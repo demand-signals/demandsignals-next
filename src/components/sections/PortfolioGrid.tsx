@@ -18,18 +18,17 @@ export default function PortfolioGrid() {
       }}
     >
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <h2
-          style={{
-            fontSize: 'clamp(1.6rem, 3vw, 2.4rem)',
-            fontWeight: 800,
-            color: 'var(--dark)',
-            textAlign: 'center',
-            marginBottom: 56,
-            lineHeight: 1.2,
-          }}
-        >
-          Clients Who Stand Out.
-        </h2>
+        <div style={{ textAlign: 'center', marginBottom: 56 }}>
+          <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Recent Work
+          </span>
+          <h2 style={{ fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 800, color: 'var(--dark)', lineHeight: 1.2, margin: '14px 0 16px' }}>
+            We Don&apos;t Talk About Results. We Ship Them.
+          </h2>
+          <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.6, maxWidth: 580, margin: '0 auto' }}>
+            Real businesses we&apos;ve launched in the last 6 months — every one ranking, converting, and running on AI.
+          </p>
+        </div>
 
         <div
           style={{

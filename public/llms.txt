@@ -1,6 +1,6 @@
 # Demand Signals
 
-> Demand Signals is an AI-powered demand generation agency based in Northern California. We build AI-powered websites, deploy AI agent swarms, and run AI-driven marketing operations for local businesses. Our AI systems continuously optimize websites, produce content, manage social media, and respond to reviews — 24/7. We have built and shipped 14+ client projects across every industry in the last 6 months, averaging over one project per week. Founded by a 30-year veteran in web development and digital marketing. We serve El Dorado County, Sacramento, Placer County, and all of Northern California.
+> Demand Signals is an AI-powered demand generation agency based in Northern California, serving clients across the USA, Thailand, Australia and beyond. We build AI-powered websites, deploy AI agent swarms, and run AI-driven marketing operations for local businesses. Our AI systems continuously optimize websites, produce content, manage social media, and respond to reviews — 24/7. Founded by a 30-year veteran in web development and digital marketing.
 
 ## Core Services
 
@@ -38,7 +38,7 @@
 ## Company
 - [About](https://demandsignals.co/about): Our story, mission, and AI-first approach to demand generation.
 - [Our Team](https://demandsignals.co/about/team): The people and AI systems behind Demand Signals.
-- [Portfolio](https://demandsignals.co/portfolio): 14+ client projects across construction, legal, wellness, restaurant, brewery, SaaS, recruitment, and more.
+- [Portfolio](https://demandsignals.co/portfolio): Client projects across construction, legal, wellness, restaurant, brewery, SaaS, recruitment, and more.
 - [Blog](https://demandsignals.co/blog): Insights on AI marketing, demand generation, GEO optimization, and AI agent deployment.
 - [Service Locations](https://demandsignals.co/locations): El Dorado Hills, Folsom, Sacramento, Placerville, Roseville, Rocklin, Granite Bay, Auburn, Citrus Heights, Cameron Park, South Lake Tahoe.
 
@@ -53,9 +53,7 @@
 - [Book a Free Call](https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true)
 
 ## Key Facts
-- 14+ client projects shipped in 6 months
-- Ships over a project per week
 - AI replaces marketing employees and agency retainers
 - Three-layer discovery strategy: SEO + GEO + AEO
-- Based in Northern California, serving US and Australia
+- Based in Northern California, serving clients across the USA, Thailand, Australia and Beyond
 - Built on Next.js, React, WordPress, Claude API, Supabase, Vercel

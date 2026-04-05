@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     template: '%s | Demand Signals',
   },
   description:
-    'Demand Signals deploys AI agent swarms, AI-powered websites, and automated marketing systems for local businesses in Northern California. 14 clients. 3x leads. 24/7 AI.',
+    'Demand Signals deploys AI agent swarms, AI-powered websites, and automated marketing systems for businesses across the USA, Thailand, Australia and beyond. 3x leads. 24/7 AI.',
   keywords: [
     'AI demand generation',
     'AI marketing agency',
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     siteName: 'Demand Signals',
     title: 'Demand Signals — AI-Powered Demand Generation',
     description:
-      'AI agent swarms, AI websites, and automated marketing for local businesses. 14 clients. 3x leads. Always on.',
+      'AI agent swarms, AI websites, and automated marketing for businesses. 3x leads. Always on.',
     url: 'https://demandsignals.co',
     images: [
       {

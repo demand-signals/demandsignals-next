@@ -36,7 +36,7 @@ export default function TeamPage() {
                 <h2 style={{ color: 'var(--dark)', fontWeight: 800, fontSize: '1.5rem', marginBottom: 4 }}>Hunter</h2>
                 <p style={{ color: 'var(--teal)', fontWeight: 600, fontSize: '0.9rem', marginBottom: 16 }}>Managing Director</p>
                 <p style={{ color: 'var(--slate)', lineHeight: 1.75, fontSize: '1rem' }}>
-                  30-year veteran in web development and digital marketing. Built and shipped over a project per week for the past year. Closed 14 client sites across every industry — from gun ranges to law firms to MMA gyms in Thailand. Leads strategy, closes deals, and oversees every AI system Demand Signals deploys.
+                  30-year veteran in web development and digital marketing. Has shipped client projects across every industry — from gun ranges to law firms to MMA gyms in Thailand. Leads strategy, closes deals, and oversees every AI system Demand Signals deploys. Based in Northern California, serving clients across the USA, Thailand, Australia and beyond.
                 </p>
               </div>
             </div>

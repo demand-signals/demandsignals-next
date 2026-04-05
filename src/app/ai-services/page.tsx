@@ -63,7 +63,7 @@ const SERVICES = [
 const FAQS = [
   {
     question: 'What business functions can AI realistically replace today?',
-    answer: 'In 2026, AI can effectively replace or augment: social media management, content writing, review response management, SEO monitoring and optimization, basic customer service, data entry, appointment scheduling, report generation, email outreach, and marketing coordination. We\'ve done all of these across our 14+ client deployments.',
+    answer: 'In 2026, AI can effectively replace or augment: social media management, content writing, review response management, SEO monitoring and optimization, basic customer service, data entry, appointment scheduling, report generation, email outreach, and marketing coordination. We\'ve done all of these across our client deployments.',
   },
   {
     question: 'How much can I save by replacing roles with AI agents?',

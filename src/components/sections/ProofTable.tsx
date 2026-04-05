@@ -34,10 +34,10 @@ export default function ProofTable() {
             lineHeight: 1.2,
           }}
         >
-          14 Projects. Every Industry. All in the Last 6 Months.
+          Every Industry. Every Challenge. Shipped.
         </h2>
         <p style={{ textAlign: 'center', color: 'var(--slate)', fontSize: '1.05rem', marginBottom: 48, maxWidth: 600, margin: '0 auto 48px' }}>
-          We ship over a project per week. Here&apos;s what we&apos;ve delivered recently.
+          A sample of the projects we&apos;ve delivered recently across industries and geographies.
         </p>
 
         <div

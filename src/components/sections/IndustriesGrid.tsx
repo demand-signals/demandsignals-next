@@ -22,18 +22,17 @@ export default function IndustriesGrid() {
       }}
     >
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <h2
-          style={{
-            fontSize: 'clamp(1.6rem, 3vw, 2.4rem)',
-            fontWeight: 800,
-            color: 'var(--dark)',
-            textAlign: 'center',
-            marginBottom: 56,
-            lineHeight: 1.2,
-          }}
-        >
-          If You Sell Locally, We Generate Your Demand.
-        </h2>
+        <div style={{ textAlign: 'center', marginBottom: 56 }}>
+          <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Industries We Serve
+          </span>
+          <h2 style={{ fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 800, color: 'var(--dark)', lineHeight: 1.2, margin: '14px 0 16px' }}>
+            Built for Businesses That Can&apos;t Afford to Be Invisible.
+          </h2>
+          <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.6, maxWidth: 580, margin: '0 auto' }}>
+            Whether you pour concrete or pour lattes — if your customers are local, our AI systems will find them before your competitors do.
+          </p>
+        </div>
 
         <div
           style={{

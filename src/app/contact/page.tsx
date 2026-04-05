@@ -224,7 +224,7 @@ export default function ContactPage() {
             {[
               { icon: '📞', label: 'Phone', value: CONTACT_PHONE, href: `tel:${CONTACT_PHONE}` },
               { icon: '✉️', label: 'Email', value: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` },
-              { icon: '📍', label: 'Based In', value: 'Northern California\nServing US & AU', href: null },
+              { icon: '📍', label: 'Based In', value: 'Northern California\nServing USA, Thailand, AU & Beyond', href: null },
             ].map((tile) => (
               <div key={tile.label} style={{
                 background: 'var(--light)',

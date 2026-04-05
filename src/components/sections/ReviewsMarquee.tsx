@@ -73,11 +73,14 @@ export default function ReviewsMarquee() {
           letterSpacing: '0.1em',
           textTransform: 'uppercase',
         }}>
-          Client Reviews
+          What They&apos;re Saying
         </span>
-        <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, margin: '14px 0 0' }}>
-          Clients Who Stand Out.
+        <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, margin: '14px 0 12px' }}>
+          Don&apos;t Take Our Word for It. Take Theirs.
         </h2>
+        <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.6, maxWidth: 560, margin: '0 auto' }}>
+          From general contractors to SaaS founders — here&apos;s what happens when AI meets local business.
+        </p>
       </div>
 
       <style>{`
