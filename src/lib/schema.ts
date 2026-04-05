@@ -4,7 +4,7 @@ export const orgSchema = {
   "@id": "https://demandsignals.co/#organization",
   "name": "Demand Signals",
   "url": "https://demandsignals.co",
-  "logo": "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69a7735995dcd2da251c8bf7/efdd5a396_dsig_q2y25_logo_v2b.png",
+  "logo": "https://demandsignals.co/logo.png",
   "description": "AI-powered demand generation agency specializing in AI agent swarms, AI websites, local SEO, and generative engine optimization for local businesses.",
   "telephone": "+1-916-542-2423",
   "email": "DemandSignals@gmail.com",

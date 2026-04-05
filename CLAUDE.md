@@ -80,7 +80,7 @@ git -c credential.helper="" \
 - **Contact email:** `DemandSignals@gmail.com`
 - **Phone:** `(916) 542-2423`
 - **Booking URL:** `https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true`
-- **Logo:** `https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69a7735995dcd2da251c8bf7/efdd5a396_dsig_q2y25_logo_v2b.png`
+- **Logo:** `https://demandsignals.us/assets/logos/dsig_logo_v2b.png`
 
 ---
 
