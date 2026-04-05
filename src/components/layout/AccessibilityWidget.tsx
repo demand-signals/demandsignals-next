@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const STORAGE_KEY = 'accessibility_settings'
-const COOKIE_KEY = 'cookie_preference'
 
 interface AccessibilityState {
   fontSize: number
@@ -13,11 +12,9 @@ interface AccessibilityState {
   cursorSize: 'normal' | 'large' | 'xlarge'
   lineHeight: 'normal' | 'increased' | 'double'
   letterSpacing: 'normal' | 'increased' | 'wide'
-  hideImages: boolean
   highlightLinks: boolean
   readableFont: boolean
   pauseAnimations: boolean
-  textAlign: 'default' | 'left' | 'center' | 'right'
 }
 
 const DEFAULT_STATE: AccessibilityState = {
@@ -27,11 +24,9 @@ const DEFAULT_STATE: AccessibilityState = {
   cursorSize: 'normal',
   lineHeight: 'normal',
   letterSpacing: 'normal',
-  hideImages: false,
   highlightLinks: false,
   readableFont: false,
   pauseAnimations: false,
-  textAlign: 'default',
 }
 
 const A11Y_STYLE_ID = 'a11y-widget-styles'
@@ -84,7 +79,6 @@ function applyContrast(value: AccessibilityState['contrast']) {
 }
 
 function applyColorBlind(value: AccessibilityState['colorBlind']) {
-  // Remove existing SVG
   document.getElementById(A11Y_SVG_ID)?.remove()
 
   if (value === 'none') {
@@ -137,9 +131,6 @@ function applyA11yStyles(state: AccessibilityState) {
   if (state.letterSpacing !== 'normal') {
     rules.push(`* { letter-spacing: ${letterSpacings[state.letterSpacing]} !important; }`)
   }
-  if (state.hideImages) {
-    rules.push(`img, picture, video, [role="img"], svg:not(#${A11Y_SVG_ID} *) { visibility: hidden !important; }`)
-  }
   if (state.highlightLinks) {
     rules.push(`a { background: #fef08a !important; color: #111 !important; text-decoration: underline !important; }`)
   }
@@ -148,9 +139,6 @@ function applyA11yStyles(state: AccessibilityState) {
   }
   if (state.pauseAnimations) {
     rules.push(`*, *::before, *::after { animation-play-state: paused !important; transition: none !important; }`)
-  }
-  if (state.textAlign !== 'default') {
-    rules.push(`body * { text-align: ${state.textAlign} !important; }`)
   }
 
   if (rules.length === 0) return
@@ -293,20 +281,15 @@ function Section({ children }: { children: React.ReactNode }) {
 
 export function AccessibilityWidget() {
   const [open, setOpen] = useState(false)
-  const [cookieSet, setCookieSet] = useState(false)
   const [state, setState] = useState<AccessibilityState>(DEFAULT_STATE)
 
   // Load state from localStorage on mount
   useEffect(() => {
-    const cookiePref = localStorage.getItem(COOKIE_KEY)
-    setCookieSet(!!cookiePref)
-
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
       try {
         const parsed = JSON.parse(stored) as AccessibilityState
         setState(parsed)
-        // Re-apply all settings
         applyFontSize(parsed.fontSize)
         applyContrast(parsed.contrast)
         applyColorBlind(parsed.colorBlind)
@@ -318,40 +301,23 @@ export function AccessibilityWidget() {
     }
   }, [])
 
-  // Poll for cookie preference (in case user accepts after widget loads)
-  useEffect(() => {
-    if (cookieSet) return
-    const interval = setInterval(() => {
-      const pref = localStorage.getItem(COOKIE_KEY)
-      if (pref) {
-        setCookieSet(true)
-        clearInterval(interval)
-      }
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [cookieSet])
-
   const update = useCallback(
     (changes: Partial<AccessibilityState>) => {
       setState((prev) => {
         const next = { ...prev, ...changes }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
 
-        // Apply side effects
         if ('fontSize' in changes) applyFontSize(next.fontSize)
         if ('contrast' in changes) applyContrast(next.contrast)
         if ('colorBlind' in changes) applyColorBlind(next.colorBlind)
         if ('cursorSize' in changes) applyCursorSize(next.cursorSize)
 
-        // These all write to the shared style tag
         const styleKeys: (keyof AccessibilityState)[] = [
           'lineHeight',
           'letterSpacing',
-          'hideImages',
           'highlightLinks',
           'readableFont',
           'pauseAnimations',
-          'textAlign',
         ]
         if (styleKeys.some((k) => k in changes)) applyA11yStyles(next)
 
@@ -371,32 +337,28 @@ export function AccessibilityWidget() {
     document.getElementById(A11Y_STYLE_ID)?.remove()
   }
 
-  const disabled = !cookieSet
-
   return (
     <>
       {/* Trigger button */}
       <div style={{ position: 'fixed', bottom: 20, left: 20, zIndex: 90 }}>
         <button
-          onClick={() => !disabled && setOpen(true)}
-          title={disabled ? 'Accept cookies to use accessibility settings' : 'Accessibility Settings'}
+          onClick={() => setOpen(true)}
+          title="Accessibility Settings"
           style={{
             width: 40,
             height: 40,
             borderRadius: '50%',
             background: '#1e40af',
             border: 'none',
-            cursor: disabled ? 'not-allowed' : 'pointer',
+            cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: '#fff',
             boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
-            opacity: disabled ? 0.5 : 1,
-            transition: 'opacity 0.2s',
+            transition: 'transform 0.2s',
           }}
           aria-label="Open accessibility settings"
-          disabled={disabled}
         >
           <AccessIcon />
         </button>
@@ -448,7 +410,7 @@ export function AccessibilityWidget() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '18px 20px',
+                  padding: '18px 20px 14px',
                   borderBottom: '1px solid #e5e7eb',
                   position: 'sticky',
                   top: 0,
@@ -456,45 +418,34 @@ export function AccessibilityWidget() {
                   zIndex: 1,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ color: '#1e40af' }}>
-                    <AccessIcon />
-                  </span>
-                  <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#111827' }}>
-                    Accessibility
-                  </h2>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                    <span style={{ color: '#1e40af' }}>
+                      <AccessIcon />
+                    </span>
+                    <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#111827' }}>
+                      Accessibility
+                    </h2>
+                  </div>
+                  <p style={{ margin: 0, fontSize: 12, color: '#9ca3af' }}>
+                    Customize your experience
+                  </p>
                 </div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <button
-                    onClick={resetAll}
-                    style={{
-                      fontSize: 12,
-                      color: '#6b7280',
-                      background: 'none',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: 6,
-                      padding: '4px 10px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Reset
-                  </button>
-                  <button
-                    onClick={() => setOpen(false)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#6b7280',
-                      padding: 4,
-                      borderRadius: 6,
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <CloseIcon />
-                  </button>
-                </div>
+                <button
+                  onClick={() => setOpen(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#6b7280',
+                    padding: 4,
+                    borderRadius: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <CloseIcon />
+                </button>
               </div>
 
               {/* ── Text Size ── */}
@@ -503,20 +454,7 @@ export function AccessibilityWidget() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <button
                     onClick={() => update({ fontSize: Math.max(80, state.fontSize - 10) })}
-                    style={{
-                      width: 30,
-                      height: 30,
-                      borderRadius: '50%',
-                      border: '1.5px solid #e5e7eb',
-                      background: '#fff',
-                      cursor: 'pointer',
-                      fontSize: 18,
-                      lineHeight: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#374151',
-                    }}
+                    style={circleBtn}
                   >
                     −
                   </button>
@@ -525,20 +463,7 @@ export function AccessibilityWidget() {
                   </span>
                   <button
                     onClick={() => update({ fontSize: Math.min(150, state.fontSize + 10) })}
-                    style={{
-                      width: 30,
-                      height: 30,
-                      borderRadius: '50%',
-                      border: '1.5px solid #e5e7eb',
-                      background: '#fff',
-                      cursor: 'pointer',
-                      fontSize: 18,
-                      lineHeight: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#374151',
-                    }}
+                    style={circleBtn}
                   >
                     +
                   </button>
@@ -561,17 +486,17 @@ export function AccessibilityWidget() {
                 </div>
               </Section>
 
-              {/* ── Color Blind Mode ── */}
+              {/* ── Color Blind Modes ── */}
               <Section>
-                <SectionTitle>Color Blind Mode</SectionTitle>
+                <SectionTitle>Color Blind Modes</SectionTitle>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {(
                     [
                       ['none', 'None'],
-                      ['protanopia', 'Protanopia'],
-                      ['deuteranopia', 'Deuteranopia'],
-                      ['tritanopia', 'Tritanopia'],
-                      ['achromatopsia', 'Achromatopsia'],
+                      ['protanopia', 'Protanopia (Red-Blind)'],
+                      ['deuteranopia', 'Deuteranopia (Green-Blind)'],
+                      ['tritanopia', 'Tritanopia (Blue-Blind)'],
+                      ['achromatopsia', 'Achromatopsia (Total Color Blind)'],
                     ] as [AccessibilityState['colorBlind'], string][]
                   ).map(([v, label]) => (
                     <OptionButton
@@ -595,7 +520,7 @@ export function AccessibilityWidget() {
                       active={state.cursorSize === v}
                       onClick={() => update({ cursorSize: v })}
                     >
-                      {v === 'normal' ? 'Normal' : v === 'large' ? 'Large' : 'X-Large'}
+                      {v === 'normal' ? 'Normal' : v === 'large' ? 'Large' : 'Extra Large'}
                     </OptionButton>
                   ))}
                 </div>
@@ -633,16 +558,10 @@ export function AccessibilityWidget() {
                 </div>
               </Section>
 
-              {/* ── Quick Toggles ── */}
+              {/* ── Additional Options ── */}
               <Section>
-                <SectionTitle>Quick Toggles</SectionTitle>
+                <SectionTitle>Additional Options</SectionTitle>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  <TogglePill
-                    active={state.hideImages}
-                    onClick={() => update({ hideImages: !state.hideImages })}
-                  >
-                    Hide Images
-                  </TogglePill>
                   <TogglePill
                     active={state.highlightLinks}
                     onClick={() => update({ highlightLinks: !state.highlightLinks })}
@@ -662,32 +581,69 @@ export function AccessibilityWidget() {
                     Pause Animations
                   </TogglePill>
                 </div>
-
-                {/* Text align sub-section */}
-                <div style={{ marginTop: 14 }}>
-                  <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>Text Align</div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {(['left', 'center', 'right'] as const).map((v) => (
-                      <TogglePill
-                        key={v}
-                        active={state.textAlign === v}
-                        onClick={() =>
-                          update({ textAlign: state.textAlign === v ? 'default' : v })
-                        }
-                      >
-                        {v.charAt(0).toUpperCase() + v.slice(1)}
-                      </TogglePill>
-                    ))}
-                  </div>
-                </div>
               </Section>
 
-              {/* Bottom padding */}
-              <div style={{ height: 24 }} />
+              {/* Reset All Settings */}
+              <div style={{ padding: '16px 20px' }}>
+                <button
+                  onClick={resetAll}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: 8,
+                    border: '1.5px solid #e5e7eb',
+                    background: '#fff',
+                    color: '#374151',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  Reset All Settings
+                </button>
+              </div>
+
+              {/* Branding + WCAG Badge */}
+              <div style={{ padding: '12px 20px 24px', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 12px', fontSize: 11, color: '#9ca3af' }}>
+                  Accessibility App by Demand Signals
+                </p>
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: '#f0fdf4', border: '1px solid #bbf7d0',
+                  borderRadius: 8, padding: '8px 14px',
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#15803d' }}>WCAG 2.1 AA Compliant</div>
+                    <div style={{ fontSize: 10, color: '#4ade80', lineHeight: 1.3 }}>
+                      This site meets Web Content Accessibility Guidelines standards for accessible web content.
+                    </div>
+                  </div>
+                </div>
+              </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
     </>
   )
+}
+
+const circleBtn: React.CSSProperties = {
+  width: 30,
+  height: 30,
+  borderRadius: '50%',
+  border: '1.5px solid #e5e7eb',
+  background: '#fff',
+  cursor: 'pointer',
+  fontSize: 18,
+  lineHeight: 1,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: '#374151',
 }
