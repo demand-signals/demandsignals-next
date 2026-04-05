@@ -18,9 +18,9 @@ import styles from './header.module.css'
 type DropdownKey = 'services' | 'ai' | 'tools' | null
 
 const DROPDOWN_ITEMS: { key: DropdownKey; label: string; items: typeof NAV_SERVICES }[] = [
-  { key: 'services', label: 'Services',   items: NAV_SERVICES   },
-  { key: 'ai',       label: 'AI & Agents', items: NAV_AI_AGENTS  },
-  { key: 'tools',    label: 'Tools',       items: NAV_TOOLS      },
+  { key: 'services', label: 'Services',    items: NAV_SERVICES  },
+  { key: 'ai',       label: 'AI & Agents', items: NAV_AI_AGENTS },
+  { key: 'tools',    label: 'Tools',       items: NAV_TOOLS     },
 ]
 
 const DIRECT_LINKS = [
@@ -31,11 +31,18 @@ const DIRECT_LINKS = [
 
 export function Header() {
   const [open,       setOpen]       = useState<DropdownKey>(null)
+  const [scrolled,   setScrolled]   = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const currentPath = usePathname()
   useEffect(() => { setOpen(null); setMobileOpen(false) }, [currentPath])
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const handleMouseEnter = (key: DropdownKey) => {
     if (closeTimer.current) clearTimeout(closeTimer.current)
@@ -46,8 +53,10 @@ export function Header() {
     closeTimer.current = setTimeout(() => setOpen(null), 120)
   }
 
+  const headerClass = [styles.header, scrolled ? styles.headerScrolled : ''].filter(Boolean).join(' ')
+
   return (
-    <header className={styles.header}>
+    <header className={headerClass}>
       <div className={styles.inner}>
 
         {/* Logo */}
@@ -76,7 +85,9 @@ export function Header() {
               >
                 <button className={styles.navTrigger}>
                   {label}
-                  <span className={[styles.chevron, open === key && styles.chevronOpen].filter(Boolean).join(' ')} />
+                  <span className={[styles.caret, open === key ? styles.caretOpen : ''].filter(Boolean).join(' ')}>
+                    ▾
+                  </span>
                 </button>
                 {open === key && (
                   <div className={styles.dropdown}>

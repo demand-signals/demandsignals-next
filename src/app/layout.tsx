@@ -88,7 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen flex flex-col">
         <Header />
-        <main id="main-content" className="flex-1">
+        <main id="main-content" className="flex-1" style={{ paddingTop: '72px' }}>
           {children}
         </main>
         <Footer />

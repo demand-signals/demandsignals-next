@@ -11,30 +11,30 @@ export const HERO_VIDEO_URL =
 
 // ── Services dropdown ────────────────────────────────────────
 export const NAV_SERVICES = [
-  { label: 'WordPress Sites',         href: '/services/wordpress'      },
-  { label: 'React / Next.js WebApps', href: '/services/nextjs-webapps' },
-  { label: 'Vibe Coded WebApps',      href: '/services/vibe-coded'     },
-  { label: 'iOS & Android Apps',      href: '/services/mobile-apps'    },
-  { label: 'UI/UX Design',            href: '/services/ui-ux-design'   },
-  { label: 'Local Demand Generation', href: '/services/local-demand'   },
-  { label: 'GEO & Generative Search', href: '/ai-agents/geo-llm'       },
-  { label: 'Content Marketing',       href: '/services/content'        },
+  { icon: '🏢', label: 'WordPress Sites',         desc: 'Custom themes, WooCommerce, AI content pipelines',    href: '/services/wordpress'      },
+  { icon: '⚡', label: 'React / Next.js WebApps', desc: 'Full-stack apps with AI features & edge deployment',  href: '/services/nextjs-webapps' },
+  { icon: '🤖', label: 'Vibe Coded WebApps',      desc: 'Ship in days with Cursor, Claude Code & Base44',      href: '/services/vibe-coded'     },
+  { icon: '📱', label: 'iOS & Android Apps',      desc: 'React Native cross-platform, App Store ready',        href: '/services/mobile-apps'    },
+  { icon: '🎨', label: 'UI/UX Design',            desc: 'Figma systems, AI prototyping, dev-ready handoff',    href: '/services/ui-ux-design'   },
+  { icon: '📍', label: 'Local Demand Generation', desc: 'SEO, GBP, citations & Map Pack domination',           href: '/services/local-demand'   },
+  { icon: '🔮', label: 'GEO & Generative Search', desc: 'Appear in ChatGPT, Gemini & Perplexity results',      href: '/ai-agents/geo-llm'       },
+  { icon: '✍️', label: 'Content Marketing',       desc: 'AI agents publishing city-targeted content daily',    href: '/services/content'        },
 ]
 
 export const NAV_AI_AGENTS = [
-  { label: 'AI Agent Farms',         href: '/ai-agents/agent-farms'    },
-  { label: 'AI Voice Systems',       href: '/ai-agents/voice'          },
-  { label: 'Workflow Automation',    href: '/ai-agents/automation'     },
-  { label: 'AI-Powered Outreach',    href: '/ai-agents/outreach'       },
-  { label: 'GEO & LLM Optimization', href: '/ai-agents/geo-llm'       },
-  { label: 'Agent Infrastructure',   href: '/ai-agents/infrastructure' },
+  { icon: '🤖', label: 'AI Agent Farms',          desc: 'Networks of agents handling marketing ops 24/7',      href: '/ai-agents/agent-farms'    },
+  { icon: '🎙️', label: 'AI Voice Systems',        desc: 'Inbound call handling & appointment booking',         href: '/ai-agents/voice'          },
+  { icon: '⚙️', label: 'Workflow Automation',     desc: 'End-to-end business process automation',              href: '/ai-agents/automation'     },
+  { icon: '📧', label: 'AI-Powered Outreach',     desc: 'Personalized prospecting & lead routing at scale',    href: '/ai-agents/outreach'       },
+  { icon: '🔮', label: 'GEO & LLM Optimization',  desc: 'Structured data & entity signals for AI search',      href: '/ai-agents/geo-llm'        },
+  { icon: '🏗️', label: 'Agent Infrastructure',    desc: 'The systems powering automated marketing ops',        href: '/ai-agents/infrastructure' },
 ]
 
 export const NAV_TOOLS = [
-  { label: 'Free Demand Audit',    href: '/tools/demand-audit',     badge: 'Free' },
-  { label: 'Intelligence Reports', href: '/tools/research-reports', badge: 'Free' },
-  { label: 'Demand Links',         href: '/tools/demand-links',     badge: 'Soon' },
-  { label: 'Dynamic QR Codes',     href: '/tools/dynamic-qr',       badge: 'Soon' },
+  { icon: '🔍', label: 'Free Demand Audit',    desc: 'See where competitors are beating you — instantly', href: '/tools/demand-audit',     badge: 'Free' },
+  { icon: '📊', label: 'Intelligence Reports', desc: 'Market intel reports for NorCal businesses',        href: '/tools/research-reports', badge: 'Free' },
+  { icon: '🔗', label: 'Demand Links',         desc: 'Smart link management & tracking',                  href: '/tools/demand-links',     badge: 'Soon' },
+  { icon: '📱', label: 'Dynamic QR Codes',     desc: 'Trackable QR codes with live destinations',         href: '/tools/dynamic-qr',       badge: 'Soon' },
 ]
 
 // Legacy aliases kept for any existing imports
