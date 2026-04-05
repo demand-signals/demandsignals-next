@@ -329,8 +329,8 @@ export function HeroCanvas() {
       />
 
       {/* Content */}
-      <div style={{ position: 'relative', zIndex: 30, maxWidth: 1200, margin: '0 auto', padding: '96px 24px 80px', width: '100%' }}>
-        <div style={{ maxWidth: 760 }}>
+      <div style={{ position: 'relative', zIndex: 30, maxWidth: 1200, margin: '0 auto', padding: '96px 24px 80px', width: '100%', textAlign: 'center' }}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
           {/* Eyebrow */}
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -350,12 +350,12 @@ export function HeroCanvas() {
           </h1>
 
           {/* Tagline */}
-          <p style={{ fontSize: 'clamp(1rem, 1.8vw, 1.25rem)', color: 'rgba(255,255,255,0.72)', maxWidth: 620, marginBottom: 40, lineHeight: 1.65 }}>
+          <p style={{ fontSize: 'clamp(1rem, 1.8vw, 1.25rem)', color: 'rgba(255,255,255,0.72)', maxWidth: 620, margin: '0 auto 40px', lineHeight: 1.65 }}>
             Demand Signals builds AI-powered systems that put your business in front of the right buyers — across search, social, and every channel that matters.
           </p>
 
           {/* CTAs */}
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
             <Link href="/contact" style={{
               display: 'inline-flex', alignItems: 'center', padding: '16px 36px',
               background: '#FF6B2B',
