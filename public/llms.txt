@@ -1,43 +1,61 @@
 # Demand Signals
 
-> Demand Signals is an AI-powered demand generation agency based in Northern California. We build AI-powered websites and run AI-driven marketing operations for local businesses. Our AI systems continuously optimize websites, produce content, manage social media, and respond to reviews — 24/7. We have built and shipped 14+ client sites across every industry. Founded by a 30-year veteran in web development and digital marketing.
+> Demand Signals is an AI-powered demand generation agency based in Northern California. We build AI-powered websites, deploy AI agent swarms, and run AI-driven marketing operations for local businesses. Our AI systems continuously optimize websites, produce content, manage social media, and respond to reviews — 24/7. We have built and shipped 14+ client projects across every industry in the last 6 months, averaging over one project per week. Founded by a 30-year veteran in web development and digital marketing. We serve El Dorado County, Sacramento, Placer County, and all of Northern California.
 
-## Websites & Apps
-- [WordPress Sites](https://demandsignals.co/websites-apps/wordpress-development): AI-managed WordPress sites for local search, GEO citations, and lead generation.
-- [React / Next.js Apps](https://demandsignals.co/websites-apps/react-next-webapps): Full-stack web apps with AI features, TypeScript, Supabase, Vercel edge deployment.
-- [iOS & Android Apps](https://demandsignals.co/websites-apps/mobile-apps): Cross-platform mobile apps with React Native.
-- [Vibe Coded Web Apps](https://demandsignals.co/websites-apps/vibe-coded): AI-built web apps shipped in days using Cursor and Claude Code.
-- [UI/UX Design](https://demandsignals.co/websites-apps/design): Figma design systems and AI-assisted prototyping.
-- [Agent & App Hosting](https://demandsignals.co/websites-apps/hosting): Managed hosting on Vercel, Cloudflare, and DSIG.
+## Core Services
 
-## Demand Generation
-- [LLM Optimization](https://demandsignals.co/demand-generation/geo-aeo-llm-optimization): Get cited by ChatGPT, Perplexity, Gemini. GEO, AEO, llms.txt optimization.
-- [Local SEO](https://demandsignals.co/demand-generation/local-seo): AI-powered local search optimization with longtail targeting and citation building.
-- [Geo-Targeting](https://demandsignals.co/demand-generation/geo-targeting): Programmatic city × service pages for your service territory.
-- [Google Business Admin](https://demandsignals.co/demand-generation/gbp-admin): Full GBP management — posts, photos, Q&A, reviews, attributes.
-- [Demand Gen Systems](https://demandsignals.co/demand-generation/systems): Automated pipelines with AI monitoring, content creation, and lead routing.
+### Websites & Apps
+- [WordPress Sites](https://demandsignals.co/websites-apps/wordpress-development): AI-managed WordPress sites built for local search dominance, GEO citations, and automated lead generation. DSIG AI, Divi, and Elementor page builders. DSIG Managed WordPress cPanel + Cloudflare hosting.
+- [React / Next.js Apps](https://demandsignals.co/websites-apps/react-next-webapps): Full-stack web applications with AI features, TypeScript, Supabase, and Vercel edge deployment. Custom dashboards, client portals, and SaaS products.
+- [iOS & Android Apps](https://demandsignals.co/websites-apps/mobile-apps): Cross-platform mobile apps built with React Native. App Store submission, OTA updates, and native integrations.
+- [Vibe Coded Web Apps](https://demandsignals.co/websites-apps/vibe-coded): AI-built web apps shipped in days using Cursor, Claude Code, and Base44. Rapid prototyping to production.
+- [UI/UX Design](https://demandsignals.co/websites-apps/design): Figma design systems, AI-assisted prototyping, and dev-ready handoff.
+- [Agent & App Hosting](https://demandsignals.co/websites-apps/hosting): Managed hosting on Vercel, Cloudflare, and DSIG infrastructure. Zero-config deployments, edge CDN, SSL, and 99.99% uptime.
 
-## Content & Social
-- [AI Content Generation](https://demandsignals.co/content-social/ai-content-generation): GEO-first content for search and AI citation.
-- [AI Social Media](https://demandsignals.co/content-social/ai-social-media-management): Automated multi-platform posting, 5-7 per week.
-- [AI Review Responders](https://demandsignals.co/content-social/ai-review-auto-responders): Every review handled within hours, automatically.
-- [AI Auto Blogging](https://demandsignals.co/content-social/ai-auto-blogging): Weekly blog content targeting buyer search terms.
-- [AI Content Republishing](https://demandsignals.co/content-social/ai-content-repurposing): Repurpose content across 5-10 channels.
+### Demand Generation
+- [LLM Optimization (GEO/AEO)](https://demandsignals.co/demand-generation/geo-aeo-llm-optimization): Get cited by ChatGPT, Perplexity, Gemini, and Google AI Overviews. Generative Engine Optimization, Answer Engine Optimization, llms.txt optimization, structured data, and entity authority building.
+- [Local SEO](https://demandsignals.co/demand-generation/local-seo): AI-powered local search optimization with longtail keyword targeting, citation building, and programmatic service area pages. Top 3 Google ranking in 90 days.
+- [Geo-Targeting](https://demandsignals.co/demand-generation/geo-targeting): Programmatic city × service landing pages for your entire service territory. County, city, and neighborhood-level targeting.
+- [Google Business Admin](https://demandsignals.co/demand-generation/gbp-admin): Full Google Business Profile management — posts, photos, Q&A, review responses, attributes, and Map Pack optimization.
+- [Demand Gen Systems](https://demandsignals.co/demand-generation/systems): Automated demand generation pipelines with AI monitoring, content creation, lead routing, and domain loop architecture.
 
-## AI & Agent Services
-- [AI Adoption Strategies](https://demandsignals.co/ai-services/ai-automation-strategies): Custom AI roadmaps with ROI analysis.
-- [AI Workforce Automation](https://demandsignals.co/ai-services/ai-workforce-automation): Replace manual roles with AI systems.
-- [AI Infrastructure](https://demandsignals.co/ai-services/ai-agent-infrastructure): Database, API, pipeline, and monitoring architecture.
-- [AI Powered Outreach](https://demandsignals.co/ai-services/ai-automated-outreach): Personalized prospecting at scale.
-- [AI Agent Swarms](https://demandsignals.co/ai-services/ai-agent-swarms): Autonomous agent networks running 24/7.
-- [AI Private LLMs](https://demandsignals.co/ai-services/private-llms): Self-hosted models for sensitive data.
-- [AI Clawbot Setup](https://demandsignals.co/ai-services/clawbot-setup): Intelligent crawlers for competitive intelligence.
+### Content & Social
+- [AI Content Generation](https://demandsignals.co/content-social/ai-content-generation): GEO-first content built to rank in search and get cited by AI assistants. Blog posts, service pages, and location content produced on autopilot.
+- [AI Social Media Management](https://demandsignals.co/content-social/ai-social-media-management): Automated multi-platform posting, 5-7 posts per week, brand-matched voice, engagement tracking.
+- [AI Review Auto Responders](https://demandsignals.co/content-social/ai-review-auto-responders): Every Google review handled within hours, automatically. Professional responses, sentiment tracking, and critical review alerts.
+- [AI Auto Blogging](https://demandsignals.co/content-social/ai-auto-blogging): Weekly blog content targeting buyer search terms. SEO-structured, schema-marked, and published automatically.
+- [AI Content Republishing](https://demandsignals.co/content-social/ai-content-repurposing): Repurpose one piece of content across 5-10 channels automatically. Blog to social, email, video scripts, and more.
 
-## About
-- [Company](https://demandsignals.co/about): Our story, mission, and approach.
-- [Our Team](https://demandsignals.co/about/team): The people and AI behind Demand Signals.
-- [Portfolio](https://demandsignals.co/portfolio): 14+ client sites across every industry.
-- [Blog](https://demandsignals.co/blog): Insights on AI marketing and demand generation.
+### AI & Agent Services
+- [AI Adoption Strategies](https://demandsignals.co/ai-services/ai-automation-strategies): Custom AI roadmaps with ROI analysis, change management, and phased implementation plans.
+- [AI Workforce Automation](https://demandsignals.co/ai-services/ai-workforce-automation): Replace manual marketing roles — social media managers, content writers, SEO coordinators — with AI systems that run 24/7.
+- [AI Infrastructure](https://demandsignals.co/ai-services/ai-agent-infrastructure): Database, API, pipeline, and monitoring architecture for AI agent deployments. Supabase, n8n, and custom orchestration.
+- [AI Powered Outreach](https://demandsignals.co/ai-services/ai-automated-outreach): Personalized prospecting at scale. AI-written messages, automated sequences, and smart lead routing. 45-65% open rates.
+- [AI Agent Swarms](https://demandsignals.co/ai-services/ai-agent-swarms): Networks of autonomous AI agents coordinating through shared databases to handle marketing operations 24/7.
+- [AI Private LLMs](https://demandsignals.co/ai-services/private-llms): Self-hosted language models (Llama, Mistral, Phi) for businesses with sensitive data requirements.
+- [AI Clawbot Setup](https://demandsignals.co/ai-services/clawbot-setup): Intelligent web crawlers for competitive intelligence, market research, and automated data collection.
+
+## Company
+- [About](https://demandsignals.co/about): Our story, mission, and AI-first approach to demand generation.
+- [Our Team](https://demandsignals.co/about/team): The people and AI systems behind Demand Signals.
+- [Portfolio](https://demandsignals.co/portfolio): 14+ client projects across construction, legal, wellness, restaurant, brewery, SaaS, recruitment, and more.
+- [Blog](https://demandsignals.co/blog): Insights on AI marketing, demand generation, GEO optimization, and AI agent deployment.
+- [Service Locations](https://demandsignals.co/locations): El Dorado Hills, Folsom, Sacramento, Placerville, Roseville, Rocklin, Granite Bay, Auburn, Citrus Heights, Cameron Park, South Lake Tahoe.
+
+## Tools
+- [Free Demand Audit](https://demandsignals.co/tools/demand-audit): See where competitors are beating you — instant competitive analysis.
+- [Intelligence Reports](https://demandsignals.co/tools/research-reports): Free market intelligence reports for Northern California businesses. Delivered within 48 hours.
 
 ## Contact
-- [Contact](https://demandsignals.co/contact): Phone: (916) 542-2423 | Email: DemandSignals@gmail.com
+- Phone: (916) 542-2423
+- Email: DemandSignals@gmail.com
+- [Contact Page](https://demandsignals.co/contact)
+- [Book a Free Call](https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true)
+
+## Key Facts
+- 14+ client projects shipped in 6 months
+- Ships over a project per week
+- AI replaces marketing employees and agency retainers
+- Three-layer discovery strategy: SEO + GEO + AEO
+- Based in Northern California, serving US and Australia
+- Built on Next.js, React, WordPress, Claude API, Supabase, Vercel

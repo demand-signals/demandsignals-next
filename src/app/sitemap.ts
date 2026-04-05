@@ -52,6 +52,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/about`,               lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/about/team`,          lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE}/contact`,             lastModified: now, changeFrequency: 'yearly',  priority: 0.8 },
+    // Legal / Policy
+    { url: `${BASE}/privacy`,             lastModified: now, changeFrequency: 'yearly',  priority: 0.3 },
+    { url: `${BASE}/terms`,               lastModified: now, changeFrequency: 'yearly',  priority: 0.3 },
+    { url: `${BASE}/accessibility`,        lastModified: now, changeFrequency: 'yearly',  priority: 0.3 },
   ]
 
   const cities: MetadataRoute.Sitemap = CITY_SLUGS.map((slug) => ({
