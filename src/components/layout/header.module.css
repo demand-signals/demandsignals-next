@@ -5,15 +5,12 @@
   left: 0;
   right: 0;
   z-index: 1000;
-  background: transparent;
-  transition: background 0.3s ease, box-shadow 0.3s ease, backdrop-filter 0.3s ease;
+  background: var(--dark);
+  transition: box-shadow 0.3s ease;
 }
 
 .headerScrolled {
-  background: rgba(20, 27, 40, 0.97);
   box-shadow: 0 2px 24px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
 }
 
 .inner {
@@ -79,13 +76,15 @@
 }
 
 .caret {
-  font-size: 0.7rem;
-  opacity: 0.6;
+  font-size: 0.85rem;
+  color: #ff6b2b;
   transition: transform 0.2s;
+  transform: rotate(90deg);
+  display: inline-block;
 }
 
 .caretOpen {
-  transform: rotate(180deg);
+  transform: rotate(270deg);
 }
 
 .dropdown {

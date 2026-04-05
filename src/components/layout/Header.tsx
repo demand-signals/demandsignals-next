@@ -87,7 +87,7 @@ export function Header() {
                 <button className={styles.navTrigger}>
                   {label}
                   <span className={[styles.caret, open === key ? styles.caretOpen : ''].filter(Boolean).join(' ')}>
-                    ▾
+                    ›
                   </span>
                 </button>
                 {open === key && (
@@ -111,13 +111,10 @@ export function Header() {
               href={BOOKING_URL}
               target="_blank"
               rel="noopener"
-              className={styles.btnOutline}
+              className={styles.btnPrimary}
             >
               Book a Call
             </a>
-            <Link href="/contact" className={styles.btnPrimary}>
-              Get a Quote
-            </Link>
           </div>
         </div>
 
