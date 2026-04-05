@@ -13,7 +13,7 @@ export default function BookingSection() {
   return (
     <section
       style={{
-        background: 'linear-gradient(135deg, var(--dark) 0%, var(--dark-2) 100%)',
+        background: '#FF6B2B',
         padding: '96px 24px',
       }}
     >
@@ -69,7 +69,7 @@ export default function BookingSection() {
               rel="noopener noreferrer"
               style={{
                 display: 'inline-block',
-                background: '#FF6B2B',
+                background: 'var(--dark)',
                 color: '#fff',
                 fontWeight: 700,
                 fontSize: '0.95rem',
@@ -106,8 +106,8 @@ export default function BookingSection() {
         {/* Right column — checklist card */}
         <div
           style={{
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'rgba(255,255,255,0.15)',
+            border: '1px solid rgba(255,255,255,0.25)',
             borderRadius: 16,
             padding: '36px 32px',
           }}

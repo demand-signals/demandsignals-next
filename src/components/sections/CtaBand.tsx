@@ -5,7 +5,7 @@ export default function CtaBand() {
   return (
     <section
       style={{
-        background: 'var(--dark)',
+        background: '#FF6B2B',
         padding: '96px 24px',
         textAlign: 'center',
       }}
@@ -46,7 +46,7 @@ export default function CtaBand() {
             href="/contact"
             style={{
               display: 'inline-block',
-              background: '#FF6B2B',
+              background: 'var(--dark)',
               color: '#fff',
               fontWeight: 700,
               fontSize: '1rem',

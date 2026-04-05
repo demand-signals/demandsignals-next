@@ -6,6 +6,7 @@ import { Footer } from '@/components/layout/Footer'
 import { ContactBot } from '@/components/layout/ContactBot'
 import { CookieConsent } from '@/components/layout/CookieConsent'
 import { AccessibilityWidget } from '@/components/layout/AccessibilityWidget'
+import { ArcCardGame } from '@/components/sections/ArcCardGame'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { orgSchema, websiteSchema } from '@/lib/schema'
 import { cn } from "@/lib/utils";
@@ -91,6 +92,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main id="main-content" className="flex-1" style={{ paddingTop: '72px' }}>
           {children}
         </main>
+        <ArcCardGame />
         <Footer />
         <ContactBot />
         <CookieConsent />

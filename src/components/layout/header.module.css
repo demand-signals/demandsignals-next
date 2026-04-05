@@ -5,7 +5,7 @@
   left: 0;
   right: 0;
   z-index: 1000;
-  background: var(--dark);
+  background: #1e2740;
   transition: box-shadow 0.3s ease;
 }
 

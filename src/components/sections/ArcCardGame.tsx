@@ -1,5 +1,6 @@
 'use client'
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
+import { BOOKING_URL } from '@/lib/constants'
 
 const LOGO = 'https://media.base44.com/images/public/68ccebd683c4aa87ed81a043/781073a7a_dsig_icon_v1a.png'
 
@@ -47,12 +48,14 @@ function buildDeck(): Card[] {
 }
 
 export function ArcCardGame() {
-  const [cards, setCards] = useState<Card[]>(buildDeck)
+  const [cards, setCards] = useState<Card[]>([])
   const [moves, setMoves] = useState(0)
   const [won, setWon] = useState(false)
   const [finalMoves, setFinalMoves] = useState(0)
   const lockRef = useRef(false)
   const selectedRef = useRef<number[]>([])
+
+  useEffect(() => { setCards(buildDeck()) }, [])
 
   const handleCardClick = useCallback((uid: number) => {
     if (lockRef.current) return
@@ -107,6 +110,45 @@ export function ArcCardGame() {
     setMoves(0)
     setWon(false)
     setFinalMoves(0)
+  }, [])
+
+  const confettiRef = useRef<HTMLCanvasElement>(null)
+
+  const fireConfetti = useCallback(() => {
+    const canvas = confettiRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+    const colors = ['#FF6B2B', '#52C9A0', '#7B8FE0', '#A78BFA', '#FFD700', '#FF4081']
+    const particles: { x: number; y: number; vx: number; vy: number; r: number; color: string; rot: number; rv: number; life: number }[] = []
+    for (let i = 0; i < 150; i++) {
+      particles.push({
+        x: canvas.width / 2, y: canvas.height / 2,
+        vx: (Math.random() - 0.5) * 20, vy: (Math.random() - 0.5) * 20 - 5,
+        r: Math.random() * 6 + 3, color: colors[Math.floor(Math.random() * colors.length)],
+        rot: Math.random() * Math.PI * 2, rv: (Math.random() - 0.5) * 0.3, life: 1,
+      })
+    }
+    let frame: number
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      let alive = false
+      for (const p of particles) {
+        if (p.life <= 0) continue
+        alive = true
+        p.x += p.vx; p.y += p.vy; p.vy += 0.4; p.rot += p.rv; p.life -= 0.012
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot)
+        ctx.globalAlpha = p.life; ctx.fillStyle = p.color
+        ctx.fillRect(-p.r / 2, -p.r, p.r, p.r * 2)
+        ctx.restore()
+      }
+      if (alive) { frame = requestAnimationFrame(animate) }
+      else { ctx.clearRect(0, 0, canvas.width, canvas.height) }
+    }
+    animate()
+    return () => cancelAnimationFrame(frame)
   }, [])
 
   return (
@@ -187,21 +229,69 @@ export function ArcCardGame() {
         ))}
       </div>
 
-      {/* Win state */}
+      {/* Win modal */}
       {won && (
-        <div style={{ marginTop: 32, textAlign: 'center', padding: '28px 40px', background: 'rgba(82,201,160,0.08)', border: '1px solid rgba(82,201,160,0.25)', borderRadius: 12 }}>
-          <p style={{ color: '#52C9A0', fontWeight: 700, fontSize: '1.1rem', marginBottom: 8 }}>
-            You matched them all in {finalMoves} moves!
-          </p>
-          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginBottom: 16 }}>
-            Ready to put the pieces together for your business?
-          </p>
-          <button
-            onClick={reset}
-            style={{ background: '#52C9A0', color: '#fff', fontWeight: 700, padding: '10px 24px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
-          >
-            Play again →
-          </button>
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 24,
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) { reset() } }}
+        >
+          <canvas ref={confettiRef} style={{ position: 'fixed', inset: 0, zIndex: 10000, pointerEvents: 'none' }} />
+          <div style={{
+            background: 'linear-gradient(135deg, #0d1420 0%, #1d2330 100%)',
+            border: '1px solid rgba(82,201,160,0.3)',
+            borderRadius: 20, padding: '48px 40px', maxWidth: 460, width: '100%',
+            textAlign: 'center', position: 'relative', zIndex: 10001,
+            boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+          }}>
+            <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎯</div>
+            <h3 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 800, marginBottom: 8 }}>
+              {finalMoves} Moves. All Matched.
+            </h3>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 32 }}>
+              Now imagine what we could do for your business.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <button
+                onClick={reset}
+                style={{
+                  background: 'var(--dark)', color: '#fff', fontWeight: 700,
+                  padding: '14px 28px', borderRadius: 100, border: 'none',
+                  cursor: 'pointer', fontSize: '0.95rem', transition: 'transform 0.2s',
+                }}
+              >
+                Play Again
+              </button>
+              <a
+                href={BOOKING_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  background: '#FF6B2B', color: '#fff', fontWeight: 700,
+                  padding: '14px 28px', borderRadius: 100, textDecoration: 'none',
+                  fontSize: '0.95rem', display: 'block', transition: 'transform 0.2s',
+                }}
+              >
+                Schedule a Call
+              </a>
+              <a
+                href="/spacegame"
+                style={{
+                  background: 'transparent', color: 'rgba(255,255,255,0.5)',
+                  fontWeight: 600, padding: '10px 28px', borderRadius: 100,
+                  border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
+                  fontSize: '0.85rem', transition: 'color 0.2s, border-color 0.2s',
+                  textDecoration: 'none', display: 'block', textAlign: 'center',
+                }}
+              >
+                🎉 ???
+              </a>
+            </div>
+          </div>
         </div>
       )}
     </section>

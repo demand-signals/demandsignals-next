@@ -1,6 +1,6 @@
 /* ─── Dropdown panel ─────────────────────────────────────── */
 .panel {
-  background: rgba(20, 27, 40, 0.97);
+  background: rgba(30, 39, 64, 0.97);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(104, 197, 173, 0.15);
@@ -14,11 +14,11 @@
 @keyframes ddIn {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(-8px);
+    transform: translateY(-8px);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
   }
 }
 

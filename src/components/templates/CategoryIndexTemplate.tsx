@@ -63,7 +63,7 @@ export function CategoryIndexTemplate({
 
       {/* Service Cards */}
       <section style={{ background: 'var(--light)', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 1060, margin: '0 auto' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 28 }}>
             {services.map((service) => (
               <a key={service.title} href={service.href} style={{
@@ -100,7 +100,7 @@ export function CategoryIndexTemplate({
       {/* FAQ Section */}
       {faqs.length > 0 && (
         <section style={{ background: '#fff', padding: '72px 24px' }}>
-          <div style={{ maxWidth: 800, margin: '0 auto' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
               <p style={{ color: 'var(--teal)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.85rem', marginBottom: 10 }}>
                 FAQ
@@ -126,25 +126,25 @@ export function CategoryIndexTemplate({
       )}
 
       {/* CTA */}
-      <section style={{ background: 'var(--dark)', padding: '72px 24px', textAlign: 'center' }}>
+      <section style={{ background: '#FF6B2B', padding: '72px 24px', textAlign: 'center' }}>
         <div style={{ maxWidth: 560, margin: '0 auto' }}>
           <h2 style={{ color: '#fff', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 800, marginBottom: 16 }}>
             {ctaHeading}
           </h2>
-          <p style={{ color: '#a0aec0', lineHeight: 1.65, marginBottom: 28 }}>
+          <p style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.65, marginBottom: 28 }}>
             {ctaText}
           </p>
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
             <a href="/tools/research-reports" style={{
-              background: '#FF6B2B', color: '#fff', fontWeight: 700,
+              background: 'var(--dark)', color: '#fff', fontWeight: 700,
               padding: '13px 28px', borderRadius: 100, textDecoration: 'none',
             }}>
               Get a Free Report →
             </a>
             <a href="/contact" style={{
-              background: 'rgba(255,255,255,0.15)', color: '#fff', fontWeight: 600,
+              background: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 600,
               padding: '13px 28px', borderRadius: 100, textDecoration: 'none',
-              border: '2px solid rgba(255,255,255,0.5)',
+              border: '2px solid rgba(255,255,255,0.6)',
             }}>
               Talk to Us
             </a>
