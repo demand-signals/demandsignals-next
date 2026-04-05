@@ -56,58 +56,74 @@ export function ArcCardGame() {
   const [finalMoves, setFinalMoves] = useState(0)
   const lockRef = useRef(false)
   const selectedRef = useRef<number[]>([])
+  const movesRef = useRef(0)
 
   useEffect(() => { setCards(buildDeck()) }, [])
 
+  const cardsRef = useRef<Card[]>([])
+
+  // Keep cardsRef in sync
+  useEffect(() => { cardsRef.current = cards }, [cards])
+
   const handleCardClick = useCallback((uid: number) => {
     if (lockRef.current) return
-    setCards(prev => {
-      const card = prev.find(c => c.uid === uid)
-      if (!card || card.flipped || card.matched) return prev
-      if (selectedRef.current.length === 2) return prev
+    const prev = cardsRef.current
+    const card = prev.find(c => c.uid === uid)
+    if (!card || card.flipped || card.matched) return
+    if (selectedRef.current.length >= 2) return
 
-      const next = prev.map(c => c.uid === uid ? { ...c, flipped: true } : c)
-      selectedRef.current = [...selectedRef.current, uid]
+    // Flip the clicked card
+    const next = prev.map(c => c.uid === uid ? { ...c, flipped: true } : c)
+    selectedRef.current = [...selectedRef.current, uid]
 
-      if (selectedRef.current.length === 2) {
-        const [aUid, bUid] = selectedRef.current
-        const a = next.find(c => c.uid === aUid)!
-        const b = next.find(c => c.uid === bUid)!
+    if (selectedRef.current.length === 2) {
+      const [aUid, bUid] = selectedRef.current
+      const a = next.find(c => c.uid === aUid)!
+      const b = next.find(c => c.uid === bUid)!
 
-        setMoves(m => {
-          const newMoves = m + 1
-          if (a.id === b.id) {
-            // Match
-            const matched = next.map(c =>
-              c.uid === aUid || c.uid === bUid ? { ...c, matched: true } : c
-            )
-            selectedRef.current = []
-            const matchedCount = matched.filter(c => c.matched).length
-            if (matchedCount === CARD_PATTERNS.length * 2) {
-              setTimeout(() => { setFinalMoves(newMoves); setWon(true) }, 500)
-            }
-            setCards(matched)
-          } else {
-            // No match — flip back after 900ms
-            lockRef.current = true
-            setTimeout(() => {
-              setCards(cur => cur.map(c =>
-                c.uid === aUid || c.uid === bUid ? { ...c, flipped: false } : c
-              ))
-              selectedRef.current = []
-              lockRef.current = false
-            }, 900)
-          }
-          return newMoves
-        })
+      movesRef.current += 1
+      setMoves(movesRef.current)
+
+      if (a.id === b.id) {
+        // Match
+        const matched = next.map(c =>
+          c.uid === aUid || c.uid === bUid ? { ...c, matched: true } : c
+        )
+        selectedRef.current = []
+        cardsRef.current = matched
+        setCards(matched)
+        const matchedCount = matched.filter(c => c.matched).length
+        if (matchedCount === CARD_PATTERNS.length * 2) {
+          const m = movesRef.current
+          setTimeout(() => { setFinalMoves(m); setWon(true) }, 500)
+        }
+        return
+      } else {
+        // No match — flip back after delay
+        lockRef.current = true
+        cardsRef.current = next
+        setCards(next)
+        setTimeout(() => {
+          const flippedBack = cardsRef.current.map(c =>
+            c.uid === aUid || c.uid === bUid ? { ...c, flipped: false } : c
+          )
+          cardsRef.current = flippedBack
+          setCards(flippedBack)
+          selectedRef.current = []
+          lockRef.current = false
+        }, 900)
+        return
       }
-      return next
-    })
+    }
+
+    cardsRef.current = next
+    setCards(next)
   }, [])
 
   const reset = useCallback(() => {
     lockRef.current = false
     selectedRef.current = []
+    movesRef.current = 0
     setCards(buildDeck())
     setMoves(0)
     setWon(false)
