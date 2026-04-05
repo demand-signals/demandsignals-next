@@ -1,0 +1,49 @@
+import { buildMetadata } from '@/lib/metadata'
+import { ServicePageTemplate } from '@/components/templates/ServicePageTemplate'
+
+export const metadata = buildMetadata({
+  title:       'AI Agent Swarms — Autonomous Agent Networks | Demand Signals',
+  description: 'Networks of specialized AI agents handling marketing operations 24/7. Each agent handles a function. They coordinate through shared data. Always on.',
+  path:        '/ai-services/ai-agent-swarms',
+  keywords:    ['AI agent swarms', 'multi-agent systems', 'autonomous AI agents', 'AI agent networks'],
+})
+
+export default function Page() {
+  return (
+    <ServicePageTemplate
+      eyebrow="AI Agent Swarms"
+      titleHtml={<><span style={{color:'#FF6B2B'}}>AI Agent Swarms</span><br /><span style={{color:'#52C9A0'}}>A Team That Never Sleeps.</span></>}
+      subtitle="Networks of autonomous AI agents handling marketing operations 24/7. Each agent specializes in a function — content, SEO, reviews, outreach. They coordinate through shared data."
+      calloutHtml={<>We run 19 AI agents ourselves — monitoring search, generating content, responding to reviews, and managing outreach across every client. Now we deploy them for your business.</>}
+      ctaLabel="Deploy My Agent Swarm →"
+      breadcrumbs={[
+        { name: 'Home', path: '/' },
+        { name: 'AI & Agent Services', path: '/ai-services' },
+        { name: 'AI Agent Swarms', path: '/ai-services/ai-agent-swarms' },
+      ]}
+      schemaName="AI Agent Swarms"
+      schemaDescription="Autonomous networks of specialized AI agents for business operations."
+      schemaUrl="/ai-services/ai-agent-swarms"
+      featuresHeading="Specialized Agents, Unified Results"
+      features={[
+        { icon: '🔍', title: 'Search Intelligence Agent', description: 'Monitors GSC data daily, scores every page, identifies ranking opportunities, and triggers content updates when pages underperform.' },
+        { icon: '✍️', title: 'Content Generation Agent', description: 'Writes blog posts, service pages, FAQs, and social content. Produces GEO-optimized content structured for both search engines and AI citation.' },
+        { icon: '⭐', title: 'Reputation Agent', description: 'Monitors reviews across platforms, classifies sentiment, drafts responses, and escalates critical reviews. Every review handled within hours.' },
+        { icon: '📣', title: 'Social Media Agent', description: 'Generates platform-specific posts, schedules content, and tracks engagement. Maintains your brand voice across every channel.' },
+        { icon: '📧', title: 'Outreach Agent', description: 'Researches prospects, crafts personalized messages, manages sequences, and routes qualified leads to your sales process.' },
+        { icon: '📊', title: 'Analytics Agent', description: 'Aggregates performance data from all other agents, generates reports, identifies trends, and recommends strategy adjustments.' },
+      ]}
+      aiCalloutHeading="Not 6 tools. 6 agents working together."
+      aiCalloutText="Tools wait for you to use them. Agents act autonomously. Our agent swarms monitor, reason, act, and report — continuously. They coordinate through a shared database, so the content agent knows what the search agent found, the reputation agent informs the social agent, and the analytics agent tracks everything. It's a team. It just never sleeps."
+      faqs={[
+        { question: 'What is an AI agent swarm?', answer: 'An AI agent swarm is a network of specialized AI agents that handle different business functions, coordinated through a shared database. Each agent has a specific role — one monitors search, another generates content, another handles reviews. They run 24/7 and report results to your portal.' },
+        { question: 'How do agents coordinate with each other?', answer: 'Through a shared Supabase database. When the search intelligence agent finds a keyword opportunity, it creates a record that the content agent picks up and writes a page for. When the reputation agent detects a negative review trend, it informs the content agent to create positive content around that topic. The database is the coordination layer.' },
+        { question: 'How many agents do I need?', answer: 'It depends on which functions you want automated. Most clients start with 2-3 agents (content + search + reputation) and add more as they see results. The beauty of the architecture is that agents are modular — add or remove them based on your needs.' },
+      ]}
+      ctaHeading="Ready for AI Agents Working for Your Business 24/7?"
+      ctaText="We'll identify which agents would deliver the highest ROI for your business and deploy them within weeks."
+      ctaPrimaryLabel="Deploy My Agents →"
+      ctaPrimaryHref="/contact"
+    />
+  )
+}

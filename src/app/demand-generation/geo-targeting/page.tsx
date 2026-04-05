@@ -1,0 +1,49 @@
+import { buildMetadata } from '@/lib/metadata'
+import { ServicePageTemplate } from '@/components/templates/ServicePageTemplate'
+
+export const metadata = buildMetadata({
+  title:       'Geo-Targeting — Hyper-Local Demand Generation | Demand Signals',
+  description: 'Hyper-local targeting across counties, cities, and neighborhoods. Programmatic location pages that rank for every service × city combination in your territory.',
+  path:        '/demand-generation/geo-targeting',
+  keywords:    ['geo-targeting', 'hyper-local marketing', 'location-based SEO', 'programmatic local pages', 'city service pages'],
+})
+
+export default function Page() {
+  return (
+    <ServicePageTemplate
+      eyebrow="Geo-Targeting"
+      titleHtml={<><span style={{color:'#FF6B2B'}}>Geo-Targeting</span><br /><span style={{color:'#52C9A0'}}>Own Every Zip Code.</span></>}
+      subtitle="Programmatic location pages that rank for every service × city combination in your territory. AI builds them, AI maintains them, AI optimizes them."
+      calloutHtml={<>We built 93 geo-targeted pages for SB Construction — they now rank #1 for 40+ local search terms across El Dorado County.</>}
+      ctaLabel="Target My Territory →"
+      breadcrumbs={[
+        { name: 'Home', path: '/' },
+        { name: 'Demand Generation', path: '/demand-generation' },
+        { name: 'Geo-Targeting Services', path: '/demand-generation/geo-targeting' },
+      ]}
+      schemaName="Geo-Targeting Services"
+      schemaDescription="Hyper-local geo-targeting with programmatic city × service pages for local market domination."
+      schemaUrl="/demand-generation/geo-targeting"
+      featuresHeading="How Geo-Targeting Works"
+      features={[
+        { icon: '🗺️', title: 'County × City × Service Pages', description: 'Programmatic pages for every combination — a plumber serving 10 cities with 5 services gets 50+ unique, optimized pages automatically.' },
+        { icon: '📍', title: 'Service Area Targeting', description: 'Define your exact service territory — down to neighborhoods. Every page includes location-specific content, landmarks, and local references.' },
+        { icon: '📊', title: 'Local Intent Matching', description: 'AI identifies which city × service combinations have real search demand, so we build pages where buyers are actually looking.' },
+        { icon: '🔗', title: 'Internal Link Architecture', description: 'County pages link to cities. City pages link to services. Service pages link to longtails. A structured hierarchy that search engines and AI understand.' },
+        { icon: '📝', title: 'Unique Content Per Page', description: 'Every location page has unique content — not templates with city names swapped. AI generates location-specific FAQs, descriptions, and service details.' },
+        { icon: '📈', title: 'Compound Growth', description: 'Each new page strengthens the domain\'s topical authority. 50 pages today become 100 next quarter — all building on each other.' },
+      ]}
+      aiCalloutHeading="93 pages. 40+ #1 rankings. One AI system."
+      aiCalloutText="SB Construction went from a 5-page website to 93 geo-targeted pages covering every city and service combination in El Dorado County. The result: #1 rankings for over 40 local search terms and a consistent flow of qualified leads from organic search. Our AI built and maintains every page."
+      faqs={[
+        { question: 'How many location pages do I need?', answer: 'It depends on your service area and service mix. A business serving 10 cities with 5 services needs approximately 50 longtail pages plus county and city index pages. We analyze search demand to prioritize which combinations to build first.' },
+        { question: 'Won\'t Google penalize thin or duplicate content across location pages?', answer: 'Not when done correctly. Our AI generates unique content for every page — location-specific FAQs, service descriptions with local references, and genuine value for the searcher. Google penalizes template pages with swapped city names. We don\'t do that.' },
+        { question: 'How do location pages work with AI search engines?', answer: 'Location pages with proper schema markup and FAQ content are excellent for AI citation. When someone asks ChatGPT \'who is the best plumber in Folsom?\' — a well-structured location page with specific, citable content is exactly what the AI looks for.' },
+      ]}
+      ctaHeading="Ready to Own Your Territory?"
+      ctaText="We'll map your service area, identify the highest-value city × service combinations, and tell you exactly how many pages you need."
+      ctaPrimaryLabel="Map My Territory →"
+      ctaPrimaryHref="/contact"
+    />
+  )
+}

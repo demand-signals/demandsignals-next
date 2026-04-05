@@ -9,24 +9,27 @@ import { MobileMenu } from './MobileMenu'
 import {
   LOGO_URL,
   BOOKING_URL,
-  NAV_SERVICES,
-  NAV_AI_AGENTS,
-  NAV_TOOLS,
+  NAV_WEBSITES_APPS,
+  NAV_DEMAND_GEN,
+  NAV_CONTENT_SOCIAL,
+  NAV_AI_SERVICES,
+  NAV_LEARN,
+  type NavItem,
 } from '@/lib/constants'
 import styles from './header.module.css'
 
-type DropdownKey = 'services' | 'ai' | 'tools' | null
+type DropdownKey = 'websites' | 'demand' | 'content' | 'ai' | 'learn' | null
 
-const DROPDOWN_ITEMS: { key: DropdownKey; label: string; items: typeof NAV_SERVICES }[] = [
-  { key: 'services', label: 'Services',    items: NAV_SERVICES  },
-  { key: 'ai',       label: 'AI & Agents', items: NAV_AI_AGENTS },
-  { key: 'tools',    label: 'Tools',       items: NAV_TOOLS     },
+const DROPDOWN_ITEMS: { key: Exclude<DropdownKey, null>; label: string; items: NavItem[] }[] = [
+  { key: 'websites', label: 'Websites & Apps',    items: NAV_WEBSITES_APPS  },
+  { key: 'demand',   label: 'Demand Generation',  items: NAV_DEMAND_GEN     },
+  { key: 'content',  label: 'Content & Social',   items: NAV_CONTENT_SOCIAL },
+  { key: 'ai',       label: 'AI & Agents',        items: NAV_AI_SERVICES    },
+  { key: 'learn',    label: 'Learn',              items: NAV_LEARN          },
 ]
 
 const DIRECT_LINKS = [
   { label: 'Portfolio', href: '/portfolio' },
-  { label: 'Blog',      href: '/blog'      },
-  { label: 'About',     href: '/about'     },
 ]
 
 export function Header() {

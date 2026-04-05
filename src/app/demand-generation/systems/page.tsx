@@ -1,0 +1,49 @@
+import { buildMetadata } from '@/lib/metadata'
+import { ServicePageTemplate } from '@/components/templates/ServicePageTemplate'
+
+export const metadata = buildMetadata({
+  title:       'Demand Gen Systems — Automated Lead Pipelines | Demand Signals',
+  description: 'Full-stack demand generation pipelines that run 24/7. AI monitors search performance, identifies opportunities, generates content, and routes qualified leads.',
+  path:        '/demand-generation/systems',
+  keywords:    ['demand generation systems', 'automated lead generation', 'marketing automation', 'AI marketing pipeline', 'lead routing'],
+})
+
+export default function Page() {
+  return (
+    <ServicePageTemplate
+      eyebrow="Demand Gen Systems"
+      titleHtml={<><span style={{color:'#FF6B2B'}}>Demand Gen Systems</span><br /><span style={{color:'#52C9A0'}}>Pipelines That Run 24/7.</span></>}
+      subtitle="Full-stack demand generation pipelines — AI monitors performance, identifies opportunities, creates content, optimizes pages, and routes leads. All automated. All always on."
+      calloutHtml={<>Our domain loop architecture means your demand generation never stops — search monitoring, content creation, and optimization run continuously without human intervention.</>}
+      ctaLabel="Build My Pipeline →"
+      breadcrumbs={[
+        { name: 'Home', path: '/' },
+        { name: 'Demand Generation', path: '/demand-generation' },
+        { name: 'Demand Generation Systems', path: '/demand-generation/systems' },
+      ]}
+      schemaName="Demand Generation Systems"
+      schemaDescription="Automated demand generation pipelines with AI monitoring, content creation, and lead routing."
+      schemaUrl="/demand-generation/systems"
+      featuresHeading="The Domain Loop Architecture"
+      features={[
+        { icon: '🔄', title: 'Website Intelligence Loop', description: 'AI monitors every page daily — GSC data, rankings, AI citations. Pages that underperform get rewritten. New opportunities get new pages built. Continuously.' },
+        { icon: '✍️', title: 'Content & Social Loop', description: 'AI generates blog posts, social media, GBP posts, and review responses on schedule. Content calendar planned monthly, executed daily.' },
+        { icon: '⭐', title: 'Reputation Loop', description: 'Reviews monitored across platforms, responses drafted, sentiment tracked, and alerts sent for critical reviews. Every review handled, every time.' },
+        { icon: '📊', title: 'Performance Dashboard', description: 'Real-time visibility into rankings, traffic, AI citations, content published, and leads generated. One portal, everything you need to know.' },
+        { icon: '🔀', title: 'Lead Routing', description: 'Qualified leads from forms, calls, and chat automatically routed to the right person on your team with full context on how they found you.' },
+        { icon: '📈', title: 'Compound Growth', description: 'Each loop feeds the others. Better content → better rankings → more authority → better AI citations → more traffic → more data → better content. The flywheel spins faster every month.' },
+      ]}
+      aiCalloutHeading="Three loops. Zero employees. Always on."
+      aiCalloutText="Traditional agencies have teams of people doing these tasks manually. We replaced those teams with three AI domain loops that coordinate through a shared database. They run 24/7, they never take vacation, and they get better over time. That's why our clients get better results at a fraction of the cost."
+      faqs={[
+        { question: 'What is a domain loop?', answer: 'A domain loop is a self-reinforcing AI system that monitors a specific business function, reasons about what to do, takes action, and measures results — continuously. We run three: Website Intelligence (search optimization), Content & Social (content generation), and Reputation (review management). They coordinate through a shared database.' },
+        { question: 'How is this different from marketing automation tools like HubSpot?', answer: 'Marketing automation tools require you to set up workflows, write content, and monitor results. Our domain loops do all of that autonomously. The AI writes the content, identifies the opportunities, creates the pages, and monitors the results. You approve — AI does the rest.' },
+        { question: 'What does my involvement look like week to week?', answer: 'About 10 minutes. Log into your portal, approve upcoming content, review performance metrics, and flag anything that needs attention. The AI handles everything else — research, writing, publishing, optimization, and monitoring.' },
+      ]}
+      ctaHeading="Ready for Demand Gen on Autopilot?"
+      ctaText="We'll audit your current marketing operations and show you exactly which functions AI can handle — and how much you'll save."
+      ctaPrimaryLabel="Get My Free Audit →"
+      ctaPrimaryHref="/tools/demand-audit"
+    />
+  )
+}

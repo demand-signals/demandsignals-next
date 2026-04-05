@@ -19,60 +19,64 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Services col */}
+        {/* Websites & Demand Gen col */}
         <div>
-          <h4 style={{ color: '#fff', fontSize: '0.875rem', fontWeight: 700, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Services</h4>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[
-              ['Websites & Web Apps', '/services/websites'],
-              ['Local Demand Generation', '/services/local-demand'],
-              ['Content Marketing', '/services/content'],
-              ['Google My Business', '/services/gmb'],
-              ['Brand Identity & Design', '/services/brand-design'],
-            ].map(([label, href]) => (
-              <li key={href}><Link href={href} style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.65)', transition: 'color var(--t)' }}
-                onMouseEnter={e => (e.currentTarget.style.color = 'var(--teal)')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.65)')}>{label}</Link></li>
+          <h4 style={colHead}>Websites & Apps</h4>
+          <ul style={ul}>
+            {([
+              ['WordPress Sites',     '/websites-apps/wordpress-development'],
+              ['React / Next.js',     '/websites-apps/react-next-webapps'],
+              ['Mobile Apps',         '/websites-apps/mobile-apps'],
+              ['Vibe Coded Apps',     '/websites-apps/vibe-coded'],
+              ['UI/UX Design',        '/websites-apps/design'],
+            ] as const).map(([label, href]) => (
+              <li key={href}><FooterLink href={href}>{label}</FooterLink></li>
             ))}
           </ul>
         </div>
 
-        {/* AI col */}
+        {/* Demand Gen + Content col */}
         <div>
-          <h4 style={{ color: '#fff', fontSize: '0.875rem', fontWeight: 700, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.08em' }}>AI &amp; Agents</h4>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[
-              ['AI Agent Farms', '/ai-agents/agent-farms'],
-              ['AI Voice Systems', '/ai-agents/voice'],
-              ['Workflow Automation', '/ai-agents/automation'],
-              ['GEO & LLM Optimization', '/ai-agents/geo-llm'],
-              ['Agent Infrastructure', '/ai-agents/infrastructure'],
-            ].map(([label, href]) => (
-              <li key={href}><Link href={href} style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.65)', transition: 'color var(--t)' }}
-                onMouseEnter={e => (e.currentTarget.style.color = 'var(--teal)')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.65)')}>{label}</Link></li>
+          <h4 style={colHead}>Demand Generation</h4>
+          <ul style={ul}>
+            {([
+              ['LLM Optimization',      '/demand-generation/geo-aeo-llm-optimization'],
+              ['Local SEO',             '/demand-generation/local-seo'],
+              ['Geo-Targeting',         '/demand-generation/geo-targeting'],
+              ['Google Business Admin',  '/demand-generation/gbp-admin'],
+              ['Demand Gen Systems',     '/demand-generation/systems'],
+            ] as const).map(([label, href]) => (
+              <li key={href}><FooterLink href={href}>{label}</FooterLink></li>
             ))}
           </ul>
         </div>
 
-        {/* Company col */}
+        {/* AI & Company col */}
         <div>
-          <h4 style={{ color: '#fff', fontSize: '0.875rem', fontWeight: 700, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Company</h4>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[
-              ['Portfolio', '/portfolio'],
-              ['Blog', '/blog'],
-              ['About', '/about'],
-              ['Contact', '/contact'],
-              ['Free Reports', '/tools/research-reports'],
-              ['Free Demand Audit', '/tools/demand-audit'],
-            ].map(([label, href]) => (
-              <li key={href}><Link href={href} style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.65)', transition: 'color var(--t)' }}
-                onMouseEnter={e => (e.currentTarget.style.color = 'var(--teal)')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.65)')}>{label}</Link></li>
+          <h4 style={colHead}>AI & Agent Services</h4>
+          <ul style={ul}>
+            {([
+              ['AI Agent Swarms',          '/ai-services/ai-agent-swarms'],
+              ['AI Workforce Automation',  '/ai-services/ai-workforce-automation'],
+              ['AI Powered Outreach',      '/ai-services/ai-automated-outreach'],
+              ['AI Private LLMs',          '/ai-services/private-llms'],
+            ] as const).map(([label, href]) => (
+              <li key={href}><FooterLink href={href}>{label}</FooterLink></li>
             ))}
           </ul>
-          <div style={{ marginTop: 24 }}>
+          <h4 style={{ ...colHead, marginTop: 20 }}>Company</h4>
+          <ul style={ul}>
+            {([
+              ['Portfolio',       '/portfolio'],
+              ['Blog & News',    '/blog'],
+              ['About',          '/about'],
+              ['Contact',        '/contact'],
+              ['Locations',      '/locations'],
+            ] as const).map(([label, href]) => (
+              <li key={href}><FooterLink href={href}>{label}</FooterLink></li>
+            ))}
+          </ul>
+          <div style={{ marginTop: 20 }}>
             <a href={BOOKING_URL} target="_blank" rel="noopener" style={{
               display: 'inline-block', padding: '10px 20px', background: '#FF6B2B',
               color: '#fff', fontWeight: 600, fontSize: '0.875rem', borderRadius: 100,
@@ -90,5 +94,23 @@ export function Footer() {
         </div>
       </div>
     </footer>
+  )
+}
+
+/* ── Shared footer styles ─────────────────────────────────── */
+const colHead: React.CSSProperties = {
+  color: '#fff', fontSize: '0.875rem', fontWeight: 700,
+  marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.08em',
+}
+const ul: React.CSSProperties = {
+  listStyle: 'none', padding: 0, margin: 0,
+  display: 'flex', flexDirection: 'column', gap: 10,
+}
+
+function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.65)', transition: 'color 0.2s' }}>
+      {children}
+    </Link>
   )
 }

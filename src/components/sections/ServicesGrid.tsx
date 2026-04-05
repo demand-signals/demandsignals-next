@@ -1,12 +1,12 @@
 import Link from 'next/link'
 
 const services = [
-  { icon: '🌐', title: 'AI-Powered Websites', href: '/services/websites', desc: 'Fast, database-driven sites that rank in Google, get cited by ChatGPT and Perplexity, and convert visitors into leads. Not a template — a continuously optimizing system.' },
-  { icon: '✍️', title: 'AI Content & Social', href: '/services/content', desc: 'AI writes your blog posts, social media, and GMB content daily. Replaces your social media manager and content writer at a fraction of the cost. You approve in 10 minutes a week.' },
-  { icon: '⭐', title: 'Reputation & GMB', href: '/services/gmb', desc: 'AI monitors and responds to every Google review within hours. GMB profile kept active with posts, photos, and Q&A. Every review handled. Every time.' },
-  { icon: '🔮', title: 'GEO & AI Search Visibility', href: '/ai-agents/geo-llm', desc: 'When someone asks ChatGPT, Perplexity, or Gemini who to hire in your area — your name comes up. We make that happen with GEO, AEO, and llms.txt optimization.' },
-  { icon: '📍', title: 'Local Demand Generation', href: '/services/local-demand', desc: 'GMB management, longtail SEO, review platforms, and hyper-local content across El Dorado, Sacramento, Placer, Amador, and Nevada counties.' },
-  { icon: '🤖', title: 'AI Agent Farms & Automation', href: '/ai-agents/agent-farms', desc: 'Custom networks of autonomous AI agents that replace specific, expensive roles — the SEO consultant, marketing coordinator, social media manager. We run 19 ourselves.' },
+  { icon: '🌐', title: 'AI-Powered Websites & Apps', href: '/websites-apps', desc: 'WordPress, Next.js, mobile apps, and vibe-coded web apps — all built with AI features, GEO optimization, and continuous improvement from day one.' },
+  { icon: '🔮', title: 'LLM & GEO Optimization', href: '/demand-generation/geo-aeo-llm-optimization', desc: 'When someone asks ChatGPT, Perplexity, or Gemini who to hire in your area — your name comes up. We make that happen with GEO, AEO, and llms.txt optimization.' },
+  { icon: '✍️', title: 'AI Content & Social', href: '/content-social', desc: 'AI writes your blog posts, social media, and GMB content daily. Replaces your social media manager and content writer at a fraction of the cost. You approve in 10 minutes a week.' },
+  { icon: '⭐', title: 'AI Review Auto Responders', href: '/content-social/ai-review-auto-responders', desc: 'AI monitors and responds to every Google review within hours. Professional responses, sentiment tracking, and critical review alerts. Every review handled. Every time.' },
+  { icon: '📍', title: 'Local Demand Generation', href: '/demand-generation', desc: 'Full-stack demand gen: local SEO, geo-targeting, GBP management, and automated pipelines. AI monitors, optimizes, and generates leads 24/7.' },
+  { icon: '🤖', title: 'AI Agent Swarms', href: '/ai-services/ai-agent-swarms', desc: 'Networks of autonomous AI agents handling marketing operations 24/7 — content, SEO, reviews, outreach. They coordinate through shared data and never take a day off.' },
 ]
 
 export function ServicesGrid() {
