@@ -31,14 +31,14 @@ export default function WordPressDevelopmentPage() {
         { icon: '🔌', title: 'Plugin & Integration Dev', description: 'Custom WordPress plugins, ACF field groups, REST API endpoints, and third-party integrations (HubSpot, Stripe, Zapier, Twilio). When off-the-shelf plugins won\'t cut it.' },
         { icon: '🤖', title: 'AI-Powered Content Engine', description: 'Our AI system connects directly to your WordPress install — researching topics, writing posts, updating service pages, and publishing on schedule. Your site compounds while you run your business.' },
         { icon: '🔄', title: 'Migrations & Rebuilds', description: 'Moving from Wix, Squarespace, or a legacy PHP site? We migrate your content, preserve your SEO equity with proper 301 redirects, and launch you on a clean, fast WordPress stack.' },
-        { icon: '🔒', title: 'Managed Hosting & Security', description: 'Verpex managed hosting with Cloudflare CDN, daily backups, malware scanning, and proactive uptime monitoring. You focus on your business — we keep the lights on.' },
+        { icon: '🔒', title: 'Managed Hosting & Security', description: 'DSIG Managed WordPress cPanel + Cloudflare CDN, daily backups, malware scanning, and proactive uptime monitoring. You focus on your business — we keep the lights on.' },
       ]}
       techStack={[
         { label: 'CMS', value: 'WordPress 6.x (Block Editor + Classic)' },
         { label: 'E-commerce', value: 'WooCommerce, WooPayments, Stripe' },
-        { label: 'Page Builder', value: 'Gutenberg blocks, ACF Pro, custom PHP' },
+        { label: 'Page Builder', value: 'DSIG AI, Divi, Elementor' },
         { label: 'Theme', value: 'Custom-built (no page-builder bloat)' },
-        { label: 'Hosting', value: 'Verpex Managed WordPress + Cloudflare CDN' },
+        { label: 'Hosting', value: 'DSIG Managed WordPress cPanel + Cloudflare' },
         { label: 'Search', value: 'Yoast/RankMath + custom schema.org markup' },
         { label: 'AI Layer', value: 'Claude API → WP REST API content pipelines' },
         { label: 'Analytics', value: 'GA4 + Google Search Console + PostHog' },
@@ -49,7 +49,7 @@ export default function WordPressDevelopmentPage() {
       faqs={[
         { question: 'Why WordPress instead of Squarespace or Wix?', answer: 'WordPress powers 43% of the web and offers unmatched flexibility. Unlike Squarespace or Wix, WordPress gives us full control over code, schema markup, server-side rendering, and API integrations. Most importantly, our AI content engine connects directly to WordPress via its REST API — something closed platforms don\'t support.' },
         { question: 'How does AI content work on WordPress?', answer: 'Our AI system uses the Claude API to research topics and write SEO-structured content, then publishes directly to your WordPress site via the WP REST API on an automated schedule. Every post includes proper categories, tags, featured images, and schema markup. You can review and approve content in your portal before it goes live.' },
-        { question: 'Do you build on WordPress.com or self-hosted WordPress?', answer: 'Self-hosted WordPress exclusively. WordPress.com limits plugin access, custom code, and server control. We host on Verpex managed WordPress with Cloudflare CDN — giving you full control, better performance, and the ability to run our AI content pipeline.' },
+        { question: 'Do you build on WordPress.com or self-hosted WordPress?', answer: 'Self-hosted WordPress exclusively. WordPress.com limits plugin access, custom code, and server control. We host on DSIG Managed WordPress cPanel with Cloudflare — giving you full control, better performance, and the ability to run our AI content pipeline.' },
         { question: 'Can you migrate my existing site to WordPress?', answer: 'Yes. We handle full migrations from any platform — Wix, Squarespace, Shopify, Joomla, Drupal, or static HTML. We preserve your SEO equity with proper 301 redirects, migrate all content, and rebuild on a clean WordPress stack optimized for search and AI discovery.' },
       ]}
       ctaHeading="Ready for a WordPress Site That Actually Ranks?"

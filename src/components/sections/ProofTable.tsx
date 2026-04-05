@@ -1,20 +1,20 @@
 import Link from 'next/link';
 
 const rows = [
-  { client: 'SB Construction', industry: 'General Contracting', built: 'Full site + longtail SEO — 93 geo-targeted pages, #1 for 40+ local terms' },
-  { client: 'Hangtown Range', industry: 'Gun Range & Retail', built: 'Site + CA compliance tool + AI agent integration + Clover POS' },
-  { client: 'Dockside Fuel Services', industry: 'Marine Fuel Services', built: 'Site + service area targeting + GMB domination' },
-  { client: 'TruBlu Solutions', industry: 'Pool Services', built: 'Site + service area pages + local demand system' },
-  { client: 'Savia Azul', industry: 'Med Spa', built: 'Site + booking integration + GEO optimization' },
-  { client: 'Sphere Drafting', industry: 'Architectural Drafting', built: 'Site + project showcase + local SEO' },
-  { client: 'Hill McGlynn', industry: 'Recruitment', built: 'Site + job board + candidate flow — 3x qualified calls in 90 days' },
-  { client: 'Mind Tree', industry: 'Wellness', built: 'Site + appointment system + content engine' },
-  { client: 'Halal Grill', industry: 'Restaurant', built: 'Site + menu system + online ordering' },
-  { client: 'QuickTags', industry: 'DMV Services', built: 'Site + service scheduling + local AI visibility' },
-  { client: 'Jack Russell Brewery', industry: 'Craft Brewery', built: 'Site + events + taproom — 2K+ Instagram followers' },
-  { client: 'Law by Leo', industry: 'Legal Services', built: 'Site + client intake automation + AI document generation' },
-  { client: 'Dynapod', industry: 'SaaS Product', built: 'Product site + onboarding flow + GEO optimization' },
-  { client: 'Southside MMA', industry: 'MMA Gym (Thailand)', built: 'Full platform: member portal, courses, merch, dual-currency payments, gamification' },
+  { industry: 'General Contracting', type: 'Full site + longtail SEO — 93 geo-targeted pages, #1 for 40+ local terms', services: ['WordPress', 'Local SEO', 'GEO'], shipped: 'Mar 28, 2026' },
+  { industry: 'Gun Range & Retail', type: 'Site + CA compliance tool + AI agent integration + Clover POS', services: ['Next.js', 'AI Agents', 'E-commerce'], shipped: 'Mar 21, 2026' },
+  { industry: 'Marine Fuel Services', type: 'Site + service area targeting + GMB domination', services: ['WordPress', 'GBP Admin', 'Geo-Targeting'], shipped: 'Mar 14, 2026' },
+  { industry: 'Pool Services', type: 'Site + service area pages + local demand system', services: ['WordPress', 'Local SEO', 'Content'], shipped: 'Mar 7, 2026' },
+  { industry: 'Med Spa', type: 'Site + booking integration + GEO optimization', services: ['WordPress', 'GEO', 'AI Content'], shipped: 'Feb 28, 2026' },
+  { industry: 'Architectural Drafting', type: 'Site + project showcase + local SEO', services: ['WordPress', 'Portfolio', 'Local SEO'], shipped: 'Feb 20, 2026' },
+  { industry: 'Recruitment', type: 'Site + job board + candidate flow — 3x qualified calls in 90 days', services: ['Next.js', 'AI Outreach', 'Automation'], shipped: 'Feb 13, 2026' },
+  { industry: 'Wellness & Therapy', type: 'Site + appointment system + content engine', services: ['WordPress', 'AI Content', 'Booking'], shipped: 'Feb 5, 2026' },
+  { industry: 'Restaurant', type: 'Site + menu system + online ordering', services: ['WordPress', 'E-commerce', 'GBP'], shipped: 'Jan 29, 2026' },
+  { industry: 'DMV Services', type: 'Site + service scheduling + local AI visibility', services: ['WordPress', 'GEO', 'AI Agents'], shipped: 'Jan 21, 2026' },
+  { industry: 'Craft Brewery', type: 'Site + events + taproom — 2K+ Instagram followers', services: ['WordPress', 'Social Media', 'Content'], shipped: 'Jan 14, 2026' },
+  { industry: 'Legal Services', type: 'Site + client intake automation + AI document generation', services: ['Next.js', 'AI Agents', 'Automation'], shipped: 'Jan 6, 2026' },
+  { industry: 'SaaS Product', type: 'Product site + onboarding flow + GEO optimization', services: ['Next.js', 'GEO', 'AI Content'], shipped: 'Dec 30, 2025' },
+  { industry: 'MMA Gym (International)', type: 'Full platform: member portal, courses, merch, dual-currency payments, gamification', services: ['Next.js', 'E-commerce', 'AI Agents'], shipped: 'Dec 22, 2025' },
 ];
 
 export default function ProofTable() {
@@ -32,12 +32,15 @@ export default function ProofTable() {
             fontWeight: 800,
             color: 'var(--dark)',
             textAlign: 'center',
-            marginBottom: 48,
+            marginBottom: 16,
             lineHeight: 1.2,
           }}
         >
-          14 Businesses. Every Industry. All in the Last 6 Months.
+          14 Projects. Every Industry. All in the Last 6 Months.
         </h2>
+        <p style={{ textAlign: 'center', color: 'var(--slate)', fontSize: '1.05rem', marginBottom: 48, maxWidth: 600, margin: '0 auto 48px' }}>
+          We ship over a project per week. Here&apos;s what we&apos;ve delivered recently.
+        </p>
 
         <div
           style={{
@@ -62,7 +65,7 @@ export default function ProofTable() {
                   color: '#fff',
                 }}
               >
-                {['Client', 'Industry', 'What We Built'].map((h) => (
+                {['Industry', 'What We Shipped', 'Services', 'Shipped'].map((h) => (
                   <th
                     key={h}
                     style={{
@@ -83,7 +86,7 @@ export default function ProofTable() {
             <tbody>
               {rows.map((row, i) => (
                 <tr
-                  key={row.client}
+                  key={row.industry}
                   style={{
                     borderBottom: '1px solid var(--border)',
                     background: i % 2 === 0 ? '#fff' : 'var(--light)',
@@ -98,15 +101,6 @@ export default function ProofTable() {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {row.client}
-                  </td>
-                  <td
-                    style={{
-                      padding: '14px 20px',
-                      color: 'var(--slate)',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
                     {row.industry}
                   </td>
                   <td
@@ -116,7 +110,41 @@ export default function ProofTable() {
                       lineHeight: 1.5,
                     }}
                   >
-                    {row.built}
+                    {row.type}
+                  </td>
+                  <td
+                    style={{
+                      padding: '14px 20px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {row.services.map((s) => (
+                        <span
+                          key={s}
+                          style={{
+                            background: 'rgba(104,197,173,0.12)',
+                            color: 'var(--teal-dark)',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            padding: '3px 10px',
+                            borderRadius: 100,
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td
+                    style={{
+                      padding: '14px 20px',
+                      color: 'var(--slate)',
+                      whiteSpace: 'nowrap',
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    {row.shipped}
                   </td>
                 </tr>
               ))}

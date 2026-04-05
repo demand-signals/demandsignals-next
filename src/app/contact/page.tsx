@@ -58,10 +58,10 @@ export default function ContactPage() {
             Get In Touch
           </p>
           <h1 style={{ color: '#fff', fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 800, lineHeight: 1.15, marginBottom: 20 }}>
-            <span style={{color:'#52C9A0'}}>Start the Conversation.</span> <span style={{color:'#FF6B2B'}}>Get Real Answers.</span>
+            <span style={{color:'#52C9A0'}}>Let&apos;s Build Something</span>{' '}<span style={{color:'#FF6B2B'}}>That Works.</span>
           </h1>
           <p style={{ color: '#a0aec0', fontSize: '1.125rem', lineHeight: 1.7, maxWidth: 560, margin: '0 auto' }}>
-            Whether you have a project in mind or just want to explore what's possible — we'd love to hear from you.
+            Tell us what you need — a website, AI systems, demand generation, or all three. We&apos;ll tell you exactly how we&apos;d solve it, what it costs, and how fast we can ship.
           </p>
         </div>
       </section>

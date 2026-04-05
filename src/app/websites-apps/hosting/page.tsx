@@ -3,7 +3,7 @@ import { ServicePageTemplate } from '@/components/templates/ServicePageTemplate'
 
 export const metadata = buildMetadata({
   title:       'Agent & App Hosting — Managed Infrastructure | Demand Signals',
-  description: 'Managed hosting on Vercel, Cloudflare, and Verpex. Zero-config deployments, edge CDN, SSL, monitoring, and 99.99% uptime for every site and app we build.',
+  description: 'Managed hosting on Vercel, Cloudflare, and DSIG. Zero-config deployments, edge CDN, SSL, monitoring, and 99.99% uptime for every site and app we build.',
   path:        '/websites-apps/hosting',
   keywords:    ['managed hosting', 'Vercel hosting', 'Cloudflare CDN', 'app hosting', 'managed infrastructure', 'web hosting Northern California'],
 })
@@ -13,7 +13,7 @@ export default function HostingPage() {
     <ServicePageTemplate
       eyebrow="Agent & App Hosting"
       titleHtml={<><span style={{color:'#FF6B2B'}}>Managed Infrastructure</span><br /><span style={{color:'#52C9A0'}}>Zero DevOps Required.</span></>}
-      subtitle="Enterprise-grade hosting on Vercel, Cloudflare, and Verpex. Automated deployments, edge CDN, SSL, and monitoring — you never think about servers."
+      subtitle="Enterprise-grade hosting on Vercel, Cloudflare, and DSIG. Automated deployments, edge CDN, SSL, and monitoring — you never think about servers."
       ctaLabel="Get Hosted →"
       breadcrumbs={[
         { name: 'Home', path: '/' },
@@ -21,7 +21,7 @@ export default function HostingPage() {
         { name: 'Agent & App Hosting', path: '/websites-apps/hosting' },
       ]}
       schemaName="Managed Hosting & Infrastructure"
-      schemaDescription="Enterprise-grade managed hosting on Vercel, Cloudflare, and Verpex with automated deployments and monitoring."
+      schemaDescription="Enterprise-grade managed hosting on Vercel, Cloudflare, and DSIG with automated deployments and monitoring."
       schemaUrl="/websites-apps/hosting"
       featuresHeading="Infrastructure That Just Works"
       features={[
@@ -34,7 +34,7 @@ export default function HostingPage() {
       ]}
       techStack={[
         { label: 'Next.js Hosting', value: 'Vercel Pro (edge functions, ISR, streaming)' },
-        { label: 'WordPress Hosting', value: 'Verpex Managed WordPress' },
+        { label: 'WordPress Hosting', value: 'DSIG Managed WordPress' },
         { label: 'CDN / DNS', value: 'Cloudflare (all domains)' },
         { label: 'Database', value: 'Supabase Pro (PostgreSQL, daily backups)' },
         { label: 'SSL', value: 'Automatic via Cloudflare + Vercel' },

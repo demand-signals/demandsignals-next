@@ -1,5 +1,6 @@
 'use client'
 import { useRef, useState, useCallback, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { BOOKING_URL } from '@/lib/constants'
 
 const LOGO = 'https://media.base44.com/images/public/68ccebd683c4aa87ed81a043/781073a7a_dsig_icon_v1a.png'
@@ -48,6 +49,7 @@ function buildDeck(): Card[] {
 }
 
 export function ArcCardGame() {
+  const pathname = usePathname()
   const [cards, setCards] = useState<Card[]>([])
   const [moves, setMoves] = useState(0)
   const [won, setWon] = useState(false)
@@ -150,6 +152,8 @@ export function ArcCardGame() {
     animate()
     return () => cancelAnimationFrame(frame)
   }, [])
+
+  if (pathname === '/spacegame') return null
 
   return (
     <section style={{
@@ -288,7 +292,7 @@ export function ArcCardGame() {
                   textDecoration: 'none', display: 'block', textAlign: 'center',
                 }}
               >
-                🎉 ???
+                🥚 Easter Egg
               </a>
             </div>
           </div>

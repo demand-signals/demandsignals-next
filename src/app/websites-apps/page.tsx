@@ -48,7 +48,7 @@ const SERVICES = [
     icon: '🖥️',
     href: '/websites-apps/hosting',
     title: 'Agent & App Hosting',
-    description: 'Managed hosting infrastructure on Vercel, Cloudflare, and Verpex. Zero-config deployments, edge CDN, SSL, and automated monitoring for every site and app we build.',
+    description: 'Managed hosting infrastructure on Vercel, Cloudflare, and DSIG. Zero-config deployments, edge CDN, SSL, and automated monitoring for every site and app we build.',
     features: ['Vercel Pro hosting', 'Cloudflare CDN + DNS', 'Automated deployments', '99.99% uptime SLA'],
   },
 ]
@@ -68,7 +68,7 @@ const FAQS = [
   },
   {
     question: 'What does hosting cost for a Demand Signals website?',
-    answer: 'Hosting is included in our monthly management fee. We use enterprise-grade infrastructure — Vercel Pro for Next.js sites, Verpex managed WordPress hosting, and Cloudflare CDN for all projects. You never deal with server management, SSL certificates, or uptime monitoring.',
+    answer: 'Hosting is included in our monthly management fee. We use enterprise-grade infrastructure — Vercel Pro for Next.js sites, DSIG managed WordPress hosting, and Cloudflare CDN for all projects. You never deal with server management, SSL certificates, or uptime monitoring.',
   },
 ]
 

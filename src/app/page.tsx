@@ -8,7 +8,6 @@ import IndustriesGrid from '@/components/sections/IndustriesGrid'
 import HowItWorks from '@/components/sections/HowItWorks'
 import PortfolioGrid from '@/components/sections/PortfolioGrid'
 import BookingSection from '@/components/sections/BookingSection'
-import ReportsCallout from '@/components/sections/ReportsCallout'
 import CtaBand from '@/components/sections/CtaBand'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { faqSchema } from '@/lib/schema'
@@ -86,7 +85,6 @@ export default function HomePage() {
       <HowItWorks />
       <PortfolioGrid />
       <BookingSection />
-      <ReportsCallout />
       <CtaBand />
     </>
   )

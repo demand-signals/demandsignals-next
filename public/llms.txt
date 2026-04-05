@@ -8,7 +8,7 @@
 - [iOS & Android Apps](https://demandsignals.co/websites-apps/mobile-apps): Cross-platform mobile apps with React Native.
 - [Vibe Coded Web Apps](https://demandsignals.co/websites-apps/vibe-coded): AI-built web apps shipped in days using Cursor and Claude Code.
 - [UI/UX Design](https://demandsignals.co/websites-apps/design): Figma design systems and AI-assisted prototyping.
-- [Agent & App Hosting](https://demandsignals.co/websites-apps/hosting): Managed hosting on Vercel, Cloudflare, and Verpex.
+- [Agent & App Hosting](https://demandsignals.co/websites-apps/hosting): Managed hosting on Vercel, Cloudflare, and DSIG.
 
 ## Demand Generation
 - [LLM Optimization](https://demandsignals.co/demand-generation/geo-aeo-llm-optimization): Get cited by ChatGPT, Perplexity, Gemini. GEO, AEO, llms.txt optimization.
