@@ -104,11 +104,11 @@ export default function ToolsPage() {
                 {tool.available ? (
                   <a href={tool.href} style={{
                     display: 'inline-block',
-                    background: 'var(--teal)',
+                    background: '#FF6B2B',
                     color: '#fff',
                     fontWeight: 700,
                     padding: '12px 24px',
-                    borderRadius: 8,
+                    borderRadius: 100,
                     textDecoration: 'none',
                     fontSize: '0.95rem',
                     textAlign: 'center',
@@ -146,11 +146,11 @@ export default function ToolsPage() {
           </p>
           <a href="/contact" style={{
             display: 'inline-block',
-            background: 'var(--teal)',
+            background: '#FF6B2B',
             color: '#fff',
             fontWeight: 700,
             padding: '13px 28px',
-            borderRadius: 8,
+            borderRadius: 100,
             textDecoration: 'none',
           }}>
             Start a Conversation →

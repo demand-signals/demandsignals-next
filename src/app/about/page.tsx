@@ -91,24 +91,24 @@ export default function AboutPage() {
           </p>
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
             <a href="/tools/research-reports" style={{
-              background: 'var(--teal)',
+              background: '#FF6B2B',
               color: '#fff',
               fontWeight: 700,
               padding: '13px 28px',
-              borderRadius: 8,
+              borderRadius: 100,
               textDecoration: 'none',
               fontSize: '0.95rem',
             }}>
               Get a Free Report →
             </a>
             <a href="/contact" style={{
-              background: 'transparent',
+              background: 'rgba(255,255,255,0.15)',
               color: '#fff',
               fontWeight: 600,
               padding: '13px 28px',
-              borderRadius: 8,
+              borderRadius: 100,
               textDecoration: 'none',
-              border: '1.5px solid rgba(255,255,255,0.25)',
+              border: '2px solid rgba(255,255,255,0.5)',
               fontSize: '0.95rem',
             }}>
               Contact Us

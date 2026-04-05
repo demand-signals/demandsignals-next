@@ -308,13 +308,13 @@ export default function ResearchReportsPage() {
                 type="submit"
                 disabled={status === 'loading'}
                 style={{
-                  background: 'var(--teal)',
+                  background: '#FF6B2B',
                   color: '#fff',
                   fontWeight: 700,
                   fontSize: '1.05rem',
                   padding: '16px',
                   border: 'none',
-                  borderRadius: 8,
+                  borderRadius: 100,
                   cursor: status === 'loading' ? 'not-allowed' : 'pointer',
                   opacity: status === 'loading' ? 0.7 : 1,
                 }}

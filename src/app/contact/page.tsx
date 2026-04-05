@@ -91,12 +91,12 @@ export default function ContactPage() {
               rel="noopener noreferrer"
               style={{
                 display: 'inline-block',
-                background: 'var(--teal)',
+                background: '#FF6B2B',
                 color: '#fff',
                 fontWeight: 700,
                 fontSize: '1rem',
                 padding: '14px 32px',
-                borderRadius: 8,
+                borderRadius: 100,
                 textDecoration: 'none',
                 transition: 'background 0.2s',
               }}
@@ -198,13 +198,13 @@ export default function ContactPage() {
                 disabled={status === 'loading'}
                 style={{
                   width: '100%',
-                  background: 'var(--teal)',
+                  background: '#FF6B2B',
                   color: '#fff',
                   fontWeight: 700,
                   fontSize: '1.05rem',
                   padding: '16px',
                   border: 'none',
-                  borderRadius: 8,
+                  borderRadius: 100,
                   cursor: status === 'loading' ? 'not-allowed' : 'pointer',
                   opacity: status === 'loading' ? 0.7 : 1,
                   transition: 'background 0.2s',

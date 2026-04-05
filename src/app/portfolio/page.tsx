@@ -171,11 +171,11 @@ export default function PortfolioPage() {
           </p>
           <a href="/contact" style={{
             display: 'inline-block',
-            background: 'var(--teal)',
+            background: '#FF6B2B',
             color: '#fff',
             fontWeight: 700,
             padding: '14px 32px',
-            borderRadius: 8,
+            borderRadius: 100,
             textDecoration: 'none',
             fontSize: '1rem',
           }}>

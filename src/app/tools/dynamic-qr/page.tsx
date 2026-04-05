@@ -1,0 +1,279 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { PageHero } from '@/components/sections/PageHero';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { breadcrumbSchema, howToSchema } from '@/lib/schema';
+
+export const metadata: Metadata = {
+  title: 'Dynamic QR Codes — Track Every Scan, Update Any Destination',
+  description:
+    'Smart QR codes with real-time scan analytics, geo-location tracking, and editable destinations for local businesses. No reprinting when your links change. Restaurant menus, business cards, signage.',
+  keywords: [
+    'dynamic QR codes local business',
+    'trackable QR codes Northern California',
+    'editable QR code destination',
+    'QR scan analytics',
+    'restaurant menu QR code',
+    'business card QR code tracking',
+    'branded QR codes',
+  ],
+  openGraph: {
+    title: 'Dynamic QR Codes — Track Every Scan, Update Any Destination',
+    description:
+      'Smart QR codes for local businesses. Real-time scan analytics, geo-location tracking, and editable destinations. No reprinting.',
+    url: 'https://demandsignals.co/tools/dynamic-qr',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Dynamic QR Codes — Demand Signals' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Dynamic QR Codes for Local Business',
+    description: 'Track every scan. Update any destination. No reprinting. Smart QR codes with real-time analytics.',
+  },
+  alternates: { canonical: 'https://demandsignals.co/tools/dynamic-qr' },
+};
+
+const USE_CASES = [
+  {
+    title: 'Restaurant Menus',
+    description:
+      'Update your menu daily — prices, specials, seasonal items — without ever reprinting a QR code. Your table tents stay the same; only the destination changes.',
+  },
+  {
+    title: 'Business Cards',
+    description:
+      "Update your booking link, portfolio URL, or contact page anytime. Your cards never go stale, even when your website changes.",
+  },
+  {
+    title: 'Truck & Vehicle Wraps',
+    description:
+      'Track scan location by city, neighborhood, and route. See exactly which areas generate the most interest and optimize your coverage accordingly.',
+  },
+  {
+    title: 'Event Signage',
+    description:
+      'Point QR codes to event-day information, then instantly redirect to a recap video, photo gallery, or next-event registration — the moment the event ends.',
+  },
+];
+
+const FEATURES = [
+  {
+    label: 'Real-Time Scan Analytics',
+    detail: 'Total scans, unique scans, scan-over-time charts, and device breakdown — all in a live dashboard.',
+  },
+  {
+    label: 'Geo-Location Tracking',
+    detail: 'See where in the world each scan originated. Map scan density by city, ZIP code, or neighborhood.',
+  },
+  {
+    label: 'UTM Parameter Auto-Tagging',
+    detail: 'Every scan automatically appends UTM parameters so your Google Analytics and ad attribution stay clean.',
+  },
+  {
+    label: 'Bulk QR Generation',
+    detail: 'Generate hundreds of unique QR codes at once — for product packaging, event badges, or a full menu reprint.',
+  },
+  {
+    label: 'Custom Branded QR Designs',
+    detail: 'Replace the generic black-and-white grid with your brand colors, logo, and custom frame — QR codes your customers will actually trust.',
+  },
+];
+
+export default function DynamicQrPage() {
+  return (
+    <>
+      <JsonLd
+        data={howToSchema(
+          'How to Use Dynamic QR Codes for Your Business',
+          'Smart QR codes with real-time scan analytics and editable destinations — no reprinting required when your links change.',
+          [
+            {
+              name: 'Generate Your Dynamic QR Code',
+              text: 'Create a dynamic QR code linked to any URL — your menu, booking page, portfolio, or landing page. Choose your design, colors, and optional logo overlay.',
+            },
+            {
+              name: 'Deploy on Any Physical Surface',
+              text: 'Print the QR code on business cards, table tents, vehicle wraps, event signage, packaging, or any physical marketing material.',
+            },
+            {
+              name: 'Track Scans and Update Destinations Anytime',
+              text: 'Monitor real-time scan analytics by location, device, and time. Update the destination URL at any time without reprinting — your QR code always stays current.',
+            },
+          ],
+        )}
+      />
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: 'Home', url: 'https://demandsignals.co' },
+          { name: 'Tools', url: 'https://demandsignals.co/tools' },
+          { name: 'Dynamic QR Codes', url: 'https://demandsignals.co/tools/dynamic-qr' },
+        ])}
+      />
+      <PageHero
+        eyebrow="Coming Soon — Dynamic QR Codes"
+        title={
+          <>
+            Track Every Scan. Update Any Destination.{' '}
+            <span style={{ color: '#52C9A0' }}>No Reprinting.</span>
+          </>
+        }
+        subtitle="Smart QR codes for business cards, menus, signage, and ads — with real-time scan analytics and editable destinations."
+        ctaLabel="Get Early Access →"
+        ctaHref="/contact"
+      />
+
+      {/* Use Cases */}
+      <section style={{ background: 'var(--light)', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 52 }}>
+            <p style={eyebrowStyle}>Use Cases</p>
+            <h2 style={h2Style}>Offline Marketing That Connects to Online Data</h2>
+            <p style={subStyle}>
+              Any physical surface with a QR code becomes a trackable, editable marketing channel.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))', gap: 24 }}>
+            {USE_CASES.map((uc) => (
+              <div key={uc.title} style={cardStyle}>
+                <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1.05rem', marginBottom: 10 }}>
+                  {uc.title}
+                </h3>
+                <p style={{ color: 'var(--slate)', fontSize: '0.93rem', lineHeight: 1.65, margin: 0 }}>
+                  {uc.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section style={{ background: '#fff', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 52 }}>
+            <p style={eyebrowStyle}>Platform Features</p>
+            <h2 style={h2Style}>Everything You Need to Run QR at Scale</h2>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {FEATURES.map((f) => (
+              <div
+                key={f.label}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 18,
+                  background: 'var(--light)',
+                  borderRadius: 12,
+                  padding: '24px 24px',
+                }}
+              >
+                <span
+                  style={{
+                    flexShrink: 0,
+                    width: 28,
+                    height: 28,
+                    background: 'var(--teal)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    marginTop: 2,
+                  }}
+                >
+                  ✓
+                </span>
+                <div>
+                  <p style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '0.98rem', marginBottom: 4 }}>
+                    {f.label}
+                  </p>
+                  <p style={{ color: 'var(--slate)', fontSize: '0.92rem', lineHeight: 1.6, margin: 0 }}>
+                    {f.detail}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Early Access CTA */}
+      <section style={{ background: 'var(--dark)', padding: '72px 24px', textAlign: 'center' }}>
+        <div style={{ maxWidth: 600, margin: '0 auto' }}>
+          <div style={badgeStyle}>Coming Soon</div>
+          <h2 style={{ color: '#fff', fontSize: 'clamp(1.7rem, 4vw, 2.4rem)', fontWeight: 800, marginBottom: 18, lineHeight: 1.2 }}>
+            Get Early Access to Dynamic QR
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1.05rem', lineHeight: 1.65, marginBottom: 36 }}>
+            We're opening a limited early access cohort. Sign up and you'll get first access, founding member pricing, and a hands-on onboarding session with our team.
+          </p>
+          <Link href="/contact" style={ctaButtonStyle}>
+            Request Early Access →
+          </Link>
+        </div>
+      </section>
+    </>
+  );
+}
+
+const eyebrowStyle: React.CSSProperties = {
+  color: 'var(--teal)',
+  fontWeight: 600,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  fontSize: '0.82rem',
+  marginBottom: 10,
+};
+
+const h2Style: React.CSSProperties = {
+  color: 'var(--dark)',
+  fontSize: 'clamp(1.6rem, 4vw, 2.4rem)',
+  fontWeight: 800,
+  marginBottom: 16,
+  lineHeight: 1.15,
+};
+
+const subStyle: React.CSSProperties = {
+  color: 'var(--slate)',
+  fontSize: '1rem',
+  lineHeight: 1.65,
+  maxWidth: 560,
+  margin: '0 auto',
+};
+
+const cardStyle: React.CSSProperties = {
+  background: '#fff',
+  border: '1px solid rgba(0,0,0,0.07)',
+  borderRadius: 14,
+  padding: '32px 28px',
+};
+
+const badgeStyle: React.CSSProperties = {
+  display: 'inline-block',
+  background: 'rgba(82,201,160,0.15)',
+  border: '1px solid rgba(82,201,160,0.3)',
+  color: 'var(--teal)',
+  fontWeight: 700,
+  fontSize: '0.8rem',
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  padding: '6px 16px',
+  borderRadius: 100,
+  marginBottom: 20,
+};
+
+const ctaButtonStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  padding: '16px 40px',
+  background: '#FF6B2B',
+  color: '#fff',
+  fontWeight: 700,
+  fontSize: '1.05rem',
+  borderRadius: 100,
+  textDecoration: 'none',
+  boxShadow: '0 4px 24px rgba(255,107,43,0.35)',
+};

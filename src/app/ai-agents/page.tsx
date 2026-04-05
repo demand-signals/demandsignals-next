@@ -136,11 +136,11 @@ export default function AiAgentsPage() {
           </p>
           <a href="/contact" style={{
             display: 'inline-block',
-            background: 'var(--teal)',
+            background: '#FF6B2B',
             color: '#fff',
             fontWeight: 700,
             padding: '14px 32px',
-            borderRadius: 8,
+            borderRadius: 100,
             textDecoration: 'none',
           }}>
             Talk to Us About Agents →

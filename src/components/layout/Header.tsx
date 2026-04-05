@@ -2,14 +2,19 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { LOGO_URL, BOOKING_URL, NAV_SERVICES, NAV_AI, NAV_TOOLS } from '@/lib/constants'
+import { usePathname } from 'next/navigation'
+import { LOGO_URL, BOOKING_URL, NAV_SERVICES, NAV_AI, NAV_TOOLS, NAV_LOCATIONS } from '@/lib/constants'
 
-type DropdownKey = 'services' | 'ai' | 'tools' | null
+type DropdownKey = 'services' | 'ai' | 'tools' | 'locations' | null
 
 export function Header() {
   const [open, setOpen] = useState<DropdownKey>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const pathname = usePathname()
+
+  // Close dropdown on route change
+  useEffect(() => { setOpen(null); setMobileOpen(false) }, [pathname])
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -37,23 +42,30 @@ export function Header() {
           {/* Services */}
           <div style={{ position: 'relative' }}>
             <button onClick={() => toggle('services')} style={navBtnStyle}>
-              Services <span style={{ fontSize: '0.7em', marginLeft: 2 }}>▾</span>
+              Services <span style={{ fontSize: '0.7em', marginLeft: 4, display: 'inline-block', transition: 'transform 0.2s', transform: open === 'services' ? 'rotate(180deg)' : 'none' }}>▾</span>
             </button>
-            {open === 'services' && <Dropdown items={NAV_SERVICES} />}
+            {open === 'services' && <Dropdown items={NAV_SERVICES} onClose={() => setOpen(null)} />}
           </div>
           {/* AI & Agents */}
           <div style={{ position: 'relative' }}>
             <button onClick={() => toggle('ai')} style={navBtnStyle}>
-              AI &amp; Agents <span style={{ fontSize: '0.7em', marginLeft: 2 }}>▾</span>
+              AI &amp; Agents <span style={{ fontSize: '0.7em', marginLeft: 4, display: 'inline-block', transition: 'transform 0.2s', transform: open === 'ai' ? 'rotate(180deg)' : 'none' }}>▾</span>
             </button>
-            {open === 'ai' && <Dropdown items={NAV_AI} />}
+            {open === 'ai' && <Dropdown items={NAV_AI} onClose={() => setOpen(null)} />}
           </div>
           {/* Tools */}
           <div style={{ position: 'relative' }}>
             <button onClick={() => toggle('tools')} style={navBtnStyle}>
-              Tools <span style={{ fontSize: '0.7em', marginLeft: 2 }}>▾</span>
+              Tools <span style={{ fontSize: '0.7em', marginLeft: 4, display: 'inline-block', transition: 'transform 0.2s', transform: open === 'tools' ? 'rotate(180deg)' : 'none' }}>▾</span>
             </button>
-            {open === 'tools' && <Dropdown items={NAV_TOOLS} hasBadge />}
+            {open === 'tools' && <Dropdown items={NAV_TOOLS} hasBadge onClose={() => setOpen(null)} />}
+          </div>
+          {/* Locations */}
+          <div style={{ position: 'relative' }}>
+            <button onClick={() => toggle('locations')} style={navBtnStyle}>
+              Locations <span style={{ fontSize: '0.7em', marginLeft: 4, display: 'inline-block', transition: 'transform 0.2s', transform: open === 'locations' ? 'rotate(180deg)' : 'none' }}>▾</span>
+            </button>
+            {open === 'locations' && <Dropdown items={NAV_LOCATIONS} onClose={() => setOpen(null)} />}
           </div>
 
           <Link href="/portfolio" style={navBtnStyle}>Portfolio</Link>
@@ -91,6 +103,7 @@ export function Header() {
             { label: 'Services', href: '/services' },
             { label: 'AI & Agents', href: '/ai-agents' },
             { label: 'Tools', href: '/tools' },
+            { label: 'Locations', href: '/locations' },
             { label: 'Portfolio', href: '/portfolio' },
             { label: 'Blog', href: '/blog' },
             { label: 'About', href: '/about' },
@@ -117,7 +130,7 @@ export function Header() {
   )
 }
 
-function Dropdown({ items, hasBadge = false }: { items: Array<{ label: string; href: string; icon?: string; badge?: string }>; hasBadge?: boolean }) {
+function Dropdown({ items, hasBadge = false, onClose }: { items: Array<{ label: string; href: string; badge?: string }>; hasBadge?: boolean; onClose: () => void }) {
   return (
     <div style={{
       position: 'absolute', top: 'calc(100% + 8px)', left: 0,
@@ -125,17 +138,14 @@ function Dropdown({ items, hasBadge = false }: { items: Array<{ label: string; h
       borderRadius: 12, padding: '8px 0', minWidth: 220, boxShadow: '0 16px 48px rgba(0,0,0,0.4)', zIndex: 200,
     }}>
       {items.map(item => (
-        <Link key={item.href} href={item.href} style={{
+        <Link key={item.href} href={item.href} onClick={onClose} style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '10px 16px', color: 'rgba(255,255,255,0.82)', fontSize: '0.875rem',
           gap: 8, transition: 'background var(--t)',
         }}
           onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {item.icon && <span aria-hidden="true">{item.icon}</span>}
-            {item.label}
-          </span>
+          <span>{item.label}</span>
           {hasBadge && 'badge' in item && item.badge && (
             <span style={{
               fontSize: '0.65rem', fontWeight: 700, padding: '2px 7px', borderRadius: 100,
@@ -158,13 +168,14 @@ const navBtnStyle: React.CSSProperties = {
 
 const primaryBtnStyle: React.CSSProperties = {
   display: 'inline-flex', alignItems: 'center', padding: '9px 20px',
-  background: 'linear-gradient(135deg, var(--teal), var(--teal-dark))',
-  color: '#fff', fontWeight: 600, fontSize: '0.875rem', borderRadius: 8,
+  background: '#FF6B2B',
+  color: '#fff', fontWeight: 600, fontSize: '0.875rem', borderRadius: 100,
   transition: 'transform var(--t), box-shadow var(--t)',
 }
 
 const outlineBtnStyle: React.CSSProperties = {
   display: 'inline-flex', alignItems: 'center', padding: '8px 18px',
-  border: '1.5px solid rgba(255,255,255,0.35)', color: 'rgba(255,255,255,0.85)',
-  fontWeight: 600, fontSize: '0.875rem', borderRadius: 8, transition: 'border-color var(--t)',
+  border: '2px solid rgba(255,255,255,0.5)', color: '#fff',
+  background: 'rgba(255,255,255,0.15)',
+  fontWeight: 600, fontSize: '0.875rem', borderRadius: 100, transition: 'border-color var(--t)',
 }

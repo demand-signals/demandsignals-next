@@ -114,12 +114,12 @@ export default function ReportsCallout() {
             href="/tools/research-reports"
             style={{
               display: 'inline-block',
-              background: 'var(--teal)',
+              background: '#FF6B2B',
               color: '#fff',
               fontWeight: 700,
               fontSize: '1rem',
               padding: '14px 32px',
-              borderRadius: 8,
+              borderRadius: 100,
               textDecoration: 'none',
               transition: 'background var(--t)',
             }}

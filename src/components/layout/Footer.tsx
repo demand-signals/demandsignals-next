@@ -74,8 +74,8 @@ export function Footer() {
           </ul>
           <div style={{ marginTop: 24 }}>
             <a href={BOOKING_URL} target="_blank" rel="noopener" style={{
-              display: 'inline-block', padding: '10px 20px', background: 'var(--teal)',
-              color: '#fff', fontWeight: 600, fontSize: '0.875rem', borderRadius: 8,
+              display: 'inline-block', padding: '10px 20px', background: '#FF6B2B',
+              color: '#fff', fontWeight: 600, fontSize: '0.875rem', borderRadius: 100,
             }}>Book a Free Call →</a>
           </div>
         </div>

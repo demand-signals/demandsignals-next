@@ -46,12 +46,12 @@ export default function CtaBand() {
             href="/contact"
             style={{
               display: 'inline-block',
-              background: 'var(--teal)',
+              background: '#FF6B2B',
               color: '#fff',
               fontWeight: 700,
               fontSize: '1rem',
               padding: '15px 32px',
-              borderRadius: 8,
+              borderRadius: 100,
               textDecoration: 'none',
               transition: 'background var(--t)',
               whiteSpace: 'nowrap',
@@ -65,14 +65,14 @@ export default function CtaBand() {
             rel="noopener noreferrer"
             style={{
               display: 'inline-block',
-              background: 'transparent',
+              background: 'rgba(255,255,255,0.15)',
               color: '#fff',
               fontWeight: 700,
               fontSize: '1rem',
               padding: '15px 32px',
-              borderRadius: 8,
+              borderRadius: 100,
               textDecoration: 'none',
-              border: '2px solid rgba(255,255,255,0.25)',
+              border: '2px solid rgba(255,255,255,0.5)',
               transition: 'border-color var(--t)',
               whiteSpace: 'nowrap',
             }}

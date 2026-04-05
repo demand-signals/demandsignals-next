@@ -10,26 +10,41 @@ export const HERO_VIDEO_URL =
   'https://base44.app/api/apps/68ccebd683c4aa87ed81a043/files/public/68ccebd683c4aa87ed81a043/d76594fa5_demand_signals_penguines_shity_one_v1a.mp4'
 
 export const NAV_SERVICES = [
-  { label: 'Websites & Web Apps',     href: '/services/websites',     icon: '🏢' },
-  { label: 'Local Demand Generation', href: '/services/local-demand', icon: '📍' },
-  { label: 'GEO & Generative Search', href: '/ai-agents/geo-llm',     icon: '🔮' },
-  { label: 'Content Marketing',       href: '/services/content',      icon: '✍️' },
-  { label: 'Google My Business',      href: '/services/gmb',          icon: '⭐' },
-  { label: 'Brand Identity & Design', href: '/services/brand-design', icon: '🎨' },
+  { label: 'Websites & Web Apps',     href: '/services/websites' },
+  { label: 'Local Demand Generation', href: '/services/local-demand' },
+  { label: 'GEO & Generative Search', href: '/ai-agents/geo-llm' },
+  { label: 'Content Marketing',       href: '/services/content' },
+  { label: 'Google My Business',      href: '/services/gmb' },
+  { label: 'Brand Identity & Design', href: '/services/brand-design' },
 ]
 
 export const NAV_AI = [
-  { label: 'AI Agent Farms',        href: '/ai-agents/agent-farms',    icon: '🤖' },
-  { label: 'AI Voice Systems',      href: '/ai-agents/voice',          icon: '📞' },
-  { label: 'Workflow Automation',   href: '/ai-agents/automation',     icon: '⚡' },
-  { label: 'AI-Powered Outreach',   href: '/ai-agents/outreach',       icon: '🎯' },
-  { label: 'GEO & LLM Optimization',href: '/ai-agents/geo-llm',        icon: '🔮' },
-  { label: 'Agent Infrastructure',  href: '/ai-agents/infrastructure', icon: '🔧' },
+  { label: 'AI Agent Swarms',         href: '/ai-agents/agent-farms' },
+  { label: 'AI Voice Systems',       href: '/ai-agents/voice' },
+  { label: 'Workflow Automation',    href: '/ai-agents/automation' },
+  { label: 'AI-Powered Outreach',    href: '/ai-agents/outreach' },
+  { label: 'GEO & LLM Optimization', href: '/ai-agents/geo-llm' },
+  { label: 'Agent Infrastructure',   href: '/ai-agents/infrastructure' },
 ]
 
 export const NAV_TOOLS = [
-  { label: 'Free Demand Audit',   href: '/tools/demand-audit',      icon: '📊', badge: 'Free' },
-  { label: 'Intelligence Reports',href: '/tools/research-reports',  icon: '📋', badge: 'Free' },
-  { label: 'Demand Links',        href: '/tools/demand-links',       icon: '🔗', badge: 'Soon' },
-  { label: 'Dynamic QR Codes',    href: '/tools/dynamic-qr',         icon: '📱', badge: 'Soon' },
+  { label: 'Free Demand Audit',    href: '/tools/demand-audit',     badge: 'Free' },
+  { label: 'Intelligence Reports', href: '/tools/research-reports', badge: 'Free' },
+  { label: 'Demand Links',         href: '/tools/demand-links',     badge: 'Soon' },
+  { label: 'Dynamic QR Codes',     href: '/tools/dynamic-qr',       badge: 'Soon' },
+]
+
+export const NAV_LOCATIONS = [
+  { label: 'El Dorado Hills',   href: '/locations/el-dorado-hills' },
+  { label: 'Folsom',            href: '/locations/folsom' },
+  { label: 'Sacramento',        href: '/locations/sacramento' },
+  { label: 'Placerville',       href: '/locations/placerville' },
+  { label: 'Roseville',         href: '/locations/roseville' },
+  { label: 'Rocklin',           href: '/locations/rocklin' },
+  { label: 'Granite Bay',       href: '/locations/granite-bay' },
+  { label: 'Auburn',            href: '/locations/auburn' },
+  { label: 'Citrus Heights',    href: '/locations/citrus-heights' },
+  { label: 'Cameron Park',      href: '/locations/cameron-park' },
+  { label: 'South Lake Tahoe',  href: '/locations/south-lake-tahoe' },
+  { label: 'All Locations',     href: '/locations' },
 ]

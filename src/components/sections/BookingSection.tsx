@@ -69,12 +69,12 @@ export default function BookingSection() {
               rel="noopener noreferrer"
               style={{
                 display: 'inline-block',
-                background: 'var(--teal)',
+                background: '#FF6B2B',
                 color: '#fff',
                 fontWeight: 700,
                 fontSize: '0.95rem',
                 padding: '14px 28px',
-                borderRadius: 8,
+                borderRadius: 100,
                 textDecoration: 'none',
                 transition: 'background var(--t)',
                 whiteSpace: 'nowrap',
@@ -86,14 +86,14 @@ export default function BookingSection() {
               href="/tools/research-reports"
               style={{
                 display: 'inline-block',
-                background: 'transparent',
-                color: 'rgba(255,255,255,0.8)',
+                background: 'rgba(255,255,255,0.15)',
+                color: '#fff',
                 fontWeight: 600,
                 fontSize: '0.95rem',
                 padding: '14px 28px',
-                borderRadius: 8,
+                borderRadius: 100,
                 textDecoration: 'none',
-                border: '1px solid rgba(255,255,255,0.2)',
+                border: '2px solid rgba(255,255,255,0.5)',
                 transition: 'border-color var(--t), color var(--t)',
                 whiteSpace: 'nowrap',
               }}
