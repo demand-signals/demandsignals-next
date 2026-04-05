@@ -1,5 +1,3 @@
-import Link from 'next/link';
-
 const rows = [
   { industry: 'General Contracting', type: 'Full site + longtail SEO — 93 geo-targeted pages, #1 for 40+ local terms', services: ['WordPress', 'Local SEO', 'GEO'], shipped: 'Mar 28, 2026' },
   { industry: 'Gun Range & Retail', type: 'Site + CA compliance tool + AI agent integration + Clover POS', services: ['Next.js', 'AI Agents', 'E-commerce'], shipped: 'Mar 21, 2026' },
@@ -152,22 +150,6 @@ export default function ProofTable() {
           </table>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: 36 }}>
-          <Link
-            href="/portfolio"
-            style={{
-              color: 'var(--teal-dark)',
-              fontWeight: 700,
-              fontSize: '1rem',
-              textDecoration: 'none',
-              borderBottom: '2px solid var(--teal)',
-              paddingBottom: 2,
-              transition: 'color var(--t)',
-            }}
-          >
-            See Full Portfolio →
-          </Link>
-        </div>
       </div>
     </section>
   );

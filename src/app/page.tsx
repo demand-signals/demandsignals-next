@@ -3,10 +3,10 @@ import { HeroCanvas } from '@/components/sections/HeroCanvas'
 import { StatsBar } from '@/components/sections/StatsBar'
 import { ServicesGrid } from '@/components/sections/ServicesGrid'
 import ReplacesGrid from '@/components/sections/ReplacesGrid'
-import ProofTable from '@/components/sections/ProofTable'
 import IndustriesGrid from '@/components/sections/IndustriesGrid'
 import HowItWorks from '@/components/sections/HowItWorks'
 import PortfolioGrid from '@/components/sections/PortfolioGrid'
+import ReviewsMarquee from '@/components/sections/ReviewsMarquee'
 import BookingSection from '@/components/sections/BookingSection'
 import CtaBand from '@/components/sections/CtaBand'
 import { JsonLd } from '@/components/seo/JsonLd'
@@ -80,10 +80,10 @@ export default function HomePage() {
       <StatsBar />
       <ServicesGrid />
       <ReplacesGrid />
-      <ProofTable />
       <IndustriesGrid />
       <HowItWorks />
       <PortfolioGrid />
+      <ReviewsMarquee />
       <BookingSection />
       <CtaBand />
     </>

@@ -1,4 +1,5 @@
 import { buildMetadata } from '@/lib/metadata';
+import ProofTable from '@/components/sections/ProofTable';
 
 export const metadata = buildMetadata({
   title:       'Portfolio — Demand Signals',
@@ -115,6 +116,9 @@ export default function PortfolioPage() {
           </p>
         </div>
       </section>
+
+      {/* Proof Table */}
+      <ProofTable />
 
       {/* Client Grid */}
       <section style={{ background: 'var(--light)', padding: '72px 24px' }}>
