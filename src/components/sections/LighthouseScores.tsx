@@ -30,15 +30,13 @@ const desktopMetrics = [
   { label: 'Speed Index', value: '0.4s', good: true },
 ]
 
-const perfLabels = ['FCP', 'SI', 'LCP', 'TBT', 'CLS']
-
 function scoreColor(value: number) {
   if (value >= 90) return '#0cce6b'
   if (value >= 50) return '#ffa400'
   return '#f33'
 }
 
-function ScoreRing({ value, label, size = 80 }: { value: number; label: string; size?: number }) {
+function ScoreRing({ value, label, size = 72 }: { value: number; label: string; size?: number }) {
   const radius = (size / 2) - 5
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (value / 100) * circumference
@@ -48,57 +46,79 @@ function ScoreRing({ value, label, size = 80 }: { value: number; label: string; 
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
       <div style={{ position: 'relative', width: size, height: size }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="5" />
+          <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="#e5e7eb" strokeWidth="5" />
           <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke={color} strokeWidth="5"
             strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
             transform={`rotate(-90 ${size/2} ${size/2})`} />
         </svg>
         <div style={{
           position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: size > 100 ? '2.2rem' : '1.2rem', fontWeight: 800, color,
+          fontSize: '1.2rem', fontWeight: 800, color,
         }}>
           {value}
         </div>
       </div>
-      <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.55)', textAlign: 'center' }}>
+      <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#6b7280', textAlign: 'center' }}>
         {label}
       </span>
     </div>
   )
 }
 
-/* Large summary ring with metric labels around it */
+/* Segmented performance ring with 5 labeled gaps */
 function SummaryRing({ value }: { value: number }) {
-  const size = 160
+  const color = scoreColor(value)
+  // 5 segments with gaps — each segment is 60deg with 12deg gaps
+  // Labels positioned at each gap: FCP (top), LCP (right), TBT (bottom-right), CLS (bottom-left), SI (left)
+  const labels = [
+    { text: 'FCP', x: 100, y: 8 },
+    { text: 'LCP', x: 178, y: 68 },
+    { text: 'TBT', x: 155, y: 160 },
+    { text: 'CLS', x: 32, y: 160 },
+    { text: 'SI', x: 14, y: 68 },
+  ]
+
+  // Create 5 arc segments with gaps using strokeDasharray
   const radius = 68
   const circumference = 2 * Math.PI * radius
-  const offset = circumference - (value / 100) * circumference
-  const color = scoreColor(value)
+  const segmentLength = circumference * 0.17 // each segment ~17% of circle
+  const gapLength = circumference * 0.03 // 3% gap
+  const dashPattern = `${segmentLength} ${gapLength}`
+  const fillRatio = value / 100
+  const filledLength = circumference * fillRatio
 
   return (
-    <div style={{ position: 'relative', width: size + 60, height: size + 40 }}>
-      {/* Metric labels around the ring */}
-      <span style={{ position: 'absolute', top: -2, left: '50%', transform: 'translateX(-50%)', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>FCP</span>
-      <span style={{ position: 'absolute', top: -2, left: 20, fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>SI</span>
-      <span style={{ position: 'absolute', top: 55, right: 0, fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>LCP</span>
-      <span style={{ position: 'absolute', top: 55, left: 0, fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>CLS</span>
-      <span style={{ position: 'absolute', bottom: 22, left: '50%', transform: 'translateX(-50%)', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>TBT</span>
+    <div style={{ position: 'relative', width: 200, height: 200, flexShrink: 0 }}>
+      <svg width="200" height="200" viewBox="0 0 200 200">
+        {/* Background segmented ring */}
+        <circle cx="100" cy="100" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="7"
+          strokeDasharray={dashPattern} transform="rotate(-126 100 100)" />
+        {/* Filled segmented ring */}
+        <circle cx="100" cy="100" r={radius} fill="none" stroke={color} strokeWidth="7"
+          strokeLinecap="round"
+          strokeDasharray={`${filledLength} ${circumference}`}
+          transform="rotate(-126 100 100)" />
 
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: 'block', margin: '12px auto 0' }}>
-        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="7" />
-        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke={color} strokeWidth="7"
-          strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
-          transform={`rotate(-90 ${size/2} ${size/2})`} />
+        {/* Labels */}
+        {labels.map(l => (
+          <text key={l.text} x={l.x} y={l.y} textAnchor="middle"
+            fill="#9ca3af" fontSize="10" fontWeight="600" fontFamily="inherit">
+            {l.text}
+          </text>
+        ))}
       </svg>
+
+      {/* Center score */}
       <div style={{
-        position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
-        width: size, height: size, display: 'flex', flexDirection: 'column',
+        position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
       }}>
         <span style={{ fontSize: '3rem', fontWeight: 800, color, lineHeight: 1 }}>{value}</span>
       </div>
-      <div style={{ textAlign: 'center', marginTop: 4 }}>
-        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#fff' }}>Performance</span>
+
+      {/* Label below */}
+      <div style={{ textAlign: 'center', marginTop: -4 }}>
+        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#374151' }}>Performance</span>
       </div>
     </div>
   )
@@ -110,38 +130,39 @@ function DeviceCard({ title, icon, scores, metrics, perfScore }: {
 }) {
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.05)', borderRadius: 20, padding: '32px 28px',
-      flex: 1, minWidth: 320, border: '1px solid rgba(255,255,255,0.08)',
+      background: '#fff', borderRadius: 20, padding: '32px 28px',
+      flex: 1, minWidth: 320, border: '1px solid #e5e7eb',
+      boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
     }}>
       {/* Device header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
         {icon}
-        <span style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem' }}>{title}</span>
+        <span style={{ color: '#111827', fontWeight: 700, fontSize: '1.1rem' }}>{title}</span>
       </div>
 
-      {/* Top: score rings row */}
+      {/* Score rings row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 28, padding: '0 4px' }}>
         {scores.map(s => (
-          <ScoreRing key={s.label} value={s.value} label={s.label} size={72} />
+          <ScoreRing key={s.label} value={s.value} label={s.label} />
         ))}
       </div>
 
-      {/* Summary ring + metrics side by side */}
+      {/* Summary ring + metrics */}
       <div style={{
-        display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 28,
-        alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 24,
+        display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 24,
+        alignItems: 'center', borderTop: '1px solid #f0f2f5', paddingTop: 24,
       }}>
         <SummaryRing value={perfScore} />
 
         <div>
-          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#9ca3af', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>
             Core Web Vitals
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {metrics.map(m => (
               <div key={m.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: m.good ? '#0cce6b' : '#ffa400', flexShrink: 0 }} />
-                <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', flex: 1 }}>{m.label}</span>
+                <span style={{ fontSize: '0.78rem', color: '#6b7280', flex: 1 }}>{m.label}</span>
                 <span style={{ fontSize: '0.88rem', fontWeight: 700, color: m.good ? '#0cce6b' : '#ffa400' }}>{m.value}</span>
               </div>
             ))}
@@ -149,8 +170,8 @@ function DeviceCard({ title, icon, scores, metrics, perfScore }: {
         </div>
       </div>
 
-      {/* Footer legend */}
-      <div style={{ display: 'flex', gap: 16, marginTop: 20, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 16, marginTop: 20, paddingTop: 16, borderTop: '1px solid #f0f2f5' }}>
         {[
           { color: '#f33', label: '0-49' },
           { color: '#ffa400', label: '50-89' },
@@ -158,7 +179,7 @@ function DeviceCard({ title, icon, scores, metrics, perfScore }: {
         ].map(item => (
           <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: item.color }} />
-            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>{item.label}</span>
+            <span style={{ fontSize: '0.7rem', color: '#9ca3af' }}>{item.label}</span>
           </div>
         ))}
       </div>
@@ -167,14 +188,14 @@ function DeviceCard({ title, icon, scores, metrics, perfScore }: {
 }
 
 const PhoneIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
     <line x1="12" y1="18" x2="12" y2="18" strokeWidth="2" />
   </svg>
 )
 
 const DesktopIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
     <line x1="8" y1="21" x2="16" y2="21" />
     <line x1="12" y1="17" x2="12" y2="21" />
@@ -189,7 +210,7 @@ export default function LighthouseScores() {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <span style={{
-            display: 'inline-block', background: 'rgba(12, 206, 107, 0.12)', color: '#0cce6b',
+            display: 'inline-block', background: 'rgba(12, 206, 107, 0.15)', color: '#0cce6b',
             padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700,
             letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14,
           }}>
