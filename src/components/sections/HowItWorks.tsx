@@ -44,7 +44,7 @@ export default function HowItWorks() {
             lineHeight: 1.2,
           }}
         >
-          Built Different, From Day One.
+          We Build Your Projects Different, From Day One.
         </h2>
 
         <div
