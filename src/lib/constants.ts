@@ -6,8 +6,7 @@ export const BOOKING_URL =
   'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true'
 export const LOGO_URL =
   '/logo.png'
-export const HERO_VIDEO_URL =
-  'https://base44.app/api/apps/68ccebd683c4aa87ed81a043/files/public/68ccebd683c4aa87ed81a043/d76594fa5_demand_signals_penguines_shity_one_v1a.mp4'
+export const HERO_VIDEO_URL = '/hero-video.mp4'
 
 // ── Nav item type ─────────────────────────────────────────────
 export type NavItem = {

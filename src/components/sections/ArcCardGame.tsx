@@ -3,7 +3,7 @@ import { useRef, useState, useCallback, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { BOOKING_URL } from '@/lib/constants'
 
-const LOGO = 'https://media.base44.com/images/public/68ccebd683c4aa87ed81a043/781073a7a_dsig_icon_v1a.png'
+const LOGO = '/dsig-icon.png'
 
 // 9 unique card patterns — each appears twice (18 total cards)
 const CARD_PATTERNS = [

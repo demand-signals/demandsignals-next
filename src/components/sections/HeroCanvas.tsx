@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { BOOKING_URL } from '@/lib/constants'
 
-// Particle canvas — ported exactly from demandsignals.co base44 source
+// Particle canvas — ported from demandsignals.co
 export function ParticleCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const rafRef = useRef<number>(0)
