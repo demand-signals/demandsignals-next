@@ -41,32 +41,32 @@ const SERVICES = [
   {
     title: 'AI-Powered Website',
     description: 'Fast, modern websites built to rank in Google and convert local visitors into phone calls and booked appointments. Includes local schema, city-specific landing pages, and Core Web Vitals optimization.',
-    href: '/services/websites',
+    href: '/websites-apps',
   },
   {
     title: 'Local SEO & Google Maps',
     description: 'Full Google Business Profile management, local citation building, and on-page SEO targeting your city\'s highest-intent searches. We own the Map Pack for your service categories.',
-    href: '/services/gmb',
+    href: '/demand-generation/gbp-admin',
   },
   {
     title: 'AI Agent Swarms',
     description: 'Networks of AI agents handling content creation, review management, outreach, and analytics — running 24/7 without a team. One monthly cost replaces multiple vendors.',
-    href: '/ai-agents/agent-farms',
+    href: '/ai-services/ai-agent-swarms',
   },
   {
     title: 'GEO & AI Search Optimization',
     description: 'Optimize your business to appear when locals ask ChatGPT, Gemini, or Perplexity for recommendations. Structured data, entity signals, and citation authority built for the AI era.',
-    href: '/ai-agents/geo-llm',
+    href: '/demand-generation/geo-aeo-llm-optimization',
   },
   {
     title: 'Content Marketing',
     description: 'City-specific blog posts, service pages, and local guides published on a consistent schedule. Builds topical authority and long-tail organic traffic month after month.',
-    href: '/services/content',
+    href: '/content-social/ai-content-generation',
   },
   {
     title: 'AI Outreach',
     description: 'Automated prospecting sequences that research local leads, craft personalized messages, and route interested replies directly to your inbox. No SDR required.',
-    href: '/ai-agents/outreach',
+    href: '/ai-services/ai-automated-outreach',
   },
 ]
 

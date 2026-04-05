@@ -14,7 +14,7 @@ export default function Page() {
       eyebrow="AI Workforce Automation"
       titleHtml={<><span style={{color:'#FF6B2B'}}>Replace the Role.</span><br /><span style={{color:'#52C9A0'}}>Not the Person.</span></>}
       subtitle="AI systems that handle specific business functions — content creation, social media, review management, SEO, data entry — at a fraction of the cost of human labor."
-      calloutHtml={<>The pitch is simple: replace the people and agencies doing manual marketing work with AI systems that cost less and perform better. Here are 14 businesses we\'ve already done it for.</>}
+      calloutHtml={<>The pitch is simple: replace the people and agencies doing manual marketing work with AI systems that cost less and perform better. We&apos;ve done it across every industry.</>}
       ctaLabel="Automate My Workforce →"
       breadcrumbs={[
         { name: 'Home', path: '/' },

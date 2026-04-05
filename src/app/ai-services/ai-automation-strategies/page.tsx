@@ -33,7 +33,7 @@ export default function Page() {
         { icon: '📈', title: 'Success Metrics', description: 'Clear KPIs for each phase — time saved, cost reduced, output increased. You\'ll know exactly what\'s working and what needs adjustment.' },
       ]}
       aiCalloutHeading="Most businesses don't need more AI tools. They need a plan."
-      aiCalloutText="The gap isn't technology — it's knowing where to apply it. We've deployed AI systems across 14 businesses in every industry. We know which processes automate well and which don't. Our roadmap gives you a clear path from where you are to where AI can take you."
+      aiCalloutText="The gap isn't technology — it's knowing where to apply it. We've deployed AI systems across every industry — from construction to legal to hospitality. We know which processes automate well and which don't. Our roadmap gives you a clear path from where you are to where AI can take you."
       faqs={[
         { question: 'How long does an AI strategy engagement take?', answer: 'The initial audit and roadmap typically takes 1-2 weeks. Implementation follows the phased plan — quick wins in weeks 1-4, core systems in months 1-3, full automation in months 3-6. The pace depends on your business complexity.' },
         { question: 'Do I need technical staff to implement AI?', answer: 'No. We handle the technical implementation. Your team needs to participate in the audit (telling us how things work today) and the change management (adopting new workflows). The technology is fully managed by us.' },

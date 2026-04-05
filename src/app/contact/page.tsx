@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { BOOKING_URL, CONTACT_PHONE, CONTACT_EMAIL } from '@/lib/constants';
 
+
 export default function ContactPage() {
   const [form, setForm] = useState({
     name: '',
@@ -44,8 +45,6 @@ export default function ContactPage() {
 
   return (
     <>
-      <title>Contact Demand Signals — Start the Conversation</title>
-
       {/* Dark Hero */}
       <section style={{
         background: 'var(--dark)',

@@ -6,6 +6,7 @@ import ReplacesGrid from '@/components/sections/ReplacesGrid'
 import IndustriesGrid from '@/components/sections/IndustriesGrid'
 import HowItWorks from '@/components/sections/HowItWorks'
 import PortfolioGrid from '@/components/sections/PortfolioGrid'
+import LighthouseScores from '@/components/sections/LighthouseScores'
 import ReviewsMarquee from '@/components/sections/ReviewsMarquee'
 import BookingSection from '@/components/sections/BookingSection'
 import CtaBand from '@/components/sections/CtaBand'
@@ -83,6 +84,7 @@ export default function HomePage() {
       <IndustriesGrid />
       <HowItWorks />
       <PortfolioGrid />
+      <LighthouseScores />
       <ReviewsMarquee />
       <BookingSection />
       <CtaBand />

@@ -3,9 +3,7 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: 'qtrypzzcjebvfcihiynt.supabase.co' },
-      { protocol: 'https', hostname: 'base44.app' },
-      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'demandsignals.us' },
     ],
   },
   async redirects() {
