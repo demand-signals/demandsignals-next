@@ -6,20 +6,52 @@ import { LOGO_URL, CONTACT_PHONE, CONTACT_EMAIL, BOOKING_URL } from '@/lib/const
 export function Footer() {
   return (
     <footer style={{ background: '#1e2740', color: 'rgba(255,255,255,0.65)', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '64px 24px 40px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 48 }}>
-        {/* Brand col */}
-        <div>
-          <Image src={LOGO_URL} alt="Demand Signals" width={140} height={36} style={{ height: 36, width: 'auto', marginBottom: 16 }} />
-          <p style={{ fontSize: '0.875rem', lineHeight: 1.7, marginBottom: 16 }}>
-            AI-first demand generation agency. We make you the signal, not the noise.
+
+      {/* Brand bar — logo, tagline, phone, email in a row */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px 36px' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          paddingBottom: 36, borderBottom: '1px solid rgba(255,255,255,0.08)',
+          flexWrap: 'wrap', gap: 24,
+        }}>
+          <Image src={LOGO_URL} alt="Demand Signals" width={150} height={38} style={{ height: 38, width: 'auto', flexShrink: 0 }} />
+          <p style={{ fontSize: '0.9rem', lineHeight: 1.6, margin: 0, color: 'rgba(255,255,255,0.55)' }}>
+            AI-first demand generation agency.<br />We make you the signal, not the noise.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.875rem' }}>
-            <a href={`tel:${CONTACT_PHONE}`} style={{ color: 'rgba(255,255,255,0.65)' }}>{CONTACT_PHONE}</a>
-            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'rgba(255,255,255,0.65)' }}>{CONTACT_EMAIL}</a>
-          </div>
+          <a href={`tel:${CONTACT_PHONE}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem' }}>
+            <span style={{ color: 'var(--teal)', fontSize: '1rem' }}>📞</span> {CONTACT_PHONE}
+          </a>
+          <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem' }}>
+            <span style={{ color: 'var(--teal)', fontSize: '1rem' }}>✉️</span> {CONTACT_EMAIL}
+          </a>
+          <a href={BOOKING_URL} target="_blank" rel="noopener" style={{
+            display: 'inline-block', padding: '10px 22px', background: '#FF6B2B',
+            color: '#fff', fontWeight: 700, fontSize: '0.85rem', borderRadius: 100,
+            textDecoration: 'none', whiteSpace: 'nowrap',
+          }}>Book an Intro Call →</a>
+        </div>
+      </div>
+
+      {/* Link grid — 4 equal columns */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 40 }}>
+
+        {/* Company */}
+        <div>
+          <h4 style={colHead}>Company</h4>
+          <ul style={ul}>
+            {([
+              ['About',          '/about'],
+              ['Portfolio',      '/portfolio'],
+              ['Blog & News',   '/blog'],
+              ['Contact',       '/contact'],
+              ['Locations',     '/locations'],
+            ] as const).map(([label, href]) => (
+              <li key={href}><FooterLink href={href}>{label}</FooterLink></li>
+            ))}
+          </ul>
         </div>
 
-        {/* Websites & Demand Gen col */}
+        {/* Websites & Apps */}
         <div>
           <h4 style={colHead}>Websites & Apps</h4>
           <ul style={ul}>
@@ -29,13 +61,14 @@ export function Footer() {
               ['Mobile Apps',         '/websites-apps/mobile-apps'],
               ['Vibe Coded Apps',     '/websites-apps/vibe-coded'],
               ['UI/UX Design',        '/websites-apps/design'],
+              ['Hosting',             '/websites-apps/hosting'],
             ] as const).map(([label, href]) => (
               <li key={href}><FooterLink href={href}>{label}</FooterLink></li>
             ))}
           </ul>
         </div>
 
-        {/* Demand Gen + Content col */}
+        {/* Demand Generation */}
         <div>
           <h4 style={colHead}>Demand Generation</h4>
           <ul style={ul}>
@@ -51,7 +84,7 @@ export function Footer() {
           </ul>
         </div>
 
-        {/* AI & Company col */}
+        {/* AI & Agent Services */}
         <div>
           <h4 style={colHead}>AI & Agent Services</h4>
           <ul style={ul}>
@@ -60,31 +93,16 @@ export function Footer() {
               ['AI Workforce Automation',  '/ai-services/ai-workforce-automation'],
               ['AI Powered Outreach',      '/ai-services/ai-automated-outreach'],
               ['AI Private LLMs',          '/ai-services/private-llms'],
+              ['AI Infrastructure',        '/ai-services/ai-agent-infrastructure'],
+              ['AI Strategies',            '/ai-services/ai-automation-strategies'],
             ] as const).map(([label, href]) => (
               <li key={href}><FooterLink href={href}>{label}</FooterLink></li>
             ))}
           </ul>
-          <h4 style={{ ...colHead, marginTop: 20 }}>Company</h4>
-          <ul style={ul}>
-            {([
-              ['Portfolio',       '/portfolio'],
-              ['Blog & News',    '/blog'],
-              ['About',          '/about'],
-              ['Contact',        '/contact'],
-              ['Locations',      '/locations'],
-            ] as const).map(([label, href]) => (
-              <li key={href}><FooterLink href={href}>{label}</FooterLink></li>
-            ))}
-          </ul>
-          <div style={{ marginTop: 20 }}>
-            <a href={BOOKING_URL} target="_blank" rel="noopener" style={{
-              display: 'inline-block', padding: '10px 20px', background: '#FF6B2B',
-              color: '#fff', fontWeight: 600, fontSize: '0.875rem', borderRadius: 100,
-            }}>Book a Free Call →</a>
-          </div>
         </div>
       </div>
 
+      {/* Bottom bar */}
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', maxWidth: 1200, margin: '0 auto', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)' }}>
         <span>© {new Date().getFullYear()} Demand Signals. All rights reserved.</span>
         <div style={{ display: 'flex', gap: 20 }}>
@@ -109,7 +127,7 @@ const ul: React.CSSProperties = {
 
 function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.65)', transition: 'color 0.2s' }}>
+    <Link href={href} style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.65)', transition: 'color 0.2s', textDecoration: 'none' }}>
       {children}
     </Link>
   )
