@@ -72,6 +72,29 @@ const HOW_IT_WORKS = [
   { step: '4', label: 'Report delivered to your inbox within 48 hours', detail: 'You receive a polished, actionable PDF report at no cost.' },
 ];
 
+const reportFaqs = [
+  {
+    question: 'Are the intelligence reports really free?',
+    answer: 'Yes, your first report is completely free with no strings attached. We use AI research agents to pull real market data, then our team reviews every report for accuracy before delivery. We offer these reports because they demonstrate the depth of our capabilities and give you actionable intelligence you can use immediately, whether or not you become a client.',
+  },
+  {
+    question: 'How long does it take to receive my report?',
+    answer: 'Reports are delivered to your inbox within 48 hours of your request. Our AI research agents begin data collection within minutes of submission, and a human strategist reviews every report for accuracy and actionability before it goes out. You will receive a polished PDF with clear findings and prioritized recommendations.',
+  },
+  {
+    question: 'What data sources do your AI research agents use?',
+    answer: 'Our agents pull from multiple real-time data sources including Google search rankings, Google Business Profile metrics, backlink databases, keyword volume APIs, and AI citation platforms like ChatGPT and Perplexity. Every data point in your report comes from live market signals, not estimates or projections. We cross-reference multiple sources to ensure accuracy.',
+  },
+  {
+    question: 'Can I request more than one type of report?',
+    answer: 'Your first report of any type is free. If you find the first report valuable, we are happy to run additional reports at no cost as part of a strategy conversation. Many clients request a Competitor Intelligence report first, then follow up with a full SEO + GEO + AEO Audit once they see the depth of insight our AI agents deliver.',
+  },
+  {
+    question: 'Will someone try to sell me services after I receive my report?',
+    answer: 'We will follow up to make sure you received the report and to answer any questions about the findings. There is no hard sell, no recurring calls, and no obligation. If the report reveals opportunities you want help executing, we are here to discuss next steps — but only if you initiate that conversation. Our goal is to earn trust through value, not pressure.',
+  },
+]
+
 export default function ResearchReportsPage() {
   const [form, setForm] = useState({
     name: '',
@@ -218,6 +241,24 @@ export default function ResearchReportsPage() {
                 </div>
                 <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '0.95rem', marginBottom: 8 }}>{step.label}</h3>
                 <p style={{ color: 'var(--slate)', fontSize: '0.88rem', lineHeight: 1.6, margin: 0 }}>{step.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section style={{ background: '#fff', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>FAQ</span>
+            <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 0' }}>Frequently Asked Questions</h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {reportFaqs.map(faq => (
+              <div key={faq.question} style={{ background: 'var(--light)', borderRadius: 14, padding: '24px 28px' }}>
+                <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1rem', marginBottom: 10, lineHeight: 1.4 }}>{faq.question}</h3>
+                <p style={{ color: 'var(--slate)', fontSize: '0.93rem', lineHeight: 1.7, margin: 0 }}>{faq.answer}</p>
               </div>
             ))}
           </div>

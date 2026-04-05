@@ -2,7 +2,30 @@ import { buildMetadata } from '@/lib/metadata';
 import Link from 'next/link';
 import { PageHero } from '@/components/sections/PageHero';
 import { JsonLd } from '@/components/seo/JsonLd';
-import { breadcrumbSchema, howToSchema } from '@/lib/schema';
+import { breadcrumbSchema, howToSchema, faqSchema } from '@/lib/schema';
+
+const faqs = [
+  {
+    question: 'What is the difference between a static QR code and a dynamic QR code?',
+    answer: 'A static QR code permanently encodes a single URL directly into its pattern — once printed, it can never be changed. A dynamic QR code points to an intermediate redirect that you control, meaning you can update the destination URL at any time without reprinting the physical code. Dynamic QR codes also enable scan tracking, geo-location analytics, and UTM parameter tagging that static codes cannot provide.',
+  },
+  {
+    question: 'Can I update where my QR code points after printing it?',
+    answer: 'Yes, that is the core advantage of dynamic QR codes. You can change the destination URL as many times as you need through your dashboard without ever reprinting the physical code. This is ideal for restaurant menus that change seasonally, business cards that need updated portfolio links, or event signage that should redirect to a recap page after the event ends.',
+  },
+  {
+    question: 'What analytics do dynamic QR codes provide?',
+    answer: 'Our dynamic QR platform provides real-time scan analytics including total and unique scan counts, scan-over-time charts, device and operating system breakdowns, and geo-location data by city, ZIP code, and neighborhood. Every scan is automatically tagged with UTM parameters for clean attribution in Google Analytics. This turns every physical placement into a measurable marketing channel.',
+  },
+  {
+    question: 'What are the best use cases for dynamic QR codes in local businesses?',
+    answer: 'The most effective use cases include restaurant table tents linked to daily-updated menus, business cards with editable portfolio or booking links, vehicle wraps with location-tracked scan data to measure route effectiveness, event signage that can be redirected post-event, and product packaging with links to tutorials or warranty registration. Any physical surface where your links might change or where you want scan analytics is a strong candidate.',
+  },
+  {
+    question: 'Can I customize the design of my QR codes with my brand colors and logo?',
+    answer: 'Yes, our platform supports fully branded QR code designs including custom colors, logo overlays, and branded frames. Research shows that branded QR codes generate significantly higher scan rates than generic black-and-white codes because customers trust them more. You can also generate QR codes in bulk for product packaging, event badges, or multi-location rollouts with consistent branding across every code.',
+  },
+];
 
 export const metadata = buildMetadata({
   title:              'Dynamic QR Codes — Track Every Scan, Update Any Destination',
@@ -71,6 +94,7 @@ const FEATURES = [
 export default function DynamicQrPage() {
   return (
     <>
+      <JsonLd data={faqSchema(faqs)} />
       <JsonLd
         data={howToSchema(
           'How to Use Dynamic QR Codes for Your Business',
@@ -185,6 +209,24 @@ export default function DynamicQrPage() {
                     {f.detail}
                   </p>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section style={{ background: '#fff', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>FAQ</span>
+            <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 0' }}>Frequently Asked Questions</h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {faqs.map(faq => (
+              <div key={faq.question} style={{ background: 'var(--light)', borderRadius: 14, padding: '24px 28px' }}>
+                <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1rem', marginBottom: 10, lineHeight: 1.4 }}>{faq.question}</h3>
+                <p style={{ color: 'var(--slate)', fontSize: '0.93rem', lineHeight: 1.7, margin: 0 }}>{faq.answer}</p>
               </div>
             ))}
           </div>

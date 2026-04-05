@@ -1,4 +1,29 @@
 import { buildMetadata } from '@/lib/metadata'
+import { JsonLd } from '@/components/seo/JsonLd'
+import { faqSchema } from '@/lib/schema'
+
+const faqs = [
+  {
+    question: 'How is the Demand Signals team structured?',
+    answer: 'Demand Signals operates on a hybrid human-AI model. A lean human team led by Managing Director Hunter — a 30-year web development and marketing veteran — directs a farm of specialized AI agent systems. Each AI loop handles a specific function: website intelligence, content generation, reputation management, and more. Every client engagement includes a dedicated human strategist who oversees the agents, reviews outputs, and ensures quality.',
+  },
+  {
+    question: 'What are AI agent loops and how do they work?',
+    answer: 'AI agent loops are autonomous systems that continuously monitor, reason, act, and improve within a specific domain. For example, the Website Intelligence Loop monitors search rankings daily, identifies optimization opportunities, rewrites underperforming pages, and maintains structured data. The Content and Social Loop plans content calendars monthly and executes daily across blog, social media, and Google Business Profile. Each loop runs 24/7 without human intervention, though a strategist reviews and approves key outputs.',
+  },
+  {
+    question: 'Who reviews the work that AI agents produce?',
+    answer: 'Every piece of work that goes to a client is reviewed by a human strategist before delivery. While our AI agents handle the heavy lifting of research, writing, optimization, and monitoring, a human professional ensures accuracy, brand consistency, strategic alignment, and quality. This hybrid approach gives you the speed and consistency of AI with the judgment and accountability of an experienced marketing professional.',
+  },
+  {
+    question: 'Why does Demand Signals use AI agents instead of a traditional team?',
+    answer: 'Traditional agencies staff junior copywriters, link builders, and account managers who bill hours and work business hours only. Our AI agent architecture delivers enterprise-grade output at small business pricing because agents work 24/7, never miss deadlines, maintain perfect consistency, and can process data at a scale no human team can match. The result is faster delivery, lower costs, and more thorough analysis than traditional agency models.',
+  },
+  {
+    question: 'Can I communicate directly with the team, or only through AI?',
+    answer: 'You always have direct access to a human strategist. While our AI systems handle execution, your point of contact is a real person who understands your business, answers your questions, and makes strategic decisions on your behalf. We use standard communication channels — email, phone, and video calls — just like any other agency. The AI works behind the scenes so your experience is seamless and personal.',
+  },
+]
 
 export const metadata = buildMetadata({
   title:       'Our Team — The People & AI Behind Demand Signals',
@@ -9,6 +34,7 @@ export const metadata = buildMetadata({
 export default function TeamPage() {
   return (
     <>
+      <JsonLd data={faqSchema(faqs)} />
       <section style={{ background: 'var(--dark)', paddingTop: 120, paddingBottom: 72, textAlign: 'center' }}>
         <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 24px' }}>
           <p style={{ color: 'var(--teal)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.85rem', marginBottom: 14 }}>
@@ -66,6 +92,24 @@ export default function TeamPage() {
                 <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1.05rem', marginBottom: 4 }}>{agent.name}</h3>
                 <p style={{ color: 'var(--teal)', fontSize: '0.82rem', fontWeight: 600, marginBottom: 12 }}>{agent.role}</p>
                 <p style={{ color: 'var(--slate)', fontSize: '0.9rem', lineHeight: 1.6, margin: 0 }}>{agent.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section style={{ background: '#fff', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>FAQ</span>
+            <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 0' }}>Frequently Asked Questions</h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {faqs.map(faq => (
+              <div key={faq.question} style={{ background: 'var(--light)', borderRadius: 14, padding: '24px 28px' }}>
+                <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1rem', marginBottom: 10, lineHeight: 1.4 }}>{faq.question}</h3>
+                <p style={{ color: 'var(--slate)', fontSize: '0.93rem', lineHeight: 1.7, margin: 0 }}>{faq.answer}</p>
               </div>
             ))}
           </div>

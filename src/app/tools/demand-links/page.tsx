@@ -2,7 +2,30 @@ import { buildMetadata } from '@/lib/metadata';
 import Link from 'next/link';
 import { PageHero } from '@/components/sections/PageHero';
 import { JsonLd } from '@/components/seo/JsonLd';
-import { breadcrumbSchema } from '@/lib/schema';
+import { breadcrumbSchema, faqSchema } from '@/lib/schema';
+
+const faqs = [
+  {
+    question: 'What is Demand Links and how does it work?',
+    answer: 'Demand Links is an AI-powered link intelligence tool that maps your competitors\u2019 entire backlink profiles, identifies the exact citation and link opportunities your business is missing, and tracks your link acquisition velocity over time. Unlike generic backlink checkers, it is built specifically for local and regional businesses and focuses on the authority signals that both Google and AI assistants use to rank and recommend businesses.',
+  },
+  {
+    question: 'Why do backlinks still matter for local businesses?',
+    answer: 'Backlinks remain Google\u2019s single strongest authority signal for determining which businesses rank highest in search results and the local map pack. Beyond traditional SEO, AI models like ChatGPT, Gemini, and Perplexity also rely heavily on the web\u2019s link graph when deciding which businesses to recommend. Businesses with strong, relevant link profiles from local news outlets, industry publications, and trusted directories get cited by AI far more often than those without.',
+  },
+  {
+    question: 'What types of link opportunities does Demand Links find?',
+    answer: 'The tool identifies multiple categories of link opportunities including local business directories, chamber of commerce listings, industry-specific citation sources, local news and publication mentions, competitor-exclusive links you should also have, and broken link recovery opportunities. Every recommendation is specific to your business category and geographic market rather than generic national directories.',
+  },
+  {
+    question: 'How is Demand Links different from tools like Ahrefs or Moz?',
+    answer: 'While enterprise tools like Ahrefs and Moz provide raw backlink data, Demand Links is purpose-built for local businesses and focuses on actionable intelligence rather than data dumps. It automatically prioritizes the links that will have the most impact on your local rankings and AI citation status, tracks link velocity relative to your specific competitors, and alerts you immediately when valuable links are lost so you can take recovery action.',
+  },
+  {
+    question: 'When will Demand Links be available?',
+    answer: 'Demand Links is currently in active development. We are opening a limited early access cohort with founding member pricing and hands-on onboarding. You can join the waitlist through our contact page to get priority access when we launch. Early access members will also get a direct line to our product team to help shape the features that matter most to local businesses.',
+  },
+];
 
 export const metadata = buildMetadata({
   title:              'Demand Links — AI Link Intelligence for Local Business Authority',
@@ -48,6 +71,7 @@ const FEATURES = [
 export default function DemandLinksPage() {
   return (
     <>
+      <JsonLd data={faqSchema(faqs)} />
       <JsonLd
         data={breadcrumbSchema([
           { name: 'Home', url: 'https://demandsignals.co' },
@@ -116,6 +140,24 @@ export default function DemandLinksPage() {
             <p style={{ color: 'var(--slate)', fontSize: '0.95rem', lineHeight: 1.7, margin: 0, borderTop: '1px solid rgba(0,0,0,0.08)', paddingTop: 20 }}>
               Demand Links is designed to help you win on both fronts: organic search rankings <em>and</em> AI citation status — with a single, unified link intelligence system.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section style={{ background: '#fff', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>FAQ</span>
+            <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 0' }}>Frequently Asked Questions</h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {faqs.map(faq => (
+              <div key={faq.question} style={{ background: 'var(--light)', borderRadius: 14, padding: '24px 28px' }}>
+                <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1rem', marginBottom: 10, lineHeight: 1.4 }}>{faq.question}</h3>
+                <p style={{ color: 'var(--slate)', fontSize: '0.93rem', lineHeight: 1.7, margin: 0 }}>{faq.answer}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>

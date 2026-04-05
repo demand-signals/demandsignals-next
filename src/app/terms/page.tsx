@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { CONTACT_EMAIL, SITE_NAME } from '@/lib/constants';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { breadcrumbSchema } from '@/lib/schema';
 
 export const metadata: Metadata = {
   title: 'Terms of Service — Demand Signals',
@@ -8,6 +10,10 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <>
+      <JsonLd data={breadcrumbSchema([
+        { name: 'Home', url: 'https://demandsignals.co' },
+        { name: 'Terms of Service', url: 'https://demandsignals.co/terms' },
+      ])} />
       {/* Dark Hero */}
       <section style={{
         background: 'var(--dark)',

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { CONTACT_EMAIL, SITE_NAME } from '@/lib/constants';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { breadcrumbSchema } from '@/lib/schema';
 
 export const metadata: Metadata = {
   title: 'Accessibility Statement — Demand Signals',
@@ -10,6 +12,10 @@ export const metadata: Metadata = {
 export default function AccessibilityPage() {
   return (
     <>
+      <JsonLd data={breadcrumbSchema([
+        { name: 'Home', url: 'https://demandsignals.co' },
+        { name: 'Accessibility', url: 'https://demandsignals.co/accessibility' },
+      ])} />
       {/* Dark Header */}
       <section
         style={{

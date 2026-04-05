@@ -2,7 +2,7 @@ import { buildMetadata } from '@/lib/metadata'
 import Link from 'next/link'
 import { PageHero } from '@/components/sections/PageHero'
 import { JsonLd } from '@/components/seo/JsonLd'
-import { breadcrumbSchema } from '@/lib/schema'
+import { breadcrumbSchema, faqSchema } from '@/lib/schema'
 import { CITIES } from '@/lib/cities'
 
 export const metadata = buildMetadata({
@@ -36,6 +36,29 @@ const counties = [
     name: 'Placer County',
     cities: ['roseville', 'rocklin', 'granite-bay', 'auburn'],
     description: "One of California's fastest-growing counties, from affluent suburbs to Sierra foothills.",
+  },
+]
+
+const locationsFaqs = [
+  {
+    question: 'What areas does Demand Signals serve in Northern California?',
+    answer: 'We serve businesses across El Dorado County, Sacramento County, and Placer County — including cities like Placerville, Sacramento, Folsom, Roseville, Rocklin, Auburn, and South Lake Tahoe. Our AI marketing systems are configured specifically for Northern California markets, but we also work with clients across the USA, Thailand, Australia, and beyond.',
+  },
+  {
+    question: 'Do I need to be located in Northern California to work with Demand Signals?',
+    answer: 'No. While we specialize in Northern California local markets, our AI-powered services work for businesses anywhere. Website development, content generation, and AI agent swarms are fully remote. For local SEO and geo-targeting services, we configure our systems to your specific market regardless of where you are physically located.',
+  },
+  {
+    question: 'How does local market knowledge improve AI marketing results?',
+    answer: 'AI marketing performs dramatically better when it understands local competition, seasonal demand patterns, and regional search behavior. Our team is based in El Dorado County and has deep familiarity with Northern California markets. We use this knowledge to train our AI systems on the competitors, keywords, and customer behaviors specific to each city we serve.',
+  },
+  {
+    question: 'Can you handle multiple locations for a business with several branches?',
+    answer: 'Absolutely. Multi-location businesses are one of our specialties. We build city-specific landing pages, manage separate Google Business Profiles for each location, and run AI content generation tuned to each market. Our agent swarms can handle review responses, social media, and outreach for every location simultaneously without additional headcount.',
+  },
+  {
+    question: 'What if my city is not listed on your service areas page?',
+    answer: 'If your city is not listed, we very likely still serve your area. Our coverage extends across all of Northern California and we regularly take on clients in new markets. Contact us with your location and business details — we will assess the local competitive landscape and let you know exactly how we can help within 24 hours.',
   },
 ]
 
@@ -114,6 +137,25 @@ export default function LocationsPage() {
           </section>
         )
       })}
+
+      {/* FAQ */}
+      <JsonLd data={faqSchema(locationsFaqs)} />
+      <section style={{ background: '#fff', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>FAQ</span>
+            <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 0' }}>Frequently Asked Questions</h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {locationsFaqs.map(faq => (
+              <div key={faq.question} style={{ background: 'var(--light)', borderRadius: 14, padding: '24px 28px' }}>
+                <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1rem', marginBottom: 10, lineHeight: 1.4 }}>{faq.question}</h3>
+                <p style={{ color: 'var(--slate)', fontSize: '0.93rem', lineHeight: 1.7, margin: 0 }}>{faq.answer}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* All cities list */}
       <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>

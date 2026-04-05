@@ -219,7 +219,7 @@ export default function ContactPage() {
           )}
 
           {/* Info Tiles */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginTop: 56 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginTop: 56, marginBottom: 0 }}>
             {[
               { icon: '📞', label: 'Phone', value: CONTACT_PHONE, href: `tel:${CONTACT_PHONE}` },
               { icon: '✉️', label: 'Email', value: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` },
@@ -244,9 +244,50 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
+
+      {/* FAQ */}
+      <section style={{ background: '#fff', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>FAQ</span>
+            <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 0' }}>Frequently Asked Questions</h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {contactFaqs.map(faq => (
+              <div key={faq.question} style={{ background: 'var(--light)', borderRadius: 14, padding: '24px 28px' }}>
+                <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1rem', marginBottom: 10, lineHeight: 1.4 }}>{faq.question}</h3>
+                <p style={{ color: 'var(--slate)', fontSize: '0.93rem', lineHeight: 1.7, margin: 0 }}>{faq.answer}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </>
   );
 }
+
+const contactFaqs = [
+  {
+    question: 'How quickly will I hear back after submitting the contact form?',
+    answer: 'We respond to every inquiry within one business hour during Pacific business hours (Monday through Friday, 8 AM to 6 PM). If you reach out over the weekend or after hours, you will hear from us first thing the following business day. Our AI intake system processes your request immediately so our team has full context before responding.',
+  },
+  {
+    question: 'What should I expect on a free strategy call?',
+    answer: 'Our strategy calls are 30 minutes of focused, no-pitch consultation. We review your current online presence, identify the biggest gaps in your local visibility, and outline what an AI-powered approach would look like for your specific business. You will walk away with actionable insights whether you work with us or not.',
+  },
+  {
+    question: 'Do I need to know what service I need before reaching out?',
+    answer: 'Not at all. Many of our clients come to us knowing they need more leads but unsure which services will get them there. Select "Not sure yet" on the form and describe your situation — our team will recommend the right combination of AI marketing, web development, or automation based on your goals and budget.',
+  },
+  {
+    question: 'Is there any cost or commitment to contacting Demand Signals?',
+    answer: 'There is zero cost and zero obligation. The contact form, strategy call, and initial audit are all completely free. We believe in earning your business by demonstrating value upfront. You will never be pressured into a contract or upsold during your initial consultation.',
+  },
+  {
+    question: 'Can I request a proposal for multiple services at once?',
+    answer: 'Absolutely. Most of our clients benefit from a bundled approach — combining an AI-powered website with local SEO, content generation, and review management. Mention everything you are interested in on the form or during your call, and we will build a unified proposal with clear pricing for each component.',
+  },
+];
 
 const labelStyle: React.CSSProperties = {
   display: 'block',

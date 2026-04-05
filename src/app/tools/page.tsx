@@ -1,4 +1,29 @@
 import { buildMetadata } from '@/lib/metadata';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { faqSchema } from '@/lib/schema';
+
+const faqs = [
+  {
+    question: 'What free tools does Demand Signals offer?',
+    answer: 'We currently offer a free Demand Audit that scans your online presence across Google, Maps, AI assistants, and social media, plus free Intelligence Reports with custom AI-built competitor analysis and market demand mapping. Two additional tools — Demand Links for AI-powered link intelligence and Dynamic QR for trackable smart QR codes — are in active development and coming soon.',
+  },
+  {
+    question: 'Are these tools really free, or is there a catch?',
+    answer: 'They are genuinely free with no credit card required and no upsell walls. We built them to give local businesses real market intelligence so you can see where you stand before spending a dollar. If the data shows you need help, we are here — but the tools deliver value on their own regardless of whether you become a client.',
+  },
+  {
+    question: 'How do your free tools differ from generic SEO audit tools?',
+    answer: 'Most free audit tools give you a vanity score and a list of technical issues. Our tools are built specifically for local and regional businesses and go beyond traditional SEO. We audit AI visibility across ChatGPT, Gemini, and Perplexity, analyze your Google Business Profile health, benchmark you against real local competitors, and deliver a prioritized action plan — not just a checklist.',
+  },
+  {
+    question: 'Who are these tools designed for?',
+    answer: 'Our tools are designed for local and regional business owners who want data-driven insight into their online visibility without hiring an agency first. Whether you run a dental practice, law firm, restaurant, contractor business, or retail store, these tools analyze the specific signals that determine whether customers find you or your competitor.',
+  },
+  {
+    question: 'How long does it take to get results from a free tool?',
+    answer: 'The Demand Audit delivers a full visibility scorecard, competitor benchmark, and prioritized action plan within 48 hours of a short 15-minute intake call. Intelligence Reports follow a similar timeline. Both are prepared by our AI research agents and reviewed by a human strategist before delivery, ensuring every recommendation is actionable and relevant to your specific market.',
+  },
+];
 
 export const metadata = buildMetadata({
   title:       'Free Tools — Demand Signals',
@@ -48,6 +73,7 @@ const TOOLS = [
 export default function ToolsPage() {
   return (
     <>
+      <JsonLd data={faqSchema(faqs)} />
       {/* Dark Hero */}
       <section style={{
         background: 'var(--dark)',
@@ -131,6 +157,24 @@ export default function ToolsPage() {
                     Notify Me When Ready
                   </div>
                 )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section style={{ background: '#fff', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>FAQ</span>
+            <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 0' }}>Frequently Asked Questions</h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {faqs.map(faq => (
+              <div key={faq.question} style={{ background: 'var(--light)', borderRadius: 14, padding: '24px 28px' }}>
+                <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1rem', marginBottom: 10, lineHeight: 1.4 }}>{faq.question}</h3>
+                <p style={{ color: 'var(--slate)', fontSize: '0.93rem', lineHeight: 1.7, margin: 0 }}>{faq.answer}</p>
               </div>
             ))}
           </div>

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ParticleCanvas } from '@/components/sections/HeroCanvas'
 import { JsonLd } from '@/components/seo/JsonLd'
-import { breadcrumbSchema, serviceSchema } from '@/lib/schema'
+import { breadcrumbSchema, serviceSchema, faqSchema } from '@/lib/schema'
 import { getCityBySlug, CITY_SLUGS } from '@/lib/cities'
 import { BOOKING_URL } from '@/lib/constants'
 
@@ -76,6 +76,31 @@ const PROOF = [
   { value: '3 mo.', label: 'avg time to first page rank' },
   { value: '24/7',  label: 'always-on — no sick days' },
 ]
+
+function getCityFaqs(cityName: string, county: string) {
+  return [
+    {
+      question: `What services does Demand Signals offer in ${cityName}?`,
+      answer: `We offer a full suite of AI-powered marketing services for ${cityName} businesses — including custom websites, local SEO and Google Maps optimization, AI content generation, review management, social media automation, and AI agent swarms. Every service is configured specifically for the ${cityName} market, targeting the competitors, keywords, and customer behaviors unique to ${county}.`,
+    },
+    {
+      question: `How quickly can I expect results from AI marketing in ${cityName}?`,
+      answer: `Most ${cityName} clients see measurable improvements within the first 30 days, with significant ranking gains and lead volume increases by month three. AI-powered systems work around the clock — publishing content, responding to reviews, and optimizing campaigns while you sleep. The speed of results depends on your industry's competitiveness in ${cityName}, but our three-layer discovery strategy (SEO + GEO + AEO) accelerates visibility across all channels simultaneously.`,
+    },
+    {
+      question: `Do you work with businesses outside ${cityName}?`,
+      answer: `Yes. While we have deep expertise in ${cityName} and the broader ${county} market, we serve businesses across all of Northern California and beyond. Our AI systems can be configured for any geographic market. Many of our ${cityName}-area clients also have service areas that extend into neighboring cities, and we build multi-location strategies that capture demand across every community they serve.`,
+    },
+    {
+      question: `What makes Demand Signals different from other ${cityName} marketing agencies?`,
+      answer: `Unlike traditional agencies that rely on manual labor and generic templates, we deploy AI agent swarms that handle content creation, review responses, social media, and outreach autonomously. This means ${cityName} businesses get enterprise-level marketing output at a fraction of the cost. We are also based in Northern California, so we understand the local market dynamics that national agencies miss entirely.`,
+    },
+    {
+      question: `How much does AI marketing cost for a ${cityName} business?`,
+      answer: `Our services are structured to replace the cost of a marketing employee or traditional agency retainer. AI-powered websites range from $5K to $25K with monthly management starting at $800. Content, reputation, and social automation packages start at $800 per month. We build custom proposals based on your ${cityName} market, competitive landscape, and business goals — and the first consultation is always free.`,
+    },
+  ]
+}
 
 export default async function CityPage({ params }: Props) {
   const { city: citySlug } = await params
@@ -221,6 +246,32 @@ export default async function CityPage({ params }: Props) {
           </div>
         </div>
       </section>
+
+      {/* ─── FAQ ──────────────────────────────────────────────── */}
+      {(() => {
+        const faqs = getCityFaqs(city.name, city.county)
+        return (
+          <>
+            <JsonLd data={faqSchema(faqs)} />
+            <section style={{ background: '#fff', padding: '72px 24px' }}>
+              <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+                <div style={{ textAlign: 'center', marginBottom: 48 }}>
+                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>FAQ</span>
+                  <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 0' }}>Frequently Asked Questions</h2>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  {faqs.map(faq => (
+                    <div key={faq.question} style={{ background: 'var(--light)', borderRadius: 14, padding: '24px 28px' }}>
+                      <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1rem', marginBottom: 10, lineHeight: 1.4 }}>{faq.question}</h3>
+                      <p style={{ color: 'var(--slate)', fontSize: '0.93rem', lineHeight: 1.7, margin: 0 }}>{faq.answer}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          </>
+        )
+      })()}
 
       {/* ─── CTA ──────────────────────────────────────────────── */}
       <section style={{ background: 'var(--light)', padding: '88px 24px', textAlign: 'center' }}>

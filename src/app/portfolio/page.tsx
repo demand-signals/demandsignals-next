@@ -1,5 +1,30 @@
 import { buildMetadata } from '@/lib/metadata';
 import ProofTable from '@/components/sections/ProofTable';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { faqSchema } from '@/lib/schema';
+
+const faqs = [
+  {
+    question: 'What types of businesses has Demand Signals worked with?',
+    answer: 'We have worked with businesses across a wide range of industries including veterinary and medical practices, dental offices, law firms, roofing and construction contractors, real estate brokerages, fitness studios, restaurants and craft beverage brands, auto service businesses, retail stores, and education centers. Our AI-powered systems are designed to be industry-agnostic, adapting to the specific competitive landscape and customer behavior of each market.',
+  },
+  {
+    question: 'What kind of results can I expect from working with Demand Signals?',
+    answer: 'Results vary by industry and starting point, but our engagements typically focus on measurable outcomes: improved search visibility for high-intent local keywords, increased Google Maps rankings, enhanced AI citation status across ChatGPT, Gemini, and Perplexity, automated lead capture and qualification, and streamlined operations through AI voice and booking systems. Every engagement begins with a baseline audit so progress is tracked against real data.',
+  },
+  {
+    question: 'What services does Demand Signals provide for client projects?',
+    answer: 'Our client projects typically combine multiple capabilities depending on the business need. These include AI-optimized website builds, local SEO and Google Business Profile optimization, GEO and LLM optimization for AI citation visibility, AI voice receptionists and booking automation, content strategy and automated publishing, review management and reputation systems, and demand generation campaigns with lead qualification funnels.',
+  },
+  {
+    question: 'Do you work with businesses outside of Northern California?',
+    answer: 'Yes. While many of our clients are based in Northern California — particularly the Sacramento metro area, El Dorado County, and the Sierra Foothills — we serve clients across the United States, Thailand, Australia, and beyond. Our AI-powered systems work in any geography, and our strategies are tailored to the specific local market, competitors, and customer behavior of each region we operate in.',
+  },
+  {
+    question: 'How do I get started with Demand Signals?',
+    answer: 'The best first step is to book a free strategy call or request a free Demand Audit. The audit gives you a clear picture of your current visibility across Google, Maps, AI assistants, and social media, benchmarked against your local competitors. From there, we build a tailored engagement plan around the highest-impact opportunities. There is no obligation — the audit and action plan are yours to keep regardless of whether you choose to work with us.',
+  },
+];
 
 export const metadata = buildMetadata({
   title:       'Portfolio — Demand Signals',
@@ -97,6 +122,7 @@ const INDUSTRY_COLORS: Record<string, string> = {
 export default function PortfolioPage() {
   return (
     <>
+      <JsonLd data={faqSchema(faqs)} />
       {/* Dark Hero */}
       <section style={{
         background: 'var(--dark)',
@@ -162,6 +188,24 @@ export default function PortfolioPage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section style={{ background: '#fff', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>FAQ</span>
+            <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 0' }}>Frequently Asked Questions</h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {faqs.map(faq => (
+              <div key={faq.question} style={{ background: 'var(--light)', borderRadius: 14, padding: '24px 28px' }}>
+                <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1rem', marginBottom: 10, lineHeight: 1.4 }}>{faq.question}</h3>
+                <p style={{ color: 'var(--slate)', fontSize: '0.93rem', lineHeight: 1.7, margin: 0 }}>{faq.answer}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
