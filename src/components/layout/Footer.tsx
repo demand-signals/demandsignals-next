@@ -5,7 +5,7 @@ import { LOGO_URL, CONTACT_PHONE, CONTACT_EMAIL, BOOKING_URL } from '@/lib/const
 
 export function Footer() {
   return (
-    <footer style={{ background: '#1E2740', color: 'rgba(255,255,255,0.65)', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+    <footer style={{ background: 'var(--dark)', color: 'rgba(255,255,255,0.65)', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '64px 24px 40px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 48 }}>
         {/* Brand col */}
         <div>

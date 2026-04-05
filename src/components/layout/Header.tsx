@@ -28,9 +28,7 @@ const DROPDOWN_ITEMS: { key: Exclude<DropdownKey, null>; label: string; items: N
   { key: 'learn',    label: 'Learn',              items: NAV_LEARN          },
 ]
 
-const DIRECT_LINKS = [
-  { label: 'Portfolio', href: '/portfolio' },
-]
+const DIRECT_LINKS: { label: string; href: string }[] = []
 
 export function Header() {
   const [open,       setOpen]       = useState<DropdownKey>(null)

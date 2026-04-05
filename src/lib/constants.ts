@@ -63,6 +63,7 @@ export const NAV_LEARN: NavItem[] = [
   { icon: '👤', label: 'Our Teams',          desc: 'The people & AI behind Demand Signals',          href: '/about/team' },
   { icon: '📰', label: 'Blog & News',        desc: 'Insights on AI marketing & demand generation',   href: '/blog'      },
   { icon: '📍', label: 'Service Locations',  desc: 'Counties & cities we serve across NorCal',       href: '/locations'  },
+  { icon: '🖼️', label: 'Portfolio',          desc: 'Client work & case studies',                     href: '/portfolio'  },
 ]
 
 // ── Tools (keep as standalone nav link, not dropdown) ─────────
