@@ -56,7 +56,7 @@ export default function ReplacesGrid() {
             Your Team Just Got a Lot Bigger.
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1.1rem', lineHeight: 1.7, maxWidth: 680, margin: '0 auto 16px' }}>
-            Right now, <span style={{ color: '#FF6B2B', fontWeight: 700 }}>95% of corporate AI projects are failing</span>. Fortune 500 companies are burning millions on AI integrations that never ship. Their committees are still debating frameworks while their budgets evaporate.
+            Right now, <span style={{ color: '#FF6B2B', fontWeight: 700 }}>95% of corporate AI projects are failing</span>. Fortune 500 companies are firing thousands of humans only to burn millions on AI replacements that never ship. Their committees are still debating frameworks while their budgets evaporate.
           </p>
           <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1rem', lineHeight: 1.7, maxWidth: 640, margin: '0 auto' }}>
             That&apos;s your window. While the giants stumble, you can deploy AI agents that actually work — this month, not next year. But they won&apos;t fail forever. Move now.
