@@ -102,7 +102,7 @@ export function CategoryIndexTemplate({
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
               <span style={pillStyle}>FAQ</span>
-              <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, margin: '14px 0 0' }}>
+              <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 0' }}>
                 Frequently Asked Questions
               </h2>
             </div>
@@ -125,7 +125,7 @@ export function CategoryIndexTemplate({
       {/* CTA */}
       <section style={{ background: '#FF6B2B', padding: '72px 24px', textAlign: 'center' }}>
         <div style={{ maxWidth: 560, margin: '0 auto' }}>
-          <h2 style={{ color: '#fff', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 800, marginBottom: 16 }}>
+          <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, marginBottom: 16 }}>
             {ctaHeading}
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.65, marginBottom: 28 }}>

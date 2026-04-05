@@ -200,7 +200,7 @@ export function ArcCardGame() {
         <p style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#52C9A0', marginBottom: 12 }}>
           Play &amp; Learn
         </p>
-        <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, color: '#fff', marginBottom: 16 }}>
+        <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, color: '#fff', marginBottom: 16 }}>
           Games are Good
         </h2>
         <p style={{ fontSize: '1.1rem', color: '#d1d5db', lineHeight: 1.6 }}>

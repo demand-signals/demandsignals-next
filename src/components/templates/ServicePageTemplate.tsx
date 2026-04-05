@@ -101,7 +101,7 @@ export function ServicePageTemplate({
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 52 }}>
             <span style={pillStyle}>{featuresEyebrow}</span>
-            <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, margin: '14px 0 0' }}>
+            <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 0' }}>
               {featuresHeading}
             </h2>
           </div>
@@ -124,7 +124,7 @@ export function ServicePageTemplate({
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
               <div>
                 <span style={pillStyle}>{techEyebrow || 'Our Stack'}</span>
-                <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, margin: '14px 0 20px' }}>
+                <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 20px' }}>
                   {techHeading || 'Built on Technology, Powered by AI'}
                 </h2>
                 {techDescription && (
@@ -155,7 +155,7 @@ export function ServicePageTemplate({
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <div style={{ background: 'linear-gradient(135deg, #080e1f 0%, #1d2330 100%)', borderRadius: 20, padding: '48px 52px', border: '1px solid rgba(82,201,160,0.2)' }}>
               <span style={pillStyle}>{aiCalloutEyebrow || 'The AI Difference'}</span>
-              <h2 style={{ color: '#fff', fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, lineHeight: 1.3, margin: '14px 0 16px' }}>
+              <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, lineHeight: 1.3, margin: '14px 0 16px' }}>
                 {aiCalloutHeading}
               </h2>
               <p style={{ color: 'rgba(255,255,255,0.72)', lineHeight: 1.75, fontSize: '1rem', margin: 0 }}>
@@ -172,7 +172,7 @@ export function ServicePageTemplate({
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
               <span style={pillStyle}>FAQ</span>
-              <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, margin: '14px 0 0' }}>
+              <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 0' }}>
                 Frequently Asked Questions
               </h2>
             </div>
@@ -195,7 +195,7 @@ export function ServicePageTemplate({
       {/* CTA */}
       <section style={{ background: '#FF6B2B', padding: '72px 24px', textAlign: 'center' }}>
         <div style={{ maxWidth: 560, margin: '0 auto' }}>
-          <h2 style={{ color: '#fff', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 800, marginBottom: 16 }}>
+          <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, marginBottom: 16 }}>
             {ctaHeading}
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.65, marginBottom: 28 }}>

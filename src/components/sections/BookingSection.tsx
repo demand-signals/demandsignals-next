@@ -50,7 +50,7 @@ export default function BookingSection() {
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <h2
             style={{
-              fontSize: 'clamp(1.75rem, 3.5vw, 2.6rem)',
+              fontSize: 'clamp(1.8rem, 4vw, 2.6rem)',
               fontWeight: 800,
               color: 'var(--dark)',
               lineHeight: 1.2,

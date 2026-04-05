@@ -13,7 +13,7 @@ export default function CtaBand() {
       <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center' }}>
         <h2
           style={{
-            fontSize: 'clamp(2rem, 4vw, 3rem)',
+            fontSize: 'clamp(1.8rem, 4vw, 2.6rem)',
             fontWeight: 800,
             color: '#fff',
             lineHeight: 1.15,

@@ -48,7 +48,7 @@ export function ServicesGrid() {
     <section aria-labelledby="services-heading" style={{ background: 'var(--light)', padding: '96px 24px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <h2 id="services-heading" style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, color: 'var(--dark)', lineHeight: 1.15, margin: 0 }}>
+          <h2 id="services-heading" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, color: 'var(--dark)', lineHeight: 1.2, margin: 0 }}>
             Everything You Need to{' '}
             <span style={{ color: 'var(--teal)' }}>Dominate Your Market</span>
           </h2>

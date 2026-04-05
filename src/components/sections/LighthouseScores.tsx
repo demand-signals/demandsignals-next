@@ -217,7 +217,7 @@ export default function LighthouseScores() {
             Google Lighthouse Audit
           </span>
           <h2 style={{
-            color: '#fff', fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)',
+            color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)',
             fontWeight: 800, lineHeight: 1.2, marginBottom: 16,
           }}>
             Green Scores Rank Higher. We Build Green.

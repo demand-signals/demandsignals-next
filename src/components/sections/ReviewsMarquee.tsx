@@ -75,7 +75,7 @@ export default function ReviewsMarquee() {
         }}>
           What They&apos;re Saying
         </span>
-        <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, margin: '14px 0 12px' }}>
+        <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 12px' }}>
           Don&apos;t Take Our Word for It. Take Theirs.
         </h2>
         <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.6, maxWidth: 560, margin: '0 auto' }}>

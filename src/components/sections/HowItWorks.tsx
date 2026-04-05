@@ -36,7 +36,7 @@ export default function HowItWorks() {
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <h2
           style={{
-            fontSize: 'clamp(1.6rem, 3vw, 2.4rem)',
+            fontSize: 'clamp(1.8rem, 4vw, 2.6rem)',
             fontWeight: 800,
             color: 'var(--dark)',
             textAlign: 'center',
