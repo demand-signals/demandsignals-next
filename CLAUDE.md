@@ -256,11 +256,7 @@ Both templates auto-generate JSON-LD schema (Service, BreadcrumbList, FAQPage).
 16 permanent 301 redirects from old `/services/*` and `/ai-agents/*` URLs to new structure.
 
 ### In `vercel.json`:
-**⚠️ STALE — needs updating.** Some redirects still point to old URLs:
-- `/geo-search` → `/ai-agents/geo-llm` (should be `/demand-generation/geo-aeo-llm-optimization`)
-- `/ai-seo` → `/ai-agents/geo-llm` (same)
-- `/local-seo` → `/services/local-demand` (should be `/demand-generation/local-seo`)
-- `/website-design` → `/services/websites` (should be `/websites-apps`)
+21 vanity/shortcut redirects for common paths — `/seo`, `/llm`, `/geo`, `/wordpress`, `/reviews`, `/team`, etc. All point to the correct new URL structure. Updated 2026-04-05.
 
 ---
 
@@ -290,7 +286,6 @@ Both templates auto-generate JSON-LD schema (Service, BreadcrumbList, FAQPage).
 
 ### High Priority (before prospecting)
 - [ ] **Verify Vercel deployment** — confirm new nav and pages are live at dsig.demandsignals.dev
-- [ ] **Fix vercel.json redirects** — stale URLs pointing to old structure (see section 9)
 - [ ] **Visual polish on service pages** — some pages use inline styles, match .co visual quality
 - [ ] **Mobile menu UX** — currently a simple slide-down; .co uses full-screen overlay with animations
 - [ ] **OG image** — `/og-image.png` is placeholder, needs real branded asset

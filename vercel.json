@@ -1,14 +1,25 @@
 {
   "redirects": [
-    { "source": "/research",     "destination": "/tools/research-reports", "permanent": true },
-    { "source": "/reports",      "destination": "/tools/research-reports", "permanent": true },
-    { "source": "/free-report",  "destination": "/tools/research-reports", "permanent": true },
-    { "source": "/intelligence", "destination": "/tools/research-reports", "permanent": true },
-    { "source": "/audit",        "destination": "/tools/demand-audit",     "permanent": true },
-    { "source": "/free-audit",   "destination": "/tools/demand-audit",     "permanent": true },
-    { "source": "/geo-search",   "destination": "/ai-agents/geo-llm",      "permanent": true },
-    { "source": "/ai-seo",       "destination": "/ai-agents/geo-llm",      "permanent": true },
-    { "source": "/local-seo",    "destination": "/services/local-demand",  "permanent": true },
-    { "source": "/website-design","destination": "/services/websites",     "permanent": true }
+    { "source": "/research",      "destination": "/tools/research-reports",                  "permanent": true },
+    { "source": "/reports",       "destination": "/tools/research-reports",                  "permanent": true },
+    { "source": "/free-report",   "destination": "/tools/research-reports",                  "permanent": true },
+    { "source": "/intelligence",  "destination": "/tools/research-reports",                  "permanent": true },
+    { "source": "/audit",         "destination": "/tools/demand-audit",                      "permanent": true },
+    { "source": "/free-audit",    "destination": "/tools/demand-audit",                      "permanent": true },
+    { "source": "/geo-search",    "destination": "/demand-generation/geo-aeo-llm-optimization", "permanent": true },
+    { "source": "/ai-seo",        "destination": "/demand-generation/geo-aeo-llm-optimization", "permanent": true },
+    { "source": "/local-seo",     "destination": "/demand-generation/local-seo",             "permanent": true },
+    { "source": "/website-design","destination": "/websites-apps",                           "permanent": true },
+    { "source": "/seo",           "destination": "/demand-generation/local-seo",             "permanent": true },
+    { "source": "/llm",           "destination": "/demand-generation/geo-aeo-llm-optimization", "permanent": true },
+    { "source": "/geo",           "destination": "/demand-generation/geo-aeo-llm-optimization", "permanent": true },
+    { "source": "/ai-agents",     "destination": "/ai-services",                             "permanent": true },
+    { "source": "/wordpress",     "destination": "/websites-apps/wordpress-development",     "permanent": true },
+    { "source": "/mobile-apps",   "destination": "/websites-apps/mobile-apps",               "permanent": true },
+    { "source": "/content",       "destination": "/content-social/ai-content-generation",    "permanent": true },
+    { "source": "/social",        "destination": "/content-social/ai-social-media-management","permanent": true },
+    { "source": "/reviews",       "destination": "/content-social/ai-review-auto-responders","permanent": true },
+    { "source": "/hosting",       "destination": "/websites-apps/hosting",                   "permanent": true },
+    { "source": "/team",          "destination": "/about/team",                              "permanent": true }
   ]
 }
