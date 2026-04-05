@@ -2,49 +2,44 @@ import Link from 'next/link'
 
 const services = [
   {
-    icon: '🏛️',
-    color: '#FF6B2B',
-    eyebrow: 'Digital Presence',
-    title: 'Sites & Apps',
+    icon: '🌐',
+    color: '#2563EB',
+    eyebrow: 'Websites',
+    title: 'High Impact Websites',
     href: '/websites-apps',
-    desc: 'WordPress sites, React/Next.js web apps, Vite-based sites, iOS apps, and Android apps — designed, built, and optimized to convert.',
-    borderColor: '#52C9A0',
+    desc: 'WordPress sites, React/Next.js web apps, and Vite-based sites — designed for local search dominance, GEO citations, and automated lead generation.',
   },
   {
-    icon: '🏛️',
-    color: '#FF6B2B',
-    eyebrow: 'Demand Generation',
-    title: 'Demand Generation',
-    href: '/demand-generation',
-    desc: 'Local SEO, Google Business Profile, geo-targeted content, and demand gen systems that put you in front of buyers when they are ready to act.',
-    borderColor: '#FF6B2B',
+    icon: '📱',
+    color: '#7C3AED',
+    eyebrow: 'Apps',
+    title: 'Web & Mobile Apps',
+    href: '/websites-apps/mobile-apps',
+    desc: 'iOS, Android, and cross-platform apps with React Native. Full-stack web apps with AI features, real-time data, and edge deployment.',
   },
   {
-    icon: '🏛️',
-    color: '#FF6B2B',
-    eyebrow: 'Content & Social',
-    title: 'Content & Social',
-    href: '/content-social',
-    desc: 'AI-powered content operations, social media management, and brand storytelling — built to keep you visible, credible, and top of mind.',
-    borderColor: '#F59E0B',
+    icon: '✍️',
+    color: '#DB2777',
+    eyebrow: 'Content',
+    title: 'AI Content Generation',
+    href: '/content-social/ai-content-generation',
+    desc: 'AI writes your blog posts, service pages, and GMB content on autopilot. SEO-structured, GEO-optimized, and published on schedule.',
   },
   {
-    icon: '🏛️',
-    color: '#52C9A0',
-    eyebrow: 'AI Workforce',
-    title: 'AI Workforce',
+    icon: '📣',
+    color: '#0891B2',
+    eyebrow: 'Social',
+    title: 'Social Media Automation',
+    href: '/content-social/ai-social-media-management',
+    desc: 'AI-powered social media management across every platform — 5-7 posts per week, brand-matched voice, zero manual effort.',
+  },
+  {
+    icon: '🤖',
+    color: '#059669',
+    eyebrow: 'AI & Agents',
+    title: 'AI Strategies & Agents',
     href: '/ai-services',
-    desc: 'AI agent farms, workforce automation, and agent infrastructure — custom-built to run your back office, ops, and client delivery on autopilot.',
-    borderColor: '#7B8FE0',
-  },
-  {
-    icon: '🏛️',
-    color: '#52C9A0',
-    eyebrow: 'AI-Powered Revenue',
-    title: 'AI-Powered Revenue',
-    href: '/ai-services/ai-automated-outreach',
-    desc: 'AI-powered outreach, intelligent client portals, and real-time analytics — the revenue stack that runs while you sleep.',
-    borderColor: '#52C9A0',
+    desc: 'AI adoption roadmaps, workforce automation, agent swarms, and private LLMs — custom-built to run your operations on autopilot.',
   },
 ]
 
@@ -63,14 +58,14 @@ export function ServicesGrid() {
         </div>
 
         {/* Top row: 3 cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 24 }}>
+        <div className="services-grid-top" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 24 }}>
           {services.slice(0, 3).map(s => (
             <ServiceCard key={s.href} {...s} />
           ))}
         </div>
 
         {/* Bottom row: 2 cards centered */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, maxWidth: 800, margin: '0 auto' }}>
+        <div className="services-grid-bottom" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, maxWidth: 800, margin: '0 auto' }}>
           {services.slice(3).map(s => (
             <ServiceCard key={s.href} {...s} />
           ))}
@@ -79,7 +74,7 @@ export function ServicesGrid() {
 
       <style>{`
         @media (max-width: 768px) {
-          .services-top-row, .services-bottom-row {
+          .services-grid-top, .services-grid-bottom {
             grid-template-columns: 1fr !important;
             max-width: 100% !important;
           }
@@ -89,15 +84,15 @@ export function ServicesGrid() {
   )
 }
 
-function ServiceCard({ icon, color, eyebrow, title, href, desc, borderColor }: {
+function ServiceCard({ icon, color, eyebrow, title, href, desc }: {
   icon: string; color: string; eyebrow: string; title: string;
-  href: string; desc: string; borderColor: string;
+  href: string; desc: string;
 }) {
   return (
     <article style={{
       background: '#fff', borderRadius: 16, padding: '32px 28px',
       border: '1.5px solid #edf0f4', display: 'flex', flexDirection: 'column',
-      borderBottom: `4px solid ${borderColor}`,
+      borderBottom: `4px solid ${color}`,
       transition: 'box-shadow 0.22s, border-color 0.22s',
     }}>
       <div style={{

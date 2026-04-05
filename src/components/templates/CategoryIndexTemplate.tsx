@@ -49,9 +49,8 @@ export function CategoryIndexTemplate({
         textAlign: 'center',
       }}>
         <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 24px' }}>
-          <p style={{ color: 'var(--teal)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.85rem', marginBottom: 14 }}>
-            {eyebrow}
-          </p>
+          <span style={pillStyle}>{eyebrow}</span>
+          <div style={{ marginBottom: 14 }} />
           <h1 style={{ color: '#fff', fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 800, lineHeight: 1.12, marginBottom: 20 }}>
             {titleHtml}
           </h1>
@@ -102,10 +101,8 @@ export function CategoryIndexTemplate({
         <section style={{ background: '#fff', padding: '72px 24px' }}>
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
-              <p style={{ color: 'var(--teal)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.85rem', marginBottom: 10 }}>
-                FAQ
-              </p>
-              <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.4rem, 3vw, 2rem)', fontWeight: 800, margin: 0 }}>
+              <span style={pillStyle}>FAQ</span>
+              <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, margin: '14px 0 0' }}>
                 Frequently Asked Questions
               </h2>
             </div>
@@ -153,4 +150,16 @@ export function CategoryIndexTemplate({
       </section>
     </>
   )
+}
+
+const pillStyle: React.CSSProperties = {
+  display: 'inline-block',
+  background: 'rgba(104, 197, 173, 0.12)',
+  color: 'var(--teal)',
+  padding: '6px 18px',
+  borderRadius: 100,
+  fontSize: '0.8rem',
+  fontWeight: 700,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
 }

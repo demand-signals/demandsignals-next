@@ -100,10 +100,8 @@ export function ServicePageTemplate({
       <section style={{ background: 'var(--light)', padding: '72px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 52 }}>
-            <p style={{ color: 'var(--teal)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.85rem', marginBottom: 10 }}>
-              {featuresEyebrow}
-            </p>
-            <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, margin: 0 }}>
+            <span style={pillStyle}>{featuresEyebrow}</span>
+            <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, margin: '14px 0 0' }}>
               {featuresHeading}
             </h2>
           </div>
@@ -125,10 +123,8 @@ export function ServicePageTemplate({
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
               <div>
-                <p style={{ color: 'var(--teal)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.85rem', marginBottom: 12 }}>
-                  {techEyebrow || 'Our Stack'}
-                </p>
-                <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.4rem, 3vw, 2rem)', fontWeight: 800, marginBottom: 20 }}>
+                <span style={pillStyle}>{techEyebrow || 'Our Stack'}</span>
+                <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, margin: '14px 0 20px' }}>
                   {techHeading || 'Built on Technology, Powered by AI'}
                 </h2>
                 {techDescription && (
@@ -158,10 +154,8 @@ export function ServicePageTemplate({
         <section style={{ background: 'var(--light)', padding: '72px 24px' }}>
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <div style={{ background: 'linear-gradient(135deg, #080e1f 0%, #1d2330 100%)', borderRadius: 20, padding: '48px 52px', border: '1px solid rgba(82,201,160,0.2)' }}>
-              <p style={{ color: 'var(--teal)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.8rem', marginBottom: 16 }}>
-                {aiCalloutEyebrow || 'The AI Difference'}
-              </p>
-              <h2 style={{ color: '#fff', fontSize: 'clamp(1.3rem, 3vw, 1.8rem)', fontWeight: 800, lineHeight: 1.3, marginBottom: 16 }}>
+              <span style={pillStyle}>{aiCalloutEyebrow || 'The AI Difference'}</span>
+              <h2 style={{ color: '#fff', fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, lineHeight: 1.3, margin: '14px 0 16px' }}>
                 {aiCalloutHeading}
               </h2>
               <p style={{ color: 'rgba(255,255,255,0.72)', lineHeight: 1.75, fontSize: '1rem', margin: 0 }}>
@@ -177,10 +171,8 @@ export function ServicePageTemplate({
         <section style={{ background: '#fff', padding: '72px 24px' }}>
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
-              <p style={{ color: 'var(--teal)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.85rem', marginBottom: 10 }}>
-                FAQ
-              </p>
-              <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.4rem, 3vw, 2rem)', fontWeight: 800, margin: 0 }}>
+              <span style={pillStyle}>FAQ</span>
+              <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, margin: '14px 0 0' }}>
                 Frequently Asked Questions
               </h2>
             </div>
@@ -223,4 +215,16 @@ export function ServicePageTemplate({
       </section>
     </>
   )
+}
+
+const pillStyle: React.CSSProperties = {
+  display: 'inline-block',
+  background: 'rgba(104, 197, 173, 0.12)',
+  color: 'var(--teal)',
+  padding: '6px 18px',
+  borderRadius: 100,
+  fontSize: '0.8rem',
+  fontWeight: 700,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
 }
