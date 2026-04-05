@@ -6,7 +6,6 @@ export const BOOKING_URL =
   'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true'
 export const LOGO_URL =
   '/logo.png'
-export const HERO_VIDEO_URL = '/hero-video.mp4'
 
 // ── Nav item type ─────────────────────────────────────────────
 export type NavItem = {
