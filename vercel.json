@@ -1,0 +1,14 @@
+{
+  "redirects": [
+    { "source": "/research",     "destination": "/tools/research-reports", "permanent": true },
+    { "source": "/reports",      "destination": "/tools/research-reports", "permanent": true },
+    { "source": "/free-report",  "destination": "/tools/research-reports", "permanent": true },
+    { "source": "/intelligence", "destination": "/tools/research-reports", "permanent": true },
+    { "source": "/audit",        "destination": "/tools/demand-audit",     "permanent": true },
+    { "source": "/free-audit",   "destination": "/tools/demand-audit",     "permanent": true },
+    { "source": "/geo-search",   "destination": "/ai-agents/geo-llm",      "permanent": true },
+    { "source": "/ai-seo",       "destination": "/ai-agents/geo-llm",      "permanent": true },
+    { "source": "/local-seo",    "destination": "/services/local-demand",  "permanent": true },
+    { "source": "/website-design","destination": "/services/websites",     "permanent": true }
+  ]
+}

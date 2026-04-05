@@ -1,0 +1,100 @@
+---
+title: "Inside an AI Agent Farm: What Running 19 Specialized Agents Looks Like Day-to-Day"
+date: "2025-08-04"
+author: "Landon (Technical Advisor)"
+excerpt: "We operate 19 named AI agents at Demand Signals — each with a specific role, persistent memory, and a set of tools. This is the architecture, the failures, the cost, and what we'd do differently."
+tags: ["AI Agents", "Operations", "Behind the Scenes", "Agency"]
+readTime: "12 min read"
+---
+
+We are not a traditional marketing agency that has adopted AI tools. We are an AI agent operation that does marketing. The distinction matters because it shapes every decision we make about infrastructure, hiring, quality control, and client relationships.
+
+As of August 2025, we operate 19 named agents — each with a defined role, a persistent memory file, a set of tools, and a daily task schedule. This post is an honest account of how the system works, where it succeeds, where it fails, and what we would do differently if we were starting over.
+
+## The Three-Tier Architecture
+
+Our agents are organized into three functional tiers.
+
+### Tier 1: Strategic Agents (3 agents)
+
+These agents handle the work that touches the overall direction and quality of client strategy. They do not produce high-volume commodity outputs. They do synthesis, evaluation, and planning.
+
+**Landon** (that's me — the human-in-loop advisor who reviews Tier 1 outputs) works alongside two strategic agents: **Cyrus**, who handles research and trend analysis, and **Maya**, who handles client strategy synthesis and quarterly planning. Tier 1 agents produce outputs weekly, not daily, and every output receives human review before it influences client deliverables.
+
+### Tier 2: Specialist Agents (11 agents)
+
+This is the core production layer. Each specialist agent owns a specific domain:
+
+- **Jasper** — long-form content production (blog posts, landing pages, case study drafts)
+- **Gabby** — AEO/GEO optimization (structured data, citation analysis, AI search visibility)
+- **Marcus** — social media content and scheduling
+- **Priya** — email marketing and nurture sequences
+- **Dev** — review management and reputation monitoring
+- **Sasha** — local SEO and Google Business Profile management
+- **Felix** — outreach and partnership communications
+- **Nora** — reporting and analytics synthesis
+- **Eli** — ad copy and paid media support
+- **Zoe** — website copy and conversion optimization
+- **Kai** — research report generation for client audits
+
+Each specialist agent has a defined task queue that resets daily. They work from briefs produced by Tier 1 and return outputs to a review queue where a human editor approves, adjusts, or rejects before publication or client delivery.
+
+### Tier 3: Support Agents (5 agents)
+
+These agents handle the connective tissue of operations — scheduling, data entry, CRM updates, monitoring alerts, and internal documentation. They are the least glamorous but among the most valuable. Without Tier 3, the cognitive load on Tier 1 and Tier 2 would be substantially higher.
+
+## A Day in the Life of the Agent Farm
+
+### 6:00 AM — Reporting Sweep
+
+Nora pulls the overnight data: ranking changes, review activity, website traffic anomalies, lead form submissions, email send performance. She produces a consolidated morning brief that is in Landon's inbox before 7am. This brief replaced a process that previously took a human analyst two to three hours per day.
+
+### 7:30 AM — Review Management
+
+Dev scans all monitored review platforms for new reviews across all client accounts. Positive reviews get responses drafted and queued for approval. Negative reviews (under 3 stars) get flagged immediately with a suggested response and escalation recommendation. Dev processes approximately 40 to 80 reviews per day across all clients. Previously, this required a full-time employee.
+
+### 8:00–10:00 AM — Content Queue
+
+Jasper and Marcus work through the day's content queue. Jasper handles longer-form pieces — blog posts, service page updates, email campaigns — based on briefs approved the previous day. Marcus handles social posts, captions, and short-form content. Both agents submit outputs to a review queue where a human editor approves content within a two-hour window.
+
+### Continuous — Citation Monitoring
+
+Gabby runs a continuous monitoring loop for AI search citation data. When a client appears in a Perplexity answer, a Google AI Overview, or a ChatGPT response, that citation gets logged with the query, the context, and whether the information was accurate. When a competitor is cited instead, that triggers a gap analysis report. This monitoring was not possible at all before agents — the data volume makes human-only monitoring impractical.
+
+### Ongoing — Outreach and Follow-Up
+
+Felix manages outreach sequences for partnership and local press activities. He runs follow-up cadences for every active outreach thread, drafts new outreach based on opportunity briefs from Maya, and logs all responses. His conversion rate on outreach is slightly lower than a skilled human relationship builder, but his consistency is much higher — he never forgets to follow up.
+
+## What Works Well
+
+**High-volume, pattern-driven tasks** are where agents consistently outperform any realistic human alternative. Review responses, content scheduling, reporting sweeps, citation monitoring, follow-up sequences — these tasks scale nearly linearly with agent capacity and produce consistent quality.
+
+**Consistency under load** is a genuine superpower. When we bring on five new clients in a month, agent capacity expands to match. There is no hiring lag, no onboarding curve, no quality degradation from overloaded humans.
+
+**24/7 availability** means that a review left at 10pm on Saturday gets responded to by Sunday morning. An inquiry submitted on a holiday gets a follow-up within 90 seconds. This responsiveness was not achievable before.
+
+## What Doesn't Work
+
+**Novel judgment calls** remain a genuine weakness. When a client faces a reputation crisis — a viral negative review, a local news story, a hostile online campaign — agents can draft responses and flag the issue, but the strategic decisions require human judgment. We learned this the hard way in Q1 when an agent drafted a response to a heated review situation that was technically accurate but tonally wrong. The human review caught it before publication, but the near-miss reshaped how we structure escalation protocols.
+
+**Creative direction and brand voice development** require human input. Agents execute against a brand voice guide exceptionally well, but writing that guide, making the judgment call that a client's tone is "confident but not arrogant," deciding to pivot a campaign concept — these are human decisions.
+
+**Tool failure cascades** are the most operationally costly failure mode. When an API that an agent depends on goes down, and the agent's error handling isn't robust, it can stall an entire task queue without obvious notification. We have invested heavily in monitoring and alerting, but cascade failures remain a risk in complex multi-agent systems.
+
+## The Cost Reality
+
+This is the number people most often want to know. Our total agent infrastructure cost — API costs, tooling subscriptions, monitoring infrastructure, and the human review layer — runs approximately $1,400 to $1,800 per month for our current 19-agent operation covering 12 client accounts.
+
+The human equivalent of the same function — a team capable of producing the same volume of content, review management, reporting, outreach, and monitoring — would cost between $18,000 and $22,000 per month in fully loaded compensation, benefits, and management overhead.
+
+That is not a slight efficiency gain. It is a structural cost advantage that allows us to price our services in a range that is accessible to local businesses while maintaining margins that allow reinvestment in the system.
+
+## What We Would Do Differently
+
+If we were rebuilding the agent farm from scratch, we would invest more heavily in structured handoffs between agents earlier in the process. Much of our early technical debt came from agents that produced outputs in formats slightly different from what the next agent expected, requiring manual cleanup.
+
+We would also define escalation protocols before we needed them, not after. The cost of a bad escalation decision is far higher than the cost of building the protocol in advance.
+
+If you want to see what an agent farm deployment looks like for a client engagement — not the internal version, but the client-facing version — visit [DSIG Agent Farms](/ai-agents/agent-farms) for a full breakdown of how we structure client deployments.
+
+The infrastructure is real, the cost savings are real, and the limitations are real. Any vendor who tells you agents can do everything without human oversight is selling you something that will eventually fail in a consequential way.
