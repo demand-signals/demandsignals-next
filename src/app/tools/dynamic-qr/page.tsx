@@ -1,14 +1,14 @@
-import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/metadata';
 import Link from 'next/link';
 import { PageHero } from '@/components/sections/PageHero';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { breadcrumbSchema, howToSchema } from '@/lib/schema';
 
-export const metadata: Metadata = {
-  title: 'Dynamic QR Codes — Track Every Scan, Update Any Destination',
-  description:
-    'Smart QR codes with real-time scan analytics, geo-location tracking, and editable destinations for local businesses. No reprinting when your links change. Restaurant menus, business cards, signage.',
-  keywords: [
+export const metadata = buildMetadata({
+  title:              'Dynamic QR Codes — Track Every Scan, Update Any Destination',
+  description:        'Smart QR codes with real-time scan analytics, geo-location tracking, and editable destinations for local businesses. No reprinting when your links change. Restaurant menus, business cards, signage.',
+  path:               '/tools/dynamic-qr',
+  keywords:           [
     'dynamic QR codes local business',
     'trackable QR codes Northern California',
     'editable QR code destination',
@@ -17,20 +17,10 @@ export const metadata: Metadata = {
     'business card QR code tracking',
     'branded QR codes',
   ],
-  openGraph: {
-    title: 'Dynamic QR Codes — Track Every Scan, Update Any Destination',
-    description:
-      'Smart QR codes for local businesses. Real-time scan analytics, geo-location tracking, and editable destinations. No reprinting.',
-    url: 'https://demandsignals.co/tools/dynamic-qr',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Dynamic QR Codes — Demand Signals' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Dynamic QR Codes for Local Business',
-    description: 'Track every scan. Update any destination. No reprinting. Smart QR codes with real-time analytics.',
-  },
-  alternates: { canonical: 'https://demandsignals.co/tools/dynamic-qr' },
-};
+  ogDescription:      'Smart QR codes for local businesses. Real-time scan analytics, geo-location tracking, and editable destinations. No reprinting.',
+  twitterTitle:       'Dynamic QR Codes for Local Business',
+  twitterDescription: 'Track every scan. Update any destination. No reprinting. Smart QR codes with real-time analytics.',
+});
 
 const USE_CASES = [
   {
@@ -112,13 +102,14 @@ export default function DynamicQrPage() {
         eyebrow="Coming Soon — Dynamic QR Codes"
         title={
           <>
-            Track Every Scan. Update Any Destination.{' '}
-            <span style={{ color: '#52C9A0' }}>No Reprinting.</span>
+            <span style={{color:'#52C9A0'}}>Track Every Scan.</span> Update Any Destination.{' '}
+            <span style={{color:'#FF6B2B'}}>No Reprinting.</span>
           </>
         }
         subtitle="Smart QR codes for business cards, menus, signage, and ads — with real-time scan analytics and editable destinations."
         ctaLabel="Get Early Access →"
         ctaHref="/contact"
+        callout={<>Static QR codes are a dead end. <span style={{color:'#52C9A0'}}>Dynamic QR codes</span> let you redirect, track, and optimize every scan — without reprinting anything.</>}
       />
 
       {/* Use Cases */}

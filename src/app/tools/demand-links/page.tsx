@@ -1,14 +1,14 @@
-import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/metadata';
 import Link from 'next/link';
 import { PageHero } from '@/components/sections/PageHero';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { breadcrumbSchema } from '@/lib/schema';
 
-export const metadata: Metadata = {
-  title: 'Demand Links — AI Link Intelligence for Local Business Authority',
-  description:
-    'AI-powered link intelligence that identifies competitor link gaps, finds local citation opportunities, and builds the exact authority signals Google and AI assistants need to rank and cite you.',
-  keywords: [
+export const metadata = buildMetadata({
+  title:              'Demand Links — AI Link Intelligence for Local Business Authority',
+  description:        'AI-powered link intelligence that identifies competitor link gaps, finds local citation opportunities, and builds the exact authority signals Google and AI assistants need to rank and cite you.',
+  path:               '/tools/demand-links',
+  keywords:           [
     'link building tool local business',
     'AI backlink intelligence',
     'local citation opportunity finder',
@@ -17,20 +17,10 @@ export const metadata: Metadata = {
     'authority signal building Northern California',
     'local SEO link tool',
   ],
-  openGraph: {
-    title: 'Demand Links — AI Link Intelligence for Local Business Authority',
-    description:
-      'AI-powered link intelligence that identifies and builds the exact authority signals Google and AI assistants need to trust you.',
-    url: 'https://demandsignals.co/tools/demand-links',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Demand Links — Demand Signals' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Demand Links — AI Link Intelligence Tool',
-    description: 'Build the exact authority signals Google and AI need. Competitor gaps, local citations, link velocity tracking.',
-  },
-  alternates: { canonical: 'https://demandsignals.co/tools/demand-links' },
-};
+  ogDescription:      'AI-powered link intelligence that identifies and builds the exact authority signals Google and AI assistants need to trust you.',
+  twitterTitle:       'Demand Links — AI Link Intelligence Tool',
+  twitterDescription: 'Build the exact authority signals Google and AI need. Competitor gaps, local citations, link velocity tracking.',
+});
 
 const FEATURES = [
   {
@@ -69,13 +59,14 @@ export default function DemandLinksPage() {
         eyebrow="Coming Soon — Demand Links"
         title={
           <>
-            Build the Exact Authority Signals{' '}
-            <span style={{ color: '#52C9A0' }}>Google and AI Need to Trust You.</span>
+            Build the <span style={{color:'#52C9A0'}}>Exact Authority Signals</span> Google and AI{' '}
+            <span style={{color:'#FF6B2B'}}>Need to Trust You.</span>
           </>
         }
         subtitle="AI-powered link intelligence that identifies and builds the specific backlinks your business needs to rank and get cited."
         ctaLabel="Join the Waitlist →"
         ctaHref="/contact"
+        callout={<>Google and AI models both rank trust signals before content. <span style={{color:'#52C9A0'}}>Authority links</span> are the single highest-leverage signal you can build.</>}
       />
 
       {/* What Demand Links Will Do */}

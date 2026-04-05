@@ -1,15 +1,15 @@
-import type { Metadata } from 'next'
+import { buildMetadata } from '@/lib/metadata'
 import Link from 'next/link'
 import { PageHero } from '@/components/sections/PageHero'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { breadcrumbSchema } from '@/lib/schema'
 import { CITIES } from '@/lib/cities'
 
-export const metadata: Metadata = {
-  title: 'Local AI Marketing — Northern California Service Areas',
-  description:
-    'Demand Signals serves local businesses across Northern California — El Dorado County, Sacramento County, Placer County, and the Sierra Nevada foothills. AI-powered websites, local SEO, and agent swarms for your market.',
-  keywords: [
+export const metadata = buildMetadata({
+  title:         'Local AI Marketing — Northern California Service Areas',
+  description:   'Demand Signals serves local businesses across Northern California — El Dorado County, Sacramento County, Placer County, and the Sierra Nevada foothills. AI-powered websites, local SEO, and agent swarms for your market.',
+  path:          '/locations',
+  keywords:      [
     'AI marketing Northern California',
     'local SEO Sacramento County',
     'marketing agency El Dorado County',
@@ -18,15 +18,8 @@ export const metadata: Metadata = {
     'local business marketing California',
     'demand generation Northern California',
   ],
-  openGraph: {
-    title: 'Local AI Marketing — Northern California Service Areas',
-    description:
-      'AI-powered marketing for local businesses across Northern California. El Dorado County, Sacramento, Placer County, and beyond.',
-    url: 'https://demandsignals.co/locations',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Demand Signals — Northern California Service Areas' }],
-  },
-  alternates: { canonical: 'https://demandsignals.co/locations' },
-}
+  ogDescription: 'AI-powered marketing for local businesses across Northern California. El Dorado County, Sacramento, Placer County, and beyond.',
+})
 
 const counties = [
   {
@@ -59,13 +52,14 @@ export default function LocationsPage() {
         eyebrow="Service Areas"
         title={
           <>
-            AI Marketing Across{' '}
-            <span style={{ color: '#52C9A0' }}>Northern California</span>
+            AI Marketing Across <span style={{color:'#52C9A0'}}>Northern California</span> —{' '}
+            <span style={{color:'#FF6B2B'}}>Always On.</span>
           </>
         }
         subtitle="We serve local businesses from Sacramento to South Lake Tahoe — with AI-powered websites, local SEO, and agent swarms tuned to your specific market."
         ctaLabel="Get a Free Audit"
         ctaHref="/contact"
+        callout={<>We don't run national campaigns. We build <span style={{color:'#52C9A0'}}>hyper-local systems</span> tuned to your specific market — the competitors, the customers, the keywords that actually drive revenue.</>}
       />
 
       {/* County sections */}

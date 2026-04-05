@@ -1,14 +1,14 @@
-import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/metadata';
 import { PageHero } from '@/components/sections/PageHero';
 import { BOOKING_URL, CONTACT_EMAIL } from '@/lib/constants';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { breadcrumbSchema, howToSchema } from '@/lib/schema';
 
-export const metadata: Metadata = {
-  title: 'Free Demand Audit — See Where You\'re Losing Customers Online',
-  description:
-    'Get a free AI-powered audit of your online presence across Google, Maps, AI assistants, and social media. See exactly where you\'re losing customers — before you spend a dollar. Northern California businesses.',
-  keywords: [
+export const metadata = buildMetadata({
+  title:              "Free Demand Audit — See Where You're Losing Customers Online",
+  description:        "Get a free AI-powered audit of your online presence across Google, Maps, AI assistants, and social media. See exactly where you're losing customers — before you spend a dollar. Northern California businesses.",
+  path:               '/tools/demand-audit',
+  keywords:           [
     'free SEO audit local business',
     'free demand audit Northern California',
     'AI visibility audit Sacramento',
@@ -17,20 +17,10 @@ export const metadata: Metadata = {
     'competitor gap analysis local business',
     'free online presence audit',
   ],
-  openGraph: {
-    title: 'Free Demand Audit — See Where You\'re Losing Customers Online',
-    description:
-      'Free AI-powered audit across Google, Maps, AI assistants, and social media. See exactly where you\'re losing customers.',
-    url: 'https://demandsignals.co/tools/demand-audit',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Free Demand Audit — Demand Signals' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Free Demand Audit for Local Business',
-    description: 'Stop guessing. See exactly where you stand across Google, Maps, AI assistants, and social — for free.',
-  },
-  alternates: { canonical: 'https://demandsignals.co/tools/demand-audit' },
-};
+  ogDescription:      "Free AI-powered audit across Google, Maps, AI assistants, and social media. See exactly where you're losing customers.",
+  twitterTitle:       'Free Demand Audit for Local Business',
+  twitterDescription: 'Stop guessing. See exactly where you stand across Google, Maps, AI assistants, and social — for free.',
+});
 
 const AUDIT_AREAS = [
   {
@@ -113,13 +103,14 @@ export default function DemandAuditPage() {
         eyebrow="Free Tool"
         title={
           <>
-            See Exactly Where You Stand —{' '}
-            <span style={{ color: '#52C9A0' }}>Before You Spend a Dollar.</span>
+            <span style={{color:'#FF6B2B'}}>See Exactly</span> Where You Stand —{' '}
+            <span style={{color:'#52C9A0'}}>Before You Spend a Dollar.</span>
           </>
         }
         subtitle="Our AI scans your online presence across Google, maps, social, and every AI assistant and tells you exactly where you're losing customers."
         ctaLabel="Book Your Free Audit →"
         ctaHref={BOOKING_URL}
+        callout={<><span style={{color:'#52C9A0'}}>Most businesses have no idea</span> what their competitors are doing in local search. Our audit shows you everything — in under 5 minutes, for free.</>}
       />
 
       {/* What We Audit */}

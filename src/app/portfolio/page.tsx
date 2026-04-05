@@ -1,8 +1,10 @@
-import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/metadata';
 
-export const metadata: Metadata = {
-  title: 'Portfolio — Demand Signals',
-};
+export const metadata = buildMetadata({
+  title:       'Portfolio — Demand Signals',
+  description: 'Client work from Demand Signals — AI-powered websites, local SEO campaigns, agent systems, and demand generation for local businesses across Northern California.',
+  path:        '/portfolio',
+});
 
 const CLIENTS = [
   {
@@ -106,7 +108,7 @@ export default function PortfolioPage() {
             Client Work
           </p>
           <h1 style={{ color: '#fff', fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 800, lineHeight: 1.12, marginBottom: 20 }}>
-            Portfolio
+            <span style={{color:'#52C9A0'}}>Client Work.</span> <span style={{color:'#FF6B2B'}}>Real Results.</span>
           </h1>
           <p style={{ color: '#a0aec0', fontSize: '1.125rem', lineHeight: 1.7, maxWidth: 580, margin: '0 auto' }}>
             Real businesses. Real results. We work across industries in Northern California and beyond — building AI-powered systems that drive measurable demand.

@@ -1,8 +1,10 @@
-import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/metadata';
 
-export const metadata: Metadata = {
-  title: 'About Demand Signals',
-};
+export const metadata = buildMetadata({
+  title:       'About Demand Signals',
+  description: "We're an AI-first demand generation agency based in Northern California — built to help local and regional businesses compete at a national level using automation, AI agents, and real market data.",
+  path:        '/about',
+});
 
 export default function AboutPage() {
   return (
@@ -19,7 +21,7 @@ export default function AboutPage() {
             Who We Are
           </p>
           <h1 style={{ color: '#fff', fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 800, lineHeight: 1.12, marginBottom: 20 }}>
-            About Demand Signals
+            About <span style={{color:'#52C9A0'}}>Demand Signals</span> — <span style={{color:'#FF6B2B'}}>AI-First. Always On.</span>
           </h1>
           <p style={{ color: '#a0aec0', fontSize: '1.125rem', lineHeight: 1.7, maxWidth: 580, margin: '0 auto' }}>
             We're an AI-first demand generation agency based in Northern California — built to help local and regional businesses compete at a national level using automation, AI agents, and real market data.

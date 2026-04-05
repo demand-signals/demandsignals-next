@@ -1,0 +1,199 @@
+/* ─── Header shell ─────────────────────────────────────────── */
+.header {
+  background: #4A5578;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ─── Logo ─────────────────────────────────────────────────── */
+.logo {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.logoImage {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* ─── Desktop nav ──────────────────────────────────────────── */
+.desktopNav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.navItem {
+  position: relative;
+}
+
+.navTrigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: color var(--t), background var(--t);
+}
+
+.navTrigger:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.chevron {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid #FF6B2B;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 200;
+}
+
+.navLink {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: color var(--t), background var(--t);
+  text-decoration: none;
+}
+
+.navLink:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* shadcn NavigationMenuTrigger overrides */
+.navMenuDark [data-slot='navigation-menu-trigger'] {
+  color: rgba(255, 255, 255, 0.9);
+  background: transparent;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: inherit;
+}
+
+.navMenuDark [data-slot='navigation-menu-trigger']:hover,
+.navMenuDark [data-slot='navigation-menu-trigger'][data-popup-open],
+.navMenuDark [data-slot='navigation-menu-trigger'][data-open] {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.navMenuDark [data-slot='navigation-menu-trigger'] svg {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ─── CTA buttons ──────────────────────────────────────────── */
+.ctaGroup {
+  display: flex;
+  gap: 8px;
+  margin-left: 8px;
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 20px;
+  background: #ff6b2b;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: 100px;
+  text-decoration: none;
+  transition: transform var(--t), box-shadow var(--t);
+}
+
+.btnPrimary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(255, 107, 43, 0.4);
+}
+
+.btnOutline {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 18px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: 100px;
+  text-decoration: none;
+  transition: border-color var(--t);
+}
+
+.btnOutline:hover {
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+/* ─── Mobile hamburger ─────────────────────────────────────── */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.hamburgerBar {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+}
+
+/* ─── Responsive breakpoint ────────────────────────────────── */
+@media (max-width: 900px) {
+  .desktopNav {
+    display: none;
+  }
+  .hamburger {
+    display: flex;
+  }
+}

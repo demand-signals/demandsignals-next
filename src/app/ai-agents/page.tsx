@@ -1,8 +1,10 @@
-import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/metadata';
 
-export const metadata: Metadata = {
-  title: 'AI & Agents — Demand Signals',
-};
+export const metadata = buildMetadata({
+  title:       'AI & Agents — Demand Signals',
+  description: 'Custom AI agent systems for local businesses — research agents, content agents, voice agents, GEO optimization, workflow automation, and managed infrastructure. Northern California.',
+  path:        '/ai-agents',
+});
 
 const AGENT_SERVICES = [
   {
@@ -58,7 +60,7 @@ export default function AiAgentsPage() {
             Our Agent Stack
           </p>
           <h1 style={{ color: '#fff', fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 800, lineHeight: 1.12, marginBottom: 20 }}>
-            AI & Agents
+            <span style={{color:'#FF6B2B'}}>AI Agents</span> That <span style={{color:'#52C9A0'}}>Replace Entire Teams.</span>
           </h1>
           <p style={{ color: '#a0aec0', fontSize: '1.125rem', lineHeight: 1.7, maxWidth: 600, margin: '0 auto' }}>
             We run a specialized farm of AI agents — each purpose-built for a specific job. Research. Content. Voice. GEO. Automation. Reporting. They work 24/7 so your business doesn't have to stop.

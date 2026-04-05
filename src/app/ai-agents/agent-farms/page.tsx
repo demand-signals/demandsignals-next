@@ -1,13 +1,13 @@
 import { PageHero } from '@/components/sections/PageHero'
-import type { Metadata } from 'next'
+import { buildMetadata } from '@/lib/metadata'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { serviceSchema, breadcrumbSchema } from '@/lib/schema'
 
-export const metadata: Metadata = {
-  title: 'AI Agent Swarms — Replace Roles, Automate Operations 24/7',
-  description:
-    'Deploy custom AI agent swarms that replace your SEO agency, content writers, outreach reps, and analysts — running 24/7 for a fraction of the cost. Serving Northern California businesses.',
-  keywords: [
+export const metadata = buildMetadata({
+  title:              'AI Agent Swarms — Replace Roles, Automate Operations 24/7',
+  description:        'Deploy custom AI agent swarms that replace your SEO agency, content writers, outreach reps, and analysts — running 24/7 for a fraction of the cost. Serving Northern California businesses.',
+  path:               '/ai-agents/agent-farms',
+  keywords:           [
     'AI agent swarms local business',
     'AI agents replace marketing team',
     'automated AI agents Northern California',
@@ -16,20 +16,10 @@ export const metadata: Metadata = {
     'AI operations automation',
     'AI role replacement agency',
   ],
-  openGraph: {
-    title: 'AI Agent Swarms — Replace Roles, Automate Operations 24/7',
-    description:
-      'Custom AI agent networks that replace expensive roles — researcher, writer, outreach rep, analyst — running 24/7.',
-    url: 'https://demandsignals.co/ai-agents/agent-farms',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'AI Agent Swarms — Demand Signals' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'AI Agent Swarms for Local Business',
-    description: '19 agents running right now for our clients. Deploy your own swarm and replace expensive roles.',
-  },
-  alternates: { canonical: 'https://demandsignals.co/ai-agents/agent-farms' },
-}
+  ogDescription:      'Custom AI agent networks that replace expensive roles — researcher, writer, outreach rep, analyst — running 24/7.',
+  twitterTitle:       'AI Agent Swarms for Local Business',
+  twitterDescription: '10× more leads with one AI system. Deploy your own swarm and replace expensive roles.',
+})
 
 const roles = [
   {
@@ -77,9 +67,9 @@ const steps = [
 ]
 
 const stats = [
-  { value: '19', label: 'active agents running right now' },
-  { value: '$4,200', label: 'average monthly savings per client' },
-  { value: '24/7', label: 'continuous operation — no sick days' },
+  { value: '10×',  label: 'avg lead volume increase' },
+  { value: '68%',  label: 'lower cost per lead vs. agencies' },
+  { value: '24/7', label: 'always-on automated systems' },
 ]
 
 export default function AgentFarmsPage() {
@@ -103,13 +93,14 @@ export default function AgentFarmsPage() {
         eyebrow="AI Agent Swarms"
         title={
           <>
-            19 Agents Running Right Now.{' '}
-            <span style={{ color: '#52C9A0' }}>For Our Clients.</span>
+            <span style={{color:'#FF6B2B'}}>10× More Leads.</span>{' '}
+            <span style={{color:'#52C9A0'}}>One AI System.</span>
           </>
         }
         subtitle="We deploy custom networks of AI agents that replace specific expensive roles — researcher, writer, outreach rep, analyst."
         ctaLabel="Design My Agent Swarm"
         ctaHref="/contact"
+        callout={<>The average marketing agency costs <span style={{color:'#52C9A0'}}>$5,000–$15,000/month</span> and runs during business hours. Our AI agent swarms cost less and run 24/7.</>}
       />
 
       {/* What an Agent Swarm Does */}

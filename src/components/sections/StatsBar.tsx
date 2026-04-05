@@ -1,8 +1,8 @@
 const stats = [
-  { num: '14',   label: 'Sites Shipped' },
-  { num: '19',   label: 'Active AI Agents' },
-  { num: '3x',   label: 'Avg Lead Growth' },
-  { num: '24/7', label: 'Always On Systems' },
+  { num: '10×',   label: 'Avg Lead Volume Increase' },
+  { num: '68%',   label: 'Lower Cost Per Lead' },
+  { num: '3 mo.', label: 'Avg Time to First Page Rank' },
+  { num: '24/7',  label: 'Always-On — No Sick Days' },
 ]
 
 export function StatsBar() {

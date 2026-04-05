@@ -9,10 +9,12 @@ type PageHeroProps = {
   subtitle: string
   ctaLabel?: string
   ctaHref?: string
+  callout?: React.ReactNode
 }
 
-export function PageHero({ eyebrow, title, subtitle, ctaLabel = 'Get a Quote →', ctaHref = '/contact' }: PageHeroProps) {
+export function PageHero({ eyebrow, title, subtitle, ctaLabel = 'Get a Quote →', ctaHref = '/contact', callout }: PageHeroProps) {
   return (
+    <>
     <section
       aria-label="Page hero"
       style={{
@@ -83,5 +85,15 @@ export function PageHero({ eyebrow, title, subtitle, ctaLabel = 'Get a Quote →
         </div>
       </div>
     </section>
+    {callout && (
+      <section style={{ background: 'var(--dark)', padding: '64px 24px' }}>
+        <div style={{ maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
+          <p style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)', fontWeight: 700, color: '#fff', lineHeight: 1.5, margin: 0 }}>
+            {callout}
+          </p>
+        </div>
+      </section>
+    )}
+    </>
   )
 }

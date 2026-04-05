@@ -1,13 +1,13 @@
 import { PageHero } from '@/components/sections/PageHero'
-import type { Metadata } from 'next'
+import { buildMetadata } from '@/lib/metadata'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { serviceSchema, breadcrumbSchema } from '@/lib/schema'
 
-export const metadata: Metadata = {
-  title: 'Workflow Automation — Replace Manual Tasks with AI Pipelines',
-  description:
-    'We map your manual workflows and replace them with intelligent automation pipelines powered by n8n, Make, and custom AI agents. Stop doing things computers should do. Northern California.',
-  keywords: [
+export const metadata = buildMetadata({
+  title:              'Workflow Automation — Replace Manual Tasks with AI Pipelines',
+  description:        'We map your manual workflows and replace them with intelligent automation pipelines powered by n8n, Make, and custom AI agents. Stop doing things computers should do. Northern California.',
+  path:               '/ai-agents/automation',
+  keywords:           [
     'workflow automation small business',
     'n8n automation agency Northern California',
     'business process automation Sacramento',
@@ -16,20 +16,10 @@ export const metadata: Metadata = {
     'review request automation',
     'Make automation agency',
   ],
-  openGraph: {
-    title: 'Workflow Automation — Replace Manual Tasks with AI Pipelines',
-    description:
-      'Intelligent automation pipelines powered by n8n, Make, and custom AI agents — so your team stops doing things computers should do.',
-    url: 'https://demandsignals.co/ai-agents/automation',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Workflow Automation — Demand Signals' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Workflow Automation for Local Business',
-    description: 'Stop doing things computers should do. AI-powered automation pipelines built for local businesses.',
-  },
-  alternates: { canonical: 'https://demandsignals.co/ai-agents/automation' },
-}
+  ogDescription:      'Intelligent automation pipelines powered by n8n, Make, and custom AI agents — so your team stops doing things computers should do.',
+  twitterTitle:       'Workflow Automation for Local Business',
+  twitterDescription: 'Stop doing things computers should do. AI-powered automation pipelines built for local businesses.',
+})
 
 const workflows = [
   {
@@ -86,13 +76,14 @@ export default function AutomationPage() {
         eyebrow="Workflow Automation"
         title={
           <>
-            Stop Doing Things{' '}
-            <span style={{ color: '#FF6B2B' }}>Computers Should Do.</span>
+            <span style={{color:'#FF6B2B'}}>Stop Doing Things</span>{' '}
+            <span style={{color:'#52C9A0'}}>Computers Should Do.</span>
           </>
         }
         subtitle="We map your manual workflows and replace them with intelligent automation pipelines that run without oversight."
         ctaLabel="Audit My Workflows"
         ctaHref="/contact"
+        callout={<>The average knowledge worker spends <span style={{color:'#52C9A0'}}>41% of their time</span> on repetitive tasks that could be automated today. That's almost half your payroll.</>}
       />
 
       {/* Workflows We Automate */}

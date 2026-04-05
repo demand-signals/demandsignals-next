@@ -1,0 +1,54 @@
+/* ─── Dropdown panel ───────────────────────────────────────── */
+.panel {
+  background: #0f1729;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+.panelSingle {
+  min-width: 220px;
+}
+
+.panelDouble {
+  min-width: 360px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.875rem;
+  gap: 8px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.18s;
+}
+
+.item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+
+.badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 100px;
+  flex-shrink: 0;
+}
+
+.badgeFree {
+  background: var(--teal);
+  color: #fff;
+}
+
+.badgeSoon {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.55);
+}

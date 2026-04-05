@@ -17,7 +17,7 @@ import { faqSchema } from '@/lib/schema'
 export const metadata: Metadata = {
   title: 'Demand Signals — AI-Powered Websites. AI-Driven Marketing. Always On.',
   description:
-    'We build AI-powered websites and run AI-driven marketing for local businesses in Northern California. 14 clients. 3x leads. AI replaces your SEO agency, social media manager, and web developer — at a fraction of the cost.',
+    'We build AI-powered websites and run AI-driven marketing for local businesses in Northern California. Top 3 Google ranking in 90 days. 10× more leads from the same ad spend. AI replaces your SEO agency, social media manager, and web developer — at a fraction of the cost.',
   keywords: [
     'AI marketing agency Northern California',
     'AI demand generation',
@@ -33,14 +33,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Demand Signals — AI-Powered Websites. AI-Driven Marketing. Always On.',
     description:
-      'AI agent swarms, AI-powered websites, and automated marketing for local businesses. 14 clients. 3x leads. Always on.',
+      'AI agent swarms, AI-powered websites, and automated marketing for local businesses. 10× more leads. Top 3 Google ranking in 90 days. Always on.',
     url: 'https://demandsignals.co',
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Demand Signals — AI-Powered Demand Generation' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Demand Signals — AI-Powered Demand Generation',
-    description: 'AI agents + AI websites + automated marketing for local businesses. 14 clients. 3x leads.',
+    description: 'AI agents + AI websites + automated marketing for local businesses. 10× more leads. Top 3 Google ranking in 90 days.',
     images: ['/og-image.png'],
   },
   alternates: { canonical: 'https://demandsignals.co' },

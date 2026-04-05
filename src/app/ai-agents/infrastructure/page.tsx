@@ -1,13 +1,13 @@
 import { PageHero } from '@/components/sections/PageHero'
-import type { Metadata } from 'next'
+import { buildMetadata } from '@/lib/metadata'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { serviceSchema, breadcrumbSchema } from '@/lib/schema'
 
-export const metadata: Metadata = {
-  title: 'AI Agent Infrastructure — VPS, Monitoring & Managed Operations',
-  description:
-    'Enterprise-grade infrastructure for running, monitoring, and scaling AI agent systems — VPS hosting, API management, failover, and cost controls. Built for businesses that cannot afford downtime.',
-  keywords: [
+export const metadata = buildMetadata({
+  title:              'AI Agent Infrastructure — VPS, Monitoring & Managed Operations',
+  description:        'Enterprise-grade infrastructure for running, monitoring, and scaling AI agent systems — VPS hosting, API management, failover, and cost controls. Built for businesses that cannot afford downtime.',
+  path:               '/ai-agents/infrastructure',
+  keywords:           [
     'AI agent infrastructure',
     'managed AI operations Northern California',
     'VPS hosting AI agents',
@@ -16,20 +16,10 @@ export const metadata: Metadata = {
     'API management local business',
     'AI uptime SLA Sacramento',
   ],
-  openGraph: {
-    title: 'AI Agent Infrastructure — VPS, Monitoring & Managed Operations',
-    description:
-      'Enterprise-grade infrastructure for AI agent systems — VPS hosting, API management, failover, and 99.9% uptime SLA.',
-    url: 'https://demandsignals.co/ai-agents/infrastructure',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Agent Infrastructure — Demand Signals' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'AI Agent Infrastructure Management',
-    description: 'The engine room behind every demand signal. Infrastructure you never have to think about.',
-  },
-  alternates: { canonical: 'https://demandsignals.co/ai-agents/infrastructure' },
-}
+  ogDescription:      'Enterprise-grade infrastructure for AI agent systems — VPS hosting, API management, failover, and 99.9% uptime SLA.',
+  twitterTitle:       'AI Agent Infrastructure Management',
+  twitterDescription: 'The engine room behind every demand signal. Infrastructure you never have to think about.',
+})
 
 const whatWeRun = [
   {
@@ -94,13 +84,14 @@ export default function InfrastructurePage() {
         eyebrow="Agent Infrastructure"
         title={
           <>
-            The Engine Room Behind{' '}
-            <span style={{ color: '#52C9A0' }}>Every Demand Signal.</span>
+            The <span style={{color:'#52C9A0'}}>Engine Room</span> Behind Every{' '}
+            <span style={{color:'#FF6B2B'}}>Demand Signal.</span>
           </>
         }
         subtitle="Enterprise-grade infrastructure for running, monitoring, and scaling AI agent systems — built for businesses that can't afford downtime."
         ctaLabel="Talk Infrastructure"
         ctaHref="/contact"
+        callout={<>Most businesses buy tools. <span style={{color:'#52C9A0'}}>We build systems.</span> The difference is whether your AI investments compound over time or stay disconnected point solutions.</>}
       />
 
       {/* What We Run */}

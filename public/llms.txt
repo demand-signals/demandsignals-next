@@ -1,0 +1,58 @@
+# Demand Signals
+> AI-powered demand generation agency serving businesses across Northern California. We build AI websites, run local SEO, deploy AI agent swarms, and optimize for generative AI search (GEO).
+
+Demand Signals is a Northern California marketing agency specializing in AI-first demand generation. We help local businesses generate more leads, rank higher in Google, and appear in AI-powered search results (ChatGPT, Gemini, Perplexity). Founded in El Dorado County, CA. Contact: DemandSignals@gmail.com | (916) 542-2423
+
+## Services
+
+- [Websites & Web Apps](https://demandsignals.co/services/websites): AI-optimized websites built to rank in Google and get cited by AI search. Next.js, Core Web Vitals, schema markup, and AI content pipelines.
+- [WordPress Sites](https://demandsignals.co/services/wordpress): AI-managed WordPress sites with custom themes, WooCommerce, ACF Pro, and Claude API content pipelines. Managed on Verpex + Cloudflare CDN.
+- [React / Next.js WebApps](https://demandsignals.co/services/nextjs-webapps): Full-stack Next.js web applications with AI features, TypeScript, Supabase, and Vercel edge deployment.
+- [Vibe Coded WebApps](https://demandsignals.co/services/vibe-coded): AI-built web applications using Cursor, Claude Code, Lovable, and Base44. Prototype to production in days.
+- [iOS & Android Apps](https://demandsignals.co/services/mobile-apps): Cross-platform mobile apps with React Native and Expo — AI features, push notifications, App Store and Google Play publishing.
+- [UI/UX Design](https://demandsignals.co/services/ui-ux-design): Figma design systems, component libraries, user research, and AI-assisted prototyping.
+- [Local Demand Generation](https://demandsignals.co/services/local-demand): Full local SEO systems including Google Business Profile management, local citations, on-page SEO, and Map Pack domination.
+- [Content Marketing](https://demandsignals.co/services/content): AI content agents publishing city-specific blog posts, service pages, and local guides on a consistent schedule.
+
+## AI & Automation
+
+- [AI Agent Swarms](https://demandsignals.co/ai-agents/agent-farms): Networks of AI agents handling content, reviews, outreach, and analytics 24/7 — replacing entire marketing teams.
+- [GEO & LLM Optimization](https://demandsignals.co/ai-agents/geo-llm): Generative Engine Optimization — structured data, entity signals, and citation authority so your business appears when AI assistants are asked for local recommendations.
+- [AI Voice Systems](https://demandsignals.co/ai-agents/voice): AI-powered phone answering systems that handle inbound calls, qualify leads, and book appointments automatically.
+- [Workflow Automation](https://demandsignals.co/ai-agents/automation): End-to-end business process automation using AI agents — from lead intake to follow-up sequences to reporting.
+- [AI-Powered Outreach](https://demandsignals.co/ai-agents/outreach): Automated prospecting that researches leads, crafts personalized messages, and routes qualified replies to your inbox.
+- [Agent Infrastructure](https://demandsignals.co/ai-agents/infrastructure): The underlying AI systems and integrations that power automated marketing operations at scale.
+
+## Free Tools
+
+- [Free Demand Audit](https://demandsignals.co/tools/demand-audit): Instant audit of your current local search presence — see exactly where competitors are beating you.
+- [Intelligence Reports](https://demandsignals.co/tools/research-reports): Market intelligence reports for Northern California businesses.
+
+## Service Locations
+
+Demand Signals serves businesses throughout Northern California, including:
+
+- [El Dorado Hills, CA](https://demandsignals.co/locations/el-dorado-hills)
+- [Folsom, CA](https://demandsignals.co/locations/folsom)
+- [Sacramento, CA](https://demandsignals.co/locations/sacramento)
+- [Placerville, CA](https://demandsignals.co/locations/placerville)
+- [Roseville, CA](https://demandsignals.co/locations/roseville)
+- [Rocklin, CA](https://demandsignals.co/locations/rocklin)
+- [Granite Bay, CA](https://demandsignals.co/locations/granite-bay)
+- [Auburn, CA](https://demandsignals.co/locations/auburn)
+- [Citrus Heights, CA](https://demandsignals.co/locations/citrus-heights)
+- [Cameron Park, CA](https://demandsignals.co/locations/cameron-park)
+- [South Lake Tahoe, CA](https://demandsignals.co/locations/south-lake-tahoe)
+- [All Service Areas](https://demandsignals.co/locations)
+
+## Company
+
+- [About Demand Signals](https://demandsignals.co/about): Agency background, team, and mission.
+- [Portfolio](https://demandsignals.co/portfolio): Client work and case studies.
+- [Blog](https://demandsignals.co/blog): Articles on AI marketing, local SEO, GEO, and demand generation strategy.
+- [Contact](https://demandsignals.co/contact): Get a free quote or book a discovery call.
+
+## Optional
+
+- [Privacy Policy](https://demandsignals.co/privacy)
+- [Terms of Service](https://demandsignals.co/terms)

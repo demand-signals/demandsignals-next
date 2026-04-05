@@ -1,8 +1,10 @@
-import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/metadata';
 
-export const metadata: Metadata = {
-  title: 'Free Tools — Demand Signals',
-};
+export const metadata = buildMetadata({
+  title:       'Free Tools — Demand Signals',
+  description: 'Free AI-powered tools for local businesses — demand audits, intelligence reports, dynamic QR codes, and link intelligence. See where you stand before you spend a dollar.',
+  path:        '/tools',
+});
 
 const TOOLS = [
   {
@@ -58,7 +60,7 @@ export default function ToolsPage() {
             Free Tools
           </p>
           <h1 style={{ color: '#fff', fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 800, lineHeight: 1.12, marginBottom: 20 }}>
-            Tools That Actually Tell You Something
+            Tools That <span style={{color:'#52C9A0'}}>Actually Tell You Something</span> — <span style={{color:'#FF6B2B'}}>For Free.</span>
           </h1>
           <p style={{ color: '#a0aec0', fontSize: '1.125rem', lineHeight: 1.7, maxWidth: 580, margin: '0 auto' }}>
             Free, AI-powered tools built to give you real market intelligence — not generic scores and upsell walls.

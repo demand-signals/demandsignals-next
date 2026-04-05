@@ -1,13 +1,13 @@
-import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/metadata';
 import { PageHero } from '@/components/sections/PageHero';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { serviceSchema, breadcrumbSchema } from '@/lib/schema';
 
-export const metadata: Metadata = {
-  title: 'AI Content Marketing — Blog, GMB & Social for Local Business',
-  description:
-    'AI-powered content marketing for local businesses: weekly blog posts, GMB updates, social media, and email newsletters — all written by AI, reviewed by humans, published on schedule in Sacramento and Northern California.',
-  keywords: [
+export const metadata = buildMetadata({
+  title:              'AI Content Marketing — Blog, GMB & Social for Local Business',
+  description:        'AI-powered content marketing for local businesses: weekly blog posts, GMB updates, social media, and email newsletters — all written by AI, reviewed by humans, published on schedule in Sacramento and Northern California.',
+  path:               '/services/content',
+  keywords:           [
     'AI content marketing local business',
     'automated blog posts Northern California',
     'GMB content management Sacramento',
@@ -16,20 +16,10 @@ export const metadata: Metadata = {
     'El Dorado County content marketing',
     'AI writing agency',
   ],
-  openGraph: {
-    title: 'AI Content Marketing — Blog, GMB & Social for Local Business',
-    description:
-      'AI writes your blog posts, GMB updates, social media, and email while you run your business. 20–30 pieces of content per month.',
-    url: 'https://demandsignals.co/services/content',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'AI Content Marketing — Demand Signals' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'AI Content Marketing for Local Business',
-    description: 'AI writes your content while you run your business. Blog posts, GMB, social, email — published on schedule.',
-  },
-  alternates: { canonical: 'https://demandsignals.co/services/content' },
-};
+  ogDescription:      'AI writes your blog posts, GMB updates, social media, and email while you run your business. 20–30 pieces of content per month.',
+  twitterTitle:       'AI Content Marketing for Local Business',
+  twitterDescription: 'AI writes your content while you run your business. Blog posts, GMB, social, email — published on schedule.',
+});
 
 const WHAT_WE_PRODUCE = [
   { label: 'Weekly blog posts', detail: 'Long-form, keyword-targeted articles that rank in Google and get cited by AI assistants.' },
@@ -81,10 +71,11 @@ export default function ContentPage() {
       />
       <PageHero
         eyebrow="Content Marketing"
-        title={<><span style={{ color: '#52C9A0' }}>AI Writes Your Content</span> While You Run Your Business.</>}
+        title={<><span style={{color:'#52C9A0'}}>AI Writes Your Content</span> While You <span style={{color:'#FF6B2B'}}>Run Your Business.</span></>}
         subtitle="Daily blog posts, social media, GMB updates, and email — all written by AI, all approved before publishing."
         ctaLabel="See Content Samples →"
         ctaHref="/contact"
+        callout={<>Companies that publish consistently generate <span style={{color:'#52C9A0'}}>3× more leads</span> than those that don't. AI lets us publish at a pace no human team can match.</>}
       />
 
       {/* What We Produce */}

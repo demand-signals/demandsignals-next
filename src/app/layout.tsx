@@ -72,7 +72,9 @@ export const metadata: Metadata = {
     creator: '@demandsignals',
   },
   alternates: { canonical: 'https://demandsignals.co' },
-  verification: {},
+  verification: {
+    google: 'pending',   // placeholder — replace with real GSC verification code
+  },
   category: 'technology',
 }
 

@@ -1,13 +1,13 @@
 import { PageHero } from '@/components/sections/PageHero'
-import type { Metadata } from 'next'
+import { buildMetadata } from '@/lib/metadata'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { serviceSchema, breadcrumbSchema } from '@/lib/schema'
 
-export const metadata: Metadata = {
-  title: 'AI-Powered Outreach — Email & LinkedIn at Scale',
-  description:
-    'Hyper-personalized email and LinkedIn outreach sequences that fill your pipeline while you focus on closing. 3–8x higher reply rates powered by AI. Serving Northern California businesses.',
-  keywords: [
+export const metadata = buildMetadata({
+  title:              'AI-Powered Outreach — Email & LinkedIn at Scale',
+  description:        'Hyper-personalized email and LinkedIn outreach sequences that fill your pipeline while you focus on closing. 3–8x higher reply rates powered by AI. Serving Northern California businesses.',
+  path:               '/ai-agents/outreach',
+  keywords:           [
     'AI outreach agency Northern California',
     'automated email outreach Sacramento',
     'LinkedIn outreach automation',
@@ -16,20 +16,10 @@ export const metadata: Metadata = {
     'B2B outreach automation El Dorado County',
     'AI SDR replacement',
   ],
-  openGraph: {
-    title: 'AI-Powered Outreach — Email & LinkedIn at Scale',
-    description:
-      'Hyper-personalized outreach sequences across email and LinkedIn. 3–8x higher reply rates. Fill your pipeline while you close.',
-    url: 'https://demandsignals.co/ai-agents/outreach',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'AI-Powered Outreach — Demand Signals' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'AI-Powered Outreach for Local Business',
-    description: 'A full outreach team at a fraction of the cost. 3–8x higher reply rates from AI personalization at scale.',
-  },
-  alternates: { canonical: 'https://demandsignals.co/ai-agents/outreach' },
-}
+  ogDescription:      'Hyper-personalized outreach sequences across email and LinkedIn. 3–8x higher reply rates. Fill your pipeline while you close.',
+  twitterTitle:       'AI-Powered Outreach for Local Business',
+  twitterDescription: 'A full outreach team at a fraction of the cost. 3–8x higher reply rates from AI personalization at scale.',
+})
 
 const included = [
   {
@@ -80,13 +70,14 @@ export default function OutreachPage() {
         eyebrow="AI-Powered Outreach"
         title={
           <>
-            A Full Outreach Team.{' '}
-            <span style={{ color: '#52C9A0' }}>At a Fraction of the Cost.</span>
+            A <span style={{color:'#52C9A0'}}>Full Outreach Team.</span> At a{' '}
+            <span style={{color:'#FF6B2B'}}>Fraction of the Cost.</span>
           </>
         }
         subtitle="Hyper-personalized outreach sequences across email and LinkedIn that fill your pipeline while you focus on closing."
         ctaLabel="Start Outreach Campaign"
         ctaHref="/contact"
+        callout={<>A good SDR costs <span style={{color:'#52C9A0'}}>$60,000–$90,000/year</span> and sends 40–60 emails a day. Our AI outreach agents send thousands — personalized, researched, and on-brand.</>}
       />
 
       {/* What's Included */}

@@ -9,21 +9,24 @@ export const LOGO_URL =
 export const HERO_VIDEO_URL =
   'https://base44.app/api/apps/68ccebd683c4aa87ed81a043/files/public/68ccebd683c4aa87ed81a043/d76594fa5_demand_signals_penguines_shity_one_v1a.mp4'
 
+// ── Services dropdown ────────────────────────────────────────
 export const NAV_SERVICES = [
-  { label: 'Websites & Web Apps',     href: '/services/websites' },
-  { label: 'Local Demand Generation', href: '/services/local-demand' },
-  { label: 'GEO & Generative Search', href: '/ai-agents/geo-llm' },
-  { label: 'Content Marketing',       href: '/services/content' },
-  { label: 'Google My Business',      href: '/services/gmb' },
-  { label: 'Brand Identity & Design', href: '/services/brand-design' },
+  { label: 'WordPress Sites',         href: '/services/wordpress'      },
+  { label: 'React / Next.js WebApps', href: '/services/nextjs-webapps' },
+  { label: 'Vibe Coded WebApps',      href: '/services/vibe-coded'     },
+  { label: 'iOS & Android Apps',      href: '/services/mobile-apps'    },
+  { label: 'UI/UX Design',            href: '/services/ui-ux-design'   },
+  { label: 'Local Demand Generation', href: '/services/local-demand'   },
+  { label: 'GEO & Generative Search', href: '/ai-agents/geo-llm'       },
+  { label: 'Content Marketing',       href: '/services/content'        },
 ]
 
-export const NAV_AI = [
-  { label: 'AI Agent Swarms',         href: '/ai-agents/agent-farms' },
-  { label: 'AI Voice Systems',       href: '/ai-agents/voice' },
-  { label: 'Workflow Automation',    href: '/ai-agents/automation' },
-  { label: 'AI-Powered Outreach',    href: '/ai-agents/outreach' },
-  { label: 'GEO & LLM Optimization', href: '/ai-agents/geo-llm' },
+export const NAV_AI_AGENTS = [
+  { label: 'AI Agent Farms',         href: '/ai-agents/agent-farms'    },
+  { label: 'AI Voice Systems',       href: '/ai-agents/voice'          },
+  { label: 'Workflow Automation',    href: '/ai-agents/automation'     },
+  { label: 'AI-Powered Outreach',    href: '/ai-agents/outreach'       },
+  { label: 'GEO & LLM Optimization', href: '/ai-agents/geo-llm'       },
   { label: 'Agent Infrastructure',   href: '/ai-agents/infrastructure' },
 ]
 
@@ -32,6 +35,17 @@ export const NAV_TOOLS = [
   { label: 'Intelligence Reports', href: '/tools/research-reports', badge: 'Free' },
   { label: 'Demand Links',         href: '/tools/demand-links',     badge: 'Soon' },
   { label: 'Dynamic QR Codes',     href: '/tools/dynamic-qr',       badge: 'Soon' },
+]
+
+// Legacy aliases kept for any existing imports
+export const NAV_WEBSITES  = NAV_SERVICES
+export const NAV_DEMAND    = NAV_SERVICES
+export const NAV_CONTENT   = NAV_SERVICES
+export const NAV_ABOUT     = [
+  { label: 'About Us',          href: '/about'     },
+  { label: 'Portfolio',         href: '/portfolio' },
+  { label: 'Blog',              href: '/blog'      },
+  { label: 'Service Locations', href: '/locations' },
 ]
 
 export const NAV_LOCATIONS = [

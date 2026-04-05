@@ -123,7 +123,8 @@ export default function ResearchReportsPage() {
             Free Intelligence Reports
           </p>
           <h1 style={{ color: '#fff', fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 800, lineHeight: 1.12, marginBottom: 20 }}>
-            Know Exactly Where You Stand<br />Before You Spend a Dollar
+            Know Exactly <span style={{color:'#52C9A0'}}>Where You Stand</span> —{' '}
+            <span style={{color:'#FF6B2B'}}>Before You Spend a Dollar.</span>
           </h1>
           <p style={{ color: '#a0aec0', fontSize: '1.125rem', lineHeight: 1.7, maxWidth: 600, margin: '0 auto' }}>
             Our AI research agents build custom intelligence reports in 48 hours. Real data. Real recommendations. Zero cost for your first report.

@@ -1,13 +1,13 @@
 import { PageHero } from '@/components/sections/PageHero'
-import type { Metadata } from 'next'
+import { buildMetadata } from '@/lib/metadata'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { serviceSchema, breadcrumbSchema } from '@/lib/schema'
 
-export const metadata: Metadata = {
-  title: 'GEO & LLM Optimization — Get Cited by ChatGPT, Gemini & Perplexity',
-  description:
-    'Optimize your business to appear in AI-generated answers across ChatGPT, Gemini, Perplexity, and every AI assistant your customers use. Generative Engine Optimization for local businesses in Northern California.',
-  keywords: [
+export const metadata = buildMetadata({
+  title:              'GEO & LLM Optimization — Get Cited by ChatGPT, Gemini & Perplexity',
+  description:        'Optimize your business to appear in AI-generated answers across ChatGPT, Gemini, Perplexity, and every AI assistant your customers use. Generative Engine Optimization for local businesses in Northern California.',
+  path:               '/ai-agents/geo-llm',
+  keywords:           [
     'GEO optimization Northern California',
     'generative engine optimization Sacramento',
     'LLM optimization local business',
@@ -16,20 +16,10 @@ export const metadata: Metadata = {
     'answer engine optimization',
     'AI search optimization agency',
   ],
-  openGraph: {
-    title: 'GEO & LLM Optimization — Get Cited by ChatGPT, Gemini & Perplexity',
-    description:
-      'When someone asks ChatGPT who to hire — your name comes up. Generative Engine Optimization for local businesses.',
-    url: 'https://demandsignals.co/ai-agents/geo-llm',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'GEO & LLM Optimization — Demand Signals' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'GEO & LLM Optimization for Local Business',
-    description: '90% of businesses are invisible to AI assistants. We change that with GEO and LLM optimization.',
-  },
-  alternates: { canonical: 'https://demandsignals.co/ai-agents/geo-llm' },
-}
+  ogDescription:      'When someone asks ChatGPT who to hire — your name comes up. Generative Engine Optimization for local businesses.',
+  twitterTitle:       'GEO & LLM Optimization for Local Business',
+  twitterDescription: '90% of businesses are invisible to AI assistants. We change that with GEO and LLM optimization.',
+})
 
 const layers = [
   {
@@ -97,23 +87,15 @@ export default function GeoLlmPage() {
         title={
           <>
             When Someone Asks ChatGPT Who to Hire —{' '}
-            <span style={{ color: '#52C9A0' }}>Your Name Comes Up.</span>
+            <span style={{color:'#52C9A0'}}>Your Name</span>{' '}
+            <span style={{color:'#FF6B2B'}}>Comes Up.</span>
           </>
         }
         subtitle="We optimize your business to appear in AI-generated answers across ChatGPT, Gemini, Perplexity, and every AI assistant your customers use."
         ctaLabel="Run My AI Visibility Audit"
         ctaHref="/contact"
+        callout={<><span style={{color:'#52C9A0'}}>90% of businesses</span> are invisible to AI assistants. When a potential customer asks an AI who to call, they never come up. We change that.</>}
       />
-
-      {/* Callout */}
-      <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
-          <p style={{ fontSize: 'clamp(1.4rem, 2.8vw, 1.9rem)', fontWeight: 700, color: '#fff', lineHeight: 1.45, margin: 0 }}>
-            <span style={{ color: '#52C9A0' }}>90% of businesses</span> are invisible to AI assistants.{' '}
-            When a potential customer asks an AI who to call, they never come up. We change that.
-          </p>
-        </div>
-      </section>
 
       {/* Three Layers */}
       <section style={{ background: 'var(--light)', padding: '72px 24px' }}>

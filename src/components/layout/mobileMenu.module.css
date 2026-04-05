@@ -1,0 +1,31 @@
+/* ─── Mobile slide-down menu ───────────────────────────────── */
+.menu {
+  background: var(--dark-2);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 16px 24px 24px;
+}
+
+.menuLink {
+  display: block;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: color var(--t);
+}
+
+.menuLink:hover {
+  color: #fff;
+}
+
+.ctaRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.ctaFlex {
+  flex: 1;
+  justify-content: center;
+}

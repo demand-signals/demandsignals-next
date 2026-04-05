@@ -1,13 +1,13 @@
 import { PageHero } from '@/components/sections/PageHero'
-import type { Metadata } from 'next'
+import { buildMetadata } from '@/lib/metadata'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { serviceSchema, breadcrumbSchema } from '@/lib/schema'
 
-export const metadata: Metadata = {
-  title: 'AI Voice Systems — Answer Every Call, Book Every Appointment',
-  description:
-    'AI voice agents that qualify leads, book appointments, answer FAQs, and follow up 24/7 — without a human receptionist. Never miss a call again. Serving local businesses in Northern California.',
-  keywords: [
+export const metadata = buildMetadata({
+  title:              'AI Voice Systems — Answer Every Call, Book Every Appointment',
+  description:        'AI voice agents that qualify leads, book appointments, answer FAQs, and follow up 24/7 — without a human receptionist. Never miss a call again. Serving local businesses in Northern California.',
+  path:               '/ai-agents/voice',
+  keywords:           [
     'AI voice agent local business',
     'AI receptionist Northern California',
     'automated call answering Sacramento',
@@ -16,20 +16,10 @@ export const metadata: Metadata = {
     'after-hours call handling El Dorado County',
     'AI phone system small business',
   ],
-  openGraph: {
-    title: 'AI Voice Systems — Answer Every Call, Book Every Appointment',
-    description:
-      'AI voice agents that qualify leads, book appointments, answer FAQs, and follow up 24/7 — without a human receptionist.',
-    url: 'https://demandsignals.co/ai-agents/voice',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'AI Voice Systems — Demand Signals' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'AI Voice Systems for Local Business',
-    description: 'Your phone answered every call, every time. AI voice agents for lead qualification, booking, and FAQs.',
-  },
-  alternates: { canonical: 'https://demandsignals.co/ai-agents/voice' },
-}
+  ogDescription:      'AI voice agents that qualify leads, book appointments, answer FAQs, and follow up 24/7 — without a human receptionist.',
+  twitterTitle:       'AI Voice Systems for Local Business',
+  twitterDescription: 'Your phone answered every call, every time. AI voice agents for lead qualification, booking, and FAQs.',
+})
 
 const useCases = [
   {
@@ -82,33 +72,15 @@ export default function VoicePage() {
         eyebrow="AI Voice Systems"
         title={
           <>
-            Your Phone Answered.{' '}
-            <span style={{ color: '#52C9A0' }}>Every Call. Every Time.</span>
+            Your Phone <span style={{color:'#52C9A0'}}>Answered.</span>{' '}
+            <span style={{color:'#FF6B2B'}}>Every Call. Every Time.</span>
           </>
         }
         subtitle="AI voice agents that qualify leads, book appointments, answer FAQs, and follow up — without a human receptionist."
         ctaLabel="See a Demo"
         ctaHref="/contact"
+        callout={<><span style={{color:'#52C9A0'}}>62% of calls to small businesses</span> go unanswered. Every missed call is a lead that called your competitor instead. We answer every one.</>}
       />
-
-      {/* Callout stat */}
-      <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
-          <blockquote style={{
-            fontSize: 'clamp(1.4rem, 3vw, 2rem)',
-            fontWeight: 700,
-            color: '#fff',
-            lineHeight: 1.4,
-            borderLeft: 'none',
-            margin: 0,
-            padding: 0,
-          }}>
-            "The average business misses{' '}
-            <span style={{ color: '#52C9A0' }}>62% of calls.</span>{' '}
-            Our voice agents answer every one."
-          </blockquote>
-        </div>
-      </section>
 
       {/* Use Cases */}
       <section style={{ background: 'var(--light)', padding: '72px 24px' }}>

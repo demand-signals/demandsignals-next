@@ -1,13 +1,13 @@
-import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/metadata';
 import { PageHero } from '@/components/sections/PageHero';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { serviceSchema, breadcrumbSchema } from '@/lib/schema';
 
-export const metadata: Metadata = {
-  title: 'Local Demand Generation — El Dorado County & Sacramento SEO',
-  description:
-    'AI-powered local SEO, GMB management, and hyper-local content that puts your business at the top of Google Maps and local search in El Dorado County, Sacramento, and Northern California.',
-  keywords: [
+export const metadata = buildMetadata({
+  title:              'Local Demand Generation — El Dorado County & Sacramento SEO',
+  description:        'AI-powered local SEO, GMB management, and hyper-local content that puts your business at the top of Google Maps and local search in El Dorado County, Sacramento, and Northern California.',
+  path:               '/services/local-demand',
+  keywords:           [
     'local SEO El Dorado County',
     'local demand generation Sacramento',
     'GMB management Northern California',
@@ -16,20 +16,10 @@ export const metadata: Metadata = {
     'Folsom SEO agency',
     'El Dorado Hills marketing',
   ],
-  openGraph: {
-    title: 'Local Demand Generation — El Dorado County & Sacramento SEO',
-    description:
-      'AI-powered local SEO and GMB management that puts your business at the top of local search in Northern California.',
-    url: 'https://demandsignals.co/services/local-demand',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Local Demand Generation — Demand Signals' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Local Demand Generation for El Dorado County & Sacramento',
-    description: 'AI-powered local SEO, GMB management, and hyper-local content. Be the first name found in your market.',
-  },
-  alternates: { canonical: 'https://demandsignals.co/services/local-demand' },
-};
+  ogDescription:      'AI-powered local SEO and GMB management that puts your business at the top of local search in Northern California.',
+  twitterTitle:       'Local Demand Generation for El Dorado County & Sacramento',
+  twitterDescription: 'AI-powered local SEO, GMB management, and hyper-local content. Be the first name found in your market.',
+});
 
 const STACK_ITEMS = [
   {
@@ -59,9 +49,9 @@ const STACK_ITEMS = [
 ];
 
 const STATS = [
-  { value: '14', label: 'Active clients' },
-  { value: '3x', label: 'Avg lead increase' },
-  { value: '24/7', label: 'AI agents running' },
+  { value: '10×',  label: 'avg lead volume increase' },
+  { value: '68%',  label: 'lower cost per lead vs. agencies' },
+  { value: '24/7', label: 'always-on automated systems' },
 ];
 
 export default function LocalDemandPage() {
@@ -83,15 +73,16 @@ export default function LocalDemandPage() {
       />
       <PageHero
         eyebrow="Local Demand Generation"
-        title={<>Be the First Name People Find <span style={{ color: '#52C9A0' }}>in Your Market.</span></>}
+        title={<>Be the <span style={{color:'#FF6B2B'}}>First Name</span> People Find <span style={{color:'#52C9A0'}}>in Your Market.</span></>}
         subtitle="AI-powered local SEO, GMB management, and hyper-local content that puts you on the map — literally."
         ctaLabel="Get Your Market Audit →"
         ctaHref="/contact"
+        callout={<><span style={{color:'#52C9A0'}}>46% of all Google searches</span> have local intent. The businesses that own the Map Pack capture that demand. Everyone else pays for ads.</>}
       />
 
       {/* Local Demand Stack */}
       <section style={{ background: 'var(--light)', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 52 }}>
             <p style={{ color: 'var(--teal)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.85rem', marginBottom: 10 }}>
               How We Do It
@@ -124,7 +115,7 @@ export default function LocalDemandPage() {
 
       {/* Stats Row */}
       <section style={{ background: '#fff', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 860, margin: '0 auto' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
@@ -154,7 +145,7 @@ export default function LocalDemandPage() {
 
       {/* Proof Statement */}
       <section style={{ background: 'var(--light)', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 860, margin: '0 auto' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{
             background: 'linear-gradient(135deg, #080e1f 0%, #1d2330 100%)',
             borderRadius: 20,
