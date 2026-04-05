@@ -6,11 +6,9 @@ const industries = [
   { emoji: '🏠', label: 'Real Estate & Property' },
   { emoji: '🛒', label: 'Specialty Retail' },
   { emoji: '🥊', label: 'Fitness & Sports' },
-  { emoji: '🚗', label: 'Auto & Marine Services' },
   { emoji: '💆', label: 'Health & Beauty' },
   { emoji: '🎓', label: 'Education & Training' },
   { emoji: '🌿', label: 'Landscape & Outdoor' },
-  { emoji: '⚡', label: 'Home Services' },
 ];
 
 export default function IndustriesGrid() {
@@ -36,8 +34,9 @@ export default function IndustriesGrid() {
 
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
             gap: 16,
           }}
         >
@@ -49,6 +48,7 @@ export default function IndustriesGrid() {
                 border: '1px solid var(--border)',
                 borderRadius: 10,
                 padding: '20px 16px',
+                width: 180,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
