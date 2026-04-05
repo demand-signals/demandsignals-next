@@ -1,151 +1,222 @@
 'use client'
 
-const scores = [
-  { label: 'Performance', value: 100, color: '#0cce6b' },
-  { label: 'Accessibility', value: 94, color: '#0cce6b' },
-  { label: 'Best Practices', value: 100, color: '#0cce6b' },
-  { label: 'SEO', value: 100, color: '#0cce6b' },
+const mobileScores = [
+  { label: 'Performance', value: 97 },
+  { label: 'Accessibility', value: 94 },
+  { label: 'Best Practices', value: 100 },
+  { label: 'SEO', value: 100 },
 ]
 
-function ScoreRing({ value, label, color }: { value: number; label: string; color: string }) {
-  const radius = 54
+const desktopScores = [
+  { label: 'Performance', value: 100 },
+  { label: 'Accessibility', value: 94 },
+  { label: 'Best Practices', value: 100 },
+  { label: 'SEO', value: 100 },
+]
+
+const mobileMetrics = [
+  { label: 'First Contentful Paint', value: '1.2s', good: true },
+  { label: 'Largest Contentful Paint', value: '2.6s', good: false },
+  { label: 'Total Blocking Time', value: '60ms', good: true },
+  { label: 'Cumulative Layout Shift', value: '0', good: true },
+  { label: 'Speed Index', value: '1.3s', good: true },
+]
+
+const desktopMetrics = [
+  { label: 'First Contentful Paint', value: '0.3s', good: true },
+  { label: 'Largest Contentful Paint', value: '0.6s', good: true },
+  { label: 'Total Blocking Time', value: '0ms', good: true },
+  { label: 'Cumulative Layout Shift', value: '0', good: true },
+  { label: 'Speed Index', value: '0.4s', good: true },
+]
+
+function scoreColor(value: number) {
+  if (value >= 90) return '#0cce6b'
+  if (value >= 50) return '#ffa400'
+  return '#f33'
+}
+
+function ScoreRing({ value, label, size = 90 }: { value: number; label: string; size?: number }) {
+  const radius = (size / 2) - 6
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (value / 100) * circumference
+  const color = scoreColor(value)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-      <div style={{ position: 'relative', width: 120, height: 120 }}>
-        <svg width="120" height="120" viewBox="0 0 120 120">
-          {/* Background ring */}
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+      <div style={{ position: 'relative', width: size, height: size }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
           <circle
-            cx="60" cy="60" r={radius}
-            fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8"
+            cx={size/2} cy={size/2} r={radius}
+            fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="6"
           />
-          {/* Score ring */}
           <circle
-            cx="60" cy="60" r={radius}
-            fill="none" stroke={color} strokeWidth="8"
+            cx={size/2} cy={size/2} r={radius}
+            fill="none" stroke={color} strokeWidth="6"
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={offset}
-            transform="rotate(-90 60 60)"
-            style={{ transition: 'stroke-dashoffset 1s ease' }}
+            transform={`rotate(-90 ${size/2} ${size/2})`}
           />
         </svg>
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '2rem', fontWeight: 800, color: '#fff',
+          fontSize: size > 80 ? '1.5rem' : '1.1rem', fontWeight: 800, color,
         }}>
           {value}
         </div>
       </div>
-      <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'rgba(255,255,255,0.75)' }}>
+      <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.55)', textAlign: 'center' }}>
         {label}
       </span>
     </div>
   )
 }
 
-export default function LighthouseScores() {
+function DeviceCard({ title, icon, scores, metrics }: {
+  title: string
+  icon: React.ReactNode
+  scores: typeof mobileScores
+  metrics: typeof mobileMetrics
+}) {
   return (
-    <section style={{ background: 'var(--dark)', padding: '80px 24px' }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 56,
-          alignItems: 'center',
-        }}>
-          {/* Left — copy */}
-          <div>
-            <span style={{
-              display: 'inline-block',
-              background: 'rgba(12, 206, 107, 0.15)',
-              color: '#0cce6b',
-              padding: '6px 18px',
-              borderRadius: 100,
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              marginBottom: 16,
-            }}>
-              Performance Matters
-            </span>
-            <h2 style={{
-              color: '#fff',
-              fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)',
-              fontWeight: 800,
-              lineHeight: 1.2,
-              marginBottom: 20,
-            }}>
-              Green Scores Rank Higher. We Build Green.
-            </h2>
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1rem', lineHeight: 1.7, marginBottom: 16 }}>
-              Google uses Lighthouse scores as a ranking signal. Sites that score green across Performance, Accessibility, Best Practices, and SEO get preferential treatment in search results.
-            </p>
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1rem', lineHeight: 1.7, marginBottom: 24 }}>
-              Most agencies deliver sites scoring 40-60. Every site we ship scores 90+. That&apos;s not a flex — it&apos;s an unfair advantage your competitors don&apos;t have.
-            </p>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 10,
-              background: 'rgba(12, 206, 107, 0.1)',
-              border: '1px solid rgba(12, 206, 107, 0.25)',
-              borderRadius: 10, padding: '12px 18px',
-            }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0cce6b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 6 9 17l-5-5" />
-              </svg>
-              <span style={{ color: '#0cce6b', fontSize: '0.85rem', fontWeight: 600 }}>
-                This site&apos;s live Lighthouse scores — tested right now
-              </span>
-            </div>
-          </div>
+    <div style={{
+      background: 'rgba(255,255,255,0.04)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 20,
+      padding: '32px 28px',
+      flex: 1,
+      minWidth: 320,
+    }}>
+      {/* Device header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
+        {icon}
+        <span style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem' }}>{title}</span>
+      </div>
 
-          {/* Right — score rings */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: 32,
-            justifyItems: 'center',
-          }}>
-            {scores.map(s => (
-              <ScoreRing key={s.label} {...s} />
-            ))}
-          </div>
+      {/* Score rings row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 28 }}>
+        {scores.map(s => (
+          <ScoreRing key={s.label} value={s.value} label={s.label} size={80} />
+        ))}
+      </div>
+
+      {/* Metrics */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 20 }}>
+        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>
+          Core Web Vitals
         </div>
-
-        {/* Bottom legend */}
-        <div style={{
-          display: 'flex', justifyContent: 'center', gap: 32,
-          marginTop: 48, paddingTop: 32,
-          borderTop: '1px solid rgba(255,255,255,0.08)',
-          flexWrap: 'wrap',
-        }}>
-          {[
-            { color: '#f33', range: '0-49', label: 'Poor' },
-            { color: '#ffa400', range: '50-89', label: 'Needs Work' },
-            { color: '#0cce6b', range: '90-100', label: 'Good' },
-          ].map(item => (
-            <div key={item.range} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.color }} />
-              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem' }}>
-                {item.range} — {item.label}
-              </span>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px' }}>
+          {metrics.map(m => (
+            <div key={m.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: m.good ? '#0cce6b' : '#ffa400', flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)' }}>{m.label}</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: m.good ? '#0cce6b' : '#ffa400' }}>{m.value}</div>
+              </div>
             </div>
           ))}
         </div>
       </div>
+    </div>
+  )
+}
 
-      <style>{`
-        @media (max-width: 768px) {
-          section > div > div:first-child {
-            grid-template-columns: 1fr !important;
-            text-align: center;
-          }
-        }
-      `}</style>
+const PhoneIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+    <line x1="12" y1="18" x2="12" y2="18" strokeWidth="2" />
+  </svg>
+)
+
+const DesktopIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+    <line x1="8" y1="21" x2="16" y2="21" />
+    <line x1="12" y1="17" x2="12" y2="21" />
+  </svg>
+)
+
+export default function LighthouseScores() {
+  return (
+    <section style={{ background: 'var(--dark)', padding: '80px 24px', overflow: 'hidden' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <span style={{
+            display: 'inline-block',
+            background: 'rgba(12, 206, 107, 0.15)',
+            color: '#0cce6b',
+            padding: '6px 18px',
+            borderRadius: 100,
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            marginBottom: 14,
+          }}>
+            Google Lighthouse Audit
+          </span>
+          <h2 style={{
+            color: '#fff',
+            fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)',
+            fontWeight: 800,
+            lineHeight: 1.2,
+            marginBottom: 16,
+          }}>
+            Green Scores Rank Higher. We Build Green.
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1.05rem', lineHeight: 1.65, maxWidth: 680, margin: '0 auto' }}>
+            Google uses Chrome Lighthouse audits as a direct ranking signal. Sites that score green across Performance, Accessibility, Best Practices, and SEO get preferential treatment in search results. Most agencies deliver sites scoring 40-60. We ship 90+.
+          </p>
+        </div>
+
+        {/* Two device cards */}
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 40 }}>
+          <DeviceCard title="Mobile" icon={<PhoneIcon />} scores={mobileScores} metrics={mobileMetrics} />
+          <DeviceCard title="Desktop" icon={<DesktopIcon />} scores={desktopScores} metrics={desktopMetrics} />
+        </div>
+
+        {/* Bottom bar */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.08)',
+          flexWrap: 'wrap', gap: 20,
+        }}>
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            {[
+              { color: '#f33', range: '0-49', label: 'Poor' },
+              { color: '#ffa400', range: '50-89', label: 'Needs Work' },
+              { color: '#0cce6b', range: '90-100', label: 'Good' },
+            ].map(item => (
+              <div key={item.range} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: item.color }} />
+                <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.78rem' }}>
+                  {item.range} — {item.label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Badge */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: 'rgba(12, 206, 107, 0.08)',
+            border: '1px solid rgba(12, 206, 107, 0.2)',
+            borderRadius: 8, padding: '8px 14px',
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0cce6b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+            <span style={{ color: '#0cce6b', fontSize: '0.78rem', fontWeight: 600 }}>
+              Live audit of dsig.demandsignals.dev — April 2026
+            </span>
+          </div>
+        </div>
+      </div>
     </section>
   )
 }
