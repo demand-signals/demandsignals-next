@@ -65,6 +65,9 @@ export type ServicePageProps = {
   /* Blog */
   serviceCategory?: ServiceCategory
 
+  /* Custom proof section (renders before CTA) */
+  proofSection?: React.ReactNode
+
   /* CTA */
   ctaHeading: string
   ctaText: string
@@ -80,7 +83,7 @@ export function ServicePageTemplate({
   featuresEyebrow = 'What We Deliver', featuresHeading, features,
   techEyebrow, techHeading, techDescription, techStack,
   aiCalloutEyebrow, aiCalloutHeading, aiCalloutText,
-  faqs, serviceCategory,
+  faqs, serviceCategory, proofSection,
   ctaHeading, ctaText, ctaPrimaryLabel, ctaPrimaryHref = '/contact',
   ctaSecondaryLabel = 'See Portfolio', ctaSecondaryHref = '/portfolio',
 }: ServicePageProps) {
@@ -179,6 +182,9 @@ export function ServicePageTemplate({
         </section>
       )}
 
+      {/* Blog Marquee */}
+      {serviceCategory && <BlogPostMarquee serviceCategory={serviceCategory} />}
+
       {/* FAQ Section */}
       {faqs.length > 0 && (
         <section style={{ background: '#fff', padding: '72px 24px' }}>
@@ -205,8 +211,8 @@ export function ServicePageTemplate({
         </section>
       )}
 
-      {/* Blog Marquee */}
-      {serviceCategory && <BlogPostMarquee serviceCategory={serviceCategory} />}
+      {/* Proof Section (page-specific) */}
+      {proofSection}
 
       {/* CTA */}
       <section style={{ background: '#FF6B2B', padding: '72px 24px', textAlign: 'center' }}>

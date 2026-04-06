@@ -10,7 +10,6 @@ export const metadata = buildMetadata({
 
 export default function VibeCodedPage() {
   return (
-    <>
     <ServicePageTemplate
       eyebrow="Vibe Coded Web Apps"
       titleHtml={<><span style={{color:'#FF6B2B'}}>Vibe Coded Apps</span><br /><span style={{color:'#52C9A0'}}>Ship in Days, Not Months.</span></>}
@@ -55,34 +54,34 @@ export default function VibeCodedPage() {
       ctaText="Describe what you need and we'll tell you how fast we can build it — usually same day."
       ctaPrimaryLabel="Let's Build It →"
       serviceCategory="websites-apps"
+      proofSection={
+        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
+                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                    Speed Metrics
+                  </span>
+                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
+                    Ship Speed Advantage
+                  </h2>
+                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
+                    Vibe coding with Cursor and Claude Code collapses timelines from months to days, delivering production software at a fraction of traditional cost.
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+                    {[
+                      { value: '5-10x', label: 'Faster Delivery' },
+                      { value: '40-60%', label: 'Cost Reduction' },
+                      { value: '73%', label: 'AI-Assisted Code' },
+                      { value: '2-5x', label: 'Productivity Gain' },
+                    ].map(s => (
+                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
+                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+      }
     />
-      {/* Proof Section */}
-      <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            Speed Metrics
-          </span>
-          <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-            Ship Speed Advantage
-          </h2>
-          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-            Vibe coding with Cursor and Claude Code collapses timelines from months to days, delivering production software at a fraction of traditional cost.
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-            {[
-              { value: '5-10x', label: 'Faster Delivery' },
-              { value: '40-60%', label: 'Cost Reduction' },
-              { value: '73%', label: 'AI-Assisted Code' },
-              { value: '2-5x', label: 'Productivity Gain' },
-            ].map(s => (
-              <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    </>
   )
 }

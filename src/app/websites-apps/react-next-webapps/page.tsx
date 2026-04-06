@@ -11,8 +11,7 @@ export const metadata = buildMetadata({
 
 export default function ReactNextPage() {
   return (
-    <>
-      <ServicePageTemplate
+    <ServicePageTemplate
         eyebrow="React / Next.js Development"
         titleHtml={<><span style={{color:'#FF6B2B'}}>Next.js Apps</span> With<br /><span style={{color:'#52C9A0'}}>AI Built In.</span></>}
         subtitle="Full-stack web applications on Next.js 16 — TypeScript, Supabase, Claude API, and Vercel edge deployment from day one."
@@ -58,8 +57,7 @@ export default function ReactNextPage() {
         ctaText="Tell us what you're building and we'll scope the architecture, timeline, and budget within 48 hours."
         ctaPrimaryLabel="Start My App Build →"
         serviceCategory="websites-apps"
+        proofSection={<LighthouseScores />}
       />
-      <LighthouseScores />
-    </>
   )
 }

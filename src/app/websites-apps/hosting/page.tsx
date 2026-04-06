@@ -10,7 +10,6 @@ export const metadata = buildMetadata({
 
 export default function HostingPage() {
   return (
-    <>
     <ServicePageTemplate
       eyebrow="Agent & App Hosting"
       titleHtml={<><span style={{color:'#FF6B2B'}}>Managed Infrastructure</span><br /><span style={{color:'#52C9A0'}}>Zero DevOps Required.</span></>}
@@ -54,34 +53,34 @@ export default function HostingPage() {
       ctaText="We handle the infrastructure so you can focus on your business. No servers to manage, no SSL to renew, no uptime to worry about."
       ctaPrimaryLabel="Get Started →"
       serviceCategory="websites-apps"
+      proofSection={
+        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
+                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                    Infrastructure Stats
+                  </span>
+                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
+                    Infrastructure That Performs
+                  </h2>
+                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
+                    Enterprise infrastructure without enterprise complexity. Vercel, Cloudflare, and Supabase deliver world-class performance at startup pricing.
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+                    {[
+                      { value: '99.99%', label: 'Uptime Guarantee' },
+                      { value: '<100ms', label: 'Global Latency' },
+                      { value: '300+', label: 'Edge Locations' },
+                      { value: '0 Config', label: 'Deploy Complexity' },
+                    ].map(s => (
+                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
+                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+      }
     />
-      {/* Proof Section */}
-      <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            Infrastructure Stats
-          </span>
-          <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-            Infrastructure That Performs
-          </h2>
-          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-            Enterprise infrastructure without enterprise complexity. Vercel, Cloudflare, and Supabase deliver world-class performance at startup pricing.
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-            {[
-              { value: '99.99%', label: 'Uptime Guarantee' },
-              { value: '<100ms', label: 'Global Latency' },
-              { value: '300+', label: 'Edge Locations' },
-              { value: '0 Config', label: 'Deploy Complexity' },
-            ].map(s => (
-              <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    </>
   )
 }

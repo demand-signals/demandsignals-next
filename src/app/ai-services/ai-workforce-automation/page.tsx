@@ -10,7 +10,6 @@ export const metadata = buildMetadata({
 
 export default function Page() {
   return (
-    <>
     <ServicePageTemplate
       eyebrow="AI Workforce Automation"
       titleHtml={<><span style={{color:'#FF6B2B'}}>Replace the Role.</span><br /><span style={{color:'#52C9A0'}}>Not the Person.</span></>}
@@ -48,34 +47,34 @@ export default function Page() {
       ctaPrimaryLabel="Get My Workforce Audit →"
       ctaPrimaryHref="/tools/demand-audit"
       serviceCategory="ai-services"
+      proofSection={
+        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
+                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                    Cost Comparison
+                  </span>
+                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
+                    The Replacement Math
+                  </h2>
+                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
+                    AI does not replace your best people. It replaces the roles you overpay for. The numbers speak for themselves.
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+                    {[
+                      { value: '60-85%', label: 'Cost Reduction' },
+                      { value: '$8-10K', label: 'Human Team per Month' },
+                      { value: 'serviceCategory="ai-services".4-3.5K', label: 'AI Replacement Cost' },
+                      { value: '24/7', label: 'Continuous Operation' },
+                    ].map(s => (
+                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
+                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+      }
     />
-      {/* Proof Section */}
-      <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            Cost Comparison
-          </span>
-          <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-            The Replacement Math
-          </h2>
-          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-            AI does not replace your best people. It replaces the roles you overpay for. The numbers speak for themselves.
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-            {[
-              { value: '60-85%', label: 'Cost Reduction' },
-              { value: '$8-10K', label: 'Human Team per Month' },
-              { value: '$1.4-3.5K', label: 'AI Replacement Cost' },
-              { value: '24/7', label: 'Continuous Operation' },
-            ].map(s => (
-              <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    </>
   )
 }
