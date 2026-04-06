@@ -39,15 +39,6 @@ export function BlogCategoryNav({ activeCategory }: { activeCategory?: string })
           border: !activeCategory ? '1px solid rgba(255,255,255,0.3)' : '1px solid transparent',
           textDecoration: 'none',
         }}>
-          All Posts
-        </Link>
-        <Link href="/blog#posts" style={{
-          padding: '6px 16px', borderRadius: 100, fontSize: '0.78rem', fontWeight: 700,
-          background: 'rgba(255,255,255,0.06)',
-          color: 'rgba(255,255,255,0.5)',
-          border: '1px solid transparent',
-          textDecoration: 'none',
-        }}>
           Most Recent
         </Link>
         {categories.map(([key, label]) => {

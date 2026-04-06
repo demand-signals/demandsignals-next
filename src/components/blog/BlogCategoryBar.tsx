@@ -45,18 +45,6 @@ export function BlogCategoryBar({ active, onChange }: {
             cursor: 'pointer', transition: 'all 0.15s',
           }}
         >
-          All Posts
-        </button>
-        <button
-          onClick={() => onChange('recent')}
-          style={{
-            padding: '6px 16px', borderRadius: 100, fontSize: '0.78rem', fontWeight: 700,
-            background: active === 'recent' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)',
-            color: active === 'recent' ? '#fff' : 'rgba(255,255,255,0.5)',
-            border: active === 'recent' ? '1px solid rgba(255,255,255,0.3)' : '1px solid transparent',
-            cursor: 'pointer', transition: 'all 0.15s',
-          }}
-        >
           Most Recent
         </button>
         {categories.map(([key, label]) => {

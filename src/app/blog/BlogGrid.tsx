@@ -54,7 +54,7 @@ function InfographicPreview({ infographic, category }: { infographic: Infographi
       padding: '20px 18px 16px',
       position: 'relative',
       overflow: 'hidden',
-      minHeight: 120,
+      height: 160,
     }}>
       {/* Grid texture */}
       <div style={{

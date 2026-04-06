@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { MDXRemote } from 'next-mdx-remote/rsc'
-import { getAllPosts, getPostBySlug, CONTENT_CATEGORY_LABELS, CONTENT_CATEGORY_COLORS } from '@/lib/blog'
+import { getAllPosts, getPostBySlug, getPostsByContentCategory, CONTENT_CATEGORY_LABELS, CONTENT_CATEGORY_COLORS } from '@/lib/blog'
 import { BlogInfographic } from '@/components/blog/BlogInfographic'
 import { ParticleCanvas } from '@/components/sections/HeroCanvas'
 import { BlogCategoryNav } from '@/components/blog/BlogCategoryNav'
@@ -95,17 +95,72 @@ export default async function BlogPostPage({ params }: Props) {
       </section>
 
       {/* Share links */}
-      <section style={{ background: 'var(--light)', padding: '40px 24px', borderTop: '1px solid var(--border)' }}>
-        <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--dark)' }}>Share this article:</span>
-          <a href={twitterShareUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#000', color: '#fff', padding: '8px 18px', borderRadius: 6, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-            Share on X
-          </a>
-          <a href={linkedInShareUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#0a66c2', color: '#fff', padding: '8px 18px', borderRadius: 6, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-            Share on LinkedIn
-          </a>
-        </div>
-      </section>
+      <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 24px 32px', display: 'flex', gap: 20, fontSize: '0.82rem' }}>
+        <span style={{ color: 'var(--slate)' }}>Share:</span>
+        <a href={twitterShareUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--teal)', textDecoration: 'none', fontWeight: 600 }}>X / Twitter</a>
+        <a href={linkedInShareUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--teal)', textDecoration: 'none', fontWeight: 600 }}>LinkedIn</a>
+      </div>
+
+      {/* Related posts in same category */}
+      {post.category && (() => {
+        const related = getPostsByContentCategory(post.category)
+          .filter(p => p.slug !== post.slug)
+          .slice(0, 8)
+        if (related.length === 0) return null
+        const catColor = CONTENT_CATEGORY_COLORS[post.category] || '#6b7280'
+        const catLabel = CONTENT_CATEGORY_LABELS[post.category] || post.category
+        return (
+          <section style={{ background: 'var(--light)', padding: '48px 0', overflow: 'hidden', borderTop: '1px solid #edf0f4' }}>
+            <div style={{ padding: '0 24px', marginBottom: 20 }}>
+              <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: catColor }}>
+                    More in {catLabel}
+                  </span>
+                </div>
+                <Link href="/blog" style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--teal)', textDecoration: 'none' }}>
+                  View all posts →
+                </Link>
+              </div>
+            </div>
+            <style>{`
+              .related-marquee { display: flex; gap: 16px; width: max-content; animation: relatedScroll 50s linear infinite; }
+              .related-marquee:hover { animation-play-state: paused; }
+              @keyframes relatedScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+            `}</style>
+            <div className="related-marquee">
+              {[...related, ...related].map((p, i) => (
+                <Link key={`${p.slug}-${i}`} href={`/blog/${p.slug}`} style={{
+                  background: '#fff', border: '1px solid #edf0f4', borderRadius: 12,
+                  padding: '20px 18px', minWidth: 300, maxWidth: 300, flexShrink: 0,
+                  display: 'flex', flexDirection: 'column', gap: 10, textDecoration: 'none',
+                }}>
+                  <span style={{
+                    display: 'inline-block', width: 'fit-content',
+                    background: `${catColor}15`, color: catColor,
+                    padding: '3px 10px', borderRadius: 100,
+                    fontSize: '0.68rem', fontWeight: 700,
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                  }}>
+                    {catLabel}
+                  </span>
+                  <h4 style={{
+                    color: 'var(--dark)', fontWeight: 700, fontSize: '0.9rem',
+                    lineHeight: 1.4, margin: 0,
+                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                  }}>
+                    {p.title}
+                  </h4>
+                  <div style={{ display: 'flex', gap: 12, fontSize: '0.72rem', color: 'var(--slate)', marginTop: 'auto' }}>
+                    <span>{p.author}</span>
+                    <span>{new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )
+      })()}
 
       {/* CTA */}
       <section style={{ background: '#FF6B2B', color: '#fff', padding: '72px 24px', textAlign: 'center' }}>
