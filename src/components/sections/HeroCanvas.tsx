@@ -351,7 +351,7 @@ export function HeroCanvas() {
 
           {/* Tagline */}
           <p style={{ fontSize: 'clamp(1rem, 1.8vw, 1.25rem)', color: 'rgba(255,255,255,0.72)', maxWidth: 620, margin: '0 auto 40px', lineHeight: 1.65 }}>
-            Demand Signals builds AI-powered systems that put your business in front of the right buyers — across search, social, and every channel that matters.
+            Demand Signals builds AI-powered sites, apps and systems that put your business in front of the right customers at the right time and place.
           </p>
 
           {/* CTAs */}

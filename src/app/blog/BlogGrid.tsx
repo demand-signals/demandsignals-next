@@ -60,9 +60,9 @@ export default function BlogGrid({ posts }: { posts: Post[] }) {
                   <span
                     key={tag}
                     style={{
-                      fontSize: '11px', fontWeight: 600, letterSpacing: '0.06em',
-                      textTransform: 'uppercase', background: 'rgba(232, 114, 12, 0.1)',
-                      color: 'var(--accent, #e8720c)', padding: '3px 8px', borderRadius: '4px',
+                      fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em',
+                      textTransform: 'uppercase', background: 'rgba(104, 197, 173, 0.12)',
+                      color: '#4fa894', padding: '4px 10px', borderRadius: 100,
                     }}
                   >
                     {tag}

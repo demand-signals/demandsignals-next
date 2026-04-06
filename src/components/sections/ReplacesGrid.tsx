@@ -1,33 +1,6 @@
 import Link from 'next/link'
 import { BOOKING_URL } from '@/lib/constants'
 
-const cards = [
-  {
-    title: 'The person doing social media',
-    subtitle: 'Social media manager ($3,000+/mo)',
-    description:
-      'AI-generated posts across all platforms, 5-7/week, tailored brand voice. Better consistency. More volume. Fraction of the cost.',
-  },
-  {
-    title: 'The agency managing your website',
-    subtitle: 'SEO agency ($1,000-3,000/mo)',
-    description:
-      'AI monitors every page against real search data daily. Pages that underperform get rewritten. No consultant needed.',
-  },
-  {
-    title: 'The person responding to reviews',
-    subtitle: 'Reputation management ($300-500/mo)',
-    description:
-      'AI drafts thoughtful responses within hours, not days. Every review handled. Never misses one.',
-  },
-  {
-    title: 'The marketing coordinator',
-    subtitle: '$3,500+/mo salary',
-    description:
-      'AI plans your content calendar, generates posts, schedules them, and reports on performance. No PTO. No turnover.',
-  },
-]
-
 const agentTypes = [
   { icon: '✍️', label: 'Content Agents', count: '40+' },
   { icon: '📊', label: 'SEO & Analytics', count: '25+' },
@@ -45,7 +18,7 @@ export default function ReplacesGrid() {
         padding: '96px 24px',
       }}
     >
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
         {/* Header with FUD hook */}
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
@@ -55,58 +28,12 @@ export default function ReplacesGrid() {
           <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, color: '#fff', lineHeight: 1.2, margin: '14px 0 20px' }}>
             Your Team Just Got a Lot Bigger.
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1.1rem', lineHeight: 1.7, maxWidth: 680, margin: '0 auto 16px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1.1rem', lineHeight: 1.7, maxWidth: 900, margin: '0 auto 16px' }}>
             Right now, <span style={{ color: '#FF6B2B', fontWeight: 700 }}>95% of corporate AI projects are failing</span>. Fortune 500 companies are firing thousands of humans only to burn millions on AI replacements that never ship. Their committees are still debating frameworks while their budgets evaporate.
           </p>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1rem', lineHeight: 1.7, maxWidth: 640, margin: '0 auto' }}>
-            This is your window, the opportunity is now. While the giants stumble, you can deploy AI agents that actually work — this month, not next year. But they won&apos;t fail forever. Move now. Demand Signals are the pilots that keep your operations flying higher and faster than ever before — with less investment.
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1rem', lineHeight: 1.7, maxWidth: 900, margin: '0 auto' }}>
+            This is your window, the opportunity is now. While the giants stumble, you can deploy AI agents that actually work — this month, not next year. But they won&apos;t fail forever. Move now. The Human and AI Teams at Demand Signals are the pilots that keep your operations flying higher and faster than ever before — generating more results with less investment.
           </p>
-        </div>
-
-        {/* Replaces cards */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: 24,
-            marginBottom: 64,
-          }}
-        >
-          {cards.map((card) => (
-            <div
-              key={card.title}
-              style={{
-                background: 'var(--dark-2)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                borderRadius: 12,
-                padding: '28px 24px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  color: 'var(--orange)',
-                }}
-              >
-                Replaces
-              </span>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff', lineHeight: 1.3, margin: 0 }}>
-                {card.title}
-              </h3>
-              <p style={{ fontSize: '0.85rem', color: 'var(--teal)', fontWeight: 600, margin: 0 }}>
-                {card.subtitle}
-              </p>
-              <p style={{ fontSize: '0.92rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, margin: 0 }}>
-                {card.description}
-              </p>
-            </div>
-          ))}
         </div>
 
         {/* Agent warehouse section */}
@@ -170,6 +97,55 @@ export default function ReplacesGrid() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* Infrastructure section */}
+        <div style={{
+          marginTop: 32,
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 20,
+          padding: '40px 36px',
+        }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'start' }}>
+            {/* Left — cloud */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <span style={{ fontSize: '1.4rem' }}>☁️</span>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff', margin: 0 }}>Cloud-Hosted Agents</h3>
+              </div>
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.92rem', lineHeight: 1.7, margin: '0 0 14px' }}>
+                Most businesses start here. Your AI agents run on enterprise cloud infrastructure — Vercel edge functions, Supabase databases, and orchestration layers like n8n and custom Node.js pipelines. No servers to manage, no DevOps to hire. We handle the entire stack: API keys, model routing, vector databases, cron jobs, and monitoring dashboards.
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {['Vercel Edge', 'Supabase', 'Claude API', 'GPT-4o', 'n8n', 'PostgreSQL', 'Redis', 'Cloudflare Workers'].map(t => (
+                  <span key={t} style={{ background: 'rgba(104,197,173,0.1)', color: 'var(--teal)', fontSize: '0.7rem', fontWeight: 600, padding: '3px 10px', borderRadius: 100 }}>{t}</span>
+                ))}
+              </div>
+            </div>
+
+            {/* Right — on-premise */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <span style={{ fontSize: '1.4rem' }}>🏢</span>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff', margin: 0 }}>On-Premise &amp; Private LLMs</h3>
+              </div>
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.92rem', lineHeight: 1.7, margin: '0 0 14px' }}>
+                Sensitive data stays in your building. We deploy self-hosted language models — Llama 3, Mistral, Phi — running on your own hardware or private cloud. Your data never leaves your network. Same agent capabilities, same orchestration, same results — just inside your firewall. We handle the GPU provisioning, model quantization, and inference optimization so it runs fast on hardware you can actually afford.
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {['Llama 3', 'Mistral', 'Phi-3', 'Ollama', 'vLLM', 'Docker', 'NVIDIA CUDA', 'Private VPC'].map(t => (
+                  <span key={t} style={{ background: 'rgba(255,107,43,0.1)', color: '#FF6B2B', fontSize: '0.7rem', fontWeight: 600, padding: '3px 10px', borderRadius: 100 }}>{t}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.88rem', lineHeight: 1.6, maxWidth: 700, margin: '0 auto' }}>
+              The tech stack is complex — model selection, vector embeddings, RAG pipelines, fine-tuning, API orchestration, edge deployment, GPU allocation. <strong style={{ color: 'rgba(255,255,255,0.7)' }}>You don&apos;t need to understand any of it.</strong> That&apos;s our job. You just see the results in your dashboard.
+            </p>
           </div>
         </div>
 
