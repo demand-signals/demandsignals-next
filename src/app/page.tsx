@@ -10,7 +10,6 @@ import LighthouseScores from '@/components/sections/LighthouseScores'
 import ReviewsMarquee from '@/components/sections/ReviewsMarquee'
 import BookingSection from '@/components/sections/BookingSection'
 import CtaBand from '@/components/sections/CtaBand'
-import { WaveDivider } from '@/components/ui/WaveDivider'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { faqSchema } from '@/lib/schema'
 
@@ -81,15 +80,11 @@ export default function HomePage() {
       <HeroCanvas />
       <StatsBar />
       <ServicesGrid />
-      <WaveDivider from="var(--light)" to="var(--dark)" />
       <ReplacesGrid />
-      <WaveDivider from="var(--dark)" to="#fff" flip />
       <IndustriesGrid />
       <HowItWorks />
       <PortfolioGrid />
-      <WaveDivider from="#fff" to="var(--dark)" />
       <LighthouseScores />
-      <WaveDivider from="var(--dark)" to="var(--light)" flip />
       <ReviewsMarquee />
       <BookingSection />
       <CtaBand />
