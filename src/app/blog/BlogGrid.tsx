@@ -1,6 +1,26 @@
 'use client'
 import Link from 'next/link'
 
+const CATEGORY_COLORS: Record<string, string> = {
+  'search-updates': '#2563EB',
+  'core-updates': '#DC2626',
+  'ai-engineering': '#7C3AED',
+  'search-central': '#059669',
+  'industry-trends': '#D97706',
+  'how-to': '#0891B2',
+  'case-studies': '#DB2777',
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  'search-updates': 'Search Updates',
+  'core-updates': 'Core Updates',
+  'ai-engineering': 'AI Engineering',
+  'search-central': 'Search Central',
+  'industry-trends': 'Industry Trends',
+  'how-to': 'How-To',
+  'case-studies': 'Case Studies',
+}
+
 interface Post {
   slug: string
   title: string
@@ -9,6 +29,7 @@ interface Post {
   excerpt: string
   tags: string[]
   readTime: string
+  category?: string
 }
 
 function formatDate(dateStr: string): string {
@@ -27,63 +48,74 @@ export default function BlogGrid({ posts }: { posts: Post[] }) {
         gap: '28px',
       }}
     >
-      {posts.map(post => (
-        <Link
-          key={post.slug}
-          href={`/blog/${post.slug}`}
-          style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}
-        >
-          <article
-            style={{
-              background: '#fff',
-              borderRadius: '10px',
-              padding: '28px 28px 24px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
-              transition: 'box-shadow 0.18s ease, transform 0.18s ease',
-              width: '100%',
-            }}
-            onMouseEnter={e => {
-              ;(e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.11)'
-              ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'
-            }}
-            onMouseLeave={e => {
-              ;(e.currentTarget as HTMLElement).style.boxShadow = '0 1px 4px rgba(0,0,0,0.07)'
-              ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
-            }}
+      {posts.map(post => {
+        const catColor = CATEGORY_COLORS[post.category || ''] || '#6b7280'
+        const catLabel = CATEGORY_LABELS[post.category || ''] || ''
+
+        return (
+          <Link
+            key={post.slug}
+            href={`/blog/${post.slug}`}
+            style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}
           >
-            {post.tags.length > 0 && (
+            <article
+              className="blog-card"
+              style={{
+                background: '#fff',
+                borderRadius: '10px',
+                padding: '28px 28px 24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+                transition: 'box-shadow 0.18s ease, transform 0.18s ease',
+                width: '100%',
+              }}
+            >
+              {/* Category + tags */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {post.tags.slice(0, 3).map(tag => (
+                {catLabel && (
+                  <span style={{
+                    fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em',
+                    textTransform: 'uppercase', background: `${catColor}18`,
+                    color: catColor, padding: '4px 10px', borderRadius: 100,
+                  }}>
+                    {catLabel}
+                  </span>
+                )}
+                {post.tags.slice(0, 2).map(tag => (
                   <span
                     key={tag}
                     style={{
-                      fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em',
-                      textTransform: 'uppercase', background: 'rgba(104, 197, 173, 0.12)',
-                      color: '#4fa894', padding: '4px 10px', borderRadius: 100,
+                      fontSize: '11px', fontWeight: 600, letterSpacing: '0.04em',
+                      textTransform: 'uppercase', background: '#f1f5f9',
+                      color: '#475569', padding: '4px 10px', borderRadius: 100,
                     }}
                   >
                     {tag}
                   </span>
                 ))}
               </div>
-            )}
-            <h2 style={{ fontSize: '1.125rem', fontWeight: 700, lineHeight: 1.3, margin: 0, color: 'var(--dark, #0d0d0d)' }}>
-              {post.title}
-            </h2>
-            <p style={{ fontSize: '0.925rem', color: '#555', lineHeight: 1.6, margin: 0, flexGrow: 1 }}>
-              {post.excerpt}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#888', paddingTop: '8px', borderTop: '1px solid #f0f0f0', marginTop: 'auto' }}>
-              <span>{post.author.split(' ')[0]}</span>
-              <span>{formatDate(post.date)}</span>
-              <span>{post.readTime}</span>
-            </div>
-          </article>
-        </Link>
-      ))}
+
+              <h2 style={{ fontSize: '1.125rem', fontWeight: 700, lineHeight: 1.3, margin: 0, color: 'var(--dark, #0d0d0d)' }}>
+                {post.title}
+              </h2>
+              <p style={{ fontSize: '0.925rem', color: '#555', lineHeight: 1.6, margin: 0, flexGrow: 1 }}>
+                {post.excerpt}
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#888', paddingTop: '8px', borderTop: '1px solid #f0f0f0', marginTop: 'auto' }}>
+                <span>{post.author.split(' ')[0]}</span>
+                <span>{formatDate(post.date)}</span>
+                <span>{post.readTime}</span>
+              </div>
+            </article>
+          </Link>
+        )
+      })}
+
+      <style>{`
+        .blog-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.11) !important; transform: translateY(-2px); }
+      `}</style>
     </div>
   )
 }

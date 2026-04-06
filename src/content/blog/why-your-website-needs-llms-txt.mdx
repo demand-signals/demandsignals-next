@@ -1,0 +1,142 @@
+---
+title: "Why Every Business Website Needs llms.txt (And How to Implement It)"
+date: "2025-01-07"
+author: "Jasper"
+excerpt: "llms.txt is the robots.txt for AI models — a structured file that tells ChatGPT, Perplexity, and other AI systems exactly what your business does. Here's how to implement it."
+tags: ["llms-txt", "ai-search", "technical-seo", "web-development", "geo"]
+category: "how-to"
+serviceCategories: ["websites-apps", "demand-generation"]
+readTime: "9 min read"
+featured: false
+infographic:
+  headline: "llms.txt: Your AI Business Card"
+  type: "stats"
+  stats:
+    - { label: "Implementation Time", value: "1-2 Hours" }
+    - { label: "AI Systems Supported", value: "Growing" }
+    - { label: "Competitive Adoption", value: "<5%" }
+---
+
+In 1994, the robots.txt standard was introduced to tell search engine crawlers how to interact with websites. It became universal because it solved a real problem: websites needed a way to communicate their structure and preferences to automated systems.
+
+Thirty years later, we have the same problem with a new class of automated systems. AI models — ChatGPT, Claude, Perplexity, Gemini, and the dozens of AI-powered tools that will emerge in the next few years — need a way to quickly understand what a business does, what services it offers, and how its content is organized.
+
+llms.txt is the solution. And right now, fewer than 5% of business websites have implemented it.
+
+## What llms.txt Is
+
+llms.txt is a plain text file placed at the root of your website (yourdomain.com/llms.txt) that provides AI models with a structured summary of your business and website content. It is designed to be consumed by large language models — hence the name — and provides the kind of concise, structured information that AI systems can quickly parse and use when answering questions about your business.
+
+Think of it as a combination of your elevator pitch, your sitemap, and your FAQ — formatted specifically for AI consumption.
+
+## Why AI Models Need It
+
+When an AI model like ChatGPT or Perplexity answers a question about your business or industry, it does one of two things:
+
+**Option 1: It crawls your website in real-time** (in the case of AI systems with web browsing), reading through pages, trying to understand your business, and synthesizing an answer from the unstructured content it finds. This is slow, potentially incomplete, and depends on the model correctly interpreting your website's content.
+
+**Option 2: It draws on its training data**, which may include outdated or incomplete information about your business scraped during previous training runs. This can lead to inaccurate citations, wrong service descriptions, or missing information.
+
+llms.txt provides a **third option**: a concise, authoritative, up-to-date summary that AI models can consume in seconds. It is your business's official statement to AI systems: "Here is who we are, what we do, and where to find detailed information."
+
+## The llms.txt Format
+
+The format is deliberately simple — a markdown file with specific sections:
+
+```markdown
+# Your Business Name
+
+> One-sentence description of your business.
+
+## About
+
+2-3 paragraphs describing your business, your expertise,
+your service area, and your key differentiators.
+
+## Services
+
+- [Service Name](/url): Brief description
+- [Service Name](/url): Brief description
+- [Service Name](/url): Brief description
+
+## Locations
+
+- Primary location: Address
+- Service areas: List of areas served
+
+## Contact
+
+- Phone: (xxx) xxx-xxxx
+- Email: contact@yourdomain.com
+- Booking: URL to scheduling page
+
+## Key Content
+
+- [Page Title](/url): Description
+- [Page Title](/url): Description
+
+## FAQ
+
+- **Question?** Answer.
+- **Question?** Answer.
+```
+
+The structure is intentionally human-readable as well as machine-readable. Any text editor can create it, no special tooling required.
+
+## How to Implement llms.txt
+
+### Step 1: Create the File
+
+Create a plain text file named `llms.txt` in your website's root directory. If you use WordPress, this goes in the same directory as your wp-config.php. If you use a static site generator or framework like Next.js, it goes in your public directory.
+
+### Step 2: Write Your Business Summary
+
+Start with your business name as a heading, followed by a one-sentence description. Then write two to three paragraphs that describe your business the way you would want an AI to describe it to a potential customer.
+
+Be specific. Include your location, your primary services, your years in business, your team size, and your key differentiators. This is not marketing copy — it is factual information that an AI model should use when characterizing your business.
+
+### Step 3: List Your Services with URLs
+
+Every service your business offers should be listed with a link to the corresponding page on your website. Include a one-sentence description of each service that an AI model could use as a summary.
+
+### Step 4: Include Key Business Information
+
+Contact details, service areas, business hours, and any other factual information that a customer might ask about. The more complete this section is, the more accurately AI models can answer questions about your business.
+
+### Step 5: Add FAQs
+
+Include the questions that customers most commonly ask about your business, with clear, direct answers. These are the questions that AI models are most likely to encounter when users ask about your service category, and having the answers in llms.txt ensures the AI has authoritative responses.
+
+### Step 6: Deploy and Verify
+
+Upload the file to your website root and verify it is accessible at yourdomain.com/llms.txt. Then verify that it is not blocked by your robots.txt or server configuration.
+
+## Advanced Implementation: llms-full.txt
+
+Some businesses also implement an `llms-full.txt` file — a more detailed version that includes comprehensive information about every page, every service, and every piece of content on the site. While llms.txt provides the summary, llms-full.txt provides the complete reference.
+
+For businesses with large websites — dozens of service pages, extensive blog archives, multiple location pages — the full version helps AI models understand the complete scope of your content without crawling every page individually.
+
+## Real-World Impact
+
+We implemented llms.txt across our own site and our clients' sites in late 2024. The measurable impact:
+
+**Faster AI citation for new content.** When we publish a new service page and add it to llms.txt, AI models with web browsing capability discover and cite it faster than they would through organic crawling alone.
+
+**More accurate business descriptions.** Before llms.txt, AI models would sometimes describe our clients' businesses based on incomplete or outdated training data. With llms.txt providing authoritative current information, the accuracy of AI-generated descriptions improved measurably.
+
+**Competitive citation advantage.** In head-to-head citation comparisons for local service queries, businesses with llms.txt are cited more consistently than competitors without it — all else being equal. The file gives AI models higher confidence in the information they are presenting.
+
+## The Connection to Your Broader Web Presence
+
+llms.txt works best as part of a complete GEO (Generative Engine Optimization) strategy that includes structured data markup, content depth, citation consistency, and review management. The file is not a silver bullet — it is one component of a comprehensive approach to AI-powered discovery.
+
+Our [website development service](/websites-apps/react-next-webapps) includes llms.txt implementation as a standard component of every new site we build. For existing sites, our [LLM optimization service](/demand-generation/geo-aeo-llm-optimization) adds llms.txt as part of a broader GEO optimization that covers all the signals AI models use to evaluate and cite businesses.
+
+## What This Means for Your Business
+
+llms.txt is a low-effort, high-impact optimization that fewer than 5% of business websites have implemented. The file takes one to two hours to create, costs nothing to deploy, and provides an immediate signal to AI systems that your business is actively managing its AI visibility.
+
+The businesses that implement it now — before it becomes standard practice — are the ones establishing the baseline of authoritative information that AI models will reference when answering questions about their category and geography.
+
+Create the file. Deploy it today. It is one of the easiest competitive advantages available in AI-powered search.

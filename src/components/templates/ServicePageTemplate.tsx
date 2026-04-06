@@ -1,7 +1,9 @@
 import { PageHero } from '@/components/sections/PageHero'
+import { BlogPostMarquee } from '@/components/blog/BlogPostMarquee'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { serviceSchema, breadcrumbSchema, faqSchema } from '@/lib/schema'
 import { SITE_URL } from '@/lib/constants'
+import type { ServiceCategory } from '@/lib/blog'
 
 type Feature = {
   icon: string
@@ -60,6 +62,9 @@ export type ServicePageProps = {
   /* FAQ */
   faqs: FAQ[]
 
+  /* Blog */
+  serviceCategory?: ServiceCategory
+
   /* CTA */
   ctaHeading: string
   ctaText: string
@@ -75,7 +80,7 @@ export function ServicePageTemplate({
   featuresEyebrow = 'What We Deliver', featuresHeading, features,
   techEyebrow, techHeading, techDescription, techStack,
   aiCalloutEyebrow, aiCalloutHeading, aiCalloutText,
-  faqs,
+  faqs, serviceCategory,
   ctaHeading, ctaText, ctaPrimaryLabel, ctaPrimaryHref = '/contact',
   ctaSecondaryLabel = 'See Portfolio', ctaSecondaryHref = '/portfolio',
 }: ServicePageProps) {
@@ -191,6 +196,9 @@ export function ServicePageTemplate({
           </div>
         </section>
       )}
+
+      {/* Blog Marquee */}
+      {serviceCategory && <BlogPostMarquee serviceCategory={serviceCategory} />}
 
       {/* CTA */}
       <section style={{ background: '#FF6B2B', padding: '72px 24px', textAlign: 'center' }}>

@@ -2,7 +2,8 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { MDXRemote } from 'next-mdx-remote/rsc'
-import { getAllPosts, getPostBySlug } from '@/lib/blog'
+import { getAllPosts, getPostBySlug, CONTENT_CATEGORY_LABELS, CONTENT_CATEGORY_COLORS } from '@/lib/blog'
+import { BlogInfographic } from '@/components/blog/BlogInfographic'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -40,27 +41,27 @@ export default async function BlogPostPage({ params }: Props) {
       {/* Dark hero */}
       <section style={{ background: 'var(--dark)', color: '#fff', padding: '72px 24px 64px' }}>
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
-          {post.tags.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-              {post.tags.map(tag => (
-                <span
-                  key={tag}
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    background: 'rgba(104, 197, 173, 0.15)',
-                    color: '#68c5ad',
-                    padding: '4px 12px',
-                    borderRadius: 100,
-                  }}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+            {post.category && (
+              <span style={{
+                fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+                background: `${CONTENT_CATEGORY_COLORS[post.category] || '#6b7280'}25`,
+                color: CONTENT_CATEGORY_COLORS[post.category] || '#6b7280',
+                padding: '4px 12px', borderRadius: 100,
+              }}>
+                {CONTENT_CATEGORY_LABELS[post.category] || post.category}
+              </span>
+            )}
+            {post.tags.slice(0, 3).map(tag => (
+              <span key={tag} style={{
+                fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+                background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)',
+                padding: '4px 12px', borderRadius: 100,
+              }}>
+                {tag}
+              </span>
+            ))}
+          </div>
 
           <h1 style={{ fontSize: 'clamp(1.75rem, 4.5vw, 2.75rem)', fontWeight: 800, lineHeight: 1.18, margin: '0 0 24px' }}>
             {post.title}
@@ -77,6 +78,10 @@ export default async function BlogPostPage({ params }: Props) {
       {/* Prose body */}
       <section style={{ background: '#fff', padding: '56px 24px 64px' }}>
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
+          {/* Infographic */}
+          {post.infographic && (
+            <BlogInfographic data={post.infographic} title={post.title} />
+          )}
           <div className="prose">
             <MDXRemote source={post.content} />
           </div>

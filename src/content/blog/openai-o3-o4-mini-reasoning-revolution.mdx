@@ -1,0 +1,96 @@
+---
+title: "OpenAI o3 and o4-mini: AI That Thinks With Images"
+date: "2025-04-17"
+author: "Morgan"
+excerpt: "OpenAI's o3 and o4-mini reasoning models can analyze images, generate internal visualizations, and use tool-based reasoning. This is the first real step toward truly agentic AI systems."
+tags: ["openai", "o3", "o4-mini", "reasoning-models", "agentic-ai", "multimodal"]
+category: "ai-engineering"
+serviceCategories: ["ai-services"]
+readTime: "9 min read"
+featured: false
+infographic:
+  headline: "o3 / o4-mini: Reasoning Leap"
+  type: "stats"
+  stats:
+    - { label: "Agentic Coding Score (o3)", value: "69.1%" }
+    - { label: "Math Benchmark (AIME)", value: "96.7%" }
+    - { label: "Visual Reasoning", value: "Native" }
+---
+
+OpenAI released o3 and o4-mini on April 16, 2025, and these models represent something genuinely new in AI capability: reasoning models that can think with images. Not just analyze images as input, but generate internal visualizations as part of their reasoning process, use tools mid-thought, and maintain complex multi-step reasoning chains that combine visual and textual understanding.
+
+This is a significant technical achievement. It is also, more practically, the clearest signal yet of what AI agents will be capable of within the next twelve months.
+
+## What "Thinking With Images" Means
+
+Previous AI models could analyze images — describe what they see, extract text, identify objects. o3 and o4-mini go further. During their extended reasoning process (the "chain of thought" that reasoning models use), these models can:
+
+**Generate internal visualizations.** When solving a spatial reasoning problem, the model can create a mental diagram and reason about it. When analyzing a chart, it can reconstruct the data relationships internally before generating its answer.
+
+**Use tools during reasoning.** The model can invoke external tools — a code interpreter, a web browser, a file system — as part of its thinking process, not just as a final output step. This means the model can run a calculation, check a result, revise its approach, and run another calculation, all within a single reasoning chain.
+
+**Combine visual and textual reasoning.** Given a photograph of a whiteboard with a handwritten diagram and a text document describing the same system, o3 can synthesize both inputs into a coherent understanding and reason about the combined information.
+
+For anyone building AI agents, this is the capability gap that has been limiting agent reliability. Agents that can only reason about text struggle with real-world business environments where information exists as PDFs, spreadsheets, screenshots, diagrams, and physical documents. Models that can reason across all these data types can handle a much broader range of real business tasks.
+
+## Benchmark Performance
+
+The benchmark numbers are worth noting because they indicate the scale of improvement over previous reasoning models:
+
+**AIME 2025 (math competition):** o3 scored 96.7%, up from o1's 83.3%. This is not just an incremental improvement — it puts o3 at the level of exceptional human mathematicians on competition-level problems.
+
+**SWE-bench (agentic coding):** o3 achieved 69.1% on SWE-bench Verified, a benchmark that tests an AI model's ability to autonomously find and fix real bugs in real software repositories. For context, the best score twelve months ago was below 30%.
+
+**GPQA Diamond (graduate-level science):** o3 scored above 80%, demonstrating strong performance on questions that require multi-step scientific reasoning across physics, chemistry, and biology.
+
+These benchmarks matter for business applications because they indicate the model's reliability on complex, multi-step tasks — the kind of tasks that AI agents need to perform autonomously.
+
+## What This Enables for Business
+
+The practical applications of reasoning models with visual and tool-use capabilities extend well beyond academic benchmarks:
+
+### Document Processing at Scale
+
+Businesses generate enormous volumes of documents — contracts, invoices, proposals, reports, compliance filings — that contain both text and visual elements (tables, charts, signatures, stamps). o3's ability to reason across text and visual elements means these documents can be processed, analyzed, and acted upon with significantly higher accuracy than text-only models.
+
+A legal firm can have o3 analyze a contract that includes an organizational chart, a financial table, and multiple pages of legal text — synthesizing all elements into a structured summary with risk flags. Previously, the chart and table would need to be separately processed and manually correlated with the text.
+
+### Code Review and Development
+
+The SWE-bench performance translates directly to practical software development capability. o3 can review code repositories, identify bugs, propose fixes, and validate those fixes — with a success rate that makes it useful as a genuine development tool rather than an unreliable assistant.
+
+For businesses building AI-powered applications, this means [development workflows](/websites-apps/react-next-webapps) can incorporate AI code review and automated bug fixing as standard practice, significantly reducing development timelines and improving code quality.
+
+### Agentic Workflows
+
+The combination of reasoning, vision, and tool use makes o3 the most capable foundation for building AI agents that can operate in complex business environments. An agent built on o3 can:
+
+- Read a customer email with an attached screenshot of a problem
+- Analyze the screenshot to understand the issue
+- Query internal systems to check the customer's account status
+- Reason through the appropriate resolution
+- Draft a response that addresses the specific visual evidence in the screenshot
+
+This kind of multi-modal, multi-step agent workflow was unreliable with previous models. o3 makes it viable.
+
+## o4-mini: The Cost-Effective Option
+
+While o3 gets the headlines, o4-mini may be more immediately relevant for most business deployments. It is a smaller, faster, cheaper reasoning model that retains much of o3's capability at a fraction of the cost.
+
+For high-volume tasks — processing hundreds of documents per day, handling thousands of customer inquiries, running continuous monitoring agents — o4-mini provides the reasoning capability that makes these tasks viable without the per-token cost that would make o3 prohibitively expensive at scale.
+
+The practical deployment pattern: use o3 for complex, high-stakes tasks where accuracy is critical and volume is low. Use o4-mini for high-volume, routine reasoning tasks where speed and cost matter more than maximum capability.
+
+## The Competitive Landscape
+
+o3 and o4-mini intensify the competition among AI providers. Anthropic's Claude models, Google's Gemini 2.5, and now OpenAI's o-series are all pushing toward stronger reasoning, better tool use, and native multimodal understanding.
+
+For businesses, this competition is unambiguously positive. It drives costs down, pushes capability up, and gives businesses more options for how they deploy AI. The businesses that benefit most are the ones with flexible [AI infrastructure](/ai-services/ai-agent-infrastructure) that can incorporate new models as they are released, rather than being locked into a single provider.
+
+## What This Means for Your Business
+
+The release of o3 and o4-mini is not just another model announcement. It is a capability threshold being crossed: AI models can now reliably reason through complex, multi-step, multi-modal business tasks. The gap between "AI as a text assistant" and "AI as a business operator" is closing rapidly.
+
+For businesses considering [AI adoption strategies](/ai-services/ai-automation-strategies), the practical implication is that the range of tasks you can reliably automate just expanded significantly. Document processing, code development, customer service, and multi-system agent workflows are all meaningfully more viable with reasoning models than they were with previous generations.
+
+The businesses that will benefit most from this capability leap are the ones that have already built the infrastructure to deploy AI agents. Adding a more capable model to existing agent infrastructure is straightforward. Building that infrastructure from scratch takes months. Starting now means being ready to leverage each successive model improvement as it arrives.
