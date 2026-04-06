@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { BOOKING_URL, CONTACT_PHONE, CONTACT_EMAIL } from '@/lib/constants';
+import { PageHero } from '@/components/sections/PageHero';
 
 
 export default function ContactPage() {
@@ -45,25 +46,13 @@ export default function ContactPage() {
 
   return (
     <>
-      {/* Dark Hero */}
-      <section style={{
-        background: 'var(--dark)',
-        paddingTop: '120px',
-        paddingBottom: '60px',
-        textAlign: 'center',
-      }}>
-        <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 24px' }}>
-          <p style={{ color: 'var(--teal)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.85rem', marginBottom: 12 }}>
-            Get In Touch
-          </p>
-          <h1 style={{ color: '#fff', fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 800, lineHeight: 1.15, marginBottom: 20 }}>
-            <span style={{color:'#52C9A0'}}>Let&apos;s Build Something</span>{' '}<span style={{color:'#FF6B2B'}}>That Works.</span>
-          </h1>
-          <p style={{ color: '#a0aec0', fontSize: '1.125rem', lineHeight: 1.7, maxWidth: 560, margin: '0 auto' }}>
-            Tell us what you need — a website, AI systems, demand generation, or all three. We&apos;ll tell you exactly how we&apos;d solve it, what it costs, and how fast we can ship.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="Get In Touch"
+        title={<><span style={{color:'#52C9A0'}}>Let&apos;s Build Something</span>{' '}<span style={{color:'#FF6B2B'}}>That Works.</span></>}
+        subtitle="Tell us what you need — a website, AI systems, demand generation, or all three. We'll tell you exactly how we'd solve it, what it costs, and how fast we can ship."
+        ctaLabel="Book a Free Call →"
+        ctaHref={BOOKING_URL}
+      />
 
       {/* Main Content */}
       <section style={{ background: '#fff', padding: '60px 24px 80px' }}>

@@ -1,49 +1,60 @@
-import nodemailer from 'nodemailer';
-import { NextRequest, NextResponse } from 'next/server';
-import { CONTACT_EMAIL } from '@/lib/constants';
+import nodemailer from 'nodemailer'
+import { NextRequest, NextResponse } from 'next/server'
+import { CONTACT_EMAIL } from '@/lib/constants'
+import { apiGuard, escapeHtml, isValidEmail, sanitizeField, safeErrorResponse } from '@/lib/api-security'
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT) || 587,
+  secure: Number(process.env.SMTP_PORT) === 465,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+})
 
 export async function POST(req: NextRequest) {
+  const guard = apiGuard(req)
+  if (guard) return guard
+
   try {
-    const body = await req.json();
-    const { name, email, business, phone, service, message } = body;
+    const body = await req.json()
+    const name = sanitizeField(body.name, 200)
+    const email = sanitizeField(body.email, 254)
+    const business = sanitizeField(body.business, 200)
+    const phone = sanitizeField(body.phone, 30)
+    const service = sanitizeField(body.service, 100)
+    const message = sanitizeField(body.message, 5000)
 
     if (!name || !email) {
-      return NextResponse.json({ success: false, error: 'Name and email are required.' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Name and email are required.' }, { status: 400 })
     }
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: Number(process.env.SMTP_PORT) === 465,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+    if (!isValidEmail(email)) {
+      return NextResponse.json({ success: false, error: 'Please enter a valid email address.' }, { status: 400 })
+    }
 
     const html = `
       <h2>New Contact Form Submission</h2>
       <table cellpadding="8" cellspacing="0" border="1" style="border-collapse:collapse;width:100%;max-width:600px;">
-        <tr><td><strong>Name</strong></td><td>${name}</td></tr>
-        <tr><td><strong>Email</strong></td><td><a href="mailto:${email}">${email}</a></td></tr>
-        <tr><td><strong>Business</strong></td><td>${business || '—'}</td></tr>
-        <tr><td><strong>Phone</strong></td><td>${phone || '—'}</td></tr>
-        <tr><td><strong>Service Interest</strong></td><td>${service || '—'}</td></tr>
-        <tr><td><strong>Message</strong></td><td style="white-space:pre-wrap;">${message || '—'}</td></tr>
+        <tr><td><strong>Name</strong></td><td>${escapeHtml(name)}</td></tr>
+        <tr><td><strong>Email</strong></td><td><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></td></tr>
+        <tr><td><strong>Business</strong></td><td>${escapeHtml(business || '—')}</td></tr>
+        <tr><td><strong>Phone</strong></td><td>${escapeHtml(phone || '—')}</td></tr>
+        <tr><td><strong>Service Interest</strong></td><td>${escapeHtml(service || '—')}</td></tr>
+        <tr><td><strong>Message</strong></td><td style="white-space:pre-wrap;">${escapeHtml(message || '—')}</td></tr>
       </table>
-    `;
+    `
 
     await transporter.sendMail({
       from: `"Demand Signals Contact" <${process.env.SMTP_USER}>`,
       to: CONTACT_EMAIL,
-      subject: `New Contact: ${name} — ${business || 'No business listed'}`,
+      subject: `New Contact: ${sanitizeField(body.name, 100)} — ${sanitizeField(body.business, 100) || 'No business listed'}`,
       html,
-    });
+    })
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    console.error('[contact route] error:', message);
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return safeErrorResponse('contact', err)
   }
 }

@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# project files with secrets (tokens, keys, credentials)
+PROJECT.md
+.claude-memory/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
