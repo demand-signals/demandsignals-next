@@ -165,6 +165,9 @@ export function ServicePageTemplate({
         </section>
       )}
 
+      {/* Proof Section (page-specific) */}
+      {proofSection}
+
       {/* AI Callout (optional) */}
       {aiCalloutHeading && (
         <section style={{ background: 'var(--light)', padding: '72px 24px' }}>
@@ -210,9 +213,6 @@ export function ServicePageTemplate({
           </div>
         </section>
       )}
-
-      {/* Proof Section (page-specific) */}
-      {proofSection}
 
       {/* CTA */}
       <section style={{ background: '#FF6B2B', padding: '72px 24px', textAlign: 'center' }}>
