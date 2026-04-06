@@ -6,8 +6,8 @@ import ReplacesGrid from '@/components/sections/ReplacesGrid'
 import IndustriesGrid from '@/components/sections/IndustriesGrid'
 import HowItWorks from '@/components/sections/HowItWorks'
 import PortfolioGrid from '@/components/sections/PortfolioGrid'
-import LighthouseScores from '@/components/sections/LighthouseScores'
 import ReviewsMarquee from '@/components/sections/ReviewsMarquee'
+import HomeBlogSection from '@/components/sections/HomeBlogSection'
 import BookingSection from '@/components/sections/BookingSection'
 import CtaBand from '@/components/sections/CtaBand'
 import { JsonLd } from '@/components/seo/JsonLd'
@@ -84,10 +84,10 @@ export default function HomePage() {
       <IndustriesGrid />
       <HowItWorks />
       <PortfolioGrid />
-      <LighthouseScores />
       <ReviewsMarquee />
-      <BookingSection />
+      <HomeBlogSection />
       <CtaBand />
+      <BookingSection />
     </>
   )
 }

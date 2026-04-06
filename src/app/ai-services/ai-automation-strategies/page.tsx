@@ -10,6 +10,7 @@ export const metadata = buildMetadata({
 
 export default function Page() {
   return (
+    <>
     <ServicePageTemplate
       eyebrow="AI Adoption Strategies"
       titleHtml={<><span style={{color:'#FF6B2B'}}>AI Adoption Strategies</span><br /><span style={{color:'#52C9A0'}}>Know Where to Start.</span></>}
@@ -48,5 +49,33 @@ export default function Page() {
       ctaPrimaryHref="/tools/demand-audit"
       serviceCategory="ai-services"
     />
+      {/* Proof Section */}
+      <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+          <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            AI Implementation Data
+          </span>
+          <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
+            AI Adoption Reality
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
+            Most companies fail at AI because they skip the strategy. We do not. A phased roadmap starting with highest-ROI wins changes the outcome.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+            {[
+              { value: '95%', label: 'Corporate AI Projects Fail' },
+              { value: '72%', label: 'Struggle Past Pilots' },
+              { value: '$1.3M', label: 'Avg Wasted on Failed AI' },
+              { value: '2-4 Wk', label: 'DSIG Deployment Time' },
+            ].map(s => (
+              <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
+                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
   )
 }

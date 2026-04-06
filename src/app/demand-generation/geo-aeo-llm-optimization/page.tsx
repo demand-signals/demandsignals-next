@@ -10,6 +10,7 @@ export const metadata = buildMetadata({
 
 export default function LLMOptimizationPage() {
   return (
+    <>
     <ServicePageTemplate
       eyebrow="LLM Optimization"
       titleHtml={<><span style={{color:'#FF6B2B'}}>Get Cited by AI.</span><br /><span style={{color:'#52C9A0'}}>Not Just Ranked by Google.</span></>}
@@ -57,5 +58,33 @@ export default function LLMOptimizationPage() {
       ctaSecondaryLabel="Book a Call"
       serviceCategory="demand-generation"
     />
+      {/* Proof Section */}
+      <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+          <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            AI Search Data
+          </span>
+          <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
+            The AI Search Shift
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
+            If you are not optimized for AI search, you are invisible to half your market. The shift from traditional to AI-driven discovery is accelerating.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+            {[
+              { value: '48%', label: 'Searches Trigger AI Overviews' },
+              { value: '61%', label: 'CTR Drop Without GEO' },
+              { value: '527%', label: 'AI Referral Growth YoY' },
+              { value: '72%', label: 'AI Citations Go to Top 3' },
+            ].map(s => (
+              <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
+                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
   )
 }

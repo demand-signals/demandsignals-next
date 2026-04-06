@@ -10,6 +10,7 @@ export const metadata = buildMetadata({
 
 export default function Page() {
   return (
+    <>
     <ServicePageTemplate
       eyebrow="AI Social Media"
       titleHtml={<><span style={{color:'#FF6B2B'}}>AI Social Media</span><br /><span style={{color:'#52C9A0'}}>5-7 Posts Per Week. Zero Employees.</span></>}
@@ -48,5 +49,33 @@ export default function Page() {
       ctaPrimaryHref="/contact"
       serviceCategory="content-social"
     />
+      {/* Proof Section */}
+      <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+          <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Social Media ROI
+          </span>
+          <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
+            Social on Autopilot
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
+            Consistent social presence without the headcount. AI handles the volume while you approve the quality.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+            {[
+              { value: '5-7', label: 'Posts/Week Automated' },
+              { value: '67%', label: 'More Leads from Social' },
+              { value: '3', label: 'Platforms Managed' },
+              { value: '$3K+/mo', label: 'Savings vs Human Manager' },
+            ].map(s => (
+              <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
+                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
   )
 }
