@@ -46,6 +46,7 @@ export default function Page() {
       ctaText="We'll audit your existing content and show you how much more value AI can extract from what you've already created."
       ctaPrimaryLabel="Maximize My Content →"
       ctaPrimaryHref="/contact"
+      serviceCategory="content-social"
     />
   )
 }

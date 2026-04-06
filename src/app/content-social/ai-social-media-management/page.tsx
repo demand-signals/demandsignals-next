@@ -46,6 +46,7 @@ export default function Page() {
       ctaText="We'll audit your current social presence and show you what consistent AI-powered posting can do for your engagement and reach."
       ctaPrimaryLabel="Automate My Social →"
       ctaPrimaryHref="/contact"
+      serviceCategory="content-social"
     />
   )
 }

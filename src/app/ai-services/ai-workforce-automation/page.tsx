@@ -46,6 +46,7 @@ export default function Page() {
       ctaText="We'll audit your current marketing spend and show you exactly which roles AI can handle — and the monthly savings."
       ctaPrimaryLabel="Get My Workforce Audit →"
       ctaPrimaryHref="/tools/demand-audit"
+      serviceCategory="ai-services"
     />
   )
 }

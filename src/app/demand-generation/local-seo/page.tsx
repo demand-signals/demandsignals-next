@@ -45,6 +45,7 @@ export default function LocalSEOPage() {
       ctaText="Get a free local SEO audit — we'll show you exactly where you rank, where your competitors are beating you, and what AI can fix."
       ctaPrimaryLabel="Get My Free SEO Audit →"
       ctaPrimaryHref="/tools/demand-audit"
+      serviceCategory="demand-generation"
     />
   )
 }

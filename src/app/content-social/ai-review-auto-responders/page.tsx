@@ -46,6 +46,7 @@ export default function Page() {
       ctaText="We'll audit your current review response rate and show you how AI can handle them all — faster and more consistently."
       ctaPrimaryLabel="Handle My Reviews →"
       ctaPrimaryHref="/contact"
+      serviceCategory="content-social"
     />
   )
 }

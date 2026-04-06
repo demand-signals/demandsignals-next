@@ -46,6 +46,7 @@ export default function Page() {
       ctaText="We'll audit your current marketing operations and show you exactly which functions AI can handle — and how much you'll save."
       ctaPrimaryLabel="Get My Free Audit →"
       ctaPrimaryHref="/tools/demand-audit"
+      serviceCategory="demand-generation"
     />
   )
 }

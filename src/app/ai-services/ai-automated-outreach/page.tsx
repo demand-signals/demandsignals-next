@@ -45,6 +45,7 @@ export default function Page() {
       ctaText="We'll build a custom outreach strategy for your market — target audience, messaging angles, and sequence design."
       ctaPrimaryLabel="Design My Outreach →"
       ctaPrimaryHref="/contact"
+      serviceCategory="ai-services"
     />
   )
 }

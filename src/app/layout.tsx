@@ -9,6 +9,7 @@ import { AccessibilityWidget } from '@/components/layout/AccessibilityWidget'
 import { ArcCardGame } from '@/components/sections/ArcCardGame'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { orgSchema, websiteSchema } from '@/lib/schema'
+import { Analytics } from "@vercel/analytics/next"
 import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
@@ -99,6 +100,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ContactBot />
         <CookieConsent />
         <AccessibilityWidget />
+        <Analytics />
       </body>
     </html>
   )

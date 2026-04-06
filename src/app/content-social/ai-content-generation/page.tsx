@@ -46,6 +46,7 @@ export default function Page() {
       ctaText="We'll analyze your current content, identify gaps, and show you what AI-powered content can do for your traffic and leads."
       ctaPrimaryLabel="Start My Content Engine →"
       ctaPrimaryHref="/contact"
+      serviceCategory="content-social"
     />
   )
 }

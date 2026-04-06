@@ -46,6 +46,7 @@ export default function Page() {
       ctaText="We'll audit your current Google Business Profile and show you exactly what's missing and what's costing you visibility."
       ctaPrimaryLabel="Audit My GBP →"
       ctaPrimaryHref="/tools/demand-audit"
+      serviceCategory="demand-generation"
     />
   )
 }

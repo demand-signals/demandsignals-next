@@ -51,6 +51,7 @@ export default function HostingPage() {
       ctaHeading="Ready for Hosting That You Never Think About?"
       ctaText="We handle the infrastructure so you can focus on your business. No servers to manage, no SSL to renew, no uptime to worry about."
       ctaPrimaryLabel="Get Started →"
+      serviceCategory="websites-apps"
     />
   )
 }

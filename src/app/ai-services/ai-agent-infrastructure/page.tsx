@@ -45,6 +45,7 @@ export default function Page() {
       ctaText="We'll scope the infrastructure you need based on your business requirements and growth plans."
       ctaPrimaryLabel="Scope My Infrastructure →"
       ctaPrimaryHref="/contact"
+      serviceCategory="ai-services"
     />
   )
 }

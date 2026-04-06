@@ -55,6 +55,7 @@ export default function LLMOptimizationPage() {
       ctaPrimaryLabel="Get My AI Visibility Audit →"
       ctaPrimaryHref="/tools/demand-audit"
       ctaSecondaryLabel="Book a Call"
+      serviceCategory="demand-generation"
     />
   )
 }

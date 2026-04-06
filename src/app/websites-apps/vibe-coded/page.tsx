@@ -53,6 +53,7 @@ export default function VibeCodedPage() {
       ctaHeading="Got an Idea? Let's Ship It This Week."
       ctaText="Describe what you need and we'll tell you how fast we can build it — usually same day."
       ctaPrimaryLabel="Let's Build It →"
+      serviceCategory="websites-apps"
     />
   )
 }

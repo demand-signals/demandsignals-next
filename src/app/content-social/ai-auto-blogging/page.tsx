@@ -46,6 +46,7 @@ export default function Page() {
       ctaText="We'll analyze your industry's content landscape and show you the topics that will drive the most qualified traffic."
       ctaPrimaryLabel="Start My Blog →"
       ctaPrimaryHref="/contact"
+      serviceCategory="content-social"
     />
   )
 }

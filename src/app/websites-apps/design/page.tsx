@@ -43,6 +43,7 @@ export default function DesignPage() {
       ctaHeading="Ready for Design That Actually Converts?"
       ctaText="Tell us about your project and we'll scope a design approach that fits your brand, your users, and your timeline."
       ctaPrimaryLabel="Start My Design →"
+      serviceCategory="websites-apps"
     />
   )
 }

@@ -45,6 +45,7 @@ export default function Page() {
       ctaText="Start with a free AI readiness audit. We'll identify your top 3 automation opportunities and the expected ROI for each."
       ctaPrimaryLabel="Get My AI Readiness Audit →"
       ctaPrimaryHref="/tools/demand-audit"
+      serviceCategory="ai-services"
     />
   )
 }

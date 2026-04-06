@@ -46,6 +46,7 @@ export default function Page() {
       ctaText="We'll map your service area, identify the highest-value city × service combinations, and tell you exactly how many pages you need."
       ctaPrimaryLabel="Map My Territory →"
       ctaPrimaryHref="/contact"
+      serviceCategory="demand-generation"
     />
   )
 }

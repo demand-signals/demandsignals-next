@@ -45,6 +45,7 @@ export default function Page() {
       ctaText="We'll identify the data sources most valuable for your business and deploy clawbots to monitor them continuously."
       ctaPrimaryLabel="Deploy My Clawbots →"
       ctaPrimaryHref="/contact"
+      serviceCategory="ai-services"
     />
   )
 }

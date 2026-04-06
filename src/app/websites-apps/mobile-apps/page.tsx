@@ -54,6 +54,7 @@ export default function MobileAppsPage() {
       ctaHeading="Ready for a Mobile App That Drives Business?"
       ctaText="Tell us about your app idea and we'll scope the features, timeline, and budget — usually within 48 hours."
       ctaPrimaryLabel="Start My Mobile App →"
+      serviceCategory="websites-apps"
     />
   )
 }

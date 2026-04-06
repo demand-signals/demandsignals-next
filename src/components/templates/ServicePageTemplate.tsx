@@ -101,6 +101,14 @@ export function ServicePageTemplate({
         callout={calloutHtml}
       />
 
+      {/* Freshness indicator */}
+      <div style={{ background: 'var(--light)', padding: '16px 24px 0', textAlign: 'center' }}>
+        <span style={{ fontSize: '0.75rem', color: 'var(--slate)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Last updated April 2026
+        </span>
+      </div>
+
       {/* Features Grid */}
       <section style={{ background: 'var(--light)', padding: '72px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>

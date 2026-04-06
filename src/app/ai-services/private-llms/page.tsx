@@ -45,6 +45,7 @@ export default function Page() {
       ctaText="We'll assess your data sensitivity requirements and recommend the right private LLM architecture."
       ctaPrimaryLabel="Assess My Requirements →"
       ctaPrimaryHref="/contact"
+      serviceCategory="ai-services"
     />
   )
 }

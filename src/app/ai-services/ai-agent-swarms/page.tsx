@@ -46,6 +46,7 @@ export default function Page() {
       ctaText="We'll identify which agents would deliver the highest ROI for your business and deploy them within weeks."
       ctaPrimaryLabel="Deploy My Agents →"
       ctaPrimaryHref="/contact"
+      serviceCategory="ai-services"
     />
   )
 }

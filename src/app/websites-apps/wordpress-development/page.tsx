@@ -55,6 +55,7 @@ export default function WordPressDevelopmentPage() {
       ctaHeading="Ready for a WordPress Site That Actually Ranks?"
       ctaText="Tell us about your business and we'll scope a build that fits your market, your goals, and your budget — usually within 48 hours."
       ctaPrimaryLabel="Start My WordPress Build →"
+      serviceCategory="websites-apps"
     />
   )
 }

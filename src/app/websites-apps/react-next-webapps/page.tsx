@@ -55,6 +55,7 @@ export default function ReactNextPage() {
       ctaHeading="Ready for a Web App That Does More?"
       ctaText="Tell us what you're building and we'll scope the architecture, timeline, and budget within 48 hours."
       ctaPrimaryLabel="Start My App Build →"
+      serviceCategory="websites-apps"
     />
   )
 }
