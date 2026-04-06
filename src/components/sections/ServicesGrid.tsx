@@ -73,6 +73,10 @@ export function ServicesGrid() {
       </div>
 
       <style>{`
+        .service-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+        }
         @media (max-width: 768px) {
           .services-grid-top, .services-grid-bottom {
             grid-template-columns: 1fr !important;
@@ -89,11 +93,12 @@ function ServiceCard({ icon, color, eyebrow, title, href, desc }: {
   href: string; desc: string;
 }) {
   return (
-    <article style={{
+    <article className="service-card" style={{
       background: '#fff', borderRadius: 16, padding: '32px 28px',
       border: '1.5px solid #edf0f4', display: 'flex', flexDirection: 'column',
-      borderBottom: `4px solid ${color}`,
-      transition: 'box-shadow 0.22s, border-color 0.22s',
+      borderBottom: `6px solid ${color}`,
+      transition: 'box-shadow 0.3s, transform 0.3s',
+      cursor: 'pointer',
     }}>
       <div style={{
         width: 48, height: 48, borderRadius: 12,
