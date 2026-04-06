@@ -50,19 +50,9 @@ function ReviewCard({ name, role, text }: { name: string; role: string; text: st
       <p style={{ color: 'var(--dark)', fontSize: '0.9rem', lineHeight: 1.6, margin: 0, flex: 1 }}>
         &ldquo;{text}&rdquo;
       </p>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: '50%',
-          background: `hsl(${name.charCodeAt(0) * 7 % 360}, 55%, 55%)`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff', fontWeight: 700, fontSize: '0.8rem', flexShrink: 0,
-        }}>
-          {name.split(' ').map(n => n[0]).join('')}
-        </div>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--dark)' }}>{name}</div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--slate)' }}>{role}</div>
-        </div>
+      <div>
+        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--dark)' }}>{name}</div>
+        <div style={{ fontSize: '0.78rem', color: 'var(--slate)' }}>{role}</div>
       </div>
     </div>
   )

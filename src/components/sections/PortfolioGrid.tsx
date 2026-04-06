@@ -47,41 +47,23 @@ export default function PortfolioGrid() {
                 boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
               }}
             >
-              {/* Browser frame mockup */}
+              {/* Placeholder image area */}
               <div
                 style={{
                   height: 200,
-                  background: 'var(--dark)',
+                  background: 'var(--dark-2)',
                   position: 'relative',
                   overflow: 'hidden',
-                  padding: '0',
                 }}
               >
-                {/* Browser chrome bar */}
-                <div style={{
-                  height: 28, background: 'var(--dark-2)', display: 'flex',
-                  alignItems: 'center', padding: '0 12px', gap: 6,
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
-                }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff5f56' }} />
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ffbd2e' }} />
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#27c93f' }} />
-                  <div style={{
-                    flex: 1, height: 14, background: 'rgba(255,255,255,0.06)',
-                    borderRadius: 4, marginLeft: 8, maxWidth: 180,
-                  }} />
-                </div>
-                {/* Site preview area */}
-                <div style={{
-                  position: 'absolute', top: 28, left: 0, right: 0, bottom: 0,
-                  background: `linear-gradient(135deg, rgba(104,197,173,0.2) 0%, rgba(29,35,48,0.8) 100%)`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Live Project</div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>{client.name}</div>
-                  </div>
-                </div>
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background:
+                      'linear-gradient(135deg, rgba(104,197,173,0.25) 0%, rgba(29,35,48,0.6) 100%)',
+                  }}
+                />
                 <div
                   style={{
                     position: 'absolute',
