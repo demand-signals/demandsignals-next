@@ -1,0 +1,75 @@
+---
+title: "Are Websites Getting Fat? Page Weight, HTML Size, and Googlebot's Limits"
+date: "2026-03-30"
+author: "Jasper"
+excerpt: "Google Search Central analyzes the trend of growing page sizes and explains Googlebot's practical limits for crawling and rendering heavy pages, with clear implications for site performance and indexing."
+tags: ["google-search-central", "page-weight", "web-performance", "googlebot", "technical-seo"]
+category: "search-central"
+serviceCategories: ["websites-apps", "demand-generation"]
+readTime: "5 min read"
+featured: false
+source: "https://www.youtube.com/watch?v=kype1JQbrks"
+infographic:
+  headline: "Page Weight and Googlebot Limits"
+  type: "stats"
+  stats:
+    - { label: "Avg Page Weight (2025)", value: "~2.5 MB" }
+    - { label: "HTML Size Limit (Googlebot)", value: "15 MB" }
+    - { label: "Rendering Memory Cap", value: "Limited" }
+---
+
+Google Search Central just tackled one of the most practical technical SEO questions of 2026: Are websites getting too heavy for search engines to handle? The video analyzes the trend of growing page sizes, explains Googlebot's actual limits for processing HTML and rendering pages, and provides clear guidance on what site owners should do about it.
+
+Watch the full video: [Are websites getting fat? Page weight, HTML size & Googlebot limits explained](https://www.youtube.com/watch?v=kype1JQbrks)
+
+## The Page Weight Trend
+
+The data is unambiguous: web pages are getting heavier. The average page weight has been climbing steadily for years, driven by larger images, more JavaScript, third-party scripts, embedded media, and increasingly complex CSS. What was a 500 KB page in 2015 is now often 2-3 MB or more.
+
+The video presents data showing that the median web page in 2025 weighed approximately 2.5 MB, with the 90th percentile exceeding 7 MB. These numbers include all resources (HTML, CSS, JavaScript, images, fonts, video), not just the HTML document itself.
+
+The HTML document specifically has also grown. Modern single-page applications can produce initial HTML documents of several hundred kilobytes, and pages with extensive inline styling, embedded SVGs, or server-rendered component trees can exceed 1 MB of raw HTML.
+
+## Googlebot's Limits
+
+The video clarifies Googlebot's practical limits, which have been the subject of much speculation in the SEO community:
+
+**HTML size limit:** Googlebot will crawl HTML documents up to approximately 15 MB in raw size. Documents that exceed this limit may be truncated, meaning content beyond the 15 MB mark might not be indexed. For the vast majority of websites, this limit is not a concern. But for pages with extremely long content, massive inline data, or programmatically generated markup, it is worth checking.
+
+**Rendering resources:** The rendering phase (where Googlebot executes JavaScript in headless Chromium) has memory and CPU constraints. Pages that require extensive JavaScript execution, load hundreds of resources, or trigger complex rendering operations may time out during rendering. When rendering times out, Googlebot falls back to the initial HTML it received during the crawl phase.
+
+**Crawl rate impact:** Heavier pages consume more bandwidth during crawling. For sites with crawl budget constraints, larger pages mean fewer pages crawled per session. A site with 1 MB pages gets roughly half the page throughput of a site with 500 KB pages, assuming similar server response times.
+
+## Key Takeaways
+
+1. **The 15 MB HTML limit exists but rarely matters.** Unless your pages contain massive inline data, enormous server-rendered tables, or auto-generated content blocks, you are unlikely to hit this limit. But verify your largest pages to be safe.
+
+2. **JavaScript weight is a bigger concern than HTML weight.** Heavy JavaScript slows rendering, increases the chance of render timeouts, and delays the point at which Googlebot understands your full page content. Reducing JavaScript payload has a direct impact on crawl efficiency.
+
+3. **Image optimization is the highest-impact fix for most sites.** Images typically account for 50-70% of total page weight. Implementing modern formats (WebP, AVIF), proper sizing, and lazy loading reduces total page weight dramatically without affecting content or functionality.
+
+4. **Third-party scripts add weight you do not control.** Analytics, chat widgets, ad networks, social embeds, and marketing tags can add hundreds of kilobytes to a page. Audit your third-party scripts regularly and remove any that do not justify their weight in business value.
+
+5. **Server-side rendering keeps HTML weight meaningful and JavaScript weight low.** SSR frameworks produce complete HTML on the server, reducing the client-side JavaScript needed to render the page. This means Googlebot gets full content during the crawl phase and requires less rendering work, making the process faster and more reliable.
+
+## The Performance Connection
+
+Page weight is not just a crawling concern — it directly affects user experience and Core Web Vitals. Google uses Core Web Vitals as ranking signals, which means heavy pages face a double penalty: slower crawling and indexing plus lower ranking signals due to poor performance.
+
+The Largest Contentful Paint (LCP) metric is particularly sensitive to page weight. Heavy images, unoptimized fonts, and render-blocking scripts all delay LCP, pushing it beyond the 2.5-second threshold that Google considers "good." Pages that fail the LCP threshold face ranking disadvantages in both mobile and desktop search.
+
+Total Blocking Time (TBT), which measures how long JavaScript execution blocks the main thread, is directly correlated with JavaScript payload size. Heavier JavaScript means more execution time, higher TBT, and a worse user experience that Google measures and penalizes.
+
+## The Practical Audit
+
+The video recommends a straightforward audit process: check your heaviest pages using Chrome DevTools' Network panel or a tool like WebPageTest. Identify the largest resource categories (usually images and JavaScript) and address them in order of impact.
+
+For HTML specifically, check whether your pages contain unnecessary inline styles, duplicated SVG elements, or server-rendered content that could be loaded on demand. A 50 KB HTML document with clean markup loads faster and is parsed more efficiently than a 500 KB document bloated with inline data.
+
+## What This Means for Your Business
+
+Page weight is a technical detail with strategic consequences. Heavier pages crawl slower, render less reliably, perform worse for users, and score lower on the Core Web Vitals that influence rankings. Every unnecessary kilobyte is friction between your content and both search engines and users.
+
+At Demand Signals, our [websites and web apps](/websites-apps/react-next-webapps) are built with performance as a core requirement, not an afterthought. We use Next.js with automatic image optimization, code splitting, and server-side rendering to keep page weight minimal while delivering rich user experiences. Our [hosting infrastructure](/websites-apps/hosting) includes CDN delivery, compression, and caching configurations that further reduce the effective weight of every page load.
+
+If your site has never been audited for page weight, this video is the signal to start. The crawling and ranking implications are real, measurable, and fixable.

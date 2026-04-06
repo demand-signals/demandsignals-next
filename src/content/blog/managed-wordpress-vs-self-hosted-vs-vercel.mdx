@@ -1,0 +1,142 @@
+---
+title: "Managed WordPress vs Self-Hosted vs Vercel: Hosting Comparison for Business Sites"
+date: "2025-09-28"
+author: "Morgan"
+excerpt: "Hosting affects site speed, security, and maintenance burden. We compare managed WordPress hosting, self-hosted setups, and modern platforms like Vercel across cost, performance, and scalability."
+tags: ["comparison", "hosting", "wordpress", "vercel", "web-performance"]
+category: "how-to"
+serviceCategories: ["websites-apps"]
+readTime: "9 min read"
+featured: false
+infographic:
+  headline: "Business Website Hosting: 2025 Comparison"
+  type: "comparison"
+  stats:
+    - { label: "Managed WordPress", value: "Easy, $30-200/mo" }
+    - { label: "Self-Hosted", value: "Cheapest, most work" }
+    - { label: "Vercel/Modern", value: "Fastest, $0-20/mo" }
+---
+
+Your hosting platform is the foundation your website runs on, and most business owners spend less time choosing it than they spend picking a logo. That is a mistake. Hosting directly affects page speed (which affects search rankings), security (which affects customer trust), uptime (which affects revenue), and maintenance burden (which affects your sanity).
+
+Here is an honest comparison of the three main hosting approaches for business websites in 2025.
+
+## Managed WordPress Hosting
+
+**What it is:** A hosting provider that specializes in WordPress sites. They handle server configuration, WordPress core updates, security monitoring, backups, and performance optimization. Popular options include WP Engine, Kinsta, Flywheel, and SiteGround.
+
+**Cost:** $30 to $200/month depending on traffic, storage, and features. Enterprise plans go higher.
+
+**Pros:**
+- WordPress-specific optimization (caching, CDN, PHP tuning)
+- Automatic WordPress core and plugin updates
+- Built-in security features (firewall, malware scanning, DDoS protection)
+- One-click staging environments for testing changes
+- Expert WordPress support staff
+- Daily automated backups with one-click restore
+
+**Cons:**
+- Significantly more expensive than basic shared hosting
+- You are still running WordPress, with all its inherent performance overhead
+- Plugin conflicts still happen — managed hosting does not fix them
+- Vendor lock-in with some providers (proprietary caching plugins, migration restrictions)
+- Performance is good relative to WordPress, but WordPress itself is slower than modern alternatives
+
+**Best for:** Businesses committed to WordPress that want minimal hosting headaches and can justify $50-200/month for peace of mind.
+
+**Typical performance:** Time to First Byte (TTFB) of 200-600ms. Lighthouse performance scores of 60-85 with optimization. Core Web Vitals pass rate around 50-70%.
+
+## Self-Hosted (VPS/Cloud)
+
+**What it is:** You rent a virtual private server (VPS) or cloud instance from providers like DigitalOcean, AWS, Linode, or Hetzner and install whatever you want on it. Full control, full responsibility.
+
+**Cost:** $5 to $100/month for the server. Add $50-200/month if you hire someone to manage it. Total: $5-300/month.
+
+**Pros:**
+- Complete control over every aspect of the server
+- Can host any platform, framework, or application
+- Cheapest option at scale (a $20/month VPS can handle significant traffic)
+- No vendor lock-in — you can migrate your server anywhere
+- Can optimize at the server level (nginx configuration, PHP-FPM tuning, database optimization)
+
+**Cons:**
+- You are responsible for security patches, updates, and monitoring
+- Server misconfiguration is the leading cause of business website breaches
+- No support team to call when something breaks at 2 AM
+- Requires technical knowledge or a system administrator
+- Backups, SSL renewal, and performance monitoring are your responsibility
+
+**Best for:** Businesses with technical staff or an IT partner who can manage server infrastructure. Also suitable for businesses running custom applications that do not fit managed hosting environments.
+
+**Typical performance:** Varies wildly based on configuration. A well-tuned VPS can match or beat managed hosting. A misconfigured one will be slower and less secure than any managed option.
+
+## Vercel and Modern Hosting Platforms
+
+**What it is:** Modern hosting platforms designed for JavaScript frameworks like Next.js, React, and others. [Vercel](/websites-apps/hosting), Netlify, and Cloudflare Pages represent this category. They deploy your site as static files and serverless functions distributed across a global CDN.
+
+**Cost:** $0 for hobby projects. $20/month for the Pro tier that covers most business needs. $0-20/month total for the vast majority of business websites.
+
+**Pros:**
+- Fastest performance of any hosting option (content served from CDN edge locations worldwide)
+- Zero server maintenance — no OS updates, no security patches, no server configuration
+- Automatic HTTPS, automatic scaling, automatic deployments from Git
+- Built-in analytics, speed insights, and performance monitoring
+- Preview deployments for every code change (built-in staging)
+- DDoS protection and edge-level security included
+- Global CDN means the same fast experience worldwide
+
+**Cons:**
+- Only works with modern frameworks (Next.js, React, Svelte, etc.) — not WordPress
+- Requires a developer for site changes (no admin dashboard for content edits without a headless CMS)
+- Serverless function cold starts can add latency to dynamic requests
+- Less mature ecosystem for some enterprise features (though rapidly evolving)
+
+**Best for:** Businesses with [custom-built websites on modern frameworks](/websites-apps/react-next-webapps) that prioritize speed, security, and minimal maintenance overhead.
+
+**Typical performance:** TTFB under 50ms from edge locations. Lighthouse performance scores of 90-100. Core Web Vitals pass rate above 95%.
+
+## The Numbers Side by Side
+
+| Factor | Managed WordPress | Self-Hosted VPS | Vercel/Modern |
+|--------|-------------------|-----------------|---------------|
+| Monthly cost | $30-200 | $5-300 | $0-20 |
+| Annual cost | $360-2,400 | $60-3,600 | $0-240 |
+| TTFB | 200-600ms | 100-800ms | 20-50ms |
+| Lighthouse score | 60-85 | 50-95 | 90-100 |
+| Maintenance effort | Low | High | Near zero |
+| Scaling | Plan upgrade needed | Manual scaling | Automatic |
+| Security management | Provider handles most | You handle all | Platform handles all |
+| Backup/restore | Automated | Manual setup | Git-based (automatic) |
+
+## The Performance Gap Is Real
+
+This is not a marginal difference. The gap between a managed WordPress site (TTFB of 400ms) and a Vercel-hosted Next.js site (TTFB of 30ms) is visible to users and measurable in conversion rates. Studies consistently show that every 100ms of added load time reduces conversion rates by 1-2%.
+
+For a local business website generating $500,000/year through online leads, a 300ms speed improvement could translate to 3-6% more conversions. That is $15,000-30,000 in additional revenue — far exceeding the annual hosting cost of any option.
+
+Google also uses Core Web Vitals as ranking signals. Sites that pass Core Web Vitals assessments receive a ranking boost in both traditional search and local pack results. Modern hosting platforms achieve passing scores with minimal effort; WordPress hosting requires significant optimization work to achieve the same.
+
+## Our Recommendation
+
+**If you are building a new website, use modern hosting (Vercel or equivalent).** The performance, cost, and maintenance advantages are overwhelming. Pair it with a headless CMS if your team needs to edit content without developer involvement.
+
+**If you already have a WordPress site and it is working for you, managed WordPress hosting is the pragmatic upgrade.** Moving from shared hosting to WP Engine or Kinsta delivers meaningful performance improvements without rebuilding your site.
+
+**Avoid self-hosting unless you have dedicated IT resources.** The cost savings are not worth the security and maintenance risks for most businesses. One misconfigured server can cost more in downtime and breach remediation than years of managed or modern hosting fees.
+
+## What This Means for Your Business
+
+Hosting is not a commodity decision. The platform your website runs on directly affects how fast it loads, how well it ranks, how secure it is, and how much time you spend managing it. The trend is clear: modern hosting platforms deliver better performance at lower cost with less maintenance than any traditional hosting approach.
+
+Whether you are launching a new site or considering a migration, evaluate hosting based on total cost of ownership — not just the monthly fee.
+
+## Frequently Asked Questions
+
+### Can I move my WordPress site to Vercel?
+Not directly. Vercel hosts JavaScript applications, not PHP-based WordPress. However, you can use WordPress as a headless CMS (content management backend) and build a Next.js frontend hosted on Vercel. This gives you WordPress content management with Vercel performance.
+
+### Is shared hosting ever acceptable for a business website?
+For a basic brochure site with minimal traffic and no competitive SEO ambitions, shared hosting at $5-10/month technically works. But the performance limitations, security risks, and "noisy neighbor" issues make it a poor choice for any business that depends on its website for leads or revenue.
+
+### How difficult is it to migrate between hosting platforms?
+WordPress-to-WordPress migrations (e.g., shared hosting to WP Engine) are relatively straightforward — most managed hosts offer free migration. Platform migrations (WordPress to Next.js) are full rebuild projects. The hosting decision is easier to change than the platform decision, but early is always better than late.
