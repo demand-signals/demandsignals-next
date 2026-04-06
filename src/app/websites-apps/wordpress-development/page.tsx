@@ -15,7 +15,7 @@ export default function WordPressDevelopmentPage() {
       titleHtml={<><span style={{color:'#FF6B2B'}}>WordPress Sites</span> That Work<br /><span style={{color:'#52C9A0'}}>While You Sleep.</span></>}
       subtitle="AI-managed WordPress built for local search dominance, GEO citations, and automated lead generation."
       ctaLabel="Build My WordPress Site →"
-      calloutHtml={<>We connect an <span style={{color:'#52C9A0'}}>AI content engine</span> to every WordPress site we build — so your rankings compound automatically, without you writing a single word.</>}
+      calloutHtml={<>Demand Signals connects an <span style={{color:'#52C9A0'}}>AI content engine</span> to every WordPress site we build — because 43% of the web runs on WordPress, and the sites that compound content automatically are the ones that dominate local search.</>}
       breadcrumbs={[
         { name: 'Home', path: '/' },
         { name: 'Websites & Apps', path: '/websites-apps' },

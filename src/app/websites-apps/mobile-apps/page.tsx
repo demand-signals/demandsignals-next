@@ -15,7 +15,7 @@ export default function MobileAppsPage() {
       titleHtml={<><span style={{color:'#FF6B2B'}}>iOS & Android Apps</span><br /><span style={{color:'#52C9A0'}}>One Codebase. Both Stores.</span></>}
       subtitle="Cross-platform mobile apps with React Native — AI features, push notifications, offline mode, and App Store publishing."
       ctaLabel="Build My Mobile App →"
-      calloutHtml={<>Every mobile app ships with <span style={{color:'#52C9A0'}}>AI features</span> — intelligent search, personalized content, automated notifications, and real-time analytics.</>}
+      calloutHtml={<>Demand Signals ships every mobile app with <span style={{color:'#52C9A0'}}>AI features built in</span> — intelligent search, personalized content, and automated notifications. React Native delivers 90% of native performance at 50% of the development cost, deploying to both iOS and Android from a single codebase.</>}
       breadcrumbs={[
         { name: 'Home', path: '/' },
         { name: 'Websites & Apps', path: '/websites-apps' },

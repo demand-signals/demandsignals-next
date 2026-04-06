@@ -14,7 +14,7 @@ export default function Page() {
       eyebrow="AI Content Republishing"
       titleHtml={<><span style={{color:'#FF6B2B'}}>One Piece of Content.</span><br /><span style={{color:'#52C9A0'}}>Ten Channels. Zero Extra Work.</span></>}
       subtitle="AI repurposes your blog posts into social media, email newsletters, LinkedIn articles, GMB posts, and more — maximizing every piece of content you produce."
-      calloutHtml={<>Most businesses create content once and publish it in one place. We turn every piece into 5-10 format-optimized versions across every channel.</>}
+      calloutHtml={<>Demand Signals turns every piece of content into <span style={{color:'#52C9A0'}}>5-10 format-optimized versions</span> across every channel — because multi-channel content distribution increases audience reach by up to 300%, and repurposed content generates 60% more engagement than single-format publishing.</>}
       ctaLabel="Maximize My Content →"
       breadcrumbs={[
         { name: 'Home', path: '/' },

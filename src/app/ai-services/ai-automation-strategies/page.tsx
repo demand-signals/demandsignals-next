@@ -15,6 +15,7 @@ export default function Page() {
       titleHtml={<><span style={{color:'#FF6B2B'}}>AI Adoption Strategies</span><br /><span style={{color:'#52C9A0'}}>Know Where to Start.</span></>}
       subtitle="Custom roadmaps to integrate AI across your business. We audit your operations, identify the highest-ROI opportunities, and build a phased plan."
       ctaLabel="Get My AI Roadmap →"
+      calloutHtml={<>Demand Signals builds <span style={{color:'#52C9A0'}}>phased AI adoption roadmaps</span> that start with the highest-ROI wins first — because 72% of businesses say they struggle to move past AI pilots into production, and the average company wastes $1.3M on AI projects that never ship.</>}
       breadcrumbs={[
         { name: 'Home', path: '/' },
         { name: 'AI & Agent Services', path: '/ai-services' },

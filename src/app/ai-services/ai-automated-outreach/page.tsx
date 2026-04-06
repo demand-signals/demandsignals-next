@@ -15,6 +15,7 @@ export default function Page() {
       titleHtml={<><span style={{color:'#FF6B2B'}}>AI Outreach</span><br /><span style={{color:'#52C9A0'}}>Personalized at Scale.</span></>}
       subtitle="AI researches prospects, crafts personalized messages, manages multi-step sequences, and routes qualified leads to your sales process. Outreach that feels human, runs like a machine."
       ctaLabel="Automate My Outreach →"
+      calloutHtml={<>Demand Signals delivers <span style={{color:'#52C9A0'}}>personalized outreach at scale</span> — our AI-powered sequences achieve 45-65% open rates and 8-15% reply rates, compared to the industry average of 21% open rates for cold email campaigns.</>}
       breadcrumbs={[
         { name: 'Home', path: '/' },
         { name: 'AI & Agent Services', path: '/ai-services' },

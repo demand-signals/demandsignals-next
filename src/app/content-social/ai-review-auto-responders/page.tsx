@@ -14,7 +14,7 @@ export default function Page() {
       eyebrow="AI Review Responders"
       titleHtml={<><span style={{color:'#FF6B2B'}}>Every Review Handled.</span><br /><span style={{color:'#52C9A0'}}>Within Hours, Not Days.</span></>}
       subtitle="AI monitors every Google review, drafts professional responses, and publishes them — positive reviews acknowledged, negative reviews handled diplomatically. Every review. Every time."
-      calloutHtml={<>Businesses that respond to reviews within 24 hours see 33% higher customer satisfaction scores. Our AI responds within hours.</>}
+      calloutHtml={<>Demand Signals responds to every review <span style={{color:'#52C9A0'}}>within hours, not days</span> — because businesses that respond within 24 hours see 33% higher customer satisfaction scores, and 88% of consumers say they trust businesses that respond to both positive and negative reviews.</>}
       ctaLabel="Handle My Reviews →"
       breadcrumbs={[
         { name: 'Home', path: '/' },

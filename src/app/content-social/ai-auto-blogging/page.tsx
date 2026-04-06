@@ -14,7 +14,7 @@ export default function Page() {
       eyebrow="AI Auto Blogging"
       titleHtml={<><span style={{color:'#FF6B2B'}}>Blog Content</span><br /><span style={{color:'#52C9A0'}}>On Autopilot.</span></>}
       subtitle="AI researches topics, writes SEO-structured articles, and publishes them weekly — building your authority and driving organic traffic without you writing a word."
-      calloutHtml={<>Consistent blogging is the #1 long-term traffic driver for local businesses. Our AI publishes weekly, targeting the search terms that drive actual business.</>}
+      calloutHtml={<>Demand Signals deploys <span style={{color:'#52C9A0'}}>AI-powered content engines</span> that publish SEO-structured articles on autopilot — because businesses that blog consistently generate 67% more leads per month, and companies with 400+ blog pages get 6x more leads than those with fewer than 100.</>}
       ctaLabel="Start My Blog Engine →"
       breadcrumbs={[
         { name: 'Home', path: '/' },

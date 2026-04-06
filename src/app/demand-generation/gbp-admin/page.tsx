@@ -14,7 +14,7 @@ export default function Page() {
       eyebrow="Google Business Admin"
       titleHtml={<><span style={{color:'#FF6B2B'}}>Google Business Profile</span><br /><span style={{color:'#52C9A0'}}>Always Active. Always Optimized.</span></>}
       subtitle="AI manages your Google Business Profile — weekly posts, photo updates, Q&A responses, review management, and attribute optimization. Your GBP never goes stale."
-      calloutHtml={<>Businesses with active GBP profiles receive 7x more clicks than those with incomplete listings. Our AI keeps your profile 100% optimized, 100% of the time.</>}
+      calloutHtml={<>Demand Signals keeps your Google Business Profile <span style={{color:'#52C9A0'}}>100% optimized, 100% of the time</span> — because businesses with active GBP profiles receive 7x more clicks than those with incomplete listings, and 64% of consumers use Google Business Profile to find contact details.</>}
       ctaLabel="Optimize My GBP →"
       breadcrumbs={[
         { name: 'Home', path: '/' },

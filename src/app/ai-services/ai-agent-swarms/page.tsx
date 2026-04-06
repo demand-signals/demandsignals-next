@@ -14,7 +14,7 @@ export default function Page() {
       eyebrow="AI Agent Swarms"
       titleHtml={<><span style={{color:'#FF6B2B'}}>AI Agent Swarms</span><br /><span style={{color:'#52C9A0'}}>A Team That Never Sleeps.</span></>}
       subtitle="Networks of autonomous AI agents handling marketing operations 24/7. Each agent specializes in a function — content, SEO, reviews, outreach. They coordinate through shared data."
-      calloutHtml={<>We run 19 AI agents ourselves — monitoring search, generating content, responding to reviews, and managing outreach across every client. Now we deploy them for your business.</>}
+      calloutHtml={<>Demand Signals runs <span style={{color:'#52C9A0'}}>19 autonomous AI agents</span> in-house — monitoring search rankings, generating content, responding to reviews, and managing outreach across every client, 24/7/365. We deploy the same architecture for your business.</>}
       ctaLabel="Deploy My Agent Swarm →"
       breadcrumbs={[
         { name: 'Home', path: '/' },

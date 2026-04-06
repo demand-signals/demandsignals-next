@@ -15,7 +15,7 @@ export default function LocalSEOPage() {
       titleHtml={<><span style={{color:'#FF6B2B'}}>Local SEO</span> That<br /><span style={{color:'#52C9A0'}}>Never Stops Working.</span></>}
       subtitle="AI-powered local search optimization — longtail keyword targeting, citation building, review management, and programmatic content that compounds authority automatically."
       ctaLabel="Dominate My Local Market →"
-      calloutHtml={<>Our AI monitors your search rankings daily, identifies opportunities, and creates optimized content <span style={{color:'#52C9A0'}}>automatically</span> — no monthly consultant check-ins required.</>}
+      calloutHtml={<>Demand Signals deploys AI that monitors your search rankings <span style={{color:'#52C9A0'}}>daily, not monthly</span> — because 46% of all Google searches have local intent, and businesses that publish consistently see 3.5x more indexed pages driving organic traffic compared to those that blog sporadically.</>}
       breadcrumbs={[
         { name: 'Home', path: '/' },
         { name: 'Demand Generation', path: '/demand-generation' },

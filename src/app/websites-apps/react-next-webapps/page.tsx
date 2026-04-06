@@ -15,7 +15,7 @@ export default function ReactNextPage() {
       titleHtml={<><span style={{color:'#FF6B2B'}}>Next.js Apps</span> With<br /><span style={{color:'#52C9A0'}}>AI Built In.</span></>}
       subtitle="Full-stack web applications on Next.js 16 — TypeScript, Supabase, Claude API, and Vercel edge deployment from day one."
       ctaLabel="Start My Web App →"
-      calloutHtml={<>Every app we build ships with <span style={{color:'#52C9A0'}}>AI features from day one</span> — intelligent search, content generation, automated workflows, and structured data for AI discovery.</>}
+      calloutHtml={<>Demand Signals builds every Next.js app with <span style={{color:'#52C9A0'}}>AI features from day one</span> — intelligent search, content generation, and automated workflows. Next.js powers 8 of the top 10 fastest-growing SaaS platforms, and we deploy on Vercel&apos;s edge network across 100+ global locations.</>}
       breadcrumbs={[
         { name: 'Home', path: '/' },
         { name: 'Websites & Apps', path: '/websites-apps' },

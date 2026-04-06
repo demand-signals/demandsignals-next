@@ -15,6 +15,7 @@ export default function HostingPage() {
       titleHtml={<><span style={{color:'#FF6B2B'}}>Managed Infrastructure</span><br /><span style={{color:'#52C9A0'}}>Zero DevOps Required.</span></>}
       subtitle="Enterprise-grade hosting on Vercel, Cloudflare, and DSIG. Automated deployments, edge CDN, SSL, and monitoring — you never think about servers."
       ctaLabel="Get Hosted →"
+      calloutHtml={<>Demand Signals hosts every site on <span style={{color:'#52C9A0'}}>enterprise-grade infrastructure</span> — Vercel&apos;s edge network delivers sub-100ms load times from 100+ global locations, and our 99.99% uptime SLA means less than 53 minutes of downtime per year.</>}
       breadcrumbs={[
         { name: 'Home', path: '/' },
         { name: 'Websites & Apps', path: '/websites-apps' },

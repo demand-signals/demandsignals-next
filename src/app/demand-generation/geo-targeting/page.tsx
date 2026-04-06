@@ -14,7 +14,7 @@ export default function Page() {
       eyebrow="Geo-Targeting"
       titleHtml={<><span style={{color:'#FF6B2B'}}>Geo-Targeting</span><br /><span style={{color:'#52C9A0'}}>Own Every Zip Code.</span></>}
       subtitle="Programmatic location pages that rank for every service × city combination in your territory. AI builds them, AI maintains them, AI optimizes them."
-      calloutHtml={<>We built 93 geo-targeted pages for SB Construction — they now rank #1 for 40+ local search terms across El Dorado County.</>}
+      calloutHtml={<>Demand Signals built <span style={{color:'#52C9A0'}}>93 geo-targeted pages</span> for one client — generating #1 rankings for 40+ local search terms across El Dorado County. 72% of consumers who perform a local search visit a store within 5 miles.</>}
       ctaLabel="Target My Territory →"
       breadcrumbs={[
         { name: 'Home', path: '/' },

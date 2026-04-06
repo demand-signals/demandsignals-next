@@ -14,7 +14,7 @@ export default function Page() {
       eyebrow="AI Social Media"
       titleHtml={<><span style={{color:'#FF6B2B'}}>AI Social Media</span><br /><span style={{color:'#52C9A0'}}>5-7 Posts Per Week. Zero Employees.</span></>}
       subtitle="AI generates posts across every platform, tailored to your brand voice. Scheduled, published, and tracked automatically. You approve in 10 minutes a week."
-      calloutHtml={<>A social media manager costs $3,000+/month for 3-4 posts per week. Our AI produces 5-7 posts across multiple platforms for a fraction of the cost.</>}
+      calloutHtml={<>Demand Signals replaces your <span style={{color:'#52C9A0'}}>$3,000+/month social media manager</span> with AI that produces 5-7 posts per week across multiple platforms — because consistent posting drives 67% more leads than businesses that post sporadically, at a fraction of the labor cost.</>}
       ctaLabel="Automate My Social →"
       breadcrumbs={[
         { name: 'Home', path: '/' },

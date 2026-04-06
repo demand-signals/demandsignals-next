@@ -14,7 +14,7 @@ export default function Page() {
       eyebrow="Demand Gen Systems"
       titleHtml={<><span style={{color:'#FF6B2B'}}>Demand Gen Systems</span><br /><span style={{color:'#52C9A0'}}>Pipelines That Run 24/7.</span></>}
       subtitle="Full-stack demand generation pipelines — AI monitors performance, identifies opportunities, creates content, optimizes pages, and routes leads. All automated. All always on."
-      calloutHtml={<>Our domain loop architecture means your demand generation never stops — search monitoring, content creation, and optimization run continuously without human intervention.</>}
+      calloutHtml={<>Demand Signals built the <span style={{color:'#52C9A0'}}>domain loop architecture</span> — three AI systems that coordinate 24/7 across search monitoring, content creation, and optimization. Companies using marketing automation see a 451% increase in qualified leads compared to those relying on manual processes.</>}
       ctaLabel="Build My Pipeline →"
       breadcrumbs={[
         { name: 'Home', path: '/' },

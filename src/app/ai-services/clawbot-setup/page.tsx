@@ -15,6 +15,7 @@ export default function Page() {
       titleHtml={<><span style={{color:'#FF6B2B'}}>AI Clawbots</span><br /><span style={{color:'#52C9A0'}}>Automated Intelligence Gathering.</span></>}
       subtitle="Intelligent web crawlers that gather competitive intelligence, monitor pricing, track citations, and feed data to your AI systems. Automated research at scale."
       ctaLabel="Deploy My Clawbots →"
+      calloutHtml={<>Demand Signals deploys <span style={{color:'#52C9A0'}}>intelligent web crawlers</span> that gather competitive data continuously — because 89% of businesses say competitive intelligence directly influences their strategy, and companies that monitor competitors systematically grow revenue 2.3x faster than those that don&apos;t.</>}
       breadcrumbs={[
         { name: 'Home', path: '/' },
         { name: 'AI & Agent Services', path: '/ai-services' },

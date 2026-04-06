@@ -15,7 +15,7 @@ export default function LLMOptimizationPage() {
       titleHtml={<><span style={{color:'#FF6B2B'}}>Get Cited by AI.</span><br /><span style={{color:'#52C9A0'}}>Not Just Ranked by Google.</span></>}
       subtitle="When someone asks ChatGPT, Perplexity, or Gemini who to hire in your area — your name comes up. We make that happen with GEO, AEO, and llms.txt optimization."
       ctaLabel="Optimize for AI Search →"
-      calloutHtml={<>LLM-referred traffic converts at <span style={{color:'#52C9A0'}}>2.47%</span> — higher than Google Shopping, paid search, or paid social. And it costs <span style={{color:'#52C9A0'}}>zero ad spend</span>.</>}
+      calloutHtml={<>Demand Signals specializes in the discovery channel most agencies ignore — LLM-referred traffic converts at <span style={{color:'#52C9A0'}}>2.47%</span>, higher than Google Shopping, paid search, or paid social. 48% of Google searches now trigger AI Overviews, and it costs <span style={{color:'#52C9A0'}}>zero ad spend</span>.</>}
       breadcrumbs={[
         { name: 'Home', path: '/' },
         { name: 'Demand Generation', path: '/demand-generation' },

@@ -15,7 +15,7 @@ export default function VibeCodedPage() {
       titleHtml={<><span style={{color:'#FF6B2B'}}>Vibe Coded Apps</span><br /><span style={{color:'#52C9A0'}}>Ship in Days, Not Months.</span></>}
       subtitle="AI-built web applications using Cursor, Claude Code, and modern AI development tools. From idea to production faster than you thought possible."
       ctaLabel="Ship My App Fast →"
-      calloutHtml={<>We use <span style={{color:'#52C9A0'}}>AI-assisted development</span> to ship production web apps in days — not the months traditional agencies quote. Same quality, fraction of the time.</>}
+      calloutHtml={<>Demand Signals uses <span style={{color:'#52C9A0'}}>AI-assisted development</span> to ship production web apps at 5-10x the speed of traditional agencies — cutting build timelines by 40-60% and delivering working software in days, not months.</>}
       breadcrumbs={[
         { name: 'Home', path: '/' },
         { name: 'Websites & Apps', path: '/websites-apps' },

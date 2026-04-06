@@ -15,6 +15,7 @@ export default function Page() {
       titleHtml={<><span style={{color:'#FF6B2B'}}>Private LLMs</span><br /><span style={{color:'#52C9A0'}}>Your Data Stays Yours.</span></>}
       subtitle="Self-hosted language models for businesses with sensitive data. Full AI capabilities without sending proprietary information to third-party servers."
       ctaLabel="Explore Private LLMs →"
+      calloutHtml={<>Demand Signals deploys <span style={{color:'#52C9A0'}}>private, self-hosted language models</span> for businesses where data sovereignty is non-negotiable — because 61% of enterprises cite data privacy as their top barrier to AI adoption, and fine-tuned private models can match frontier model performance on domain-specific tasks.</>}
       breadcrumbs={[
         { name: 'Home', path: '/' },
         { name: 'AI & Agent Services', path: '/ai-services' },

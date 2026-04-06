@@ -15,6 +15,7 @@ export default function Page() {
       titleHtml={<><span style={{color:'#FF6B2B'}}>AI Infrastructure</span><br /><span style={{color:'#52C9A0'}}>The Plumbing That Makes AI Work.</span></>}
       subtitle="Database design, API integrations, pipeline orchestration, monitoring, and alerting — the systems architecture that makes AI agents reliable and scalable."
       ctaLabel="Build My AI Infrastructure →"
+      calloutHtml={<>Demand Signals builds the <span style={{color:'#52C9A0'}}>infrastructure that makes AI agents reliable</span> at scale — our base stack runs at $95-265/month total and serves multiple clients with 99.99% uptime, because AI without proper infrastructure is just a chatbot.</>}
       breadcrumbs={[
         { name: 'Home', path: '/' },
         { name: 'AI & Agent Services', path: '/ai-services' },

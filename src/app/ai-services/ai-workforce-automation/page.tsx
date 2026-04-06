@@ -14,7 +14,7 @@ export default function Page() {
       eyebrow="AI Workforce Automation"
       titleHtml={<><span style={{color:'#FF6B2B'}}>Replace the Role.</span><br /><span style={{color:'#52C9A0'}}>Not the Person.</span></>}
       subtitle="AI systems that handle specific business functions — content creation, social media, review management, SEO, data entry — at a fraction of the cost of human labor."
-      calloutHtml={<>The pitch is simple: replace the people and agencies doing manual marketing work with AI systems that cost less and perform better. We&apos;ve done it across every industry.</>}
+      calloutHtml={<>Demand Signals replaces manual marketing roles with <span style={{color:'#52C9A0'}}>AI systems that cost 60-85% less</span> and perform better — a social media manager + content writer + SEO consultant typically costs $8,000-10,000/month in human labor. Our AI handles all three for $1,400-3,500/month.</>}
       ctaLabel="Automate My Workforce →"
       breadcrumbs={[
         { name: 'Home', path: '/' },

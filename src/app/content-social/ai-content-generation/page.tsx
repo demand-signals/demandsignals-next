@@ -14,7 +14,7 @@ export default function Page() {
       eyebrow="AI Content Generation"
       titleHtml={<><span style={{color:'#FF6B2B'}}>AI Content</span><br /><span style={{color:'#52C9A0'}}>That Ranks and Gets Cited.</span></>}
       subtitle="GEO-first content built to rank in Google AND get cited by ChatGPT, Perplexity, and Gemini. Written by AI, structured for discovery, reviewed by humans."
-      calloutHtml={<>Every piece of content includes direct-answer structure, question-format headers, FAQ schema, and citable data — the signals both Google and AI search engines prioritize.</>}
+      calloutHtml={<>Demand Signals structures every piece of content for <span style={{color:'#52C9A0'}}>dual discovery</span> — direct-answer paragraphs, question-format headers, FAQ schema, and citable data. 58.5% of Google searches now end without a click, making AI-citable content structure the difference between being found and being invisible.</>}
       ctaLabel="Start My Content Engine →"
       breadcrumbs={[
         { name: 'Home', path: '/' },
