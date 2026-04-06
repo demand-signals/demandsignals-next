@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import { getAllPosts, getPostBySlug, CONTENT_CATEGORY_LABELS, CONTENT_CATEGORY_COLORS } from '@/lib/blog'
 import { BlogInfographic } from '@/components/blog/BlogInfographic'
+import { ParticleCanvas } from '@/components/sections/HeroCanvas'
+import { BlogCategoryNav } from '@/components/blog/BlogCategoryNav'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -38,9 +40,10 @@ export default async function BlogPostPage({ params }: Props) {
 
   return (
     <>
-      {/* Dark hero */}
-      <section style={{ background: 'var(--dark)', color: '#fff', padding: '72px 24px 64px' }}>
-        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+      {/* Hero with particles */}
+      <section style={{ position: 'relative', overflow: 'hidden', background: '#080e1f', color: '#fff', padding: '100px 24px 64px' }}>
+        <ParticleCanvas />
+        <div style={{ maxWidth: 760, margin: '0 auto', position: 'relative', zIndex: 2 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
             {post.category && (
               <span style={{
@@ -74,6 +77,9 @@ export default async function BlogPostPage({ params }: Props) {
           </div>
         </div>
       </section>
+
+      {/* Category navigation */}
+      <BlogCategoryNav activeCategory={post.category} />
 
       {/* Prose body */}
       <section style={{ background: '#fff', padding: '56px 24px 64px' }}>
