@@ -1,16 +1,18 @@
+import Image from 'next/image'
 import { buildMetadata } from '@/lib/metadata'
 import Link from 'next/link'
 import { PageHero } from '@/components/sections/PageHero'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { breadcrumbSchema, faqSchema } from '@/lib/schema'
-import { CITIES } from '@/lib/cities'
 import { FaqAccordion } from '@/components/ui/FaqAccordion'
 import { AnimatedCTA } from '@/components/sections/AnimatedCTA'
+import { CountySelector } from '@/components/sections/CountySelector'
+import { getCountiesWithCities } from '@/lib/counties'
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/motion/ScrollReveal'
 
 export const metadata = buildMetadata({
   title:       'AI Marketing Agency — Northern California & Nationwide | Demand Signals',
-  description: 'Demand Signals is headquartered in El Dorado County, CA — serving businesses across 5 NorCal counties and clients throughout the USA, Australia, Thailand, and beyond. AI-powered websites, local SEO, and agent swarms.',
+  description: 'AI marketing agency in El Dorado County, CA serving 5 NorCal counties and clients across the USA, Australia, Thailand, and beyond.',
   path:        '/locations',
   keywords: [
     'AI marketing Northern California',
@@ -25,59 +27,14 @@ export const metadata = buildMetadata({
   ogDescription: 'Based in El Dorado County, CA — serving clients across Northern California, the USA, Australia, Thailand, and beyond.',
 })
 
-const COUNTIES = [
-  {
-    slug: 'el-dorado',
-    name: 'El Dorado County',
-    tagline: 'Our Home County · Gold Country to Lake Tahoe',
-    description: 'El Dorado County is our home base — and where our roots run deepest. From the historic Gold Rush towns of the foothills to the world-class shores of Lake Tahoe, we know every neighborhood, competitor, and customer behavior in this market.',
-    cities: ['el-dorado-hills', 'cameron-park', 'folsom', 'south-lake-tahoe', 'placerville'],
-    featured: true,
-    color: '#52C9A0',
-  },
-  {
-    slug: 'sacramento',
-    name: 'Sacramento County',
-    tagline: "California's Capital Region · Largest Metro Market",
-    description: "California's capital region is one of the most competitive local business markets in the state — and one of our strongest. We serve businesses across Sacramento, Folsom, Citrus Heights, and the surrounding suburbs.",
-    cities: ['sacramento', 'folsom', 'citrus-heights'],
-    featured: false,
-    color: '#3B82F6',
-  },
-  {
-    slug: 'placer',
-    name: 'Placer County',
-    tagline: "NorCal's Fastest-Growing · Affluent Suburbs to Sierra Foothills",
-    description: "One of California's fastest-growing counties — from Roseville's booming retail corridors to the affluent enclaves of Granite Bay and the historic charm of Auburn. A high-income market with intense competition and massive opportunity.",
-    cities: ['roseville', 'rocklin', 'granite-bay', 'auburn', 'lincoln'],
-    featured: false,
-    color: '#8B5CF6',
-  },
-  {
-    slug: 'amador',
-    name: 'Amador County',
-    tagline: 'Gold Rush Wine Country · Boutique Markets, Loyal Customers',
-    description: 'Amador County is California\'s undiscovered marketing opportunity — a wine country destination drawing thousands of Bay Area and Sacramento visitors each weekend, with a loyal local base that rewards businesses that show up online.',
-    cities: ['jackson', 'sutter-creek'],
-    featured: false,
-    color: '#DC2626',
-  },
-  {
-    slug: 'nevada',
-    name: 'Nevada County',
-    tagline: 'Sierra Foothills & Mountain Communities · High-Income, High-Loyalty',
-    description: 'Nevada County is a gem — a constellation of educated, high-income communities including Grass Valley, Nevada City, and Truckee. Remote workers, artists, mountain resort visitors, and deeply rooted locals all coexist in one of NorCal\'s most distinctive markets.',
-    cities: ['grass-valley', 'nevada-city', 'truckee'],
-    featured: false,
-    color: '#059669',
-  },
-]
+/* ── County data from shared module ────────────────────────── */
+const COUNTIES_WITH_CITIES = getCountiesWithCities()
 
-const GLOBAL_REACH = [
-  { flag: '🇺🇸', region: 'United States', note: 'Serving businesses from California to New York — AI systems configured for any US market.' },
-  { flag: '🇦🇺', region: 'Australia', note: 'Active clients across Sydney, Melbourne, and regional Australian markets.' },
-  { flag: '🇹🇭', region: 'Thailand', note: 'AI marketing for hospitality, tourism, and service businesses throughout Thailand.' },
-  { flag: '🌏', region: 'Worldwide', note: 'If you have customers in a market, we can build the AI infrastructure to reach them.' },
+const GLOBAL_REGIONS = [
+  { flag: 'https://flagcdn.com/w160/us.png', region: 'United States', markets: 'California, Texas, Florida, New York, and 46 more states', note: 'Our AI systems are market-agnostic — configured for any US city, industry, and competitive landscape.' },
+  { flag: 'https://flagcdn.com/w160/au.png', region: 'Australia', markets: 'Sydney, Melbourne, Brisbane, Perth', note: 'Active clients across Australian metros and regional markets. AI content and SEO tuned for AU search behavior.' },
+  { flag: 'https://flagcdn.com/w160/th.png', region: 'Thailand', markets: 'Bangkok, Chiang Mai, Phuket, Pattaya', note: 'AI marketing for hospitality, tourism, and service businesses throughout Thailand.' },
+  { flag: '🌏', emoji: true, region: 'Global', markets: 'Anywhere your customers are', note: 'If you have a market, we build the AI infrastructure to dominate it — language, search engine, and platform agnostic.' },
 ]
 
 const locationsFaqs = [
@@ -103,48 +60,14 @@ const locationsFaqs = [
   },
 ]
 
-function CityCard({ city, accentColor }: { city: { slug: string; name: string; county: string; population: string; industries: string[]; description: string }; accentColor: string }) {
-  return (
-    <Link href={`/locations/${city.slug}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
-      <div className="city-card" style={{
-        background: '#fff',
-        border: '1px solid var(--border)',
-        borderRadius: 16,
-        overflow: 'hidden',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-      }}>
-        <div style={{ height: 4, background: accentColor }} />
-        <div style={{ padding: '22px 24px 24px', flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-            {city.county}
-          </span>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--dark)', margin: 0, lineHeight: 1.2 }}>
-            {city.name}
-          </h3>
-          <div style={{ fontSize: '0.82rem', color: 'var(--slate)' }}>
-            👥 {city.population} residents
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, flex: 1 }}>
-            {city.industries.slice(0, 3).map(ind => (
-              <span key={ind} style={{
-                background: 'var(--light)', border: '1px solid var(--border)',
-                borderRadius: 100, padding: '3px 10px',
-                fontSize: '0.72rem', color: 'var(--dark)', fontWeight: 500,
-              }}>
-                {ind}
-              </span>
-            ))}
-          </div>
-          <span style={{ color: '#FF6B2B', fontWeight: 600, fontSize: '0.85rem', marginTop: 4 }}>
-            AI Marketing for {city.name} →
-          </span>
-        </div>
-      </div>
-    </Link>
-  )
-}
+const SERVICES = [
+  { icon: '🌐', title: 'AI-Powered Websites', desc: 'Fast, modern sites built to rank in Google and appear in AI search results. Local schema, city-specific pages, Core Web Vitals optimized.', href: '/websites-apps' },
+  { icon: '📍', title: 'Local SEO & Google Maps', desc: 'GBP management, citation building, on-page SEO targeting your city\'s highest-intent searches. We own the Map Pack.', href: '/demand-generation/local-seo' },
+  { icon: '🔍', title: 'GEO & LLM Optimization', desc: 'Get cited by ChatGPT, Gemini, and Perplexity when locals ask for recommendations. Structured data, entity signals, llms.txt.', href: '/demand-generation/geo-aeo-llm-optimization' },
+  { icon: '✍️', title: 'AI Content & Social', desc: 'City-specific blog posts, social media automation, and review responses published on a consistent schedule.', href: '/content-social/ai-content-generation' },
+  { icon: '🤖', title: 'AI Agent Swarms', desc: 'Networks of AI agents handling content, reviews, outreach, and analytics — running 24/7 without a team.', href: '/ai-services/ai-agent-swarms' },
+  { icon: '📧', title: 'AI Outreach & Lead Gen', desc: 'Automated prospecting that researches local leads, crafts personalized messages, and routes replies to your inbox.', href: '/ai-services/ai-automated-outreach' },
+]
 
 export default function LocationsPage() {
   return (
@@ -158,38 +81,61 @@ export default function LocationsPage() {
       {/* ── Hero ─────────────────────────────────────────────────── */}
       <PageHero
         eyebrow="Where We Work"
-        title={<>Northern California Roots.<br /><span style={{color:'#FF6B2B'}}>Nationwide Reach.</span></>}
-        subtitle="We're headquartered in El Dorado County, deep in the Sierra Nevada foothills — and our AI systems serve clients across the United States, Australia, Thailand, and beyond."
+        title={<>Northern California Roots.<br /><span style={{color:'#FF6B2B'}}>Global Reach.</span></>}
+        subtitle="Headquartered in El Dorado County, deep in California's Gold Country — with AI systems serving clients across the United States, Australia, Thailand, and beyond."
         ctaLabel="Get a Free Audit →"
         ctaHref="/contact"
-        callout={<>Wherever your market is, we build the <span style={{color:'#52C9A0'}}>AI infrastructure</span> to own it — local depth, global capability, enterprise-grade systems.</>}
+        callout={<>Our roots are in Northern California. Our reach is <span style={{color:'#52C9A0'}}>worldwide</span>. Wherever your customers search, we build the AI infrastructure to make sure they find you.</>}
       />
 
+      {/* ── Proof Stats ──────────────────────────────────────────── */}
+      <section style={{ background: 'var(--dark)', padding: '40px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <StaggerContainer style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 24, textAlign: 'center' }}>
+          {[
+            { value: '5', label: 'NorCal Counties' },
+            { value: '23', label: 'City Markets' },
+            { value: '4', label: 'Countries Served' },
+            { value: '24/7', label: 'AI Systems Running' },
+          ].map((p) => (
+            <StaggerItem key={p.label}>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#52C9A0', lineHeight: 1 }}>{p.value}</div>
+              <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.85rem', marginTop: 6 }}>{p.label}</div>
+            </StaggerItem>
+          ))}
+        </StaggerContainer>
+      </section>
+
       {/* ── Global Reach ─────────────────────────────────────────── */}
-      <section style={{ background: 'var(--dark-2)', padding: '72px 24px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <section style={{ background: 'var(--dark-2)', padding: '80px 24px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <ScrollReveal direction="up">
-            <div style={{ textAlign: 'center', marginBottom: 52 }}>
+            <div style={{ textAlign: 'center', marginBottom: 56 }}>
               <p style={{ color: 'var(--teal)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
                 Global Capability
               </p>
               <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 3vw, 2.6rem)', fontWeight: 800, marginBottom: 16 }}>
-                AI Marketing That Works Anywhere
+                AI Marketing That Works <span style={{color:'#FF6B2B'}}>Anywhere</span>
               </h2>
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.05rem', maxWidth: 560, margin: '0 auto', lineHeight: 1.7 }}>
-                Our AI systems are market-agnostic. While Northern California is our backyard, we build demand generation infrastructure for businesses across the globe.
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.05rem', maxWidth: 600, margin: '0 auto', lineHeight: 1.7 }}>
+                While Northern California is our backyard, our AI systems are market-agnostic. We build demand generation infrastructure for businesses across the globe — same systems, same results, any geography.
               </p>
             </div>
           </ScrollReveal>
-          <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 20 }}>
-            {GLOBAL_REACH.map((item) => (
+          <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
+            {GLOBAL_REGIONS.map((item) => (
               <StaggerItem key={item.region}>
                 <div style={{
                   background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 16, padding: '28px 24px', textAlign: 'center', height: '100%',
+                  borderRadius: 16, padding: '32px 28px', height: '100%',
                 }}>
-                  <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>{item.flag}</div>
-                  <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '1.05rem', marginBottom: 10 }}>{item.region}</h3>
+                  <div style={{ height: 56, display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+                    {'emoji' in item && item.emoji
+                      ? <div style={{ fontSize: '3rem', lineHeight: 1 }}>{item.flag}</div>
+                      : <Image src={item.flag} alt={`${item.region} flag`} width={80} height={53} style={{ borderRadius: 4, objectFit: 'contain' }} />
+                    }
+                  </div>
+                  <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem', marginBottom: 6 }}>{item.region}</h3>
+                  <p style={{ color: 'var(--teal)', fontSize: '0.78rem', fontWeight: 600, marginBottom: 12 }}>{item.markets}</p>
                   <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.88rem', lineHeight: 1.6, margin: 0 }}>{item.note}</p>
                 </div>
               </StaggerItem>
@@ -198,82 +144,58 @@ export default function LocationsPage() {
         </div>
       </section>
 
-      {/* ── 5-County Focus Intro ──────────────────────────────────── */}
-      <section style={{ background: 'var(--light)', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <ScrollReveal direction="up">
-            <div style={{ textAlign: 'center', marginBottom: 48 }}>
-              <p style={{ color: 'var(--teal)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
-                Local Intelligence
-              </p>
-              <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 3vw, 2.6rem)', fontWeight: 800, marginBottom: 16 }}>
-                5 Counties. Unmatched Local Knowledge.
-              </h2>
-              <p style={{ color: 'var(--slate)', fontSize: '1.05rem', maxWidth: 620, margin: '0 auto 36px', lineHeight: 1.7 }}>
-                While we serve clients everywhere, Northern California is our backyard. Five counties surrounding our El Dorado County headquarters — and we know each market intimately.
-              </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center' }}>
-                {COUNTIES.map(county => (
-                  <span key={county.slug} style={{
-                    background: '#fff', border: `2px solid ${county.color}20`,
-                    borderRadius: 100, padding: '8px 20px',
-                    fontSize: '0.875rem', fontWeight: 700, color: county.color,
-                  }}>
-                    {county.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </ScrollReveal>
-        </div>
+      {/* ── County Selector Hub ──────────────────────────────────── */}
+      <section style={{ background: 'var(--dark)', padding: '80px 24px' }}>
+        <ScrollReveal direction="up">
+          <div style={{ textAlign: 'center', marginBottom: 52, maxWidth: 1200, margin: '0 auto 52px' }}>
+            <p style={{ color: 'var(--teal)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
+              Our Home Territory
+            </p>
+            <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 3vw, 2.6rem)', fontWeight: 800, marginBottom: 16 }}>
+              5 Counties. <span style={{color:'#FF6B2B'}}>23 City Markets.</span>
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.05rem', maxWidth: 640, margin: '0 auto', lineHeight: 1.7 }}>
+              We serve clients everywhere — but Northern California is where we live, work, and know every competitor by name. Select a county below to explore the cities we serve.
+            </p>
+          </div>
+        </ScrollReveal>
+        <CountySelector counties={COUNTIES_WITH_CITIES} />
       </section>
 
-      {/* ── County Sections ───────────────────────────────────────── */}
-      {COUNTIES.map((county, idx) => {
-        const countyCities = CITIES.filter(c => county.cities.includes(c.slug))
-        const bg = county.featured ? 'var(--dark)' : idx % 2 === 0 ? '#fff' : 'var(--light)'
-        const headingColor = county.featured ? '#fff' : 'var(--dark)'
-        const bodyColor = county.featured ? 'rgba(255,255,255,0.65)' : 'var(--slate)'
-        const eyebrowColor = county.featured ? county.color : county.color
-
-        return (
-          <section key={county.slug} style={{ background: bg, padding: '80px 24px' }}>
-            <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-              <ScrollReveal direction="up">
-                <div style={{ marginBottom: 48 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-                    <p style={{ color: eyebrowColor, fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
-                      {county.tagline}
-                    </p>
-                    {county.featured && (
-                      <span style={{
-                        background: 'rgba(82,201,160,0.15)', border: '1px solid rgba(82,201,160,0.3)',
-                        borderRadius: 100, padding: '3px 12px',
-                        fontSize: '0.7rem', fontWeight: 700, color: '#52C9A0', textTransform: 'uppercase', letterSpacing: '0.06em',
-                      }}>
-                        Our Home County
-                      </span>
-                    )}
-                  </div>
-                  <h2 style={{ color: headingColor, fontSize: 'clamp(1.6rem, 2.5vw, 2.2rem)', fontWeight: 800, marginBottom: 14, lineHeight: 1.2 }}>
-                    {county.name}
-                  </h2>
-                  <p style={{ color: bodyColor, fontSize: '1.05rem', maxWidth: 640, lineHeight: 1.75 }}>
-                    {county.description}
-                  </p>
-                </div>
-              </ScrollReveal>
-              <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 22 }}>
-                {countyCities.map(city => (
-                  <StaggerItem key={city.slug}>
-                    <CityCard city={city} accentColor={county.color} />
-                  </StaggerItem>
-                ))}
-              </StaggerContainer>
+      {/* ── Services Summary ─────────────────────────────────────── */}
+      <section style={{ background: '#fff', padding: '80px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <ScrollReveal direction="up">
+            <div style={{ textAlign: 'center', marginBottom: 52 }}>
+              <p style={{ color: 'var(--teal)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
+                What We Deliver In Every Market
+              </p>
+              <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', fontWeight: 800, marginBottom: 16 }}>
+                Full-Stack AI Marketing — <span style={{color:'#FF6B2B'}}>Anywhere</span>
+              </h2>
+              <p style={{ color: 'var(--slate)', fontSize: '1.05rem', maxWidth: 600, margin: '0 auto', lineHeight: 1.7 }}>
+                Every city page links to the full suite of AI-powered services we deliver. Here is what a typical engagement includes:
+              </p>
             </div>
-          </section>
-        )
-      })}
+          </ScrollReveal>
+          <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
+            {SERVICES.map(svc => (
+              <StaggerItem key={svc.title}>
+                <Link href={svc.href} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
+                  <div style={{
+                    background: 'var(--light)', border: '1px solid var(--border)', borderRadius: 16,
+                    padding: '28px 24px', height: '100%', transition: 'transform 0.2s',
+                  }}>
+                    <div style={{ fontSize: '1.8rem', marginBottom: 12 }}>{svc.icon}</div>
+                    <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1.05rem', marginBottom: 8 }}>{svc.title}</h3>
+                    <p style={{ color: 'var(--slate)', fontSize: '0.9rem', lineHeight: 1.6, margin: 0 }}>{svc.desc}</p>
+                  </div>
+                </Link>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+        </div>
+      </section>
 
       {/* ── FAQ ──────────────────────────────────────────────────── */}
       <FaqAccordion faqs={locationsFaqs} />

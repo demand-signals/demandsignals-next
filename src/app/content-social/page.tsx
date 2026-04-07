@@ -2,8 +2,8 @@ import { buildMetadata } from '@/lib/metadata'
 import { CategoryIndexTemplate } from '@/components/templates/CategoryIndexTemplate'
 
 export const metadata = buildMetadata({
-  title:       'Content & Social — AI Content Generation & Social Media | Demand Signals',
-  description: 'AI-powered content generation, social media management, review auto-responders, auto-blogging, and content repurposing. Replace your content team with AI systems that run 24/7.',
+  title:       'AI Content & Social Media Management | Demand Signals',
+  description: 'AI content generation, social media management, review auto-responders, and auto-blogging. Replace your content team with AI that runs 24/7.',
   path:        '/content-social',
   keywords:    ['AI content generation', 'AI social media management', 'automated review responses', 'AI blogging', 'content repurposing', 'social media automation'],
 })

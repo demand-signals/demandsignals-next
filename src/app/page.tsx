@@ -14,9 +14,9 @@ import { JsonLd } from '@/components/seo/JsonLd'
 import { faqSchema } from '@/lib/schema'
 
 export const metadata: Metadata = {
-  title: 'Demand Signals — AI-Powered Websites. AI-Driven Marketing. Always On.',
+  title: 'AI-Powered Demand Generation Agency | Demand Signals',
   description:
-    'We build AI-powered websites and run AI-driven marketing for local businesses in Northern California. Top 3 Google ranking in 90 days. 10× more leads from the same ad spend. AI replaces your SEO agency, social media manager, and web developer — at a fraction of the cost.',
+    'AI-powered websites and AI-driven marketing for local businesses. Top 3 Google ranking in 90 days. 10x more leads at a fraction of agency cost.',
   keywords: [
     'AI marketing agency Northern California',
     'AI demand generation',
@@ -30,9 +30,9 @@ export const metadata: Metadata = {
     'Placerville marketing agency',
   ],
   openGraph: {
-    title: 'Demand Signals — AI-Powered Websites. AI-Driven Marketing. Always On.',
+    title: 'AI-Powered Demand Generation Agency | Demand Signals',
     description:
-      'AI agent swarms, AI-powered websites, and automated marketing for local businesses. 10× more leads. Top 3 Google ranking in 90 days. Always on.',
+      'AI agent swarms, AI-powered websites, and automated marketing for local businesses. 10x more leads. Top 3 Google ranking in 90 days.',
     url: 'https://demandsignals.co',
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Demand Signals — AI-Powered Demand Generation' }],
   },

@@ -2,8 +2,8 @@ import { buildMetadata } from '@/lib/metadata'
 import { CategoryIndexTemplate } from '@/components/templates/CategoryIndexTemplate'
 
 export const metadata = buildMetadata({
-  title:       'AI & Agent Services — Automation, Swarms & Infrastructure | Demand Signals',
-  description: 'AI adoption strategies, workforce automation, agent swarms, private LLMs, and AI infrastructure. Replace expensive manual processes with AI systems that run 24/7.',
+  title:       'AI Agent Services & Automation | Demand Signals',
+  description: 'AI adoption strategies, workforce automation, agent swarms, private LLMs, and AI infrastructure. Replace manual processes with AI systems that run 24/7.',
   path:        '/ai-services',
   keywords:    ['AI agent services', 'AI workforce automation', 'AI agent swarms', 'private LLMs', 'AI business automation', 'AI infrastructure'],
 })

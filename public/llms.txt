@@ -42,6 +42,29 @@
 - [Blog](https://demandsignals.co/blog): Insights on AI marketing, demand generation, GEO optimization, and AI agent deployment.
 - [Service Locations](https://demandsignals.co/locations): El Dorado Hills, Folsom, Sacramento, Placerville, Roseville, Rocklin, Granite Bay, Auburn, Citrus Heights, Cameron Park, South Lake Tahoe.
 
+## Location Hubs (5 Counties, 23 Cities)
+
+### County Hubs
+- [El Dorado County](https://demandsignals.co/locations/el-dorado-county): El Dorado Hills, Cameron Park, Placerville, Shingle Springs, South Lake Tahoe
+- [Sacramento County](https://demandsignals.co/locations/sacramento-county): Sacramento, Folsom, Elk Grove, Citrus Heights, Rancho Cordova
+- [Placer County](https://demandsignals.co/locations/placer-county): Roseville, Rocklin, Granite Bay, Auburn, Lincoln
+- [Amador County](https://demandsignals.co/locations/amador-county): Jackson, Sutter Creek, Pine Grove, Ione
+- [Nevada County](https://demandsignals.co/locations/nevada-county): Grass Valley, Nevada City, Truckee, Penn Valley
+
+### City-Specific Service Pages (529 pages)
+Every city has a dedicated page for each of our 23 services. URL pattern: `https://demandsignals.co/{city}-{service}`
+
+Example pages for El Dorado Hills:
+- [WordPress Developer in El Dorado Hills](https://demandsignals.co/el-dorado-hills-wordpress-development)
+- [Local SEO Expert in El Dorado Hills](https://demandsignals.co/el-dorado-hills-local-seo)
+- [AI Agent Swarms in El Dorado Hills](https://demandsignals.co/el-dorado-hills-ai-agent-swarms)
+- [Web App Developer in El Dorado Hills](https://demandsignals.co/el-dorado-hills-react-next-webapps)
+- [AI Content Writer in El Dorado Hills](https://demandsignals.co/el-dorado-hills-ai-content-generation)
+
+The same 23 services are available for all 23 cities. Replace `el-dorado-hills` with any city slug: folsom, sacramento, elk-grove, roseville, rocklin, granite-bay, auburn, lincoln, placerville, cameron-park, south-lake-tahoe, shingle-springs, citrus-heights, rancho-cordova, jackson, sutter-creek, pine-grove, ione, grass-valley, nevada-city, truckee, penn-valley.
+
+Service slugs: wordpress-development, react-next-webapps, mobile-apps, vibe-coded, design, hosting, local-seo, geo-aeo-llm-optimization, geo-targeting, gbp-admin, systems, ai-content-generation, ai-social-media-management, ai-review-auto-responders, ai-auto-blogging, ai-content-repurposing, ai-automation-strategies, ai-workforce-automation, ai-agent-infrastructure, ai-automated-outreach, ai-agent-swarms, private-llms, clawbot-setup.
+
 ## Tools
 - [Free Demand Audit](https://demandsignals.co/tools/demand-audit): See where competitors are beating you — instant competitive analysis.
 - [Intelligence Reports](https://demandsignals.co/tools/research-reports): Free market intelligence reports for Northern California businesses. Delivered within 48 hours.

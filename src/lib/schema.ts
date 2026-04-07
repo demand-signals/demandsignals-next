@@ -1,13 +1,45 @@
+export const SOCIAL_PROFILES = [
+  "https://x.com/DemandSignalsCo",
+  "https://www.instagram.com/DemandSignalsAgency",
+  "https://www.facebook.com/DemandSignals/",
+  "https://www.tiktok.com/@demandsignals",
+  "https://www.youtube.com/@DemandSignals",
+  "https://www.pinterest.com/demandsignals/",
+  "https://www.linkedin.com/company/demandsignals",
+  "https://business.facebook.com/latest/?asset_id=644594372062209&business_id=1334671154244756",
+]
+
 export const orgSchema = {
   "@context": "https://schema.org",
   "@type": ["Organization", "LocalBusiness", "ProfessionalService"],
   "@id": "https://demandsignals.co/#organization",
   "name": "Demand Signals",
   "url": "https://demandsignals.co",
-  "logo": "https://demandsignals.co/logo.png",
+  "logo": "https://demandsignals.us/assets/logos/dsig_logo_v2b.png",
+  "image": "https://demandsignals.us/assets/logos/dsig_logo_v2b.png",
   "description": "AI-powered demand generation agency specializing in AI agent swarms, AI websites, local SEO, and generative engine optimization for local businesses.",
-  "telephone": "+1-916-542-2423",
+  "telephone": "(916) 542-2423",
   "email": "DemandSignals@gmail.com",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "5170 Golden Foothills Pkwy",
+    "addressLocality": "El Dorado Hills",
+    "addressRegion": "CA",
+    "postalCode": "95762",
+    "addressCountry": "US",
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 38.6621,
+    "longitude": -121.0530,
+  },
+  "openingHoursSpecification": {
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    "opens": "10:00",
+    "closes": "20:00",
+  },
+  "priceRange": "$",
   "areaServed": [
     "El Dorado County, CA",
     "Sacramento, CA",
@@ -22,7 +54,7 @@ export const orgSchema = {
     "AI Agents",
     "Workflow Automation",
   ],
-  "sameAs": [],
+  "sameAs": SOCIAL_PROFILES,
   "knowsAbout": [
     "Generative Engine Optimization",
     "AI Agents",
@@ -39,11 +71,6 @@ export const websiteSchema = {
   "url": "https://demandsignals.co",
   "name": "Demand Signals",
   "publisher": { "@id": "https://demandsignals.co/#organization" },
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": "https://demandsignals.co/blog?q={search_term_string}",
-    "query-input": "required name=search_term_string",
-  },
 }
 
 export function serviceSchema(
@@ -58,7 +85,14 @@ export function serviceSchema(
     "description": description,
     "url": url,
     "provider": { "@id": "https://demandsignals.co/#organization" },
-    "areaServed": "Northern California",
+    "areaServed": [
+      { "@type": "State", "name": "California" },
+      { "@type": "AdministrativeArea", "name": "El Dorado County, CA" },
+      { "@type": "AdministrativeArea", "name": "Sacramento County, CA" },
+      { "@type": "AdministrativeArea", "name": "Placer County, CA" },
+      { "@type": "AdministrativeArea", "name": "Amador County, CA" },
+      { "@type": "AdministrativeArea", "name": "Nevada County, CA" },
+    ],
   }
 }
 

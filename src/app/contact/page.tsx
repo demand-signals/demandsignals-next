@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { BOOKING_URL, CONTACT_PHONE, CONTACT_EMAIL } from '@/lib/constants';
+import { BOOKING_URL, CONTACT_PHONE, CONTACT_PHONE_TEL, CONTACT_EMAIL } from '@/lib/constants';
 import { PageHero } from '@/components/sections/PageHero';
+import { FaqAccordion } from '@/components/ui/FaqAccordion';
 
 
 export default function ContactPage() {
@@ -207,50 +208,50 @@ export default function ContactPage() {
             </form>
           )}
 
-          {/* Info Tiles */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginTop: 56, marginBottom: 0 }}>
-            {[
-              { icon: '📞', label: 'Phone', value: CONTACT_PHONE, href: `tel:${CONTACT_PHONE}` },
-              { icon: '✉️', label: 'Email', value: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` },
-              { icon: '📍', label: 'Based In', value: 'Northern California\nServing USA, Thailand, AU & Beyond', href: null },
-            ].map((tile) => (
-              <div key={tile.label} style={{
-                background: 'var(--light)',
-                border: '1px solid var(--border)',
-                borderRadius: 12,
-                padding: '24px 20px',
-                textAlign: 'center',
-              }}>
-                <div style={{ fontSize: '1.8rem', marginBottom: 8 }}>{tile.icon}</div>
-                <div style={{ color: 'var(--slate)', fontSize: '0.78rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{tile.label}</div>
-                {tile.href ? (
-                  <a href={tile.href} style={{ color: 'var(--teal)', fontWeight: 600, fontSize: '0.95rem', textDecoration: 'none' }}>{tile.value}</a>
-                ) : (
-                  <p style={{ color: 'var(--dark)', fontWeight: 600, fontSize: '0.95rem', margin: 0, whiteSpace: 'pre-line' }}>{tile.value}</p>
-                )}
-              </div>
-            ))}
-          </div>
+          {/* Info Tiles — wrapped in semantic <address> for SEO */}
+          <address style={{ fontStyle: 'normal', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginTop: 56, marginBottom: 0 }}>
+            <div style={{
+              background: 'var(--light)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '24px 20px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '1.8rem', marginBottom: 8 }}>📞</div>
+              <div style={{ color: 'var(--slate)', fontSize: '0.78rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Phone</div>
+              <a href={`tel:${CONTACT_PHONE_TEL}`} style={{ color: 'var(--teal)', fontWeight: 600, fontSize: '0.95rem', textDecoration: 'none' }}>{CONTACT_PHONE}</a>
+            </div>
+            <div style={{
+              background: 'var(--light)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '24px 20px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '1.8rem', marginBottom: 8 }}>✉️</div>
+              <div style={{ color: 'var(--slate)', fontSize: '0.78rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Email</div>
+              <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'var(--teal)', fontWeight: 600, fontSize: '0.95rem', textDecoration: 'none' }}>{CONTACT_EMAIL}</a>
+            </div>
+            <div style={{
+              background: 'var(--light)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '24px 20px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '1.8rem', marginBottom: 8 }}>📍</div>
+              <div style={{ color: 'var(--slate)', fontSize: '0.78rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Address</div>
+              <p style={{ color: 'var(--dark)', fontWeight: 600, fontSize: '0.95rem', margin: 0, lineHeight: 1.5 }}>
+                5170 Golden Foothills Pkwy<br />
+                El Dorado Hills, CA 95762
+              </p>
+            </div>
+          </address>
         </div>
       </section>
 
       {/* FAQ */}
-      <section style={{ background: '#fff', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>FAQ</span>
-            <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 0' }}>Frequently Asked Questions</h2>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {contactFaqs.map(faq => (
-              <div key={faq.question} style={{ background: 'var(--light)', borderRadius: 14, padding: '24px 28px' }}>
-                <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1rem', marginBottom: 10, lineHeight: 1.4 }}>{faq.question}</h3>
-                <p style={{ color: 'var(--slate)', fontSize: '0.93rem', lineHeight: 1.7, margin: 0 }}>{faq.answer}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <FaqAccordion faqs={contactFaqs} />
     </>
   );
 }

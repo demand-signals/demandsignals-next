@@ -344,8 +344,9 @@ export function HeroCanvas() {
 
           {/* H1 */}
           <h1 style={{ fontSize: 'clamp(2.4rem, 6vw, 4.5rem)', fontWeight: 800, lineHeight: 1.1, marginBottom: 24, color: '#fff' }}>
-            <span style={{ color: '#fff' }}>We Make You </span>
-            <span style={{ color: '#52C9A0' }}>The Signal </span>
+            <span style={{ color: '#52C9A0' }}>AI-Powered Demand Generation</span>
+            <br />
+            <span style={{ color: '#fff' }}>We Make You The Signal, </span>
             <span style={{ color: '#FF6B2B' }}>Not The Noise.</span>
           </h1>
 

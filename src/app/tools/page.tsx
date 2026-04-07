@@ -1,6 +1,6 @@
 import { buildMetadata } from '@/lib/metadata';
 import { JsonLd } from '@/components/seo/JsonLd';
-import { faqSchema } from '@/lib/schema';
+import { faqSchema, breadcrumbSchema } from '@/lib/schema';
 
 const faqs = [
   {
@@ -73,6 +73,10 @@ const TOOLS = [
 export default function ToolsPage() {
   return (
     <>
+      <JsonLd data={breadcrumbSchema([
+        { name: 'Home', url: 'https://demandsignals.co' },
+        { name: 'Tools', url: 'https://demandsignals.co/tools' },
+      ])} />
       <JsonLd data={faqSchema(faqs)} />
       {/* Dark Hero */}
       <section style={{

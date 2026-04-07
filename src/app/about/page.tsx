@@ -1,6 +1,6 @@
 import { buildMetadata } from '@/lib/metadata'
 import { JsonLd } from '@/components/seo/JsonLd'
-import { faqSchema } from '@/lib/schema'
+import { faqSchema, breadcrumbSchema } from '@/lib/schema'
 import { PageHero } from '@/components/sections/PageHero'
 import { FaqAccordion } from '@/components/ui/FaqAccordion'
 import { AnimatedCTA } from '@/components/sections/AnimatedCTA'
@@ -56,6 +56,10 @@ const VALUE_CARDS = [
 export default function AboutPage() {
   return (
     <>
+      <JsonLd data={breadcrumbSchema([
+        { name: 'Home', url: 'https://demandsignals.co' },
+        { name: 'About', url: 'https://demandsignals.co/about' },
+      ])} />
       <JsonLd data={faqSchema(faqs)} />
 
       <PageHero
@@ -82,7 +86,7 @@ export default function AboutPage() {
                   height: '100%',
                 }}>
                   <div style={{ fontSize: '2rem', marginBottom: 14 }}>{card.icon}</div>
-                  <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1.1rem', marginBottom: 10 }}>{card.title}</h3>
+                  <h2 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1.1rem', marginBottom: 10 }}>{card.title}</h2>
                   <p style={{ color: 'var(--slate)', lineHeight: 1.65, fontSize: '0.95rem', margin: 0 }}>{card.body}</p>
                 </div>
               </StaggerItem>

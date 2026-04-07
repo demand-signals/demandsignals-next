@@ -13,7 +13,6 @@
     { "source": "/seo",           "destination": "/demand-generation/local-seo",             "permanent": true },
     { "source": "/llm",           "destination": "/demand-generation/geo-aeo-llm-optimization", "permanent": true },
     { "source": "/geo",           "destination": "/demand-generation/geo-aeo-llm-optimization", "permanent": true },
-    { "source": "/ai-agents",     "destination": "/ai-services",                             "permanent": true },
     { "source": "/wordpress",     "destination": "/websites-apps/wordpress-development",     "permanent": true },
     { "source": "/mobile-apps",   "destination": "/websites-apps/mobile-apps",               "permanent": true },
     { "source": "/content",       "destination": "/content-social/ai-content-generation",    "permanent": true },

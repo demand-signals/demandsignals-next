@@ -1,10 +1,23 @@
 import type { Metadata } from 'next';
-import { CONTACT_EMAIL, SITE_NAME } from '@/lib/constants';
+import { CONTACT_EMAIL, SITE_NAME, CONTACT_PHONE } from '@/lib/constants';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { breadcrumbSchema } from '@/lib/schema';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy — Demand Signals',
+  description: 'How Demand Signals collects, uses, protects, and shares your personal information. CCPA/CPRA compliant privacy practices for our AI-powered demand generation services.',
+  alternates: { canonical: 'https://demandsignals.co/privacy' },
+  openGraph: {
+    title: 'Privacy Policy — Demand Signals',
+    description: 'How Demand Signals collects, uses, protects, and shares your personal information.',
+    url: 'https://demandsignals.co/privacy',
+    siteName: 'Demand Signals',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Privacy Policy — Demand Signals',
+    description: 'How Demand Signals collects, uses, protects, and shares your personal information.',
+  },
 };
 
 export default function PrivacyPage() {
@@ -22,11 +35,12 @@ export default function PrivacyPage() {
         textAlign: 'center',
       }}>
         <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 24px' }}>
+          <p style={{ color: 'var(--teal)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.82rem', marginBottom: 14 }}>Legal</p>
           <h1 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 800, lineHeight: 1.15, marginBottom: 16 }}>
             Privacy Policy
           </h1>
           <p style={{ color: '#a0aec0', fontSize: '1rem' }}>
-            Last updated: April 2025
+            Last updated: April 7, 2026
           </p>
         </div>
       </section>
@@ -35,39 +49,136 @@ export default function PrivacyPage() {
       <section style={{ background: '#fff', padding: '64px 24px 80px' }}>
         <div style={{ maxWidth: 720, margin: '0 auto', color: 'var(--slate)', lineHeight: 1.75, fontSize: '0.975rem' }}>
 
-          <h2 style={sectionHeadStyle}>1. Information We Collect</h2>
-          <p>We collect information you provide directly to us through our contact forms, report request forms, and newsletter sign-ups. This includes your name, email address, phone number, business name, and any messages you submit. We do not automatically collect browsing data beyond standard server logs.</p>
+          <p style={{ marginBottom: 28 }}>
+            Demand Signals (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) operates the website <strong style={{ color: 'var(--dark)' }}>demandsignals.co</strong> and provides AI-powered demand generation, website development, and digital marketing services. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or engage our services.
+          </p>
 
-          <h2 style={sectionHeadStyle}>2. How We Use Your Information</h2>
-          <p>We use the information we collect to:</p>
-          <ul style={{ paddingLeft: 24, marginBottom: 20 }}>
-            <li>Respond to your inquiries and fulfill service requests</li>
-            <li>Deliver intelligence reports and other requested materials</li>
-            <li>Send occasional marketing communications (you can opt out at any time)</li>
-            <li>Improve our website and service offerings</li>
+          <h2 style={h2}>1. Information We Collect</h2>
+
+          <h3 style={h3}>1.1 Information You Provide Directly</h3>
+          <ul style={ulStyle}>
+            <li><strong style={bold}>Contact forms:</strong> Name, email address, phone number, business name, website URL, and any message content you submit through our contact, quote request, or report request forms.</li>
+            <li><strong style={bold}>Newsletter sign-ups:</strong> Email address and, optionally, your name and business name.</li>
+            <li><strong style={bold}>Booking/scheduling:</strong> When you book a call through our Google Calendar integration, your name, email, and selected time slot are processed by Google. We receive the appointment details.</li>
+            <li><strong style={bold}>Client engagements:</strong> Business information, access credentials, analytics data, and other materials you provide as part of a service engagement, governed by your service agreement.</li>
           </ul>
 
-          <h2 style={sectionHeadStyle}>3. Information Sharing</h2>
-          <p>We do not sell, rent, or share your personal information with third parties for marketing purposes. We may share data with service providers who assist in operating our platform (e.g., email delivery), subject to confidentiality agreements.</p>
+          <h3 style={h3}>1.2 Information Collected Automatically</h3>
+          <ul style={ulStyle}>
+            <li><strong style={bold}>Server logs:</strong> IP address, browser type, operating system, referring URL, pages visited, and timestamps. These are standard web server logs retained for security and operational purposes.</li>
+            <li><strong style={bold}>Analytics:</strong> We may use Vercel Analytics or similar privacy-respecting analytics tools to understand aggregate traffic patterns. These tools do not use third-party cookies or track individuals across websites.</li>
+            <li><strong style={bold}>Cookies:</strong> We use minimal, essential cookies for site functionality (e.g., form submission state). We do not use advertising cookies, retargeting pixels, or cross-site tracking technologies.</li>
+          </ul>
 
-          <h2 style={sectionHeadStyle}>4. Data Retention</h2>
-          <p>We retain your information for as long as necessary to provide our services and comply with legal obligations. You may request deletion of your data at any time by contacting us.</p>
+          <h3 style={h3}>1.3 Information We Do Not Collect</h3>
+          <ul style={ulStyle}>
+            <li>We do not collect payment information directly — all payments are processed through third-party payment processors (e.g., Stripe, PayPal) with their own privacy policies.</li>
+            <li>We do not collect biometric data, geolocation data, or data from social media profiles unless you explicitly provide it.</li>
+            <li>We do not purchase consumer data from data brokers or third parties.</li>
+          </ul>
 
-          <h2 style={sectionHeadStyle}>5. Cookies</h2>
-          <p>Our site may use minimal cookies for analytics and performance. We do not use third-party advertising cookies. You can disable cookies in your browser settings without affecting core site functionality.</p>
+          <h2 style={h2}>2. How We Use Your Information</h2>
+          <p>We use the information we collect for the following purposes:</p>
+          <ul style={ulStyle}>
+            <li><strong style={bold}>Service delivery:</strong> To respond to inquiries, deliver intelligence reports, fulfill service engagements, and communicate project updates.</li>
+            <li><strong style={bold}>Marketing communications:</strong> To send occasional emails about our services, blog posts, or industry insights. You can opt out at any time using the unsubscribe link in any email.</li>
+            <li><strong style={bold}>Site improvement:</strong> To analyze aggregate usage patterns, identify technical issues, and improve site performance and content.</li>
+            <li><strong style={bold}>Security:</strong> To detect and prevent fraud, abuse, and unauthorized access to our systems.</li>
+            <li><strong style={bold}>Legal compliance:</strong> To comply with applicable laws, regulations, and legal processes.</li>
+          </ul>
 
-          <h2 style={sectionHeadStyle}>6. Security</h2>
-          <p>We implement reasonable technical and organizational measures to protect your data. However, no system is completely secure, and we cannot guarantee absolute security.</p>
-
-          <h2 style={sectionHeadStyle}>7. Your Rights</h2>
-          <p>Depending on your location, you may have rights to access, correct, or delete your personal data. To exercise any of these rights, contact us directly.</p>
-
-          <h2 style={sectionHeadStyle}>8. Contact</h2>
+          <h2 style={h2}>3. AI Systems and Data Processing</h2>
           <p>
-            For privacy-related questions, contact us at:{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'var(--teal)', fontWeight: 600 }}>{CONTACT_EMAIL}</a>
+            Demand Signals uses AI systems (including language models, content generation tools, and automation agents) as part of our service delivery. When we process your business data through AI systems:
           </p>
-          <p style={{ marginTop: 8, fontSize: '0.9rem', color: '#a0aec0' }}>
+          <ul style={ulStyle}>
+            <li>Client data is used solely for delivering the contracted services — never for training AI models.</li>
+            <li>We use enterprise-grade AI APIs (e.g., Anthropic Claude API, OpenAI API) that do not retain or train on customer data per their data processing agreements.</li>
+            <li>AI-generated content is reviewed by our team before publication unless otherwise agreed in your service terms.</li>
+            <li>We do not use AI to make automated decisions that produce legal or similarly significant effects on individuals.</li>
+          </ul>
+
+          <h2 style={h2}>4. Information Sharing and Disclosure</h2>
+          <p>We do not sell, rent, or trade your personal information. We may share information in these limited circumstances:</p>
+          <ul style={ulStyle}>
+            <li><strong style={bold}>Service providers:</strong> We work with trusted third-party providers for email delivery (e.g., Gmail/Google Workspace), hosting (Vercel), analytics, and domain services. These providers are contractually obligated to protect your data and use it only for the services they provide to us.</li>
+            <li><strong style={bold}>Client-authorized sharing:</strong> When delivering services, we may interact with your platforms (Google Business Profile, social media accounts, hosting providers) using credentials you provide. We access only what is necessary for the agreed scope of work.</li>
+            <li><strong style={bold}>Legal requirements:</strong> We may disclose information if required by law, subpoena, court order, or governmental regulation, or if we believe disclosure is necessary to protect our rights, your safety, or the safety of others.</li>
+            <li><strong style={bold}>Business transfers:</strong> In the event of a merger, acquisition, or sale of assets, your information may be transferred as part of the transaction. We will notify you of any such change.</li>
+          </ul>
+
+          <h2 style={h2}>5. Data Retention</h2>
+          <ul style={ulStyle}>
+            <li><strong style={bold}>Contact form submissions:</strong> Retained for up to 2 years after the last communication, then deleted.</li>
+            <li><strong style={bold}>Newsletter subscribers:</strong> Retained until you unsubscribe, then deleted within 30 days.</li>
+            <li><strong style={bold}>Client project data:</strong> Retained for the duration of the engagement plus 1 year for reference, unless a longer period is specified in your service agreement.</li>
+            <li><strong style={bold}>Server logs:</strong> Retained for up to 90 days for security and operational purposes.</li>
+            <li><strong style={bold}>Analytics data:</strong> Aggregated analytics data (which cannot identify individuals) may be retained indefinitely.</li>
+          </ul>
+          <p>You may request deletion of your personal data at any time (see Section 7).</p>
+
+          <h2 style={h2}>6. Data Security</h2>
+          <p>We implement reasonable technical and organizational safeguards to protect your information, including:</p>
+          <ul style={ulStyle}>
+            <li>HTTPS/TLS encryption on all web traffic</li>
+            <li>Encrypted storage for sensitive credentials and API keys</li>
+            <li>Access controls limiting data access to authorized personnel</li>
+            <li>Regular security reviews of our infrastructure and third-party integrations</li>
+            <li>Secure hosting on Vercel&apos;s SOC 2 Type II certified infrastructure</li>
+          </ul>
+          <p>
+            No method of electronic transmission or storage is 100% secure. While we strive to protect your data, we cannot guarantee absolute security. If we become aware of a data breach that affects your personal information, we will notify you in accordance with applicable law.
+          </p>
+
+          <h2 style={h2}>7. Your Rights (California Residents — CCPA/CPRA)</h2>
+          <p>If you are a California resident, you have the following rights under the California Consumer Privacy Act (CCPA) and the California Privacy Rights Act (CPRA):</p>
+          <ul style={ulStyle}>
+            <li><strong style={bold}>Right to Know:</strong> You may request a copy of the personal information we have collected about you in the preceding 12 months, including the categories of information, sources, purposes, and third parties with whom it was shared.</li>
+            <li><strong style={bold}>Right to Delete:</strong> You may request that we delete your personal information, subject to certain legal exceptions.</li>
+            <li><strong style={bold}>Right to Correct:</strong> You may request correction of inaccurate personal information.</li>
+            <li><strong style={bold}>Right to Opt Out of Sale/Sharing:</strong> We do not sell or share your personal information for cross-context behavioral advertising. There is nothing to opt out of.</li>
+            <li><strong style={bold}>Right to Non-Discrimination:</strong> We will not discriminate against you for exercising any of your privacy rights.</li>
+          </ul>
+          <p>
+            To exercise any of these rights, contact us at <a href={`mailto:${CONTACT_EMAIL}`} style={link}>{CONTACT_EMAIL}</a> or call <a href="tel:+19165422423" style={link}>{CONTACT_PHONE}</a>. We will respond to verified requests within 45 days.
+          </p>
+
+          <h2 style={h2}>8. Other State Privacy Rights</h2>
+          <p>
+            Residents of Virginia (VCDPA), Colorado (CPA), Connecticut (CTDPA), Utah (UCPA), and other states with consumer privacy laws may have similar rights to access, delete, and correct their data, and to opt out of targeted advertising. Since we do not sell data or engage in targeted advertising, most opt-out rights are already satisfied. For data access or deletion requests, contact us using the information in Section 11.
+          </p>
+
+          <h2 style={h2}>9. Children&apos;s Privacy</h2>
+          <p>
+            Our services are not directed to individuals under the age of 16. We do not knowingly collect personal information from children. If you believe a child has provided us with personal information, please contact us immediately and we will delete it.
+          </p>
+
+          <h2 style={h2}>10. Third-Party Links</h2>
+          <p>
+            Our website may contain links to third-party websites (e.g., Google Calendar for booking, social media profiles). We are not responsible for the privacy practices of these external sites. We encourage you to review their privacy policies before providing any information.
+          </p>
+
+          <h2 style={h2}>11. Changes to This Policy</h2>
+          <p>
+            We may update this Privacy Policy from time to time to reflect changes in our practices, technology, or legal requirements. When we make material changes, we will update the &ldquo;Last updated&rdquo; date at the top of this page. We encourage you to review this policy periodically.
+          </p>
+
+          <h2 style={h2}>12. Contact Us</h2>
+          <div style={contactBox}>
+            <p style={{ margin: '0 0 4px', color: 'var(--dark)', fontWeight: 700 }}>Demand Signals</p>
+            <p style={{ margin: '0 0 4px' }}>Northern California, United States</p>
+            <p style={{ margin: '0 0 4px' }}>
+              Email: <a href={`mailto:${CONTACT_EMAIL}`} style={link}>{CONTACT_EMAIL}</a>
+            </p>
+            <p style={{ margin: '0 0 4px' }}>
+              Phone: <a href="tel:+19165422423" style={link}>{CONTACT_PHONE}</a>
+            </p>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(93,103,128,0.7)' }}>
+              Hours: Monday–Friday, 10 AM – 8 PM Pacific Time
+            </p>
+          </div>
+
+          <p style={{ marginTop: 48, fontSize: '0.88rem', color: '#a0aec0', borderTop: '1px solid rgba(0,0,0,0.07)', paddingTop: 24 }}>
             {SITE_NAME} · Northern California · United States
           </p>
         </div>
@@ -76,10 +187,16 @@ export default function PrivacyPage() {
   );
 }
 
-const sectionHeadStyle: React.CSSProperties = {
-  color: 'var(--dark)',
-  fontWeight: 700,
-  fontSize: '1.15rem',
-  marginTop: 36,
-  marginBottom: 12,
+const h2: React.CSSProperties = {
+  color: 'var(--dark)', fontWeight: 700, fontSize: '1.2rem', marginTop: 40, marginBottom: 12,
+};
+const h3: React.CSSProperties = {
+  color: 'var(--dark)', fontWeight: 600, fontSize: '1.05rem', marginTop: 24, marginBottom: 10,
+};
+const bold: React.CSSProperties = { color: 'var(--dark)' };
+const link: React.CSSProperties = { color: 'var(--teal)', fontWeight: 600, textDecoration: 'none' };
+const ulStyle: React.CSSProperties = { paddingLeft: 24, marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 10 };
+const contactBox: React.CSSProperties = {
+  background: 'var(--light)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 12,
+  padding: '24px 28px', margin: '20px 0', lineHeight: 1.7, fontSize: '0.95rem',
 };

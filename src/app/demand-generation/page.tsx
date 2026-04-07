@@ -2,7 +2,7 @@ import { buildMetadata } from '@/lib/metadata'
 import { CategoryIndexTemplate } from '@/components/templates/CategoryIndexTemplate'
 
 export const metadata = buildMetadata({
-  title:       'Demand Generation — SEO, GEO, LLM & Local Search | Demand Signals',
+  title:       'AI Demand Generation & Local SEO | Demand Signals',
   description: 'Full-stack demand generation: LLM optimization, local SEO, geo-targeting, Google Business Profile management, and automated demand systems. AI-powered, always on.',
   path:        '/demand-generation',
   keywords:    ['demand generation', 'LLM optimization', 'local SEO Sacramento', 'GEO optimization', 'Google Business Profile management', 'AI search optimization'],

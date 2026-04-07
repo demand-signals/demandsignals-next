@@ -1,7 +1,8 @@
 import { buildMetadata } from '@/lib/metadata';
 import ProofTable from '@/components/sections/ProofTable';
 import { JsonLd } from '@/components/seo/JsonLd';
-import { faqSchema } from '@/lib/schema';
+import { faqSchema, breadcrumbSchema } from '@/lib/schema';
+import { FaqAccordion } from '@/components/ui/FaqAccordion';
 
 const faqs = [
   {
@@ -122,6 +123,10 @@ const INDUSTRY_COLORS: Record<string, string> = {
 export default function PortfolioPage() {
   return (
     <>
+      <JsonLd data={breadcrumbSchema([
+        { name: 'Home', url: 'https://demandsignals.co' },
+        { name: 'Portfolio', url: 'https://demandsignals.co/portfolio' },
+      ])} />
       <JsonLd data={faqSchema(faqs)} />
       {/* Dark Hero */}
       <section style={{
@@ -178,9 +183,9 @@ export default function PortfolioPage() {
                     }}>
                       {client.industry}
                     </span>
-                    <h2 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1rem', marginBottom: 10, lineHeight: 1.35 }}>
+                    <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1rem', marginBottom: 10, lineHeight: 1.35 }}>
                       {client.name}
-                    </h2>
+                    </h3>
                     <p style={{ color: 'var(--slate)', fontSize: '0.9rem', lineHeight: 1.6, margin: 0 }}>
                       {client.description}
                     </p>
@@ -193,22 +198,7 @@ export default function PortfolioPage() {
       </section>
 
       {/* FAQ Section */}
-      <section style={{ background: '#fff', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>FAQ</span>
-            <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 0' }}>Frequently Asked Questions</h2>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {faqs.map(faq => (
-              <div key={faq.question} style={{ background: 'var(--light)', borderRadius: 14, padding: '24px 28px' }}>
-                <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1rem', marginBottom: 10, lineHeight: 1.4 }}>{faq.question}</h3>
-                <p style={{ color: 'var(--slate)', fontSize: '0.93rem', lineHeight: 1.7, margin: 0 }}>{faq.answer}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <FaqAccordion faqs={faqs} />
 
       {/* CTA */}
       <section style={{ background: 'var(--dark)', padding: '72px 24px', textAlign: 'center' }}>

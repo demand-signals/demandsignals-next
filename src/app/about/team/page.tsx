@@ -1,6 +1,7 @@
+import Image from 'next/image'
 import { buildMetadata } from '@/lib/metadata'
 import { JsonLd } from '@/components/seo/JsonLd'
-import { faqSchema } from '@/lib/schema'
+import { faqSchema, breadcrumbSchema } from '@/lib/schema'
 import { PageHero } from '@/components/sections/PageHero'
 import { FaqAccordion } from '@/components/ui/FaqAccordion'
 import { AnimatedCTA } from '@/components/sections/AnimatedCTA'
@@ -37,22 +38,22 @@ export const metadata = buildMetadata({
 
 const LEADERSHIP = [
   {
-    avatar: '/tiffany-avatar.svg',
+    avatar: '/tiffany_profile.jpeg',
     alt: 'Tiffany — Chief Technology Officer',
     name: 'Tiffany',
     title: 'Chief Technology Officer',
     titleColor: 'var(--teal)',
-    bio1: `Tiffany architects the intelligence layer that powers everything Demand Signals delivers. With a background spanning enterprise software engineering, machine learning infrastructure, and distributed systems, she designed and built the multi-agent orchestration platform that sits at the core of every client engagement — from content pipelines to voice reception systems to real-time rank monitoring loops.`,
-    bio2: `Before joining Demand Signals, Tiffany led engineering teams at two Series B SaaS companies, shipping AI-native products used by thousands of businesses globally. She holds deep expertise in LLM fine-tuning, retrieval-augmented generation, and the kind of prompt engineering that actually moves metrics. When she\'s not building agent swarms, she\'s usually mentoring engineers or breaking things intentionally to find out what breaks first.`,
+    bio1: `Tiffany is the architect behind the AI infrastructure that powers every Demand Signals engagement. She designed and built the multi-agent orchestration platform from the ground up — the system that coordinates content pipelines, voice reception agents, real-time rank monitoring loops, and autonomous outreach swarms across hundreds of client campaigns simultaneously. Her engineering background spans distributed systems at scale, machine learning operations, and the kind of full-stack AI infrastructure that most agencies outsource to three different vendors.`,
+    bio2: `Before Demand Signals, Tiffany served as VP of Engineering at two venture-backed SaaS companies, where she shipped AI-native products to tens of thousands of businesses and built the engineering cultures that sustained them. She holds deep expertise in LLM orchestration, retrieval-augmented generation, vector search architectures, and production-grade prompt engineering — the kind that moves revenue, not just demo metrics. Tiffany is the reason our AI systems don\'t just work in a pitch deck — they work at 3 AM on a Tuesday when no one is watching.`,
   },
   {
-    avatar: '/sarah-avatar.svg',
+    avatar: '/sarah_profile.jpeg',
     alt: 'Sarah — Chief Operating Officer',
     name: 'Sarah',
     title: 'Chief Operating Officer',
-    titleColor: '#FF6B2B',
-    bio1: `Sarah is the operational force behind Demand Signals — the one who makes sure that what gets promised actually gets delivered, every time, at scale. She manages client success, delivery operations, and the internal systems that keep the agency running at a pace most traditional firms can\'t match. Her background spans growth marketing, project operations, and revenue strategy across agencies, SaaS, and regional enterprise.`,
-    bio2: `Sarah built her career turning high-potential teams into high-output machines — and at Demand Signals, that means doing the same with human + AI hybrid workflows. She owns the client relationship lifecycle, oversees quality control on all AI-generated outputs before they go to clients, and drives the continuous improvement process that keeps the agency ahead of both competitors and algorithm shifts. Clients consistently describe Sarah as the reason they stay.`,
+    titleColor: '#E8729A',
+    bio1: `Sarah runs the machine. As COO, she owns every client engagement from signed contract to delivered results — managing delivery operations, quality assurance, and the human + AI hybrid workflows that let a lean team produce the output of an agency ten times its size. Her background spans growth marketing leadership, revenue operations, and scaling service businesses across agencies, SaaS platforms, and regional enterprises with eight-figure revenue targets.`,
+    bio2: `Before Demand Signals, Sarah led operations at a top-50 US digital agency, where she built the systems that took them from 40 to 200+ managed accounts without proportional headcount growth. She brings that same operational rigor here — except now the workforce includes AI agent swarms alongside human strategists. Sarah oversees quality control on every AI-generated deliverable, manages the client success pipeline, and drives the continuous improvement cycles that keep our systems months ahead of the market. When clients say Demand Signals feels like having an unfair advantage, Sarah is the reason it actually is one.`,
   },
 ]
 
@@ -65,7 +66,43 @@ const AI_AGENTS = [
 export default function TeamPage() {
   return (
     <>
+      <JsonLd data={breadcrumbSchema([
+        { name: 'Home', url: 'https://demandsignals.co' },
+        { name: 'About', url: 'https://demandsignals.co/about' },
+        { name: 'Team', url: 'https://demandsignals.co/about/team' },
+      ])} />
       <JsonLd data={faqSchema(faqs)} />
+      {/* Person schema for each team member */}
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'Person',
+        name: 'Hunter',
+        jobTitle: 'Managing Director',
+        worksFor: { '@type': 'Organization', name: 'Demand Signals', url: 'https://demandsignals.co' },
+        description: 'Hunter built and shipped his first client website while still in high school. He leads Demand Signals from the front: setting strategy, closing deals, and overseeing every system the agency deploys. Based in Northern California, serving clients across the USA, Thailand, Australia and beyond.',
+        image: 'https://demandsignals.co/hunter_profile.jpeg',
+        url: 'https://demandsignals.co/about/team',
+      }} />
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'Person',
+        name: 'Tiffany',
+        jobTitle: 'Chief Technology Officer',
+        worksFor: { '@type': 'Organization', name: 'Demand Signals', url: 'https://demandsignals.co' },
+        description: 'Tiffany is the architect behind the AI infrastructure that powers every Demand Signals engagement. She designed and built the multi-agent orchestration platform from the ground up.',
+        image: 'https://demandsignals.co/tiffany_profile.jpeg',
+        url: 'https://demandsignals.co/about/team',
+      }} />
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'Person',
+        name: 'Sarah',
+        jobTitle: 'Chief Operating Officer',
+        worksFor: { '@type': 'Organization', name: 'Demand Signals', url: 'https://demandsignals.co' },
+        description: 'Sarah runs the machine. As COO, she owns every client engagement from signed contract to delivered results — managing delivery operations, quality assurance, and the human + AI hybrid workflows.',
+        image: 'https://demandsignals.co/sarah_profile.jpeg',
+        url: 'https://demandsignals.co/about/team',
+      }} />
 
       <PageHero
         eyebrow="Our Team"
@@ -84,7 +121,7 @@ export default function TeamPage() {
             <div style={{ background: '#fff', borderRadius: 20, padding: '48px 40px', border: '1px solid var(--border)', marginBottom: 56 }}>
               <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', flexWrap: 'wrap' }}>
                 <div style={{ width: 110, height: 110, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '3px solid rgba(82,201,160,0.3)' }}>
-                  <img src="/hunter-avatar.jpg" alt="Hunter — Managing Director" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+                  <Image src="/hunter_profile.jpeg" alt="Hunter — Managing Director" width={110} height={110} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
                 </div>
                 <div style={{ flex: 1, minWidth: 280 }}>
                   <h2 style={{ color: 'var(--dark)', fontWeight: 800, fontSize: '1.5rem', marginBottom: 4 }}>Hunter</h2>
@@ -107,7 +144,7 @@ export default function TeamPage() {
                 <div style={{ background: '#fff', borderRadius: 20, padding: '48px 40px', border: '1px solid var(--border)' }}>
                   <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', flexWrap: 'wrap' }}>
                     <div style={{ width: 110, height: 110, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '3px solid rgba(82,201,160,0.3)' }}>
-                      <img src={person.avatar} alt={person.alt} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+                      <Image src={person.avatar} alt={person.alt} width={110} height={110} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 280 }}>
                       <h2 style={{ color: 'var(--dark)', fontWeight: 800, fontSize: '1.5rem', marginBottom: 4 }}>{person.name}</h2>
@@ -150,6 +187,51 @@ export default function TeamPage() {
             ))}
           </StaggerContainer>
 
+        </div>
+      </section>
+
+      {/* ── Company Mascots ─────────────────────────────────────── */}
+      <section style={{ background: 'var(--dark)', padding: '80px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <ScrollReveal direction="up">
+            <div style={{ textAlign: 'center', marginBottom: 48 }}>
+              <p style={{ color: 'var(--teal)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.85rem', marginBottom: 10 }}>
+                Office Security
+              </p>
+              <h2 style={{ color: '#fff', fontSize: 'clamp(1.4rem, 3vw, 2rem)', fontWeight: 800, margin: 0 }}>
+                Meet Tiki & Luna
+              </h2>
+              <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.65, maxWidth: 620, margin: '16px auto 0' }}>
+                Every great agency needs great mascots. Ours happen to be the most dedicated members of the team — on shift 24/7, never miss a meeting, and always available for moral support.
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal direction="up" delay={0.1}>
+            <div style={{ display: 'flex', gap: 40, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', maxWidth: 900, margin: '0 auto' }}>
+              <div style={{ width: 280, height: 280, borderRadius: 20, overflow: 'hidden', flexShrink: 0, border: '3px solid rgba(82,201,160,0.25)' }}>
+                <Image src="/tiki_luna_profile.jpeg" alt="Tiki and Luna — Demand Signals company mascots" width={280} height={280} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 280 }}>
+                <div style={{ marginBottom: 28 }}>
+                  <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '1.2rem', marginBottom: 6 }}>
+                    Tiki <span style={{ color: 'var(--teal)', fontSize: '0.85rem', fontWeight: 500 }}>— The Belly With Fur</span>
+                  </h3>
+                  <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem', lineHeight: 1.7, margin: 0 }}>
+                    Husky. Heterochromatic. Horizontally gifted. Tiki is our Chief Morale Officer — the first to greet every visitor, the loudest voice in every Zoom call, and the undisputed champion of strategic napping. His approach to work mirrors our own: go hard, rest hard, repeat. If you&apos;re on a video call with us, expect a cameo.
+                  </p>
+                </div>
+                <div>
+                  <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '1.2rem', marginBottom: 6 }}>
+                    Luna <span style={{ color: '#E8729A', fontSize: '0.85rem', fontWeight: 500 }}>— The Cuddly Queen</span>
+                  </h3>
+                  <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem', lineHeight: 1.7, margin: 0 }}>
+                    Dark, elegant, and quietly running the entire operation from behind the scenes. Luna is our VP of Vibes — she keeps the energy calm, the laps warm, and the office atmosphere impeccable. Where Tiki brings the chaos, Luna brings the composure. Together, they&apos;re the heart and soul of Demand Signals HQ.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 

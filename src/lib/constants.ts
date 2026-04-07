@@ -1,11 +1,23 @@
 export const SITE_NAME = 'Demand Signals'
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://demandsignals.co'
 export const CONTACT_EMAIL = 'DemandSignals@gmail.com'
-export const CONTACT_PHONE = '916-542-2423'
+export const CONTACT_PHONE = '(916) 542-2423'
+export const CONTACT_PHONE_TEL = '+19165422423'
 export const BOOKING_URL =
   'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true'
 export const LOGO_URL =
   '/logo.png'
+
+// ── Social profiles ──────────────────────────────────────────
+export const SOCIAL_LINKS = {
+  twitter:   'https://x.com/DemandSignalsCo',
+  instagram: 'https://www.instagram.com/DemandSignalsAgency',
+  facebook:  'https://www.facebook.com/DemandSignals/',
+  tiktok:    'https://www.tiktok.com/@demandsignals',
+  youtube:   'https://www.youtube.com/@DemandSignals',
+  pinterest: 'https://www.pinterest.com/demandsignals/',
+  linkedin:  'https://www.linkedin.com/company/demandsignals',
+}
 
 // ── Nav item type ─────────────────────────────────────────────
 export type NavItem = {
@@ -78,16 +90,16 @@ export const NAV_AI_AGENTS  = NAV_AI_SERVICES
 
 // ── Location data ─────────────────────────────────────────────
 export const NAV_LOCATIONS = [
-  { label: 'El Dorado Hills',   href: '/locations/el-dorado-hills' },
-  { label: 'Folsom',            href: '/locations/folsom' },
-  { label: 'Sacramento',        href: '/locations/sacramento' },
-  { label: 'Placerville',       href: '/locations/placerville' },
-  { label: 'Roseville',         href: '/locations/roseville' },
-  { label: 'Rocklin',           href: '/locations/rocklin' },
-  { label: 'Granite Bay',       href: '/locations/granite-bay' },
-  { label: 'Auburn',            href: '/locations/auburn' },
-  { label: 'Citrus Heights',    href: '/locations/citrus-heights' },
-  { label: 'Cameron Park',      href: '/locations/cameron-park' },
-  { label: 'South Lake Tahoe',  href: '/locations/south-lake-tahoe' },
+  { label: 'El Dorado Hills',   href: '/locations/el-dorado-county/el-dorado-hills' },
+  { label: 'Folsom',            href: '/locations/sacramento-county/folsom' },
+  { label: 'Sacramento',        href: '/locations/sacramento-county/sacramento' },
+  { label: 'Placerville',       href: '/locations/el-dorado-county/placerville' },
+  { label: 'Roseville',         href: '/locations/placer-county/roseville' },
+  { label: 'Rocklin',           href: '/locations/placer-county/rocklin' },
+  { label: 'Granite Bay',       href: '/locations/placer-county/granite-bay' },
+  { label: 'Auburn',            href: '/locations/placer-county/auburn' },
+  { label: 'Citrus Heights',    href: '/locations/sacramento-county/citrus-heights' },
+  { label: 'Cameron Park',      href: '/locations/el-dorado-county/cameron-park' },
+  { label: 'South Lake Tahoe',  href: '/locations/el-dorado-county/south-lake-tahoe' },
   { label: 'All Locations',     href: '/locations' },
 ]

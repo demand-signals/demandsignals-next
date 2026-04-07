@@ -45,6 +45,8 @@ export function buildMetadata({
       description: ogDescription ?? description,
       url,
       type:        'website',
+      siteName:    'Demand Signals',
+      locale:      'en_US',
       images: [{
         url:    OG_IMAGE,
         width:  1200,
@@ -59,6 +61,7 @@ export function buildMetadata({
       title:       twitterTitle ?? ogTitle ?? title,
       description: twitterDescription ?? ogDescription ?? description,
       images:      [OG_IMAGE],
+      creator:     '@demandsignals',
     },
 
     /* ── Canonical URL ────────────────────────────────── */

@@ -6,6 +6,8 @@ import { getAllPosts, getPostBySlug, getPostsByContentCategory, CONTENT_CATEGORY
 import { BlogInfographic } from '@/components/blog/BlogInfographic'
 import { ParticleCanvas } from '@/components/sections/HeroCanvas'
 import { BlogCategoryNav } from '@/components/blog/BlogCategoryNav'
+import { JsonLd } from '@/components/seo/JsonLd'
+import { breadcrumbSchema } from '@/lib/schema'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -19,9 +21,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const post = getPostBySlug(slug)
   if (!post) return {}
+  const url = `https://demandsignals.co/blog/${slug}`
   return {
     title: `${post.title} | Demand Signals`,
     description: post.excerpt,
+    keywords: post.tags,
+    alternates: { canonical: url },
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      url,
+      type: 'article',
+      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: post.title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.excerpt,
+      images: ['/og-image.png'],
+    },
   }
 }
 
@@ -38,8 +56,44 @@ export default async function BlogPostPage({ params }: Props) {
   const twitterShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(`https://demandsignals.co/blog/${post.slug}`)}`
   const linkedInShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`https://demandsignals.co/blog/${post.slug}`)}`
 
+  const canonicalUrl = `https://demandsignals.co/blog/${post.slug}`
+
+  const blogPostingSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt,
+    url: canonicalUrl,
+    datePublished: post.date,
+    dateModified: post.date,
+    author: {
+      '@type': 'Person',
+      name: post.author,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Demand Signals',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://demandsignals.co/logo.png',
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': canonicalUrl,
+    },
+    keywords: post.tags.join(', '),
+  }
+
   return (
     <>
+      <JsonLd data={blogPostingSchema} />
+      <JsonLd data={breadcrumbSchema([
+        { name: 'Home', url: 'https://demandsignals.co' },
+        { name: 'Blog', url: 'https://demandsignals.co/blog' },
+        { name: post.title, url: canonicalUrl },
+      ])} />
+
       {/* Hero with particles */}
       <section style={{ position: 'relative', overflow: 'hidden', background: '#080e1f', color: '#fff', padding: '100px 24px 64px' }}>
         <ParticleCanvas />

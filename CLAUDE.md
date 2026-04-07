@@ -29,7 +29,7 @@ Next.js 16 rebuild of demandsignals.co — an AI-powered demand generation agenc
 | Language | TypeScript (strict) | Zero TS errors required before push |
 | Styling | Tailwind CSS v4 + CSS Modules for layout | CSS vars in `globals.css` |
 | Animation | Framer Motion | |
-| Blog | MDX via `next-mdx-remote` + `gray-matter` | 10 posts in `src/content/blog/` |
+| Blog | MDX via `next-mdx-remote` + `gray-matter` | 141 posts in `src/content/blog/` |
 | Forms | Nodemailer (API routes) | SMTP not fully wired yet |
 | Sitemap | `next-sitemap` | |
 | UI primitives | shadcn (base-ui), lucide-react | |
@@ -199,13 +199,18 @@ src/
 │   ├── ai-agents/                    — LEGACY (301 redirects to new structure)
 │   ├── tools/                        — Tools (kept as-is)
 │   ├── blog/                         — MDX blog
-│   ├── locations/                    — Location pages (11 cities)
+│   ├── locations/                    — Location pages (23 cities, 5 counties)
+│   │   ├── page.tsx                  — regional hub with CountySelector
+│   │   ├── [county]/page.tsx         — county hub (5 pages)
+│   │   └── [county]/[city]/page.tsx  — city hub (23 pages, lists all 23 services)
+│   ├── [cityService]/page.tsx        — Root-level LTPs (575 pages: /el-dorado-hills-local-seo)
+│   ├── not-found.tsx                 — Custom 404 page (noindex)
 │   ├── about/ (+ about/team/)        — Company pages
 │   ├── contact/ portfolio/ privacy/ terms/ accessibility/
 │   └── api/                          — contact, subscribe, report-request
 │
 ├── components/
-│   ├── layout/                       — Header, Footer, MobileMenu, NavDropdown, ContactBot, etc.
+│   ├── layout/                       — Header, Footer (+footer.module.css), MobileMenu, NavDropdown, ContactBot
 │   ├── sections/                     — Page sections
 │   │   ├── PageHero.tsx              — Parallax hero with particle canvas
 │   │   ├── FeatureShowcase.tsx       — Scroll-pinned feature carousel (desktop) / stacked cards (mobile)
@@ -232,7 +237,10 @@ src/
     ├── metadata.ts                   — buildMetadata() helper
     ├── schema.ts                     — JSON-LD schema generators
     ├── icons.ts                      — Lucide icon resolver
-    ├── cities.ts                     — City data for location pages
+    ├── cities.ts                     — 23 cities across 5 counties
+    ├── services.ts                   — 23 services, keyword/FAQ templates with {city}/{county} vars
+    ├── counties.ts                   — County data + getCountiesWithCities()
+    ├── city-service-slugs.ts         — LTP slug lookup table (575 entries)
     ├── blog.ts                       — MDX blog loader (141 posts, 7 categories)
     ├── api-security.ts               — Rate limiting, CSRF, input validation
     └── utils.ts                      — cn() utility
@@ -271,10 +279,10 @@ Both templates auto-generate JSON-LD schema (Service, BreadcrumbList, FAQPage).
 ## 9. Redirects
 
 ### In `next.config.ts`:
-16 permanent 301 redirects from old `/services/*` and `/ai-agents/*` URLs to new structure.
+16 permanent 301 redirects from old `/services/*` and `/ai-agents/*` URLs to new structure. CSP header also configured here.
 
 ### In `vercel.json`:
-21 vanity/shortcut redirects for common paths — `/seo`, `/llm`, `/geo`, `/wordpress`, `/reviews`, `/team`, etc. All point to the correct new URL structure. Updated 2026-04-05.
+20 vanity/shortcut redirects for common paths — `/seo`, `/llm`, `/geo`, `/wordpress`, `/reviews`, `/team`, etc. All point to the correct new URL structure. Updated 2026-04-07.
 
 ---
 
@@ -284,40 +292,50 @@ Both templates auto-generate JSON-LD schema (Service, BreadcrumbList, FAQPage).
 - [x] All 23 individual service pages with unique FAQs and schema
 - [x] Header: 5 dropdown nav with new categories
 - [x] Mobile menu: sectioned navigation
-- [x] Footer: 4-column with new categories
+- [x] Footer: 4-column with new categories + hours link + basement tagline
 - [x] Homepage: ServicesGrid updated with new category links
 - [x] Templates: ServicePageTemplate + CategoryIndexTemplate
 - [x] 301 redirects from old URLs (in next.config.ts)
-- [x] Sitemap updated with all new routes
+- [x] Sitemap: all routes + 141 blog posts with frontmatter dates
 - [x] llms.txt updated with new URL structure
-- [x] About/Team page
-- [x] Blog: 141 MDX posts across 7 categories, index + [slug] pages
+- [x] About/Team page with Person schema (Hunter, Tiffany, Sarah)
+- [x] Blog: 141 MDX posts across 7 categories, index + [slug] with BlogPosting schema
 - [x] Tools: demand-audit, research-reports, demand-links, dynamic-qr
-- [x] Locations: 11 city pages
-- [x] Contact page with form
-- [x] JSON-LD: org, website, service, breadcrumb, FAQ schemas
+- [x] Locations: 23 cities, 5 counties, CountySelector, services.ts data layer
+- [x] URL Restructure: county hubs (5), city hubs (23), root-level LTPs (575 pages)
+- [x] Contact page with form + ContactPage schema + FAQ accordion + physical address
+- [x] JSON-LD: org, website, service, breadcrumb, FAQ, BlogPosting, Person, CollectionPage, ContactPage, LocalBusiness
+- [x] GBP/LocalBusiness schema: address, geo, openingHours, sameAs (8 socials), image, priceRange
 - [x] Vercel auto-deploy from GitHub master
 - [x] Section Theater motion upgrade (pilot: wordpress-development page)
-- [x] Security hardening: API routes, headers, git history purge
-- [x] Accessibility widget (WCAG 2.1 AA)
+- [x] Security hardening: API routes, CSP header, git history purge
+- [x] Accessibility page (WCAG 2.1 AA, comprehensive)
+- [x] Privacy page (CCPA/CPRA compliant, 12 sections)
+- [x] Terms of Service page (16 sections, JAMS arbitration)
+- [x] Custom 404 page with navigation links
 - [x] Card game easter egg (ArcCardGame in layout.tsx)
 - [x] Mobile responsive: tech stack, blog featured, footer all stack on mobile
+- [x] SEO/GEO/AEO site-wide audit: titles, descriptions, breadcrumbs, headings, H1 keywords
+- [x] NAP consistency: (916) 542-2423 format, physical address on contact page
+- [x] buildMetadata(): siteName, locale, twitter.creator propagated to all pages
+- [x] Category-specific LTP content: unique discovery bullets and HowTo steps per category
+- [x] hreflang, preconnect hints, noindex on spacegame/404
+- [x] 796 static pages building clean
 
 ---
 
 ## 11. What Is NOT Done (Open Work)
 
-### High Priority — Current Progression
-1. **Roll out Section Theater** to remaining 22 service pages (add stats props, verify mobile)
-2. **Longtail templates** — design template for /[cityService] pages (11 cities x 15 services = 165 pages)
-3. **Longtail pages** — generate 165 programmatic pages
-4. **DNS cutover** — Vercel domain + Cloudflare + SMTP + GSC + GA4
+### High Priority
+1. **Roll out Section Theater** to remaining 22 service pages (pilot done on wordpress-development)
+2. **301 redirects** — ~552 redirects from old `/locations/[city]/[service]` URLs to new root-level LTPs
+3. **DNS cutover** — Vercel domain + Cloudflare + SMTP + GSC + GA4
+4. **Google Search Console** — verification pending until DNS cutover to demandsignals.co
 
 ### Medium Priority
 - [ ] **Mobile menu UX** — currently a simple slide-down; .co uses full-screen overlay with animations
 - [ ] **OG image** — `/og-image.png` is placeholder, needs real branded asset
 - [ ] **SMTP wiring** — real credentials in Vercel env vars for contact form
-- [ ] **Google Search Console** — verification code is `"pending"`
 - [ ] **Analytics** — GA4 or equivalent (Vercel Analytics installed)
 - [ ] **Portfolio page** — needs real client case studies with results data
 

@@ -1,7 +1,8 @@
 'use client'
 import Link from 'next/link'
 import Image from 'next/image'
-import { LOGO_URL, CONTACT_PHONE, CONTACT_EMAIL, BOOKING_URL } from '@/lib/constants'
+import { LOGO_URL, CONTACT_PHONE, CONTACT_PHONE_TEL, CONTACT_EMAIL, BOOKING_URL } from '@/lib/constants'
+import styles from './footer.module.css'
 
 export function Footer() {
   return (
@@ -18,7 +19,7 @@ export function Footer() {
           <p style={{ fontSize: '0.9rem', lineHeight: 1.6, margin: 0, color: 'rgba(255,255,255,0.55)' }}>
             AI-first demand generation agency.<br />We make you the signal, not the noise.
           </p>
-          <a href={`tel:${CONTACT_PHONE}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem' }}>
+          <a href={`tel:${CONTACT_PHONE_TEL}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#68c5ad" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg> {CONTACT_PHONE}
           </a>
           <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem' }}>
@@ -33,8 +34,7 @@ export function Footer() {
       </div>
 
       {/* Link grid — 4 columns desktop, 2 columns mobile */}
-      <style>{`@media(min-width:768px){.footer-link-grid{grid-template-columns:repeat(4,1fr) !important;gap:40px !important}}`}</style>
-      <div className="footer-link-grid" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 32 }}>
+      <div className={styles.linkGrid}>
 
         {/* Company */}
         <div>
@@ -50,6 +50,15 @@ export function Footer() {
               <li key={href}><FooterLink href={href}>{label}</FooterLink></li>
             ))}
           </ul>
+
+          <a
+            href="https://share.google/WTvlYyGBA02cNshOC"
+            target="_blank"
+            rel="noopener"
+            style={{ fontSize: '0.85rem', color: 'var(--teal)', textDecoration: 'none', display: 'inline-block', marginTop: 16 }}
+          >
+            M-F 10am to 8pm PT
+          </a>
         </div>
 
         {/* Websites & Apps */}
@@ -106,6 +115,7 @@ export function Footer() {
       {/* Bottom bar */}
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', maxWidth: 1200, margin: '0 auto', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)' }}>
         <span>© {new Date().getFullYear()} Demand Signals. All rights reserved.</span>
+        <span style={{ color: 'rgba(255,255,255,0.3)' }}>Digital by Demand Signals.</span>
         <div style={{ display: 'flex', gap: 20 }}>
           <Link href="/privacy" style={{ color: 'rgba(255,255,255,0.35)' }}>Privacy</Link>
           <Link href="/terms" style={{ color: 'rgba(255,255,255,0.35)' }}>Terms</Link>

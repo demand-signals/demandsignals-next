@@ -9,6 +9,9 @@ export type CityData = {
   heroSubtitle: string
   nearbyAreas: string[]
   industries: string[]
+  /** Local landmarks, business parks, shopping centers, neighborhoods — for natural localization in LTP copy */
+  localTerms: string[]
+  geo: { lat: number; lng: number }
   stats: Array<{ value: string; label: string }>
   features: Array<{ title: string; description: string }>
   seoDescription: string
@@ -26,11 +29,13 @@ export const CITIES: CityData[] = [
       'El Dorado Hills is one of the fastest-growing communities in Northern California — an affluent suburb east of Sacramento with a highly educated, high-income population and strong small business ecosystem.',
     heroTitle: 'AI Marketing for El Dorado Hills Businesses',
     heroSubtitle:
-      'El Dorado Hills has one of the highest household incomes in California. We help local businesses capture that market with AI-powered websites, local SEO, and automated marketing.',
+      'El Dorado Hills is one of Northern California\'s fastest-growing business markets. We help local businesses capture that demand with AI-powered websites, local SEO, and automated marketing.',
     nearbyAreas: ['Folsom', 'Shingle Springs', 'Cameron Park', 'Rescue', 'Granite Bay'],
     industries: ['Medical & Dental', 'Real Estate', 'Financial Services', 'Restaurants & Dining', 'Home Services', 'Professional Services'],
+    localTerms: ['Town Center', 'Serrano', 'Blackstone', 'Promontory', 'Silva Valley Parkway', 'Ridgeview', 'Latrobe Road Corridor', 'Lake Forest'],
+    geo: { lat: 38.6857, lng: -121.0822 },
     stats: [
-      { value: '$120k+', label: 'median household income' },
+      { value: '2,400+', label: 'local businesses' },
       { value: '48k', label: 'residents and growing' },
       { value: '3x', label: 'average lead increase our clients see' },
     ],
@@ -81,9 +86,11 @@ export const CITIES: CityData[] = [
       'Folsom is growing fast. Competition for local customers is intense. We deploy AI-powered websites, automated SEO, and agent swarms that outpace your competitors around the clock.',
     nearbyAreas: ['El Dorado Hills', 'Granite Bay', 'Roseville', 'Orangevale', 'Sacramento'],
     industries: ['Technology & SaaS', 'Medical & Healthcare', 'Real Estate', 'Restaurants', 'Home Services', 'Legal & Financial'],
+    localTerms: ['Palladio', 'Historic Sutter Street', 'Folsom Premium Outlets', 'Folsom Lake', 'Broadstone', 'Empire Ranch', 'Folsom Ranch', 'East Bidwell Corridor'],
+    geo: { lat: 38.6780, lng: -121.1761 },
     stats: [
       { value: '82k', label: 'residents — rapidly expanding' },
-      { value: '$105k+', label: 'median household income' },
+      { value: '3,800+', label: 'local businesses' },
       { value: '24/7', label: 'AI agents running for your business' },
     ],
     features: [
@@ -121,6 +128,60 @@ export const CITIES: CityData[] = [
     ],
   },
   {
+    slug: 'elk-grove',
+    name: 'Elk Grove',
+    county: 'Sacramento County',
+    state: 'CA',
+    population: '176,000',
+    description:
+      'Elk Grove is the second-largest city in Sacramento County and one of the most diverse communities in California. With a population of 176,000, top-rated schools, and a rapidly expanding commercial corridor, Elk Grove represents a massive consumer market with intense competition for local services — and enormous upside for businesses that invest in AI-powered marketing.',
+    heroTitle: 'AI Marketing Agency — Elk Grove, CA',
+    heroSubtitle:
+      'Elk Grove is one of the largest and fastest-growing cities in the Sacramento region. With 176,000 residents and fierce local competition, AI-powered marketing is the only way to stand out.',
+    nearbyAreas: ['Sacramento', 'Laguna', 'Lodi', 'Galt', 'Rancho Cordova', 'Folsom'],
+    industries: ['Medical & Healthcare', 'Restaurants & Food', 'Home Services', 'Real Estate', 'Auto Services', 'Retail & Shopping', 'Education & Tutoring'],
+    localTerms: ['Old Town Elk Grove', 'Laguna Crossroads', 'Laguna Ridge', 'East Franklin', 'Sheldon', 'Elk Grove Boulevard', 'Laguna West', 'District 56'],
+    geo: { lat: 38.4388, lng: -121.3819 },
+    stats: [
+      { value: '176k', label: 'residents — 2nd largest in Sac County' },
+      { value: '4,200+', label: 'local businesses' },
+      { value: '24/7', label: 'AI agents running for your business' },
+    ],
+    features: [
+      {
+        title: 'Dominate Elk Grove\'s Massive Local Market',
+        description:
+          'With 176,000 residents, Elk Grove is larger than many standalone cities. We build the SEO infrastructure to capture every high-intent local search — from "dentist Elk Grove" to "HVAC near me."',
+      },
+      {
+        title: 'AI Websites Built for Sacramento\'s Suburbs',
+        description:
+          'Elk Grove residents research online before they buy. We build fast, AI-optimized websites that rank in Google and convert local traffic into booked appointments and phone calls.',
+      },
+      {
+        title: 'Multi-Cultural Market Targeting',
+        description:
+          'Elk Grove is one of California\'s most diverse cities. Our AI systems build content and targeting strategies that reach every demographic segment in this vibrant market.',
+      },
+      {
+        title: 'AI Agent Swarms for Elk Grove Scale',
+        description:
+          'From content creation to review management to outreach, our AI agents handle the marketing volume that a competitive Elk Grove market demands — without the headcount.',
+      },
+    ],
+    seoDescription:
+      'AI marketing agency serving Elk Grove, CA. Local SEO, AI websites, GEO optimization, and AI agent swarms for Elk Grove and Sacramento County businesses. 176,000 residents.',
+    keywords: [
+      'AI marketing Elk Grove CA',
+      'local SEO Elk Grove California',
+      'digital marketing Elk Grove',
+      'Elk Grove marketing agency',
+      'AI websites Elk Grove',
+      'Sacramento County marketing Elk Grove',
+      'demand generation Elk Grove CA',
+    ],
+  },
+  {
     slug: 'sacramento',
     name: 'Sacramento',
     county: 'Sacramento County',
@@ -133,9 +194,11 @@ export const CITIES: CityData[] = [
       'Sacramento businesses compete on every front — Google Maps, AI search, social media, and review platforms. We deploy AI agent swarms that win every channel simultaneously.',
     nearbyAreas: ['West Sacramento', 'Elk Grove', 'Rancho Cordova', 'Citrus Heights', 'Roseville', 'Davis'],
     industries: ['Healthcare & Medical', 'Legal Services', 'Restaurants & Food', 'Home Services', 'Real Estate', 'Retail & E-commerce', 'Government Contractors'],
+    localTerms: ['Midtown', 'Downtown Sacramento', 'East Sacramento', 'Arden-Arcade', 'Natomas', 'Land Park', 'Old Sacramento Waterfront', 'Oak Park'],
+    geo: { lat: 38.5816, lng: -121.4944 },
     stats: [
       { value: '530k', label: 'residents — one of CA\'s largest markets' },
-      { value: '$72k+', label: 'median household income' },
+      { value: '42,000+', label: 'local businesses' },
       { value: '19', label: 'active AI agents running for clients right now' },
     ],
     features: [
@@ -185,6 +248,8 @@ export const CITIES: CityData[] = [
       'Placerville\'s customers search online before they visit. We make sure your business is front and center — in Google, in AI assistants, and on every platform that matters.',
     nearbyAreas: ['El Dorado Hills', 'Cameron Park', 'Diamond Springs', 'Shingle Springs', 'Apple Hill'],
     industries: ['Wine & Tourism', 'Restaurants & Food', 'Home Services', 'Medical & Dental', 'Retail', 'Professional Services'],
+    localTerms: ['Main Street Placerville', 'Hangtown', 'Bell Tower', 'Gold Bug Park', 'Placerville Drive Corridor', 'Apple Hill', 'Historic Downtown', 'El Dorado Trail'],
+    geo: { lat: 38.7296, lng: -120.7986 },
     stats: [
       { value: '#1', label: 'county seat of El Dorado County' },
       { value: '3x', label: 'average lead increase for our clients' },
@@ -237,9 +302,11 @@ export const CITIES: CityData[] = [
       'Citrus Heights has nearly 90,000 residents and intense competition for every local service category. AI-powered marketing is the only way to stay ahead.',
     nearbyAreas: ['Roseville', 'Sacramento', 'Orangevale', 'Fair Oaks', 'Rocklin'],
     industries: ['Medical & Dental', 'Home Services', 'Restaurants', 'Auto Services', 'Legal & Financial', 'Retail'],
+    localTerms: ['Sunrise Mall', 'Sunrise MarketPlace', 'Sunrise Boulevard Corridor', 'Greenback Lane', 'Birdcage Heights', 'Rusch Park', 'Stock Ranch', 'Sylvan Corners'],
+    geo: { lat: 38.7071, lng: -121.2811 },
     stats: [
       { value: '89k', label: 'Citrus Heights residents' },
-      { value: '$65k+', label: 'median household income' },
+      { value: '2,800+', label: 'local businesses' },
       { value: '24/7', label: 'AI agents running for your business' },
     ],
     features: [
@@ -288,6 +355,8 @@ export const CITIES: CityData[] = [
       'Auburn\'s businesses serve locals and Sierra foothills visitors alike. We build the AI-powered marketing infrastructure to capture both markets — and convert them.',
     nearbyAreas: ['Rocklin', 'Roseville', 'Lincoln', 'Grass Valley', 'Colfax'],
     industries: ['Outdoor Recreation & Tourism', 'Restaurants & Bars', 'Medical & Dental', 'Home Services', 'Real Estate', 'Retail'],
+    localTerms: ['Old Town Auburn', 'Auburn State Recreation Area', 'Bell Road', 'Foresthill Road', 'Auburn-Folsom Road Corridor', 'Elm Avenue', 'Placer County Courthouse', 'Highway 49 Corridor'],
+    geo: { lat: 38.8966, lng: -121.0769 },
     stats: [
       { value: 'Placer', label: 'County — one of CA\'s fastest-growing' },
       { value: '3x', label: 'average lead increase for our clients' },
@@ -339,8 +408,10 @@ export const CITIES: CityData[] = [
       'Granite Bay\'s residents are educated, high-income, and research-driven. They discover local businesses through Google, AI assistants, and reviews. We make sure they find yours.',
     nearbyAreas: ['Roseville', 'Rocklin', 'Folsom', 'Lincoln', 'Loomis'],
     industries: ['Medical & Dental', 'Financial & Wealth Management', 'Real Estate', 'Luxury Services', 'Home Improvement', 'Professional Services'],
+    localTerms: ['Folsom Lake State Recreation Area', 'Douglas Boulevard Corridor', 'Granite Bay Town Center', 'The Marketplace at Granite Bay', 'Granite Bay Village', 'Country Gables Shopping Center', 'Cavitt Stallman Road', 'Los Lagos'],
+    geo: { lat: 38.7425, lng: -121.1745 },
     stats: [
-      { value: '$150k+', label: 'median household income' },
+      { value: '1,200+', label: 'local businesses' },
       { value: 'Top 5%', label: 'wealthiest communities in California' },
       { value: '3x', label: 'average ROI increase for our clients' },
     ],
@@ -391,9 +462,11 @@ export const CITIES: CityData[] = [
       'Roseville is one of NorCal\'s most competitive business markets. Winning requires more than a website — it requires AI-powered marketing running 24/7 while your competitors sleep.',
     nearbyAreas: ['Rocklin', 'Granite Bay', 'Citrus Heights', 'Lincoln', 'Folsom', 'Sacramento'],
     industries: ['Retail & E-commerce', 'Medical & Healthcare', 'Technology', 'Real Estate', 'Restaurants', 'Home Services', 'Financial Services'],
+    localTerms: ['Westfield Galleria at Roseville', 'The Fountains at Roseville', 'Creekside Town Center', 'Historic Downtown Roseville', 'Fiddyment Ranch', 'Woodcreek', 'Blue Oaks Boulevard', 'Diamond Oaks'],
+    geo: { lat: 38.7521, lng: -121.2880 },
     stats: [
       { value: '148k', label: 'residents — Placer County\'s largest city' },
-      { value: '$95k+', label: 'median household income' },
+      { value: '6,500+', label: 'local businesses' },
       { value: '24/7', label: 'continuous AI marketing operation' },
     ],
     features: [
@@ -443,6 +516,8 @@ export const CITIES: CityData[] = [
       'South Lake Tahoe draws millions of visitors per year. The businesses that capture them have modern websites, strong Google rankings, and AI systems working around the clock.',
     nearbyAreas: ['Stateline NV', 'Myers', 'Meyers', 'Zephyr Cove', 'Incline Village', 'Truckee'],
     industries: ['Hospitality & Hotels', 'Restaurants & Bars', 'Outdoor Recreation', 'Real Estate', 'Ski & Winter Sports', 'Retail & Vacation Shops'],
+    localTerms: ['The Shops at Heavenly Village', 'Stateline', 'South Y', 'Al Tahoe', 'Tahoe Keys', 'Bijou', 'Ski Run Boulevard', 'Lake Tahoe Boulevard'],
+    geo: { lat: 38.9332, lng: -119.9844 },
     stats: [
       { value: '3M+', label: 'annual visitors to the Tahoe Basin' },
       { value: 'Peak', label: 'both summer and winter tourist seasons' },
@@ -492,11 +567,13 @@ export const CITIES: CityData[] = [
       'Cameron Park is a desirable residential community in El Dorado County — a suburban gem between Sacramento and the Sierra foothills with strong disposable income and high demand for professional local services.',
     heroTitle: 'AI Marketing for Cameron Park Businesses',
     heroSubtitle:
-      'Cameron Park residents have high incomes and high expectations. We build the AI-powered marketing presence that earns their business and keeps your competitors at bay.',
+      'Cameron Park residents are digitally savvy and research-driven. We build the AI-powered marketing presence that earns their business and keeps your competitors at bay.',
     nearbyAreas: ['El Dorado Hills', 'Shingle Springs', 'Folsom', 'Rescue', 'Placerville'],
     industries: ['Medical & Dental', 'Real Estate', 'Home Services', 'Professional Services', 'Fitness & Wellness', 'Restaurants'],
+    localTerms: ['Cameron Park Drive', 'Cameron Park Lake', 'Cameron Park Airpark', 'Burke Junction', 'Coach Lane', 'Cameron Park Country Club', 'Highway 50 Corridor', 'Bass Lake Road'],
+    geo: { lat: 38.6688, lng: -120.9872 },
     stats: [
-      { value: '$95k+', label: 'median household income' },
+      { value: '2,600+', label: 'local businesses' },
       { value: 'El Dorado', label: 'County — fastest-growing CA county' },
       { value: '3x', label: 'average lead increase for our clients' },
     ],
@@ -546,9 +623,11 @@ export const CITIES: CityData[] = [
       'Rocklin is one of Placer County\'s fastest-growing cities. We help local businesses capture new residents and established families with AI-powered marketing that works 24/7.',
     nearbyAreas: ['Roseville', 'Granite Bay', 'Lincoln', 'Auburn', 'Citrus Heights'],
     industries: ['Technology & Software', 'Medical & Healthcare', 'Education', 'Real Estate', 'Home Services', 'Restaurants'],
+    localTerms: ['Rocklin Crossings', 'Rocklin Commons', 'Stanford Ranch', 'Whitney Oaks', 'Quarry Park Adventures', 'Sierra College Boulevard', 'Blue Oaks Town Center', 'Sunset Whitney'],
+    geo: { lat: 38.7908, lng: -121.2358 },
     stats: [
       { value: '72k', label: 'residents and growing rapidly' },
-      { value: '$92k+', label: 'median household income' },
+      { value: '2,600+', label: 'local businesses' },
       { value: '24/7', label: 'AI agents running for your business' },
     ],
     features: [
@@ -595,9 +674,11 @@ export const CITIES: CityData[] = [
     heroSubtitle: 'Lincoln is growing at one of the fastest rates in California. New residents need new service providers — and the businesses that invest in AI marketing capture them first.',
     nearbyAreas: ['Roseville', 'Rocklin', 'Auburn', 'Wheatland', 'Penryn'],
     industries: ['Home Services', 'Medical & Dental', 'Real Estate', 'Restaurants', 'Retail', 'Professional Services'],
+    localTerms: ['Twelve Bridges', 'Lincoln Crossing', 'Sun City Lincoln Hills', 'Downtown Lincoln', 'Village at Twelve Bridges', 'Ferrari Ranch Road', 'Joiner Parkway', 'Catta Verdera'],
+    geo: { lat: 38.8916, lng: -121.2930 },
     stats: [
       { value: '51k', label: 'residents — one of CA\'s fastest-growing cities' },
-      { value: '$98k+', label: 'median household income' },
+      { value: '1,900+', label: 'local businesses' },
       { value: '3x', label: 'average lead increase for our clients' },
     ],
     features: [
@@ -620,6 +701,8 @@ export const CITIES: CityData[] = [
     heroSubtitle: 'Jackson is the heart of Amador County — where wine country tourism meets a loyal local economy. We help Jackson businesses capture both markets with AI-powered marketing.',
     nearbyAreas: ['Sutter Creek', 'Ione', 'Pine Grove', 'Plymouth', 'Volcano'],
     industries: ['Wine & Tourism', 'Restaurants & Food', 'Home Services', 'Medical & Dental', 'Retail', 'Real Estate'],
+    localTerms: ['Downtown Jackson', 'Jackson Rancheria Casino Resort', 'Kennedy Gold Mine', 'Kennedy Tailing Wheels Park', 'Detert Park', 'Highway 49 Corridor', 'Jackson Gate Road', 'St. Sava Serbian Orthodox Church'],
+    geo: { lat: 38.3488, lng: -120.7741 },
     stats: [
       { value: '#1', label: 'county seat and economic hub of Amador County' },
       { value: '3x', label: 'average lead increase for our clients' },
@@ -645,6 +728,8 @@ export const CITIES: CityData[] = [
     heroSubtitle: 'Sutter Creek attracts thousands of visitors from across Northern California. We make sure they find your business — in Google, in AI assistants, and on every platform they use to plan their trip.',
     nearbyAreas: ['Jackson', 'Amador City', 'Plymouth', 'Ione', 'Volcano'],
     industries: ['Wine & Tasting Rooms', 'Boutique Retail', 'Restaurants & Cafes', 'Bed & Breakfast', 'Arts & Galleries', 'Tourism'],
+    localTerms: ['Main Street Sutter Creek', 'Knight Foundry', 'Sutter Creek Auditorium', 'Miners Bend Park', 'Eureka Street', 'Amador City Border', 'Highway 49 Corridor', 'Gold Rush Historic District'],
+    geo: { lat: 38.3930, lng: -120.8024 },
     stats: [
       { value: '100k+', label: 'annual wine country visitors to Amador County' },
       { value: '3x', label: 'average lead increase for our clients' },
@@ -670,8 +755,10 @@ export const CITIES: CityData[] = [
     heroSubtitle: 'Grass Valley blends small-town community with big-city sophistication. Its residents are educated, digitally savvy, and loyal to local businesses they discover online. We make sure they discover yours.',
     nearbyAreas: ['Nevada City', 'Penn Valley', 'Colfax', 'Auburn', 'Lake of the Pines'],
     industries: ['Medical & Wellness', 'Professional Services', 'Restaurants & Food', 'Arts & Culture', 'Home Services', 'Technology & Remote Work'],
+    localTerms: ['Historic Downtown Grass Valley', 'Empire Mine State Historic Park', 'Glenbrook Plaza', 'Sutton Way Corridor', 'McKnight Crossing', 'Nevada County Fairgrounds', 'Loma Rica Ranch', 'Idaho-Maryland Road'],
+    geo: { lat: 39.2191, lng: -121.0611 },
     stats: [
-      { value: '$75k+', label: 'median household income' },
+      { value: '1,400+', label: 'local businesses' },
       { value: '14k', label: 'residents — Nevada County\'s largest city' },
       { value: '3x', label: 'average lead increase for our clients' },
     ],
@@ -695,8 +782,10 @@ export const CITIES: CityData[] = [
     heroSubtitle: 'Nevada City\'s small size masks its economic power. Residents have high incomes, strong local loyalty, and increasingly discover businesses through AI-assisted search. We make sure they find yours.',
     nearbyAreas: ['Grass Valley', 'Penn Valley', 'Truckee', 'Colfax', 'Rough and Ready'],
     industries: ['Arts & Galleries', 'Fine Dining & Wine', 'Wellness & Healing Arts', 'Professional Services', 'Tourism', 'Boutique Retail'],
+    localTerms: ['Historic Downtown Nevada City', 'Broad Street', 'Nevada Theatre', 'Deer Creek', 'Seven Hills Business District', 'Banner Mountain', 'Cement Hill', 'Commercial Street'],
+    geo: { lat: 39.2617, lng: -121.0178 },
     stats: [
-      { value: '$80k+', label: 'median household income' },
+      { value: '600+', label: 'local businesses' },
       { value: '3x', label: 'average lead increase for our clients' },
       { value: 'Top', label: 'arts destination in the Sierra foothills' },
     ],
@@ -720,8 +809,10 @@ export const CITIES: CityData[] = [
     heroSubtitle: 'Truckee\'s visitors are high-income, mobile-first, and quick to decide. The businesses they find online — before they leave home — are the ones that win their spending. We make sure that\'s you.',
     nearbyAreas: ['South Lake Tahoe', 'Tahoe City', 'Kings Beach', 'Incline Village NV', 'Donner Lake'],
     industries: ['Ski & Mountain Recreation', 'Luxury Hospitality', 'Real Estate & Vacation Rentals', 'Fine Dining & Après Ski', 'Outdoor Gear & Sports', 'Wellness & Spa'],
+    localTerms: ['Historic Downtown Truckee', 'Donner Lake', 'Tahoe Donner', 'Northstar', 'Glenshire', 'Martis Valley', 'Gateway District', 'Donner Memorial State Park'],
+    geo: { lat: 39.3280, lng: -120.1833 },
     stats: [
-      { value: '$110k+', label: 'median household income' },
+      { value: '1,500+', label: 'local businesses' },
       { value: '5M+', label: 'annual visitors to the Tahoe-Truckee region' },
       { value: '3x', label: 'average lead increase for our clients' },
     ],
@@ -733,6 +824,141 @@ export const CITIES: CityData[] = [
     ],
     seoDescription: 'AI marketing agency for Truckee, CA. Tourism SEO, AI websites, and AI-powered marketing for Truckee and the Tahoe-Truckee mountain market.',
     keywords: ['AI marketing Truckee CA', 'local SEO Truckee California', 'digital marketing Truckee Nevada County', 'Truckee marketing agency', 'AI websites Truckee', 'Lake Tahoe Truckee marketing California'],
+  },
+  {
+    slug: 'shingle-springs',
+    name: 'Shingle Springs',
+    county: 'El Dorado County',
+    state: 'CA',
+    population: '5,300',
+    description: 'Shingle Springs is a tight-knit El Dorado County community along the Highway 50 corridor — a quiet, family-oriented area with strong local loyalty and proximity to both the Sacramento metro and the Sierra foothills. Businesses here benefit from a customer base that values personal relationships and discovers new providers through local search.',
+    heroTitle: 'AI Marketing for Shingle Springs Businesses',
+    heroSubtitle: 'Shingle Springs businesses serve a loyal, close-knit community. We make sure when they search online, your business is the first thing they find — in Google, in AI assistants, and on every platform that matters.',
+    nearbyAreas: ['Cameron Park', 'El Dorado Hills', 'Placerville', 'Diamond Springs', 'Rescue'],
+    industries: ['Home Services', 'Medical & Dental', 'Real Estate', 'Restaurants', 'Professional Services', 'Fitness & Wellness'],
+    localTerms: ['Red Hawk Casino Resort', 'Shingle Springs Drive', 'Ponderosa Road', 'Mother Lode Drive', 'Highway 50 Corridor', 'Shingle Springs Plaza', 'Cameron Park', 'El Dorado Wine Country'],
+    geo: { lat: 38.6657, lng: -120.9261 },
+    stats: [
+      { value: '450+', label: 'local businesses' },
+      { value: 'Hwy 50', label: 'corridor — high commuter traffic' },
+      { value: '3x', label: 'average lead increase for our clients' },
+    ],
+    features: [
+      { title: 'Highway 50 Corridor Local SEO', description: 'Shingle Springs sits on the busiest corridor in El Dorado County. We capture the "near me" searches from commuters and residents alike — putting your business in front of thousands daily.' },
+      { title: 'AI Websites for Community-Focused Businesses', description: 'We build professional, fast-loading websites that reflect the quality of your service and rank for every relevant Shingle Springs and El Dorado County search.' },
+      { title: 'Google Business Profile for the Foothills', description: 'Your GBP is the front door for local discovery. We fully optimize and manage it to capture Map Pack rankings across Shingle Springs, Cameron Park, and the broader Highway 50 corridor.' },
+      { title: 'Small-Town Marketing, Enterprise Results', description: 'Our AI systems deliver the same marketing firepower that big-city agencies charge a fortune for — at a price designed for Shingle Springs and El Dorado County businesses.' },
+    ],
+    seoDescription: 'AI marketing for Shingle Springs, CA. Local SEO, AI websites, and automated marketing for Shingle Springs businesses in El Dorado County.',
+    keywords: ['AI marketing Shingle Springs CA', 'local SEO Shingle Springs', 'digital marketing Shingle Springs', 'Shingle Springs marketing agency', 'El Dorado County marketing Shingle Springs', 'AI websites Shingle Springs'],
+  },
+  {
+    slug: 'rancho-cordova',
+    name: 'Rancho Cordova',
+    county: 'Sacramento County',
+    state: 'CA',
+    population: '79,000',
+    description: 'Rancho Cordova is one of Sacramento County\'s fastest-growing cities — a dynamic mix of established neighborhoods and new development, with a thriving business community, major employers, and strong demand for local services. Its strategic location between Sacramento and Folsom makes it a key market for businesses serving the eastern metro.',
+    heroTitle: 'AI Marketing Agency — Rancho Cordova, CA',
+    heroSubtitle: 'Rancho Cordova is growing fast and competition for local customers is fierce. We deploy AI-powered websites, local SEO, and agent swarms that keep your business ahead of the pack 24/7.',
+    nearbyAreas: ['Sacramento', 'Folsom', 'Elk Grove', 'Citrus Heights', 'Fair Oaks', 'Mather'],
+    industries: ['Technology & Defense', 'Medical & Healthcare', 'Home Services', 'Real Estate', 'Restaurants', 'Professional Services', 'Auto Services'],
+    localTerms: ['Rancho Cordova Town Center', 'Zinfandel Drive', 'Mills Station', 'Anatolia', 'White Rock Road', 'Mather Field', 'Capital Village', 'Sunrise Boulevard'],
+    geo: { lat: 38.5891, lng: -121.3027 },
+    stats: [
+      { value: '79k', label: 'residents — fast-growing Sacramento suburb' },
+      { value: '3,200+', label: 'local businesses' },
+      { value: '24/7', label: 'AI agents running for your business' },
+    ],
+    features: [
+      { title: 'Rancho Cordova Local Search Domination', description: 'We capture every high-intent search in Rancho Cordova — from "dentist near me" to "HVAC Rancho Cordova CA" — with targeted local SEO, citations, and Google Business Profile optimization.' },
+      { title: 'AI Websites for Sacramento\'s Eastern Corridor', description: 'Rancho Cordova sits at the crossroads of Sacramento and Folsom. We build websites that rank for both city-specific and regional searches — maximizing your reach across the eastern metro.' },
+      { title: 'AI Content for a Growing Market', description: 'AI content agents publish Rancho Cordova-specific pages and blog posts that build topical authority and capture long-tail searches your competitors overlook.' },
+      { title: 'Multi-Location Strategy for the Metro', description: 'Many Rancho Cordova businesses serve the broader Sacramento area. We build multi-location SEO strategies that capture demand across every community in your service area.' },
+    ],
+    seoDescription: 'AI marketing agency serving Rancho Cordova, CA. Local SEO, AI websites, and AI agent swarms for Rancho Cordova and Sacramento County businesses.',
+    keywords: ['AI marketing Rancho Cordova CA', 'local SEO Rancho Cordova', 'digital marketing Rancho Cordova Sacramento', 'Rancho Cordova marketing agency', 'AI websites Rancho Cordova', 'Sacramento County marketing'],
+  },
+  {
+    slug: 'pine-grove',
+    name: 'Pine Grove',
+    county: 'Amador County',
+    state: 'CA',
+    population: '2,800',
+    description: 'Pine Grove is a rural Amador County community at the gateway to the Sierra Nevada — a quiet, natural setting that attracts retirees, outdoor enthusiasts, and families seeking affordable Gold Country living. Businesses here serve a loyal customer base that values reliability and discovers new providers through local search and word of mouth.',
+    heroTitle: 'AI Marketing for Pine Grove Businesses',
+    heroSubtitle: 'Pine Grove is small but your digital presence doesn\'t have to be. We build AI-powered marketing that puts your business in front of every local searcher in Amador County and the surrounding foothills.',
+    nearbyAreas: ['Jackson', 'Sutter Creek', 'Volcano', 'Pioneer', 'Buckhorn'],
+    industries: ['Home Services', 'Real Estate', 'Restaurants', 'Outdoor Recreation', 'Medical & Dental', 'Retail'],
+    localTerms: ['Indian Grinding Rock State Historic Park', 'Pine Grove-Volcano Road', 'Highway 88 Corridor', 'Pine Grove Community Park', 'Pine Grove Town Center', 'Irishtown', 'Buckhorn', 'Ridge Road'],
+    geo: { lat: 38.4078, lng: -120.6553 },
+    stats: [
+      { value: 'Amador', label: 'County — growing Gold Country market' },
+      { value: '3x', label: 'average lead increase for our clients' },
+      { value: '45 min', label: 'from our El Dorado County HQ' },
+    ],
+    features: [
+      { title: 'Rural Market SEO That Actually Works', description: 'Small towns need different SEO strategies. We target the specific searches Pine Grove and upper Amador County residents use — not generic national keywords that miss your market entirely.' },
+      { title: 'AI Websites on a Local Budget', description: 'Professional, fast-loading websites that rank for Pine Grove and Amador County keywords — without the big-agency price tag. Our AI systems keep costs accessible for rural businesses.' },
+      { title: 'Gold Country Tourism Capture', description: 'Pine Grove sits at the gateway to some of Amador County\'s best outdoor recreation. We build the search presence that captures tourists heading to Volcano, Indian Grinding Rock, and the Sierra foothills.' },
+      { title: 'Review & Reputation for Small Communities', description: 'In Pine Grove, reputation is everything. Our AI agents manage your reviews, respond professionally, and generate new 5-star ratings from satisfied customers automatically.' },
+    ],
+    seoDescription: 'AI marketing for Pine Grove, CA. Local SEO, AI websites, and automated marketing for Pine Grove and Amador County businesses.',
+    keywords: ['AI marketing Pine Grove CA', 'local SEO Pine Grove Amador County', 'digital marketing Pine Grove California', 'Pine Grove marketing agency', 'Amador County marketing', 'AI websites Pine Grove'],
+  },
+  {
+    slug: 'ione',
+    name: 'Ione',
+    county: 'Amador County',
+    state: 'CA',
+    population: '8,200',
+    description: 'Ione is a historic Amador County town with a growing population and a diverse local economy. As the largest city in western Amador County, it serves as a commercial hub for surrounding communities and benefits from both local demand and proximity to the Sacramento metro commuter market.',
+    heroTitle: 'AI Marketing for Ione Businesses',
+    heroSubtitle: 'Ione is Amador County\'s western gateway — where local business meets Sacramento commuter demand. We build AI marketing systems that capture both audiences and convert them into customers.',
+    nearbyAreas: ['Jackson', 'Sutter Creek', 'Plymouth', 'Amador City', 'Rancho Murieta'],
+    industries: ['Home Services', 'Medical & Dental', 'Real Estate', 'Restaurants', 'Retail', 'Auto Services'],
+    localTerms: ['Preston Castle', 'Castle Oaks Golf Club', 'Castle Oaks', 'Downtown Ione', 'Howard Park', 'Ione Plaza Market', 'Main Street Corridor', 'Preston District'],
+    geo: { lat: 38.3527, lng: -120.9327 },
+    stats: [
+      { value: '8.2k', label: 'residents — largest city in western Amador' },
+      { value: '3x', label: 'average lead increase for our clients' },
+      { value: '45 min', label: 'from our El Dorado County HQ' },
+    ],
+    features: [
+      { title: 'Western Amador County SEO Hub', description: 'Ione serves as the commercial center for western Amador County. We build the SEO infrastructure to capture searches from Ione, Plymouth, Rancho Murieta, and the surrounding communities.' },
+      { title: 'AI Websites for Amador County Businesses', description: 'Fast, professional websites built for Ione\'s market — designed to rank in Google, appear in AI assistants, and convert local visitors into paying customers.' },
+      { title: 'Commuter Market Targeting', description: 'Many Ione residents commute to Sacramento. Our AI systems capture the "near home" searches they run in the evenings and weekends — when they\'re looking for local services.' },
+      { title: 'Affordable AI Marketing for Small Towns', description: 'Enterprise-grade marketing results at a price designed for Ione and Amador County businesses. Our AI agents replace the need for expensive agencies or in-house marketing staff.' },
+    ],
+    seoDescription: 'AI marketing for Ione, CA. Local SEO, AI websites, and automated marketing for Ione and western Amador County businesses.',
+    keywords: ['AI marketing Ione CA', 'local SEO Ione Amador County', 'digital marketing Ione California', 'Ione marketing agency', 'Amador County marketing Ione', 'AI websites Ione'],
+  },
+  {
+    slug: 'penn-valley',
+    name: 'Penn Valley',
+    county: 'Nevada County',
+    state: 'CA',
+    population: '1,700',
+    description: 'Penn Valley is a scenic Nevada County community centered around Lake Wildwood — an affluent gated community with strong purchasing power and a loyal local customer base. Businesses serving Penn Valley benefit from high household incomes and residents who actively seek quality local services.',
+    heroTitle: 'AI Marketing for Penn Valley Businesses',
+    heroSubtitle: 'Penn Valley\'s residents are affluent, loyal, and research-driven. We build the AI marketing presence that earns their trust and puts your business at the top of every local search.',
+    nearbyAreas: ['Grass Valley', 'Nevada City', 'Lake Wildwood', 'Rough and Ready', 'Smartsville'],
+    industries: ['Home Services', 'Real Estate', 'Medical & Wellness', 'Landscaping', 'Professional Services', 'Restaurants'],
+    localTerms: ['Lake Wildwood', 'Western Gateway Park', 'Penn Valley Drive', 'Pleasant Valley Road', 'Lake Wildwood Shopping Center', 'Penn Valley Village', 'Indian Springs', 'South Yuba River State Park'],
+    geo: { lat: 39.1923, lng: -121.1867 },
+    stats: [
+      { value: '350+', label: 'local businesses' },
+      { value: 'Lake', label: 'Wildwood — affluent gated community' },
+      { value: '3x', label: 'average lead increase for our clients' },
+    ],
+    features: [
+      { title: 'Lake Wildwood & Penn Valley SEO', description: 'We target the specific searches Penn Valley and Lake Wildwood residents use — capturing high-income homeowners actively looking for local services and home improvement providers.' },
+      { title: 'AI Websites for Affluent Rural Markets', description: 'Penn Valley residents expect quality. We build premium websites that reflect the professionalism of your service and rank for every relevant Penn Valley and Nevada County search.' },
+      { title: 'Grass Valley–Nevada City Corridor Strategy', description: 'Penn Valley businesses often serve the broader Grass Valley and Nevada City corridor. We build the multi-community SEO strategy that captures demand across the full Nevada County footprint.' },
+      { title: 'Reputation Management for Small Communities', description: 'In a community like Penn Valley, your reputation travels fast. Our AI agents ensure every review gets a professional response and every happy customer leaves a positive rating.' },
+    ],
+    seoDescription: 'AI marketing for Penn Valley, CA. Local SEO, AI websites, and AI-powered marketing for Penn Valley, Lake Wildwood, and Nevada County businesses.',
+    keywords: ['AI marketing Penn Valley CA', 'local SEO Penn Valley Nevada County', 'digital marketing Penn Valley California', 'Penn Valley marketing agency', 'Lake Wildwood marketing', 'Nevada County marketing Penn Valley'],
   },
 ]
 

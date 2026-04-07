@@ -73,7 +73,10 @@ export const metadata: Metadata = {
     images: ['/og-image.png'],
     creator: '@demandsignals',
   },
-  alternates: { canonical: 'https://demandsignals.co' },
+  alternates: {
+    canonical: 'https://demandsignals.co',
+    languages: { 'en': 'https://demandsignals.co' },
+  },
   verification: {
     google: 'pending',   // placeholder — replace with real GSC verification code
   },
@@ -85,6 +88,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={cn("font-sans", geist.variable)}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://demandsignals.us" />
+        <link rel="preconnect" href="https://flagcdn.com" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
         <JsonLd data={orgSchema} />
