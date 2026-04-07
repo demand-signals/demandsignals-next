@@ -10,6 +10,7 @@ import { ArcCardGame } from '@/components/sections/ArcCardGame'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { orgSchema, websiteSchema } from '@/lib/schema'
 import { Analytics } from "@vercel/analytics/next"
+import Script from 'next/script'
 import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans',display:'swap'});
@@ -77,9 +78,6 @@ export const metadata: Metadata = {
     canonical: 'https://demandsignals.co',
     languages: { 'en': 'https://demandsignals.co' },
   },
-  verification: {
-    google: 'pending',   // placeholder — replace with real GSC verification code
-  },
   category: 'technology',
 }
 
@@ -89,6 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
 
         <link rel="preconnect" href="https://flagcdn.com" />
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
@@ -110,6 +109,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CookieConsent />
         <AccessibilityWidget />
         <Analytics />
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-JYSS0XVLTY" strategy="afterInteractive" />
+        <Script id="ga4-init" strategy="afterInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-JYSS0XVLTY');
+        `}</Script>
       </body>
     </html>
   )
