@@ -56,14 +56,14 @@ export default function TeamPage() {
       />
 
       <section style={{ background: 'var(--light)', padding: '80px 24px' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
           {/* Founder */}
           <ScrollReveal direction="up">
             <div style={{ background: '#fff', borderRadius: 20, padding: '48px 40px', border: '1px solid var(--border)', marginBottom: 56 }}>
               <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                <div style={{ width: 100, height: 100, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '3px solid rgba(82,201,160,0.3)' }}>
-                  <img src="/hunter-avatar.png" alt="Hunter — Managing Director" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ width: 100, height: 100, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '3px solid rgba(82,201,160,0.3)', background: 'linear-gradient(135deg, #52C9A0, #4fa894)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem' }}>
+                  👤
                 </div>
                 <div style={{ flex: 1, minWidth: 280 }}>
                   <h2 style={{ color: 'var(--dark)', fontWeight: 800, fontSize: '1.5rem', marginBottom: 4 }}>Hunter</h2>

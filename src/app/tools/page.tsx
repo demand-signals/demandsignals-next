@@ -81,7 +81,7 @@ export default function ToolsPage() {
         paddingBottom: '72px',
         textAlign: 'center',
       }}>
-        <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
           <p style={{ color: 'var(--teal)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.85rem', marginBottom: 14 }}>
             Free Tools
           </p>
@@ -96,7 +96,7 @@ export default function ToolsPage() {
 
       {/* Tools Grid */}
       <section style={{ background: 'var(--light)', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 960, margin: '0 auto' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: 28 }}>
             {TOOLS.map((tool) => (
               <div key={tool.title} style={{

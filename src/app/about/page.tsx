@@ -69,7 +69,7 @@ export default function AboutPage() {
 
       {/* Value Cards */}
       <section style={{ background: 'var(--light)', padding: '80px 24px' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
           <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 28, marginBottom: 56 }}>
             {VALUE_CARDS.map((card) => (
