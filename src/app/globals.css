@@ -4,6 +4,9 @@
 
 @custom-variant dark (&:is(.dark *));
 
+.skip-link { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; z-index: 99999; background: #1d2330; color: #fff; padding: 12px 24px; border-radius: 8px; font-size: 0.95rem; font-weight: 700; text-decoration: none; }
+.skip-link:focus { position: fixed; left: 16px; top: 16px; width: auto; height: auto; overflow: visible; }
+
 :root {
   --teal:       #68c5ad;
   --teal-dark:  #4fa894;

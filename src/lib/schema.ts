@@ -15,10 +15,10 @@ export const orgSchema = {
   "@id": "https://demandsignals.co/#organization",
   "name": "Demand Signals",
   "url": "https://demandsignals.co",
-  "logo": "https://demandsignals.us/assets/logos/dsig_logo_v2b.png",
-  "image": "https://demandsignals.us/assets/logos/dsig_logo_v2b.png",
+  "logo": "https://demandsignals.co/logo.png",
+  "image": "https://demandsignals.co/logo.png",
   "description": "AI-powered demand generation agency specializing in AI agent swarms, AI websites, local SEO, and generative engine optimization for local businesses.",
-  "telephone": "(916) 542-2423",
+  "telephone": "+1-916-542-2423",
   "email": "DemandSignals@gmail.com",
   "address": {
     "@type": "PostalAddress",

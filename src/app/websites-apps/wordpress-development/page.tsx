@@ -2,7 +2,7 @@ import { buildMetadata } from '@/lib/metadata'
 import { ServicePageTemplate } from '@/components/templates/ServicePageTemplate'
 
 export const metadata = buildMetadata({
-  title:       'WordPress Website Development — AI-Managed, SEO-Optimized | Demand Signals',
+  title:       'AI-Managed WordPress Development | Demand Signals',
   description: 'We build and manage WordPress sites engineered for local search, GEO citations, and lead generation. AI agents keep your content fresh automatically. Serving Northern California.',
   path:        '/websites-apps/wordpress-development',
   keywords:    ['WordPress development Northern California', 'AI-managed WordPress site', 'WordPress SEO El Dorado County', 'managed WordPress Sacramento', 'WooCommerce development'],

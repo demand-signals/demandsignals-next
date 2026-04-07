@@ -115,7 +115,7 @@ export default async function CountyHubPage({ params }: Props) {
             opens: '10:00',
             closes: '20:00',
           },
-          image: 'https://demandsignals.us/assets/logos/dsig_logo_v2b.png',
+          image: 'https://demandsignals.co/logo.png',
           priceRange: '$',
           areaServed: [
             { '@type': 'AdministrativeArea', name: county.name },

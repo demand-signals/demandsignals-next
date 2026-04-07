@@ -66,7 +66,7 @@ function InfographicPreview({ infographic, category }: { infographic: Infographi
         {/* Brand + category */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <img src="/dsig-icon.png" alt="" width={14} height={14} style={{ borderRadius: 3 }} />
+            <img src="/dsig-icon.png" alt="" width={14} height={14} style={{ borderRadius: 3 }} aria-hidden="true" />
             <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>DSIG</span>
           </div>
           {category && (

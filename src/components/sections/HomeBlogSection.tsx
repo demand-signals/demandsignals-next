@@ -91,7 +91,7 @@ export default function HomeBlogSection() {
                   }} />
                   <div style={{ position: 'relative' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
-                      <img src="/dsig-icon.png" alt="" width={16} height={16} style={{ borderRadius: 3 }} />
+                      <img src="/dsig-icon.png" alt="" width={16} height={16} style={{ borderRadius: 3 }} aria-hidden="true" />
                       <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Latest Post</span>
                     </div>
                     {latestStats?.headline && (

@@ -6,7 +6,7 @@ import { getAllPosts } from '@/lib/blog'
 const BASE = 'https://demandsignals.co'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticDate = '2026-04-07'
+  const staticDate = new Date().toISOString().split('T')[0]
 
   /* ── PRIORITY 1.0 — Homepage, Contact, Category Indexes, Blog Index ────── */
   const priority1: MetadataRoute.Sitemap = [

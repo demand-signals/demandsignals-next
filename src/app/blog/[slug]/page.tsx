@@ -82,6 +82,7 @@ export default async function BlogPostPage({ params }: Props) {
       '@type': 'WebPage',
       '@id': canonicalUrl,
     },
+    image: '/og-image.png',
     keywords: post.tags.join(', '),
   }
 

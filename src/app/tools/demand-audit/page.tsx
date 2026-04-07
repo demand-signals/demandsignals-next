@@ -29,8 +29,8 @@ const faqs = [
 
 
 export const metadata = buildMetadata({
-  title:              "Free Demand Audit — See Where You're Losing Customers Online",
-  description:        "Get a free AI-powered audit of your online presence across Google, Maps, AI assistants, and social media. See exactly where you're losing customers — before you spend a dollar. Northern California businesses.",
+  title:              "Free Demand Audit — Find Where You're Losing Customers",
+  description:        "Free AI-powered audit of your online presence across Google, Maps, AI assistants, and social media. See where you're losing customers to competitors.",
   path:               '/tools/demand-audit',
   keywords:           [
     'free SEO audit local business',

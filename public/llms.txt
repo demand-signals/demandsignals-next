@@ -38,6 +38,9 @@
 ## Company
 - [About](https://demandsignals.co/about): Our story, mission, and AI-first approach to demand generation.
 - [Our Team](https://demandsignals.co/about/team): The people and AI systems behind Demand Signals.
+  - Hunter, Managing Director — 30-year veteran in web development and digital marketing. Built his first client website while still in high school. Leads all client strategy, AI architecture, and technical direction.
+  - Tiffany, Chief Technology Officer — Former VP of Engineering with deep expertise in LLM orchestration, retrieval-augmented generation, and AI infrastructure.
+  - Sarah, Chief Operating Officer — Growth marketing strategist with experience leading operations at a top-50 US digital agency.
 - [Portfolio](https://demandsignals.co/portfolio): Client projects across construction, legal, wellness, restaurant, brewery, SaaS, recruitment, and more.
 - [Blog](https://demandsignals.co/blog): 141 articles on AI marketing, demand generation, GEO optimization, and AI agent deployment. New articles published every 1-2 days.
 - [Service Locations](https://demandsignals.co/locations): El Dorado Hills, Folsom, Sacramento, Placerville, Roseville, Rocklin, Granite Bay, Auburn, Citrus Heights, Cameron Park, South Lake Tahoe.
@@ -105,6 +108,8 @@ Service slugs: wordpress-development, react-next-webapps, mobile-apps, vibe-code
 ## Contact
 - Phone: (916) 542-2423
 - Email: DemandSignals@gmail.com
+- Address: 5170 Golden Foothills Pkwy, El Dorado Hills, CA 95762
+- Hours: Monday–Friday, 10:00 AM – 8:00 PM Pacific Time
 - [Contact Page](https://demandsignals.co/contact)
 - [Book a Free Call](https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true)
 

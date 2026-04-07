@@ -32,7 +32,7 @@ function HeadlineInfographic({ headline, title }: { headline: string; title: str
       }} />
       <div style={{ position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-          <img src="/dsig-icon.png" alt="" width={24} height={24} style={{ borderRadius: 4 }} />
+          <img src="/dsig-icon.png" alt="" width={24} height={24} style={{ borderRadius: 4 }} aria-hidden="true" />
           <span style={{ color: BRAND_TEAL, fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
             Demand Signals
           </span>
@@ -66,7 +66,7 @@ function StatsInfographic({ headline, stats, title }: { headline: string; stats:
         {/* Brand bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <img src="/dsig-icon.png" alt="" width={24} height={24} style={{ borderRadius: 4 }} />
+            <img src="/dsig-icon.png" alt="" width={24} height={24} style={{ borderRadius: 4 }} aria-hidden="true" />
             <span style={{ color: BRAND_TEAL, fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
               Demand Signals
             </span>
