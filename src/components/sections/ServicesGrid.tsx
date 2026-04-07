@@ -63,7 +63,7 @@ export function ServicesGrid() {
         </ScrollReveal>
 
         {/* Top row: 3 cards */}
-        <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 24 }}>
+        <StaggerContainer className="services-grid-top" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 24 }}>
           {services.slice(0, 3).map(s => (
             <StaggerItem key={s.href}>
               <ServiceCard {...s} />
@@ -72,7 +72,7 @@ export function ServicesGrid() {
         </StaggerContainer>
 
         {/* Bottom row: 2 cards centered */}
-        <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, maxWidth: 800, margin: '0 auto' }}>
+        <StaggerContainer className="services-grid-bottom" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, maxWidth: 800, margin: '0 auto' }}>
           {services.slice(3).map(s => (
             <StaggerItem key={s.href}>
               <ServiceCard {...s} />

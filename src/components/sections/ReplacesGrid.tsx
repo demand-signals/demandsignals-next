@@ -48,7 +48,7 @@ export default function ReplacesGrid() {
           borderRadius: 20,
           padding: '48px 40px',
         }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
+          <div className="replaces-warehouse-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
             {/* Left — copy */}
             <div>
               <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.15)', color: '#68c5ad', padding: '5px 14px', borderRadius: 100, fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>
@@ -83,7 +83,7 @@ export default function ReplacesGrid() {
             </div>
 
             {/* Right — agent type grid */}
-            <StaggerContainer style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <StaggerContainer className="replaces-agents-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               {agentTypes.map(a => (
                 <StaggerItem key={a.label} style={{
                   background: 'rgba(255,255,255,0.04)',
@@ -114,7 +114,7 @@ export default function ReplacesGrid() {
           borderRadius: 20,
           padding: '40px 36px',
         }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'start' }}>
+          <div className="replaces-infra-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'start' }}>
             {/* Left — cloud */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
@@ -160,7 +160,12 @@ export default function ReplacesGrid() {
 
       <style>{`
         @media (max-width: 768px) {
-          .agent-warehouse-grid { grid-template-columns: 1fr !important; }
+          .replaces-warehouse-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+          .replaces-agents-grid { grid-template-columns: 1fr 1fr !important; }
+          .replaces-infra-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          .replaces-agents-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </section>

@@ -168,7 +168,7 @@ export default function BookingSection() {
               <p style={{ color: 'var(--slate)', fontSize: '0.93rem', lineHeight: 1.6, margin: 0 }}>
                 Delivered within 48 hours. No strings attached. No call required.
               </p>
-              <StaggerContainer style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, flex: 1 }}>
+              <StaggerContainer className="booking-reports-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, flex: 1 }}>
                 {reports.map((report) => (
                   <StaggerItem
                     key={report.title}
@@ -216,6 +216,11 @@ export default function BookingSection() {
           </ScrollReveal>
         </div>
       </div>
+      <style>{`
+        @media (max-width: 768px) {
+          .booking-reports-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </section>
   );
 }

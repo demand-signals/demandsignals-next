@@ -223,7 +223,7 @@ export default async function CityHubPage({ params }: Props) {
                   </span>
                 ))}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
+              <div className="city-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
                 {city.stats.map(s => (
                   <div key={s.label} style={{ background: 'var(--light)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}>
                     <div style={{ color: 'var(--teal)', fontWeight: 800, fontSize: '1.2rem' }}>{s.value}</div>
@@ -365,6 +365,13 @@ export default async function CityHubPage({ params }: Props) {
         secondaryLabel="Book a Free Call"
         secondaryHref={BOOKING_URL}
       />
+
+      {/* eslint-disable-next-line react/no-unknown-property */}
+      <style>{`
+        @media (max-width: 640px) {
+          .city-stats-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </>
   )
 }

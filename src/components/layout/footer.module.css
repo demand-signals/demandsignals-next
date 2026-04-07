@@ -3,8 +3,14 @@
   margin: 0 auto;
   padding: 0 24px 48px;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 32px;
+}
+
+@media (min-width: 480px) {
+  .linkGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (min-width: 768px) {

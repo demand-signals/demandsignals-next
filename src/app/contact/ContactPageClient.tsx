@@ -124,7 +124,7 @@ export default function ContactPageClient() {
           ) : (
             <form id="contact-form" action="#" onSubmit={handleSubmit}>
               {/* Row: Name + Business */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+              <div className="contact-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
                 <div>
                   <label style={labelStyle}>Name *</label>
                   <input name="name" required value={form.name} onChange={handleChange} style={inputStyle} placeholder="Your name" />
@@ -136,7 +136,7 @@ export default function ContactPageClient() {
               </div>
 
               {/* Row: Email + Phone */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+              <div className="contact-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
                 <div>
                   <label style={labelStyle}>Email *</label>
                   <input name="email" type="email" required value={form.email} onChange={handleChange} style={inputStyle} placeholder="you@company.com" />
@@ -209,7 +209,7 @@ export default function ContactPageClient() {
           )}
 
           {/* Info Tiles — wrapped in semantic <address> for SEO */}
-          <address style={{ fontStyle: 'normal', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginTop: 56, marginBottom: 0 }}>
+          <address className="contact-info-tiles" style={{ fontStyle: 'normal', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginTop: 56, marginBottom: 0 }}>
             <div style={{
               background: 'var(--light)',
               border: '1px solid var(--border)',
@@ -252,6 +252,13 @@ export default function ContactPageClient() {
 
       {/* FAQ */}
       <FaqAccordion faqs={contactFaqs} />
+
+      <style>{`
+        @media (max-width: 640px) {
+          .contact-form-row { grid-template-columns: 1fr !important; }
+          .contact-info-tiles { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </>
   );
 }

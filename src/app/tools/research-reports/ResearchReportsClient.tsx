@@ -283,7 +283,7 @@ export default function ResearchReportsClient() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+              <div className="reports-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
                 <div>
                   <label style={darkLabelStyle}>Name *</label>
                   <input name="name" required value={form.name} onChange={handleChange} style={darkInputStyle} placeholder="Your name" />
@@ -293,7 +293,7 @@ export default function ResearchReportsClient() {
                   <input name="business" required value={form.business} onChange={handleChange} style={darkInputStyle} placeholder="Company name" />
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+              <div className="reports-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
                 <div>
                   <label style={darkLabelStyle}>Email *</label>
                   <input name="email" type="email" required value={form.email} onChange={handleChange} style={darkInputStyle} placeholder="you@company.com" />
@@ -365,6 +365,12 @@ export default function ResearchReportsClient() {
           )}
         </div>
       </section>
+
+      <style>{`
+        @media (max-width: 640px) {
+          .reports-form-row { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </>
   );
 }

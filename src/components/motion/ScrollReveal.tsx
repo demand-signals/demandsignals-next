@@ -46,9 +46,9 @@ const itemVariants: Variants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] } },
 }
 
-export function StaggerContainer({ children, style }: { children: ReactNode; style?: CSSProperties }) {
+export function StaggerContainer({ children, style, className }: { children: ReactNode; style?: CSSProperties; className?: string }) {
   const reduced = useReducedMotion()
-  if (reduced) return <div style={style}>{children}</div>
+  if (reduced) return <div style={style} className={className}>{children}</div>
 
   return (
     <motion.div
@@ -57,6 +57,7 @@ export function StaggerContainer({ children, style }: { children: ReactNode; sty
       viewport={{ once: true, margin: '-60px' }}
       variants={containerVariants}
       style={style}
+      className={className}
     >
       {children}
     </motion.div>

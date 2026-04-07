@@ -12,7 +12,7 @@ const stats = [
 export function StatsBar() {
   return (
     <section aria-label="Agency stats" style={{ background: 'var(--dark-2)', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '32px 24px' }}>
-      <StaggerContainer style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+      <StaggerContainer className="statsbar-grid" style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
         {stats.map(s => (
           <StaggerItem key={s.num} style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 'clamp(2rem,3.5vw,2.8rem)', fontWeight: 800, color: 'var(--teal)', lineHeight: 1 }}>{s.num}</div>
@@ -20,6 +20,11 @@ export function StatsBar() {
           </StaggerItem>
         ))}
       </StaggerContainer>
+      <style>{`
+        @media (max-width: 768px) {
+          .statsbar-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
+        }
+      `}</style>
     </section>
   )
 }
