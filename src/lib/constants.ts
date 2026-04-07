@@ -70,7 +70,7 @@ export const NAV_AI_SERVICES: NavItem[] = [
 // ── Learn dropdown ────────────────────────────────────────────
 export const NAV_LEARN: NavItem[] = [
   { icon: '🏢', label: 'Company',            desc: 'Our story, mission & what drives us',            href: '/about'     },
-  { icon: '👤', label: 'Our Teams',          desc: 'The people & AI behind Demand Signals',          href: '/about/team' },
+  { icon: '👤', label: 'Our Teams',          desc: 'The people & AI behind Demand Signals',          href: '/team' },
   { icon: '📰', label: 'Blog & News',        desc: 'Insights on AI marketing & demand generation',   href: '/blog'      },
   { icon: '📍', label: 'Service Locations',  desc: 'Counties & cities we serve across NorCal',       href: '/locations'  },
   { icon: '🖼️', label: 'Portfolio',          desc: 'Client work & case studies',                     href: '/portfolio'  },

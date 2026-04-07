@@ -78,7 +78,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/locations`,           lastModified: staticDate, changeFrequency: 'monthly' as const, priority: 0.6 },
     { url: `${BASE}/portfolio`,           lastModified: staticDate, changeFrequency: 'monthly' as const, priority: 0.6 },
     { url: `${BASE}/about`,               lastModified: staticDate, changeFrequency: 'monthly' as const, priority: 0.6 },
-    { url: `${BASE}/about/team`,          lastModified: staticDate, changeFrequency: 'monthly' as const, priority: 0.6 },
+    { url: `${BASE}/team`,                lastModified: staticDate, changeFrequency: 'monthly' as const, priority: 0.6 },
     { url: `${BASE}/tools`,               lastModified: staticDate, changeFrequency: 'monthly' as const, priority: 0.6 },
     { url: `${BASE}/tools/demand-audit`,  lastModified: staticDate, changeFrequency: 'monthly' as const, priority: 0.6 },
     { url: `${BASE}/tools/research-reports`, lastModified: staticDate, changeFrequency: 'weekly' as const, priority: 0.6 },

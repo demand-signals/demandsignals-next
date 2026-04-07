@@ -33,7 +33,7 @@ const faqs = [
 export const metadata = buildMetadata({
   title:       'Our Team — The People & AI Behind Demand Signals',
   description: 'Meet the team behind Demand Signals — 30 years of web development and marketing experience, powered by AI agent systems that run 24/7.',
-  path:        '/about/team',
+  path:        '/team',
 })
 
 const LEADERSHIP = [
@@ -68,8 +68,7 @@ export default function TeamPage() {
     <>
       <JsonLd data={breadcrumbSchema([
         { name: 'Home', url: 'https://demandsignals.co' },
-        { name: 'About', url: 'https://demandsignals.co/about' },
-        { name: 'Team', url: 'https://demandsignals.co/about/team' },
+        { name: 'Team', url: 'https://demandsignals.co/team' },
       ])} />
       <JsonLd data={faqSchema(faqs)} />
       {/* Person schema for each team member */}
@@ -81,7 +80,7 @@ export default function TeamPage() {
         worksFor: { '@type': 'Organization', name: 'Demand Signals', url: 'https://demandsignals.co' },
         description: 'Hunter built and shipped his first client website while still in high school. He leads Demand Signals from the front: setting strategy, closing deals, and overseeing every system the agency deploys. Based in Northern California, serving clients across the USA, Thailand, Australia and beyond.',
         image: 'https://demandsignals.co/hunter_profile.jpeg',
-        url: 'https://demandsignals.co/about/team',
+        url: 'https://demandsignals.co/team',
         sameAs: ['https://www.linkedin.com/company/demandsignals', 'https://x.com/DemandSignalsCo'],
       }} />
       <JsonLd data={{
@@ -92,7 +91,7 @@ export default function TeamPage() {
         worksFor: { '@type': 'Organization', name: 'Demand Signals', url: 'https://demandsignals.co' },
         description: 'Tiffany is the architect behind the AI infrastructure that powers every Demand Signals engagement. She designed and built the multi-agent orchestration platform from the ground up.',
         image: 'https://demandsignals.co/tiffany_profile.jpeg',
-        url: 'https://demandsignals.co/about/team',
+        url: 'https://demandsignals.co/team',
         sameAs: [],
       }} />
       <JsonLd data={{
@@ -103,7 +102,7 @@ export default function TeamPage() {
         worksFor: { '@type': 'Organization', name: 'Demand Signals', url: 'https://demandsignals.co' },
         description: 'Sarah runs the machine. As COO, she owns every client engagement from signed contract to delivered results — managing delivery operations, quality assurance, and the human + AI hybrid workflows.',
         image: 'https://demandsignals.co/sarah_profile.jpeg',
-        url: 'https://demandsignals.co/about/team',
+        url: 'https://demandsignals.co/team',
         sameAs: [],
       }} />
 

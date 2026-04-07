@@ -19,6 +19,6 @@
     { "source": "/social",        "destination": "/content-social/ai-social-media-management","permanent": true },
     { "source": "/reviews",       "destination": "/content-social/ai-review-auto-responders","permanent": true },
     { "source": "/hosting",       "destination": "/websites-apps/hosting",                   "permanent": true },
-    { "source": "/team",          "destination": "/about/team",                              "permanent": true }
+    { "source": "/about/team",    "destination": "/team",                                    "permanent": true }
   ]
 }

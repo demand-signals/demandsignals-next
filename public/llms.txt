@@ -37,7 +37,7 @@
 
 ## Company
 - [About](https://demandsignals.co/about): Our story, mission, and AI-first approach to demand generation.
-- [Our Team](https://demandsignals.co/about/team): The people and AI systems behind Demand Signals.
+- [Our Team](https://demandsignals.co/team): The people and AI systems behind Demand Signals.
   - Hunter, Managing Director — 30-year veteran in web development and digital marketing. Built his first client website while still in high school. Leads all client strategy, AI architecture, and technical direction.
   - Tiffany, Chief Technology Officer — Former VP of Engineering with deep expertise in LLM orchestration, retrieval-augmented generation, and AI infrastructure.
   - Sarah, Chief Operating Officer — Growth marketing strategist with experience leading operations at a top-50 US digital agency.
