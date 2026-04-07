@@ -68,8 +68,11 @@ export default function TeamPage() {
                 <div style={{ flex: 1, minWidth: 280 }}>
                   <h2 style={{ color: 'var(--dark)', fontWeight: 800, fontSize: '1.5rem', marginBottom: 4 }}>Hunter</h2>
                   <p style={{ color: 'var(--teal)', fontWeight: 600, fontSize: '0.9rem', marginBottom: 16 }}>Managing Director</p>
+                  <p style={{ color: 'var(--slate)', lineHeight: 1.75, fontSize: '1rem', marginBottom: 14 }}>
+                    Hunter built and shipped his first client website while still in high school — and hasn&apos;t stopped shipping since. He leads Demand Signals from the front: setting strategy, closing deals, and overseeing every system the agency deploys. Based in Northern California, serving clients across the USA, Thailand, Australia and beyond.
+                  </p>
                   <p style={{ color: 'var(--slate)', lineHeight: 1.75, fontSize: '1rem' }}>
-                    Built his first website before most of his clients had smartphones — and has been shipping digital projects ever since. Hunter leads Demand Signals from the front: setting strategy, closing deals, and personally overseeing every AI system the agency deploys. He&apos;s part of the generation that watched the web evolve from static HTML to AI agent swarms, and built his practice around what works right now. Based in Northern California, serving clients across the USA, Thailand, Australia and beyond.
+                    Behind him is a team of talented human strategists, developers, and creatives — each one empowered by enterprise-grade AI infrastructure and swarms of specialized agents. It&apos;s the combination that makes the difference: real human judgment at the top, AI doing the heavy lifting below, and enterprise-grade systems tying it all together.
                   </p>
                 </div>
               </div>
@@ -80,13 +83,13 @@ export default function TeamPage() {
           <ScrollReveal direction="up" delay={0.05}>
             <div style={{ textAlign: 'center', marginBottom: 40 }}>
               <p style={{ color: 'var(--teal)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.85rem', marginBottom: 10 }}>
-                The AI Team
+                The Infrastructure
               </p>
               <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.4rem, 3vw, 2rem)', fontWeight: 800, margin: 0 }}>
-                AI Systems That Run 24/7
+                Human Talent. AI Firepower. Enterprise Infrastructure.
               </h2>
-              <p style={{ color: 'var(--slate)', fontSize: '1rem', lineHeight: 1.65, maxWidth: 560, margin: '16px auto 0' }}>
-                Our domain loop architecture replaces traditional marketing roles with AI systems that monitor, reason, act, and improve — continuously and autonomously.
+              <p style={{ color: 'var(--slate)', fontSize: '1rem', lineHeight: 1.65, maxWidth: 620, margin: '16px auto 0' }}>
+                Every person on our team operates with AI agent swarms and enterprise-grade systems at their fingertips — multiplying their output, eliminating the repetitive work, and letting them focus entirely on what moves the needle for clients.
               </p>
             </div>
           </ScrollReveal>
