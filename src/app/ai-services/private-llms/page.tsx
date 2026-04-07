@@ -24,7 +24,7 @@ export default function Page() {
       schemaName="Private LLM Deployment"
       schemaDescription="Self-hosted language model deployment for data-sensitive businesses."
       schemaUrl="/ai-services/private-llms"
-      featuresHeading="AI Without the Data Risk"
+      featuresHeading="Full AI Capability — Your Sensitive Data Never Leaves Your Network"
       features={[
         { icon: '🔒', title: 'Data Sovereignty', description: 'Your data never leaves your infrastructure. No third-party API calls for sensitive operations. Complete control over where your information lives.' },
         { icon: '🏗️', title: 'On-Premise Deployment', description: 'Self-hosted models running on your infrastructure or private cloud. We handle setup, configuration, and optimization.' },
@@ -32,6 +32,21 @@ export default function Page() {
         { icon: '⚡', title: 'Low-Latency Inference', description: 'On-premise models respond faster than API calls to external services. Critical for real-time applications and high-volume processing.' },
         { icon: '🔄', title: 'Hybrid Architecture', description: 'Use private LLMs for sensitive data and public APIs for non-sensitive tasks. The best of both worlds — security where it matters, capability everywhere else.' },
         { icon: '📊', title: 'Usage Monitoring', description: 'Full visibility into model usage, performance, costs, and accuracy. No surprise API bills. Predictable, fixed infrastructure costs.' },
+      ]}
+      techStack={[
+        { label: 'Models', value: 'Llama 3, Mistral, Phi (open-source)' },
+        { label: 'Deployment', value: 'On-premise or private cloud (AWS/GCP/Azure)' },
+        { label: 'Fine-tuning', value: 'Custom dataset training + RLHF' },
+        { label: 'Inference', value: 'Ollama, vLLM, or custom serving layer' },
+        { label: 'Monitoring', value: 'Usage tracking + performance dashboards' },
+        { label: 'Security', value: 'Air-gapped or VPN-isolated networks' },
+      ]}
+      techDescription="Private LLMs run on your infrastructure — on-premise hardware or a dedicated private cloud instance. We handle model selection, deployment, fine-tuning, and ongoing maintenance. Your data never leaves your network."
+      stats={[
+        { value: 61, suffix: '%', label: 'Cite Privacy as Top AI Barrier' },
+        { value: 3, label: 'Open-Source Model Families' },
+        { value: 100, suffix: '%', label: 'Data Stays On Your Network' },
+        { value: 5000, label: 'Max Fine-Tuning Examples Needed' },
       ]}
       aiCalloutHeading="The businesses that need this already know they need it."
       aiCalloutText="If you're in legal, healthcare, finance, or government — or if you handle proprietary client data — you probably can't send that data to ChatGPT or Claude's API. Private LLMs give you the same AI capabilities without the data risk. We deploy, configure, and maintain the infrastructure."
@@ -47,34 +62,6 @@ export default function Page() {
       ctaPrimaryLabel="Assess My Requirements →"
       ctaPrimaryHref="/contact"
       serviceCategory="ai-services"
-      proofSection={
-        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    Data Privacy
-                  </span>
-                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-                    Data Stays Home
-                  </h2>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-                    Frontier AI capabilities without sending data to third parties. Private LLMs solve the biggest barrier to enterprise AI adoption.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                    {[
-                      { value: '61%', label: 'Cite Privacy as Top Barrier' },
-                      { value: 'Llama', label: 'Mistral / Phi Models' },
-                      { value: 'On-Prem', label: 'Or Private Cloud' },
-                      { value: 'Zero', label: 'Data Leaves Your Network' },
-                    ].map(s => (
-                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-      }
     />
   )
 }

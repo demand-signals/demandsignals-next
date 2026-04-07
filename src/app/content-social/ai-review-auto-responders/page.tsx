@@ -24,7 +24,7 @@ export default function Page() {
       schemaName="AI Review Auto Responders"
       schemaDescription="Automated AI review monitoring and response system for Google reviews."
       schemaUrl="/content-social/ai-review-auto-responders"
-      featuresHeading="Review Management, Automated"
+      featuresHeading="Every Review Responded To — Professionally, Within Hours"
       features={[
         { icon: '🔔', title: 'Instant Detection', description: 'New reviews detected within hours across Google, Yelp, and industry-specific platforms. No review goes unnoticed.' },
         { icon: '🧠', title: 'Sentiment Analysis', description: 'AI classifies each review by sentiment and urgency. Positive reviews get acknowledged. Negative reviews get flagged for careful handling.' },
@@ -32,6 +32,12 @@ export default function Page() {
         { icon: '🚨', title: 'Critical Review Alerts', description: 'Reviews with serious concerns or potential PR issues get escalated to you immediately with a suggested response and recommended action.' },
         { icon: '✅', title: 'Auto-Publish Option', description: 'Enable auto-publish for positive review responses where AI confidence is high. Approve manually only when needed.' },
         { icon: '📊', title: 'Rating Trend Tracking', description: 'Track your average rating, review volume, sentiment trends, and response time over time. See how reputation management impacts your business.' },
+      ]}
+      stats={[
+        { value: 88, suffix: '%', label: 'Trust Responsive Businesses' },
+        { value: 33, suffix: '%', label: 'More Revenue with Good Reviews' },
+        { value: 2, suffix: 'hr', label: 'Avg AI Response Time' },
+        { value: 100, suffix: '%', label: 'Review Response Coverage' },
       ]}
       aiCalloutHeading="Reputation management that never takes a day off."
       aiCalloutText="Most businesses either ignore reviews or respond days later with generic copy-paste replies. Neither helps. Our AI responds within hours with thoughtful, specific responses that show future customers you care. Every review. Every time. No exceptions."
@@ -47,34 +53,7 @@ export default function Page() {
       ctaPrimaryLabel="Handle My Reviews →"
       ctaPrimaryHref="/contact"
       serviceCategory="content-social"
-      proofSection={
-        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    Reputation Data
-                  </span>
-                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-                    Reputation at Scale
-                  </h2>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-                    Every review handled. Every time. Within hours. The numbers prove that review management directly impacts revenue.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                    {[
-                      { value: '88%', label: 'Trust Responsive Businesses' },
-                      { value: '33%', label: 'More Revenue with Good Reviews' },
-                      { value: '<2hr', label: 'Avg AI Response Time' },
-                      { value: '100%', label: 'Review Coverage' },
-                    ].map(s => (
-                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-      }
+
     />
   )
 }

@@ -24,7 +24,7 @@ export default function LLMOptimizationPage() {
       schemaName="LLM & GEO Optimization"
       schemaDescription="Generative Engine Optimization services to get businesses cited by ChatGPT, Perplexity, Gemini, and Google AI Overviews."
       schemaUrl="/demand-generation/geo-aeo-llm-optimization"
-      featuresHeading="The Three-Layer Discovery Strategy"
+      featuresHeading="Get Cited by ChatGPT, Perplexity & Google AI — Not Just Ranked"
       features={[
         { icon: '🔍', title: 'Traditional SEO (Foundation)', description: 'SEO isn\'t dead — it\'s the foundation. Strong site speed, clean architecture, schema markup, and internal linking benefit ALL discovery channels including AI search.' },
         { icon: '🔮', title: 'GEO (Generative Engine Optimization)', description: 'Content structured so AI platforms cite and recommend your business. Direct answers first, question-format headers, citable data, and extractable content blocks.' },
@@ -42,6 +42,12 @@ export default function LLMOptimizationPage() {
         { label: 'E-E-A-T', value: 'Experience, expertise, authority, trust signals' },
       ]}
       techDescription="We implement the full technical stack for AI discoverability — from llms.txt files that tell AI systems what your site is about, to structured data that AI uses to verify information, to content architecture designed to be cited in AI-generated answers."
+      stats={[
+        { value: 48, suffix: '%', label: 'Searches Trigger AI Overviews' },
+        { value: 61, suffix: '%', label: 'CTR Drop Without GEO' },
+        { value: 527, suffix: '%', label: 'AI Referral Growth YoY' },
+        { value: 72, suffix: '%', label: 'AI Citations Go to Top 3' },
+      ]}
       aiCalloutHeading="The competitive window is open right now."
       aiCalloutText="Most agencies are still selling SEO as the whole story. Citation authority in AI, like domain authority in Google, builds over time. Starting now is the equivalent of investing in SEO in 2010. The businesses that build citation authority now will compound that advantage as AI search grows 40% quarter over quarter."
       faqs={[
@@ -56,34 +62,6 @@ export default function LLMOptimizationPage() {
       ctaPrimaryHref="/tools/demand-audit"
       ctaSecondaryLabel="Book a Call"
       serviceCategory="demand-generation"
-      proofSection={
-        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    AI Search Data
-                  </span>
-                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-                    The AI Search Shift
-                  </h2>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-                    If you are not optimized for AI search, you are invisible to half your market. The shift from traditional to AI-driven discovery is accelerating.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                    {[
-                      { value: '48%', label: 'Searches Trigger AI Overviews' },
-                      { value: '61%', label: 'CTR Drop Without GEO' },
-                      { value: '527%', label: 'AI Referral Growth YoY' },
-                      { value: '72%', label: 'AI Citations Go to Top 3' },
-                    ].map(s => (
-                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-      }
     />
   )
 }

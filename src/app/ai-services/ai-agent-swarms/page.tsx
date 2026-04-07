@@ -24,7 +24,7 @@ export default function Page() {
       schemaName="AI Agent Swarms"
       schemaDescription="Autonomous networks of specialized AI agents for business operations."
       schemaUrl="/ai-services/ai-agent-swarms"
-      featuresHeading="Specialized Agents, Unified Results"
+      featuresHeading="Networks of Autonomous AI Agents Working 24/7 for Your Business"
       features={[
         { icon: '🔍', title: 'Search Intelligence Agent', description: 'Monitors GSC data daily, scores every page, identifies ranking opportunities, and triggers content updates when pages underperform.' },
         { icon: '✍️', title: 'Content Generation Agent', description: 'Writes blog posts, service pages, FAQs, and social content. Produces GEO-optimized content structured for both search engines and AI citation.' },
@@ -32,6 +32,21 @@ export default function Page() {
         { icon: '📣', title: 'Social Media Agent', description: 'Generates platform-specific posts, schedules content, and tracks engagement. Maintains your brand voice across every channel.' },
         { icon: '📧', title: 'Outreach Agent', description: 'Researches prospects, crafts personalized messages, manages sequences, and routes qualified leads to your sales process.' },
         { icon: '📊', title: 'Analytics Agent', description: 'Aggregates performance data from all other agents, generates reports, identifies trends, and recommends strategy adjustments.' },
+      ]}
+      techStack={[
+        { label: 'AI', value: 'Claude API (multi-agent coordination)' },
+        { label: 'Database', value: 'Supabase PostgreSQL (shared state)' },
+        { label: 'Orchestration', value: 'Event-driven message queues' },
+        { label: 'Monitoring', value: 'Real-time dashboards + Telegram' },
+        { label: 'Agents', value: '165+ specialized agent types' },
+        { label: 'Deployment', value: 'Vercel Functions + scheduled runs' },
+      ]}
+      techDescription="Agent swarms coordinate through a shared Supabase database. Each agent reads from and writes to shared state — when the content agent publishes, the SEO agent automatically monitors rankings. All activity logged to your dashboard in real-time."
+      stats={[
+        { value: 165, suffix: '+', label: 'Agent Types Available' },
+        { value: 19, label: 'Agents Running In-House' },
+        { value: 6, label: 'Agent Specializations per Swarm' },
+        { value: 24, suffix: '/7', label: 'Hours of Continuous Operation' },
       ]}
       aiCalloutHeading="Not 6 tools. 6 agents working together."
       aiCalloutText="Tools wait for you to use them. Agents act autonomously. Our agent swarms monitor, reason, act, and report — continuously. They coordinate through a shared database, so the content agent knows what the search agent found, the reputation agent informs the social agent, and the analytics agent tracks everything. It's a team. It just never sleeps."
@@ -47,34 +62,6 @@ export default function Page() {
       ctaPrimaryLabel="Deploy My Agents →"
       ctaPrimaryHref="/contact"
       serviceCategory="ai-services"
-      proofSection={
-        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    Swarm Capabilities
-                  </span>
-                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-                    Swarm Intelligence
-                  </h2>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-                    Networks of specialized agents working in concert. Coordinated through shared databases, reporting through real-time dashboards.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                    {[
-                      { value: '165+', label: 'Agent Types Available' },
-                      { value: '24/7/365', label: 'Continuous Operation' },
-                      { value: 'Shared DB', label: 'Coordinated via Database' },
-                      { value: 'Real-Time', label: 'Dashboard Reporting' },
-                    ].map(s => (
-                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-      }
     />
   )
 }

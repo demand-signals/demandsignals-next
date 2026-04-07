@@ -24,7 +24,7 @@ export default function DesignPage() {
       schemaName="UI/UX Design Services"
       schemaDescription="Figma-based design systems, AI-assisted prototyping, and dev-ready handoff for web and mobile applications."
       schemaUrl="/websites-apps/design"
-      featuresHeading="Design That Converts"
+      featuresHeading="UI/UX Design That Turns Visitors Into Paying Customers"
       features={[
         { icon: '🎨', title: 'Design Systems', description: 'Complete Figma component libraries with consistent spacing, typography, color, and interaction patterns. Every element reusable, every variant documented.' },
         { icon: '📐', title: 'High-Fidelity UI', description: 'Pixel-perfect mockups for every screen and state. Not wireframes you still need to design — finished UI ready for development.' },
@@ -32,6 +32,21 @@ export default function DesignPage() {
         { icon: '📊', title: 'Conversion-Focused', description: 'Every design decision backed by conversion principles. CTA placement, visual hierarchy, trust signals, and user flow optimization built into the design — not added later.' },
         { icon: '📱', title: 'Responsive Design', description: 'Desktop, tablet, and mobile layouts designed as first-class citizens. Not desktop-first with mobile as an afterthought.' },
         { icon: '🔧', title: 'Dev-Ready Handoff', description: 'Figma files with proper auto-layout, component naming, and design tokens that map directly to Tailwind CSS classes. Developers can implement without guessing.' },
+      ]}
+      techStack={[
+        { label: 'Design', value: 'Figma (components, auto-layout, tokens)' },
+        { label: 'Prototyping', value: 'Figma Interactive Prototypes + AI' },
+        { label: 'AI Tools', value: 'Claude API for copy + layout variations' },
+        { label: 'Handoff', value: 'Figma Dev Mode + Tailwind CSS tokens' },
+        { label: 'Icons', value: 'Lucide + custom icon sets' },
+        { label: 'Assets', value: 'Optimized images + custom illustration' },
+      ]}
+      techDescription="Every design we deliver is built for implementation — Figma files with proper auto-layout, component naming, and design tokens that map directly to Tailwind CSS classes."
+      stats={[
+        { value: 94, suffix: '%', label: 'First Impressions Are Design' },
+        { value: 88, suffix: '%', label: "Won't Return After Bad UX" },
+        { value: 200, suffix: '%', label: 'Conversion Lift from Good Design' },
+        { value: 33, suffix: '%', label: 'Faster Dev with Design Systems' },
       ]}
       aiCalloutHeading="AI makes design faster — not cheaper."
       aiCalloutText="We use AI to explore more design directions in less time, generate copy variations, and prototype interactions rapidly. The result isn't a cheaper design — it's a better one, because we test more options and make better decisions in the same timeline."
@@ -45,34 +60,6 @@ export default function DesignPage() {
       ctaText="Tell us about your project and we'll scope a design approach that fits your brand, your users, and your timeline."
       ctaPrimaryLabel="Start My Design →"
       serviceCategory="websites-apps"
-      proofSection={
-        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    UX Research
-                  </span>
-                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-                    Design That Converts
-                  </h2>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-                    Design is not decoration — it is your conversion engine. These numbers show why investing in design pays for itself.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                    {[
-                      { value: '94%', label: 'First Impressions Are Design' },
-                      { value: '88%', label: "Won't Return After Bad UX" },
-                      { value: '200%', label: 'Conversion Lift from Design' },
-                      { value: '33%', label: 'Faster Dev with Systems' },
-                    ].map(s => (
-                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-      }
     />
   )
 }

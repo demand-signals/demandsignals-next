@@ -24,7 +24,7 @@ export default function Page() {
       schemaName="Google Business Profile Management"
       schemaDescription="AI-managed Google Business Profile optimization including posts, reviews, Q&A, and Map Pack visibility."
       schemaUrl="/demand-generation/gbp-admin"
-      featuresHeading="GBP Management, Automated"
+      featuresHeading="Your Google Business Profile — Always Active, Always Optimized"
       features={[
         { icon: '📌', title: 'Weekly GBP Posts', description: 'AI generates and publishes Google Business posts weekly — updates, offers, events, and tips that keep your profile active and engaging.' },
         { icon: '⭐', title: 'Review Monitoring & Response', description: 'Every review detected within hours. AI drafts professional responses — positive reviews acknowledged, negative reviews handled diplomatically.' },
@@ -32,6 +32,12 @@ export default function Page() {
         { icon: '📸', title: 'Photo Optimization', description: 'Regular photo updates that showcase your work, team, and location. Geotagged, properly categorized, and optimized for local discovery.' },
         { icon: '📊', title: 'Attribute Optimization', description: 'Business attributes, categories, service areas, hours, and descriptions kept accurate and fully populated. Every field that helps you rank — filled and maintained.' },
         { icon: '🗺️', title: 'Map Pack Strategy', description: 'Proximity, relevance, and prominence signals optimized to push your business into the Google Maps 3-pack for your target searches.' },
+      ]}
+      stats={[
+        { value: 7, suffix: 'x', label: 'More Clicks with Optimized GBP' },
+        { value: 64, suffix: '%', label: 'Use GBP for Contact Details' },
+        { value: 5, suffix: 'x', label: 'Review Response Rate with AI' },
+        { value: 84, suffix: '%', label: 'Trust Reviews Like Referrals' },
       ]}
       aiCalloutHeading="Your GBP never sleeps. Neither does our AI."
       aiCalloutText="Most businesses post to their Google Business Profile once, then forget about it. Ours posts weekly, responds to every review, answers every question, and keeps every attribute updated. The result: a profile that Google rewards with better Map Pack positioning."
@@ -47,34 +53,6 @@ export default function Page() {
       ctaPrimaryLabel="Audit My GBP →"
       ctaPrimaryHref="/tools/demand-audit"
       serviceCategory="demand-generation"
-      proofSection={
-        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    GBP Data
-                  </span>
-                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-                    Google Business Profile Impact
-                  </h2>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-                    Your GBP is your most powerful local marketing asset. Optimized profiles dramatically outperform neglected ones.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                    {[
-                      { value: '7x', label: 'More Clicks with Optimized GBP' },
-                      { value: '64%', label: 'Use GBP for Contact Details' },
-                      { value: '5x', label: 'Review Response Rate with AI' },
-                      { value: '84%', label: 'Trust Reviews Like Referrals' },
-                    ].map(s => (
-                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-      }
     />
   )
 }

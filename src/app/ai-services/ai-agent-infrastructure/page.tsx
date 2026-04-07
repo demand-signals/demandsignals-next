@@ -24,7 +24,7 @@ export default function Page() {
       schemaName="AI Agent Infrastructure"
       schemaDescription="Systems architecture for reliable AI agent operations."
       schemaUrl="/ai-services/ai-agent-infrastructure"
-      featuresHeading="Enterprise-Grade AI Systems"
+      featuresHeading="Enterprise Grade Agent Infrastructure That Guarantees Reliability at Scale"
       features={[
         { icon: '🗄️', title: 'Database Architecture', description: 'Supabase PostgreSQL with row-level security, structured tables for content, pages, pipeline runs, and client data. The foundation everything else runs on.' },
         { icon: '🔌', title: 'API Integrations', description: 'Claude API, Google APIs (GSC, GBP, Analytics), social platform APIs, Stripe, Resend — all wired together with proper authentication and error handling.' },
@@ -32,6 +32,21 @@ export default function Page() {
         { icon: '📊', title: 'Monitoring & Alerts', description: 'Pipeline run tracking, error detection, and Telegram alerts for failures. You know when something needs attention before it impacts results.' },
         { icon: '🔒', title: 'Security & Isolation', description: 'Client data isolated with row-level security. API keys managed in Supabase Vault. No client can see another client\'s data. Ever.' },
         { icon: '📈', title: 'Scalability', description: 'Infrastructure designed to serve 10, 50, or 100 clients from the same base. Each new client adds marginal cost only in API usage.' },
+      ]}
+      techStack={[
+        { label: 'Database', value: 'Supabase PostgreSQL + RLS' },
+        { label: 'AI', value: 'Claude API (Sonnet 4.5, Haiku 4.5)' },
+        { label: 'Orchestration', value: 'n8n + custom pipeline loops' },
+        { label: 'Hosting', value: 'Vercel + Cloudflare' },
+        { label: 'Alerts', value: 'Telegram + Resend email notifications' },
+        { label: 'Auth', value: 'Supabase Auth + Vault (secrets)' },
+      ]}
+      techDescription="Our infrastructure stack runs every client on the same base — Supabase, Vercel, Cloudflare — with strict row-level security ensuring complete data isolation. Base cost: $95-265/month regardless of client count."
+      stats={[
+        { value: 99, suffix: '%', label: 'System Uptime Guarantee' },
+        { value: 265, prefix: '$', label: 'Max Base Infrastructure / Month' },
+        { value: 19, label: 'Autonomous Agents Running In-House' },
+        { value: 60, suffix: 's', label: 'Downtime Detection Time' },
       ]}
       aiCalloutHeading="AI without infrastructure is just a chatbot."
       aiCalloutText="The difference between 'we use AI' and 'we have AI systems' is infrastructure. Chatbots answer questions. Systems monitor, reason, act, log, and improve continuously. Our infrastructure turns AI from a toy into a business tool that generates measurable results."
@@ -47,34 +62,6 @@ export default function Page() {
       ctaPrimaryLabel="Scope My Infrastructure →"
       ctaPrimaryHref="/contact"
       serviceCategory="ai-services"
-      proofSection={
-        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    Infrastructure Specs
-                  </span>
-                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-                    Agent Architecture
-                  </h2>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-                    Production-grade agent infrastructure at startup pricing. Enterprise reliability without enterprise cost or complexity.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                    {[
-                      { value: '$95-265', label: 'Monthly Infrastructure Cost' },
-                      { value: '99.99%', label: 'Uptime Guarantee' },
-                      { value: 'n8n+', label: 'Supabase + Claude Stack' },
-                      { value: 'Real-Time', label: 'Monitoring Dashboards' },
-                    ].map(s => (
-                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-      }
     />
   )
 }

@@ -24,7 +24,7 @@ export default function Page() {
       schemaName="AI Auto Blogging"
       schemaDescription="Automated AI blog content generation with SEO and GEO optimization."
       schemaUrl="/content-social/ai-auto-blogging"
-      featuresHeading="Blogging Without the Writing"
+      featuresHeading="Weekly Blog Content That Builds Authority on Autopilot"
       features={[
         { icon: '🔍', title: 'AI Topic Research', description: 'AI analyzes your GSC data, competitor blogs, and industry trends to identify the topics that will drive the most qualified traffic.' },
         { icon: '✍️', title: 'SEO-Structured Writing', description: 'Every post includes proper heading hierarchy, internal links, meta descriptions, and keyword placement. Structured for both Google and AI search.' },
@@ -32,6 +32,12 @@ export default function Page() {
         { icon: '📅', title: 'Scheduled Publishing', description: 'Posts publish on a consistent weekly schedule. No gaps, no \'we\'ll get to it next week.\' Consistency is what Google rewards.' },
         { icon: '📊', title: 'Performance Monitoring', description: 'Every post tracked for rankings, traffic, and conversions. Underperformers get updated with fresh data and better structure.' },
         { icon: '🔗', title: 'Internal Linking', description: 'AI maintains an internal linking strategy that connects blog content to service pages, location pages, and other posts — distributing authority across your site.' },
+      ]}
+      stats={[
+        { value: 67, suffix: '%', label: 'More Leads with Consistent Blogging' },
+        { value: 434, suffix: '%', label: 'More Indexed Pages' },
+        { value: 6, suffix: 'x', label: 'More Leads with 400+ Blog Pages' },
+        { value: 1000, suffix: '+', label: 'Words Per AI-Generated Post' },
       ]}
       aiCalloutHeading="Consistency wins. AI never misses a week."
       aiCalloutText="The businesses that win in organic search are the ones that publish consistently. Most businesses blog for a month, then stop. Our AI publishes every week, every month, without fail. After 6 months, you have 25+ pieces of optimized content compounding authority. After a year, 50+."
@@ -47,34 +53,7 @@ export default function Page() {
       ctaPrimaryLabel="Start My Blog →"
       ctaPrimaryHref="/contact"
       serviceCategory="content-social"
-      proofSection={
-        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    Blogging ROI
-                  </span>
-                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-                    Blogging That Compounds
-                  </h2>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-                    Blog content is the compounding interest of digital marketing. Consistent publishing builds authority that pays dividends for years.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                    {[
-                      { value: '67%', label: 'More Leads with Blogs' },
-                      { value: '434%', label: 'More Indexed Pages' },
-                      { value: 'Weekly', label: 'Publishing Cadence' },
-                      { value: 'SEO', label: 'Structured from Day One' },
-                    ].map(s => (
-                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-      }
+
     />
   )
 }

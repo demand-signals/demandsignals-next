@@ -24,7 +24,7 @@ export default function Page() {
       schemaName="Demand Generation Systems"
       schemaDescription="Automated demand generation pipelines with AI monitoring, content creation, and lead routing."
       schemaUrl="/demand-generation/systems"
-      featuresHeading="The Domain Loop Architecture"
+      featuresHeading="Full-Stack Demand Generation Pipelines Running 24/7"
       features={[
         { icon: '🔄', title: 'Website Intelligence Loop', description: 'AI monitors every page daily — GSC data, rankings, AI citations. Pages that underperform get rewritten. New opportunities get new pages built. Continuously.' },
         { icon: '✍️', title: 'Content & Social Loop', description: 'AI generates blog posts, social media, GBP posts, and review responses on schedule. Content calendar planned monthly, executed daily.' },
@@ -32,6 +32,12 @@ export default function Page() {
         { icon: '📊', title: 'Performance Dashboard', description: 'Real-time visibility into rankings, traffic, AI citations, content published, and leads generated. One portal, everything you need to know.' },
         { icon: '🔀', title: 'Lead Routing', description: 'Qualified leads from forms, calls, and chat automatically routed to the right person on your team with full context on how they found you.' },
         { icon: '📈', title: 'Compound Growth', description: 'Each loop feeds the others. Better content → better rankings → more authority → better AI citations → more traffic → more data → better content. The flywheel spins faster every month.' },
+      ]}
+      stats={[
+        { value: 451, suffix: '%', label: 'Increase in Qualified Leads' },
+        { value: 24, suffix: '/7', label: 'Automated Monitoring' },
+        { value: 3, label: 'AI Domain Loops Working Together' },
+        { value: 90, prefix: '<', suffix: 's', label: 'Avg Lead Response Time' },
       ]}
       aiCalloutHeading="Three loops. Zero employees. Always on."
       aiCalloutText="Traditional agencies have teams of people doing these tasks manually. We replaced those teams with three AI domain loops that coordinate through a shared database. They run 24/7, they never take vacation, and they get better over time. That's why our clients get better results at a fraction of the cost."
@@ -47,34 +53,6 @@ export default function Page() {
       ctaPrimaryLabel="Get My Free Audit →"
       ctaPrimaryHref="/tools/demand-audit"
       serviceCategory="demand-generation"
-      proofSection={
-        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    Pipeline Results
-                  </span>
-                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-                    Demand Gen Pipeline
-                  </h2>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-                    A complete demand generation system running on autopilot. Three AI loops coordinating 24/7 across search, content, and reputation.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                    {[
-                      { value: '451%', label: 'Increase in Qualified Leads' },
-                      { value: '24/7', label: 'Automated Monitoring' },
-                      { value: '6-Layer', label: 'Demand System' },
-                      { value: '<90s', label: 'Average Response Time' },
-                    ].map(s => (
-                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-      }
     />
   )
 }

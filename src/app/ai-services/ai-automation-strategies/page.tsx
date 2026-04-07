@@ -24,7 +24,7 @@ export default function Page() {
       schemaName="AI Adoption Strategies"
       schemaDescription="Custom AI integration roadmaps for businesses."
       schemaUrl="/ai-services/ai-automation-strategies"
-      featuresHeading="From Audit to Implementation"
+      featuresHeading="A Custom AI Roadmap Built Around Your Highest-ROI Wins"
       features={[
         { icon: '🔍', title: 'Operations Audit', description: 'We map every manual process in your business — who does what, how long it takes, what it costs. Then we identify which processes AI can handle.' },
         { icon: '📊', title: 'ROI Analysis', description: 'Dollar-for-dollar comparison: current cost of manual work vs. cost of AI replacement. Clear numbers, not speculation.' },
@@ -32,6 +32,21 @@ export default function Page() {
         { icon: '🔄', title: 'Change Management', description: 'Practical guidance for your team — training, workflows, and communication plans that make the transition smooth.' },
         { icon: '🏗️', title: 'Tool Selection', description: 'We recommend the right AI tools for each function — not the ones with the biggest marketing budgets, the ones that actually work.' },
         { icon: '📈', title: 'Success Metrics', description: 'Clear KPIs for each phase — time saved, cost reduced, output increased. You\'ll know exactly what\'s working and what needs adjustment.' },
+      ]}
+      techStack={[
+        { label: 'Audit', value: 'Operations mapping + ROI analysis' },
+        { label: 'AI Tools', value: 'Claude API, n8n, Supabase' },
+        { label: 'Reporting', value: 'Custom client portal dashboard' },
+        { label: 'Integration', value: 'HubSpot, Salesforce, Zapier, custom APIs' },
+        { label: 'Timeline', value: '1-2 week audit → phased implementation' },
+        { label: 'Support', value: 'Ongoing optimization + Telegram alerts' },
+      ]}
+      techDescription="We audit your current operations, map every manual process to an AI solution, and build a phased roadmap that starts with the highest-ROI wins — typically deployable within 2-4 weeks."
+      stats={[
+        { value: 95, suffix: '%', label: 'AI Projects Fail Without Strategy' },
+        { value: 72, suffix: '%', label: "Can't Move Past AI Pilots" },
+        { value: 451, suffix: '%', label: 'More Leads with Automation' },
+        { value: 4, suffix: 'wk', label: 'Avg Time to Deployment' },
       ]}
       aiCalloutHeading="Most businesses don't need more AI tools. They need a plan."
       aiCalloutText="The gap isn't technology — it's knowing where to apply it. We've deployed AI systems across every industry — from construction to legal to hospitality. We know which processes automate well and which don't. Our roadmap gives you a clear path from where you are to where AI can take you."
@@ -47,34 +62,6 @@ export default function Page() {
       ctaPrimaryLabel="Get My AI Readiness Audit →"
       ctaPrimaryHref="/tools/demand-audit"
       serviceCategory="ai-services"
-      proofSection={
-        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    AI Implementation Data
-                  </span>
-                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-                    AI Adoption Reality
-                  </h2>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-                    Most companies fail at AI because they skip the strategy. We do not. A phased roadmap starting with highest-ROI wins changes the outcome.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                    {[
-                      { value: '95%', label: 'Corporate AI Projects Fail' },
-                      { value: '72%', label: 'Struggle Past Pilots' },
-                      { value: 'serviceCategory="ai-services".3M', label: 'Avg Wasted on Failed AI' },
-                      { value: '2-4 Wk', label: 'DSIG Deployment Time' },
-                    ].map(s => (
-                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-      }
     />
   )
 }

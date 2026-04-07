@@ -24,7 +24,7 @@ export default function WordPressDevelopmentPage() {
       schemaName="WordPress Website Development"
       schemaDescription="AI-managed WordPress sites built for local search, GEO citations, and lead generation."
       schemaUrl="/websites-apps/wordpress-development"
-      featuresHeading="WordPress Done Right"
+      featuresHeading="AI-Managed WordPress Sites That Rank, Convert, and Grow"
       features={[
         { icon: '🏢', title: 'Business Marketing Sites', description: 'Multi-page WordPress sites with GEO-first content architecture, full schema markup, and lead capture integrated with your CRM. Built to rank in Google and get cited in ChatGPT answers.' },
         { icon: '🛒', title: 'WooCommerce Stores', description: 'E-commerce on WordPress with WooCommerce — product catalogs, checkout flows, inventory management, and payment processing. Optimized for product search and conversion.' },

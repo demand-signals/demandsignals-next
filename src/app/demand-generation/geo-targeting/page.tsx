@@ -24,7 +24,7 @@ export default function Page() {
       schemaName="Geo-Targeting Services"
       schemaDescription="Hyper-local geo-targeting with programmatic city × service pages for local market domination."
       schemaUrl="/demand-generation/geo-targeting"
-      featuresHeading="How Geo-Targeting Works"
+      featuresHeading="Own Every City and Zip Code in Your Service Territory"
       features={[
         { icon: '🗺️', title: 'County × City × Service Pages', description: 'Programmatic pages for every combination — a plumber serving 10 cities with 5 services gets 50+ unique, optimized pages automatically.' },
         { icon: '📍', title: 'Service Area Targeting', description: 'Define your exact service territory — down to neighborhoods. Every page includes location-specific content, landmarks, and local references.' },
@@ -32,6 +32,12 @@ export default function Page() {
         { icon: '🔗', title: 'Internal Link Architecture', description: 'County pages link to cities. City pages link to services. Service pages link to longtails. A structured hierarchy that search engines and AI understand.' },
         { icon: '📝', title: 'Unique Content Per Page', description: 'Every location page has unique content — not templates with city names swapped. AI generates location-specific FAQs, descriptions, and service details.' },
         { icon: '📈', title: 'Compound Growth', description: 'Each new page strengthens the domain\'s topical authority. 50 pages today become 100 next quarter — all building on each other.' },
+      ]}
+      stats={[
+        { value: 72, suffix: '%', label: 'Visit Within 5 Miles of Search' },
+        { value: 93, label: 'Pages Built for One Client' },
+        { value: 40, suffix: '+', label: '#1 Local Rankings Achieved' },
+        { value: 11, label: 'Cities Covered per Client Avg' },
       ]}
       aiCalloutHeading="93 pages. 40+ #1 rankings. One AI system."
       aiCalloutText="SB Construction went from a 5-page website to 93 geo-targeted pages covering every city and service combination in El Dorado County. The result: #1 rankings for over 40 local search terms and a consistent flow of qualified leads from organic search. Our AI built and maintains every page."
@@ -47,34 +53,6 @@ export default function Page() {
       ctaPrimaryLabel="Map My Territory →"
       ctaPrimaryHref="/contact"
       serviceCategory="demand-generation"
-      proofSection={
-        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    Geo-Targeting Results
-                  </span>
-                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-                    Hyper-Local Reach
-                  </h2>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-                    Programmatic city x service pages capture every local search variation. The data proves hyper-local targeting delivers outsized results.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                    {[
-                      { value: '72%', label: 'Visit Within 5 Miles' },
-                      { value: '93', label: 'Pages Built for One Client' },
-                      { value: '#1', label: 'For 40+ Local Terms' },
-                      { value: '11', label: 'Cities Covered per Client Avg' },
-                    ].map(s => (
-                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-      }
     />
   )
 }

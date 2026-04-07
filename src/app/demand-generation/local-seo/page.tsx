@@ -24,7 +24,7 @@ export default function LocalSEOPage() {
       schemaName="Local SEO Services"
       schemaDescription="AI-powered local search optimization with longtail targeting, citation building, and continuous content optimization."
       schemaUrl="/demand-generation/local-seo"
-      featuresHeading="Local SEO Done by AI"
+      featuresHeading="Dominate Local Search With AI-Powered SEO That Never Stops"
       features={[
         { icon: '📍', title: 'Longtail Keyword Targeting', description: 'Programmatic city × service pages targeting every combination in your territory. 50-200+ pages that each rank for specific local search terms.' },
         { icon: '📋', title: 'Citation Building', description: 'Consistent NAP (Name, Address, Phone) across 50+ directories, review platforms, and local data aggregators. The foundation of local authority.' },
@@ -32,6 +32,12 @@ export default function LocalSEOPage() {
         { icon: '🔗', title: 'Internal Linking', description: 'AI-maintained internal linking structure that distributes authority to your most important pages. Updated automatically as new pages are created.' },
         { icon: '⚡', title: 'Page Speed Optimization', description: 'Core Web Vitals optimization for every page — image compression, lazy loading, code splitting, and caching. Faster pages rank better.' },
         { icon: '🏗️', title: 'Schema Markup', description: 'LocalBusiness, Service, FAQ, HowTo, and Review schema on every page. The structured data that Google and AI search engines need to understand your business.' },
+      ]}
+      stats={[
+        { value: 46, suffix: '%', label: 'Google Searches Are Local' },
+        { value: 76, suffix: '%', label: 'Visit Within 24 Hours' },
+        { value: 28, suffix: '%', label: 'Convert Same Day' },
+        { value: 3, suffix: 'x', label: 'Lead Avg for Our Clients' },
       ]}
       aiCalloutHeading="AI replaces your $3,000/month SEO consultant."
       aiCalloutText="Traditional SEO agencies check in once a month, send a report, and make incremental changes. Our AI monitors every page every day, identifies what's working and what isn't, and rewrites underperforming content automatically. Better results, fraction of the cost, no gaps."
@@ -46,34 +52,6 @@ export default function LocalSEOPage() {
       ctaPrimaryLabel="Get My Free SEO Audit →"
       ctaPrimaryHref="/tools/demand-audit"
       serviceCategory="demand-generation"
-      proofSection={
-        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    Local Search Data
-                  </span>
-                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-                    Local Search Dominance
-                  </h2>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-                    Local intent is the highest-converting traffic on the internet. These numbers show why local SEO is non-negotiable for service businesses.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                    {[
-                      { value: '46%', label: 'Google Searches Are Local' },
-                      { value: '76%', label: 'Visit Within 24hrs' },
-                      { value: '28%', label: 'Convert Same Day' },
-                      { value: '3x', label: 'Leads Avg for Our Clients' },
-                    ].map(s => (
-                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-      }
     />
   )
 }

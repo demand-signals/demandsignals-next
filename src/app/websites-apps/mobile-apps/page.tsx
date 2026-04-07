@@ -24,7 +24,7 @@ export default function MobileAppsPage() {
       schemaName="iOS & Android App Development"
       schemaDescription="Cross-platform mobile apps built with React Native and Expo."
       schemaUrl="/websites-apps/mobile-apps"
-      featuresHeading="What We Build"
+      featuresHeading="iOS & Android Apps That Drive Real Business Revenue"
       features={[
         { icon: '📱', title: 'Customer-Facing Apps', description: 'Booking, ordering, loyalty programs, and member portals — branded mobile experiences that keep customers engaged and coming back.' },
         { icon: '🛒', title: 'Mobile Commerce', description: 'Product catalogs, cart management, payment processing, and order tracking. Stripe integration for subscriptions and one-time purchases.' },
@@ -43,6 +43,12 @@ export default function MobileAppsPage() {
         { label: 'Analytics', value: 'PostHog + custom event tracking' },
       ]}
       techDescription="React Native lets us build one codebase that runs on both iOS and Android. Expo handles the build pipeline, over-the-air updates, and native module management. The result: faster development, lower cost, and consistent experiences across platforms."
+      stats={[
+        { value: 60, suffix: '%', label: 'Web Traffic Is Mobile' },
+        { value: 90, suffix: '%', label: 'Native Performance via RN' },
+        { value: 2, suffix: 'wk', label: 'Avg App Store Approval' },
+        { value: 50, suffix: '%', label: 'Dev Cost Savings vs Native' },
+      ]}
       aiCalloutHeading="Mobile apps that learn from your users."
       aiCalloutText="AI doesn't just power features — it makes your app smarter over time. Usage patterns inform better recommendations. Customer inquiries train better automated responses. Every interaction makes the next one better."
       faqs={[
@@ -55,34 +61,6 @@ export default function MobileAppsPage() {
       ctaText="Tell us about your app idea and we'll scope the features, timeline, and budget — usually within 48 hours."
       ctaPrimaryLabel="Start My Mobile App →"
       serviceCategory="websites-apps"
-      proofSection={
-        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    Market Data
-                  </span>
-                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-                    Mobile-First Market
-                  </h2>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-                    Mobile users convert at higher rates when the experience is native-quality. React Native delivers that experience from a single codebase.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                    {[
-                      { value: '60%', label: 'Web Traffic Is Mobile' },
-                      { value: '90%', label: 'Native Performance via RN' },
-                      { value: '2 Wk', label: 'App Store Approval' },
-                      { value: '50%', label: 'Dev Cost vs Native' },
-                    ].map(s => (
-                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-      }
     />
   )
 }

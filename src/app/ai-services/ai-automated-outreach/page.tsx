@@ -24,7 +24,7 @@ export default function Page() {
       schemaName="AI Powered Outreach"
       schemaDescription="Automated AI prospecting with personalized messaging and lead routing."
       schemaUrl="/ai-services/ai-automated-outreach"
-      featuresHeading="Outreach That Scales"
+      featuresHeading="Personalized AI Outreach Achieving 45–65% Open Rates"
       features={[
         { icon: '🔍', title: 'AI Prospect Research', description: 'AI identifies and researches target businesses — website analysis, social presence, tech stack, growth signals, and pain point indicators.' },
         { icon: '✍️', title: 'Personalized Messaging', description: 'Not templates with names swapped. AI crafts genuinely personalized messages based on each prospect\'s specific business, challenges, and opportunities.' },
@@ -32,6 +32,21 @@ export default function Page() {
         { icon: '📊', title: 'Lead Scoring', description: 'AI scores prospects based on engagement signals — opens, clicks, replies, website visits. Qualified leads get routed to your sales process automatically.' },
         { icon: '🎯', title: 'A/B Testing', description: 'Subject lines, message angles, CTAs, and timing tested continuously. The system learns what works for your market and optimizes accordingly.' },
         { icon: '📋', title: 'CRM Integration', description: 'Leads, activities, and pipeline data synced with your CRM automatically. No manual data entry, no missed follow-ups.' },
+      ]}
+      techStack={[
+        { label: 'Research', value: 'AI prospect research + web crawling' },
+        { label: 'Messaging', value: 'Claude API for personalized copy' },
+        { label: 'Sequences', value: 'Email + LinkedIn multi-step sequences' },
+        { label: 'Delivery', value: 'Resend + domain warm-up' },
+        { label: 'CRM', value: 'HubSpot, Salesforce, Pipedrive sync' },
+        { label: 'Analytics', value: 'Open/reply/convert tracking dashboard' },
+      ]}
+      techDescription="Our outreach system researches prospects individually using web crawling and AI analysis, then crafts personalized messages for each. Sequences run automatically with timing optimized per recipient engagement patterns."
+      stats={[
+        { value: 65, suffix: '%', label: 'Open Rate Achieved' },
+        { value: 15, suffix: '%', label: 'Reply Rate Achieved' },
+        { value: 21, suffix: '%', label: 'Industry Avg Open Rate' },
+        { value: 50, label: 'Personalized Touches Per Week' },
       ]}
       aiCalloutHeading="50 personalized touches per week. Zero manual work."
       aiCalloutText="Traditional outreach requires a person spending hours researching prospects and writing individual emails. Our AI does the same work — but better, faster, and at 10x the volume. Every message is researched and personalized. Every follow-up is timed perfectly. Every qualified lead is routed automatically."
@@ -47,34 +62,6 @@ export default function Page() {
       ctaPrimaryLabel="Design My Outreach →"
       ctaPrimaryHref="/contact"
       serviceCategory="ai-services"
-      proofSection={
-        <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
-                <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: '#68c5ad', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    Outreach Performance
-                  </span>
-                  <h2 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 16px' }}>
-                    Outreach That Converts
-                  </h2>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto 40px' }}>
-                    AI-written outreach that people actually respond to. Personalized at scale, optimized continuously, and far above industry benchmarks.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                    {[
-                      { value: '45-65%', label: 'Open Rates' },
-                      { value: '8-15%', label: 'Reply Rates' },
-                      { value: '21%', label: 'Industry Avg Open Rate' },
-                      { value: 'At Scale', label: 'Personalized Messages' },
-                    ].map(s => (
-                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '28px 16px' }}>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#68c5ad', marginBottom: 8 }}>{s.value}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-      }
     />
   )
 }

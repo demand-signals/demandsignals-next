@@ -1,6 +1,5 @@
 import { buildMetadata } from '@/lib/metadata'
 import { ServicePageTemplate } from '@/components/templates/ServicePageTemplate'
-import LighthouseScores from '@/components/sections/LighthouseScores'
 
 export const metadata = buildMetadata({
   title:       'React & Next.js Web App Development — AI-Powered | Demand Signals',
@@ -25,7 +24,7 @@ export default function ReactNextPage() {
         schemaName="React & Next.js Web App Development"
         schemaDescription="Full-stack Next.js web applications with AI features, TypeScript, and edge deployment."
         schemaUrl="/websites-apps/react-next-webapps"
-        featuresHeading="What We Build"
+        featuresHeading="Cutting-Edge Web Applications Built on React & Next.js"
         features={[
           { icon: '🌐', title: 'Marketing Platforms', description: 'Database-driven marketing sites with dynamic pages, schema markup, and AI content pipelines. This site — demandsignals.co — runs on Next.js.' },
           { icon: '📊', title: 'Client Portals & Dashboards', description: 'Real-time dashboards showing search performance, AI citations, content calendars, and review management. Row-level security with Supabase Auth.' },
@@ -45,6 +44,12 @@ export default function ReactNextPage() {
           { label: 'Styling', value: 'Tailwind CSS + CSS Modules' },
         ]}
         techDescription="Our stack is designed for speed, reliability, and AI integration. Next.js gives us server-side rendering and API routes. Supabase handles data with row-level security. Claude API powers AI features. Vercel deploys to the edge globally."
+        stats={[
+          { value: 100, suffix: '+', label: 'Vercel Edge Locations' },
+          { value: 8, label: 'Top 10 SaaS Platforms on Next.js' },
+          { value: 99, suffix: '%', label: 'Target Lighthouse Score' },
+          { value: 48, suffix: 'hr', label: 'Project Scoping Turnaround' },
+        ]}
         aiCalloutHeading="AI isn't an add-on. It's the architecture."
         aiCalloutText="Every Next.js app we build has AI in the foundation — not bolted on after the fact. Content generation, intelligent search, automated workflows, and structured data pipelines are part of the architecture from sprint one. Your app gets smarter the longer it runs."
         faqs={[
@@ -57,7 +62,6 @@ export default function ReactNextPage() {
         ctaText="Tell us what you're building and we'll scope the architecture, timeline, and budget within 48 hours."
         ctaPrimaryLabel="Start My App Build →"
         serviceCategory="websites-apps"
-        proofSection={<LighthouseScores />}
       />
   )
 }
