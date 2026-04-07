@@ -43,7 +43,7 @@ export default async function BlogPostPage({ params }: Props) {
       {/* Hero with particles */}
       <section style={{ position: 'relative', overflow: 'hidden', background: '#080e1f', color: '#fff', padding: '100px 24px 64px' }}>
         <ParticleCanvas />
-        <div style={{ maxWidth: 760, margin: '0 auto', position: 'relative', zIndex: 2 }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 2 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
             {post.category && (
               <span style={{
@@ -84,25 +84,21 @@ export default async function BlogPostPage({ params }: Props) {
       {/* Prose body */}
       <section style={{ background: '#fff', padding: '56px 24px 64px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ maxWidth: 760, margin: '0 auto' }}>
-            {/* Infographic */}
-            {post.infographic && (
-              <BlogInfographic data={post.infographic} title={post.title} />
-            )}
-            <div className="prose">
-              <MDXRemote source={post.content} />
-            </div>
+          {/* Infographic */}
+          {post.infographic && (
+            <BlogInfographic data={post.infographic} title={post.title} />
+          )}
+          <div className="prose">
+            <MDXRemote source={post.content} />
           </div>
         </div>
       </section>
 
       {/* Share links */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 32px' }}>
-        <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', gap: 20, fontSize: '0.82rem' }}>
-          <span style={{ color: 'var(--slate)' }}>Share:</span>
-          <a href={twitterShareUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--teal)', textDecoration: 'none', fontWeight: 600 }}>X / Twitter</a>
-          <a href={linkedInShareUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--teal)', textDecoration: 'none', fontWeight: 600 }}>LinkedIn</a>
-        </div>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 32px', display: 'flex', gap: 20, fontSize: '0.82rem' }}>
+        <span style={{ color: 'var(--slate)' }}>Share:</span>
+        <a href={twitterShareUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--teal)', textDecoration: 'none', fontWeight: 600 }}>X / Twitter</a>
+        <a href={linkedInShareUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--teal)', textDecoration: 'none', fontWeight: 600 }}>LinkedIn</a>
       </div>
 
       {/* Related posts in same category */}
