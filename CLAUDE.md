@@ -59,20 +59,22 @@ CTA button orange: `#FF6B2B` (used in most places, slight variation from `--oran
 
 ### GitHub
 
-> **Tokens stored in:** `D:\CLAUDE\tokens.env` (local only, never committed). See PROJECT.md for values.
-- **OAuth token (git push):** `<GITHUB_OAUTH_TOKEN>`
-- **Fine-grained PAT (API only, NOT git push):** `<GITHUB_PAT>`
+> **All real tokens are in `PROJECT.md`** (gitignored, local only). CLAUDE.md uses placeholders.
+- **OAuth token (git push):** See `PROJECT.md` section 2 — starts with `gho_`
+- **Fine-grained PAT (API only, NOT git push):** See `PROJECT.md` section 2 — starts with `github_pat_`
+- **Vercel env var names:** `GITHUB_DEMANDSIGNALS_NEXT` (GitHub), `VERCEL_DEMANDSIGNALS_NEXT` (Vercel)
 
 **Git push command (headless bash):**
 ```bash
-GHTOKEN="<GITHUB_OAUTH_TOKEN>"
+# Token from PROJECT.md section 2 (OAuth token, NOT the fine-grained PAT)
+GHTOKEN="<get from PROJECT.md>"
 git -c credential.helper="" \
   -c "http.https://github.com.extraheader=Authorization: Basic $(echo -n "demand-signals:${GHTOKEN}" | base64 -w0)" \
   push origin master
 ```
 
 ### Vercel
-- **Token:** `<VERCEL_TOKEN>`
+- **Token:** See `PROJECT.md` section 2 — starts with `vca_`
 - **Team ID:** `team_jPyeNYJSdDRpqSdsw3WD3AiQ`
 - **Project ID:** `prj_MOFD7RLAS1tVLG1yLlt0kIZwPQrp`
 
