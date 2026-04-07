@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="100" fill="#e8f4fb"/>
+
+  <!-- Neck -->
+  <rect x="82" y="138" width="36" height="30" rx="10" fill="#f5c5a0"/>
+
+  <!-- Shoulders / top of body -->
+  <ellipse cx="100" cy="178" rx="54" ry="28" fill="#2d5fa6"/>
+  <!-- Blazer lapels -->
+  <polygon points="100,155 80,175 88,178" fill="#1e3f75"/>
+  <polygon points="100,155 120,175 112,178" fill="#1e3f75"/>
+  <!-- White shirt / blouse peek -->
+  <polygon points="100,155 92,172 108,172" fill="#fff"/>
+
+  <!-- Head -->
+  <ellipse cx="100" cy="105" rx="44" ry="48" fill="#f5c5a0"/>
+
+  <!-- Blonde hair — back layer -->
+  <ellipse cx="100" cy="75" rx="48" ry="40" fill="#f0c040"/>
+  <!-- Side hair left -->
+  <ellipse cx="60" cy="100" rx="16" ry="32" fill="#f0c040"/>
+  <!-- Side hair right -->
+  <ellipse cx="140" cy="100" rx="16" ry="32" fill="#f0c040"/>
+  <!-- Hair highlight -->
+  <ellipse cx="88" cy="68" rx="14" ry="7" fill="#f8d96e" opacity="0.7"/>
+
+  <!-- Head on top of hair front -->
+  <ellipse cx="100" cy="108" rx="40" ry="44" fill="#f5c5a0"/>
+
+  <!-- Eyebrows -->
+  <path d="M74 90 Q82 86 90 90" stroke="#c08820" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M110 90 Q118 86 126 90" stroke="#c08820" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Eyes — blue -->
+  <ellipse cx="83" cy="98" rx="9" ry="9" fill="#fff"/>
+  <ellipse cx="117" cy="98" rx="9" ry="9" fill="#fff"/>
+  <ellipse cx="83" cy="99" rx="6" ry="6" fill="#4a90d9"/>
+  <ellipse cx="117" cy="99" rx="6" ry="6" fill="#4a90d9"/>
+  <ellipse cx="83" cy="99" rx="3.5" ry="3.5" fill="#1a3a6b"/>
+  <ellipse cx="117" cy="99" rx="3.5" ry="3.5" fill="#1a3a6b"/>
+  <!-- Eye shine -->
+  <circle cx="86" cy="96" r="1.5" fill="#fff"/>
+  <circle cx="120" cy="96" r="1.5" fill="#fff"/>
+  <!-- Eyelashes upper -->
+  <path d="M74 91 Q83 87 92 91" stroke="#4a3010" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M108 91 Q117 87 126 91" stroke="#4a3010" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Nose -->
+  <path d="M98 108 Q100 115 102 108" stroke="#d4956a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <circle cx="96" cy="116" r="2" fill="#d4956a" opacity="0.4"/>
+  <circle cx="104" cy="116" r="2" fill="#d4956a" opacity="0.4"/>
+
+  <!-- Smile -->
+  <path d="M86 125 Q100 136 114 125" stroke="#c07050" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Lips -->
+  <path d="M88 125 Q100 132 112 125" fill="#e88070" opacity="0.6"/>
+
+  <!-- Cheek blush -->
+  <ellipse cx="70" cy="113" rx="9" ry="5" fill="#f0a0a0" opacity="0.35"/>
+  <ellipse cx="130" cy="113" rx="9" ry="5" fill="#f0a0a0" opacity="0.35"/>
+
+  <!-- Earrings -->
+  <circle cx="58" cy="116" r="4" fill="#f0c040" stroke="#c8960c" stroke-width="1"/>
+  <circle cx="142" cy="116" r="4" fill="#f0c040" stroke="#c8960c" stroke-width="1"/>
+
+  <!-- Headset / tech accent - subtle earpiece -->
+  <rect x="52" y="108" width="10" height="16" rx="5" fill="#2d5fa6" opacity="0.85"/>
+  <rect x="138" y="108" width="10" height="16" rx="5" fill="#2d5fa6" opacity="0.85"/>
+  <path d="M58 108 Q58 72 100 72 Q142 72 142 108" stroke="#2d5fa6" stroke-width="4" fill="none" opacity="0.6"/>
+
+  <!-- CTO badge glow hint at bottom -->
+  <rect x="72" y="190" width="56" height="10" rx="5" fill="#52C9A0" opacity="0.0"/>
+</svg>

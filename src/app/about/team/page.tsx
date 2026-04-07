@@ -35,6 +35,27 @@ export const metadata = buildMetadata({
   path:        '/about/team',
 })
 
+const LEADERSHIP = [
+  {
+    avatar: '/tiffany-avatar.svg',
+    alt: 'Tiffany — Chief Technology Officer',
+    name: 'Tiffany',
+    title: 'Chief Technology Officer',
+    titleColor: 'var(--teal)',
+    bio1: `Tiffany architects the intelligence layer that powers everything Demand Signals delivers. With a background spanning enterprise software engineering, machine learning infrastructure, and distributed systems, she designed and built the multi-agent orchestration platform that sits at the core of every client engagement — from content pipelines to voice reception systems to real-time rank monitoring loops.`,
+    bio2: `Before joining Demand Signals, Tiffany led engineering teams at two Series B SaaS companies, shipping AI-native products used by thousands of businesses globally. She holds deep expertise in LLM fine-tuning, retrieval-augmented generation, and the kind of prompt engineering that actually moves metrics. When she\'s not building agent swarms, she\'s usually mentoring engineers or breaking things intentionally to find out what breaks first.`,
+  },
+  {
+    avatar: '/sarah-avatar.svg',
+    alt: 'Sarah — Chief Operating Officer',
+    name: 'Sarah',
+    title: 'Chief Operating Officer',
+    titleColor: '#FF6B2B',
+    bio1: `Sarah is the operational force behind Demand Signals — the one who makes sure that what gets promised actually gets delivered, every time, at scale. She manages client success, delivery operations, and the internal systems that keep the agency running at a pace most traditional firms can\'t match. Her background spans growth marketing, project operations, and revenue strategy across agencies, SaaS, and regional enterprise.`,
+    bio2: `Sarah built her career turning high-potential teams into high-output machines — and at Demand Signals, that means doing the same with human + AI hybrid workflows. She owns the client relationship lifecycle, oversees quality control on all AI-generated outputs before they go to clients, and drives the continuous improvement process that keeps the agency ahead of both competitors and algorithm shifts. Clients consistently describe Sarah as the reason they stay.`,
+  },
+]
+
 const AI_AGENTS = [
   { icon: '🔍', name: 'Website Intelligence Loop', role: 'Search & AI Visibility', desc: 'Monitors rankings daily, identifies opportunities, rewrites underperforming pages, and maintains schema and llms.txt.' },
   { icon: '✍️', name: 'Content & Social Loop', role: 'Content Generation', desc: 'Writes blog posts, social media, GBP content, and review responses. Plans calendars monthly, executes daily.' },
@@ -78,6 +99,27 @@ export default function TeamPage() {
               </div>
             </div>
           </ScrollReveal>
+
+          {/* Leadership team */}
+          <StaggerContainer style={{ display: 'flex', flexDirection: 'column', gap: 28, marginBottom: 56 }}>
+            {LEADERSHIP.map((person) => (
+              <StaggerItem key={person.name}>
+                <div style={{ background: '#fff', borderRadius: 20, padding: '48px 40px', border: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                    <div style={{ width: 110, height: 110, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '3px solid rgba(82,201,160,0.3)' }}>
+                      <img src={person.avatar} alt={person.alt} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 280 }}>
+                      <h2 style={{ color: 'var(--dark)', fontWeight: 800, fontSize: '1.5rem', marginBottom: 4 }}>{person.name}</h2>
+                      <p style={{ color: person.titleColor, fontWeight: 600, fontSize: '0.9rem', marginBottom: 16 }}>{person.title}</p>
+                      <p style={{ color: 'var(--slate)', lineHeight: 1.75, fontSize: '1rem', marginBottom: 14 }}>{person.bio1}</p>
+                      <p style={{ color: 'var(--slate)', lineHeight: 1.75, fontSize: '1rem' }}>{person.bio2}</p>
+                    </div>
+                  </div>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
 
           {/* AI Team heading */}
           <ScrollReveal direction="up" delay={0.05}>

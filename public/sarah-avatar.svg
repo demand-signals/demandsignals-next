@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="100" fill="#edf6ee"/>
+
+  <!-- Neck -->
+  <rect x="82" y="138" width="36" height="30" rx="10" fill="#e8b090"/>
+
+  <!-- Shoulders / body -->
+  <ellipse cx="100" cy="178" rx="54" ry="28" fill="#3a7a4a"/>
+  <!-- Blazer detail -->
+  <polygon points="100,155 80,175 88,178" fill="#2a5a34"/>
+  <polygon points="100,155 120,175 112,178" fill="#2a5a34"/>
+  <!-- White blouse peek -->
+  <polygon points="100,155 93,170 107,170" fill="#fff"/>
+
+  <!-- Head -->
+  <ellipse cx="100" cy="105" rx="44" ry="48" fill="#e8b090"/>
+
+  <!-- Brown hair — back layer (wavy) -->
+  <ellipse cx="100" cy="73" rx="50" ry="42" fill="#6b3a1f"/>
+  <!-- Hair sides -->
+  <ellipse cx="58" cy="102" rx="17" ry="35" fill="#6b3a1f"/>
+  <ellipse cx="142" cy="102" rx="17" ry="35" fill="#6b3a1f"/>
+  <!-- Auburn/warm highlight -->
+  <ellipse cx="90" cy="67" rx="16" ry="8" fill="#8b4a25" opacity="0.6"/>
+  <ellipse cx="112" cy="70" rx="10" ry="6" fill="#9b5430" opacity="0.5"/>
+
+  <!-- Head front (skin) -->
+  <ellipse cx="100" cy="108" rx="40" ry="44" fill="#e8b090"/>
+
+  <!-- Eyebrows — slightly darker brown -->
+  <path d="M74 90 Q82 86 90 89" stroke="#3d1f08" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M110 89 Q118 86 126 90" stroke="#3d1f08" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Eyes — green -->
+  <ellipse cx="83" cy="98" rx="9" ry="9" fill="#fff"/>
+  <ellipse cx="117" cy="98" rx="9" ry="9" fill="#fff"/>
+  <ellipse cx="83" cy="99" rx="6" ry="6" fill="#5a9e60"/>
+  <ellipse cx="117" cy="99" rx="6" ry="6" fill="#5a9e60"/>
+  <ellipse cx="83" cy="99" rx="3.5" ry="3.5" fill="#2a5030"/>
+  <ellipse cx="117" cy="99" rx="3.5" ry="3.5" fill="#2a5030"/>
+  <!-- Eye shine -->
+  <circle cx="86" cy="96" r="1.5" fill="#fff"/>
+  <circle cx="120" cy="96" r="1.5" fill="#fff"/>
+  <!-- Eyelashes -->
+  <path d="M74 91 Q83 87 92 91" stroke="#2d1208" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M108 91 Q117 87 126 91" stroke="#2d1208" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Nose -->
+  <path d="M98 108 Q100 115 102 108" stroke="#c07555" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <circle cx="96" cy="116" r="2" fill="#c07555" opacity="0.4"/>
+  <circle cx="104" cy="116" r="2" fill="#c07555" opacity="0.4"/>
+
+  <!-- Smile / lips -->
+  <path d="M86 125 Q100 136 114 125" stroke="#b06050" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M88 125 Q100 131 112 125" fill="#cc7060" opacity="0.55"/>
+
+  <!-- Cheek blush -->
+  <ellipse cx="70" cy="113" rx="9" ry="5" fill="#f0a080" opacity="0.3"/>
+  <ellipse cx="130" cy="113" rx="9" ry="5" fill="#f0a080" opacity="0.3"/>
+
+  <!-- Simple stud earrings -->
+  <circle cx="59" cy="114" r="3.5" fill="#5a9e60" stroke="#3a7a4a" stroke-width="1"/>
+  <circle cx="141" cy="114" r="3.5" fill="#5a9e60" stroke="#3a7a4a" stroke-width="1"/>
+
+  <!-- Headset matching Hunter/Tiffany style -->
+  <rect x="51" y="108" width="10" height="16" rx="5" fill="#3a7a4a" opacity="0.85"/>
+  <rect x="139" y="108" width="10" height="16" rx="5" fill="#3a7a4a" opacity="0.85"/>
+  <path d="M57 108 Q57 70 100 70 Q143 70 143 108" stroke="#3a7a4a" stroke-width="4" fill="none" opacity="0.6"/>
+
+  <!-- Wavy hair detail strands -->
+  <path d="M60 95 Q64 110 60 125" stroke="#7b4a2f" stroke-width="2" fill="none" opacity="0.4"/>
+  <path d="M140 95 Q136 110 140 125" stroke="#7b4a2f" stroke-width="2" fill="none" opacity="0.4"/>
+</svg>
