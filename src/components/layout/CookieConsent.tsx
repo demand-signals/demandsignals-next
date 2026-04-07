@@ -7,7 +7,10 @@ type CookiePreference = 'all' | 'necessary' | 'custom' | null
 
 interface CustomChoices {
   analytics: boolean
-  marketing: boolean
+  googleSignals: boolean
+  userProvidedData: boolean
+  locationDevice: boolean
+  adsPersonalization: boolean
   preferences: boolean
 }
 
@@ -133,7 +136,10 @@ export function CookieConsent() {
   const [visible, setVisible] = useState(false)
   const [customChoices, setCustomChoices] = useState<CustomChoices>({
     analytics: true,
-    marketing: false,
+    googleSignals: true,
+    userProvidedData: false,
+    locationDevice: true,
+    adsPersonalization: false,
     preferences: true,
   })
 
@@ -142,11 +148,63 @@ export function CookieConsent() {
     if (stored) {
       setPreference(stored)
       setVisible(true)
+      // Restore GA4 consent from saved preference
+      if (stored === 'all') {
+        updateGa4Consent('all')
+      } else if (stored === 'necessary') {
+        updateGa4Consent('necessary')
+      } else if (stored === 'custom') {
+        try {
+          const saved = JSON.parse(localStorage.getItem(CUSTOM_CHOICES_KEY) || '{}')
+          const restored: CustomChoices = {
+            analytics: saved.analytics ?? false,
+            googleSignals: saved.googleSignals ?? false,
+            userProvidedData: saved.userProvidedData ?? false,
+            locationDevice: saved.locationDevice ?? false,
+            adsPersonalization: saved.adsPersonalization ?? false,
+            preferences: saved.preferences ?? true,
+          }
+          setCustomChoices(restored)
+          updateGa4Consent(restored)
+        } catch { /* ignore parse errors */ }
+      }
     } else {
       const timer = setTimeout(() => setVisible(true), 1500)
       return () => clearTimeout(timer)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const updateGa4Consent = (choices: CustomChoices | 'all' | 'necessary') => {
+    if (typeof window === 'undefined') return
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any
+    if (typeof w.gtag !== 'function') return
+    const gtag = w.gtag as (...args: unknown[]) => void
+
+    if (choices === 'all') {
+      gtag('consent', 'update', {
+        analytics_storage: 'granted',
+        ad_storage: 'granted',
+        ad_user_data: 'granted',
+        ad_personalization: 'granted',
+      })
+    } else if (choices === 'necessary') {
+      gtag('consent', 'update', {
+        analytics_storage: 'denied',
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+      })
+    } else {
+      gtag('consent', 'update', {
+        analytics_storage: choices.analytics ? 'granted' : 'denied',
+        ad_storage: choices.adsPersonalization ? 'granted' : 'denied',
+        ad_user_data: choices.userProvidedData ? 'granted' : 'denied',
+        ad_personalization: choices.adsPersonalization ? 'granted' : 'denied',
+      })
+    }
+  }
 
   const savePreference = (pref: CookiePreference) => {
     if (!pref) return
@@ -156,19 +214,26 @@ export function CookieConsent() {
     setShowPanel(false)
   }
 
-  const handleAccept = () => savePreference('all')
+  const handleAccept = () => {
+    updateGa4Consent('all')
+    savePreference('all')
+  }
 
-  const handleReject = () => savePreference('necessary')
+  const handleReject = () => {
+    updateGa4Consent('necessary')
+    savePreference('necessary')
+  }
 
   const handleSaveCustom = () => {
     localStorage.setItem(CUSTOM_CHOICES_KEY, JSON.stringify(customChoices))
+    updateGa4Consent(customChoices)
     savePreference('custom')
   }
 
   const isSettled = preference !== null
 
   const mainBg = isSettled
-    ? '#9ca3af'
+    ? '#6b7280'
     : '#52C9A0'
 
   const circleBtn: React.CSSProperties = {
@@ -176,7 +241,7 @@ export function CookieConsent() {
     height: 40,
     borderRadius: '50%',
     border: 'none',
-    cursor: isSettled ? 'default' : 'pointer',
+    cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -203,7 +268,7 @@ export function CookieConsent() {
       >
         {/* Sub-buttons */}
         <AnimatePresence>
-          {open && !isSettled && (
+          {open && (
             <>
               {/* Red — Reject */}
               <motion.button
@@ -264,7 +329,7 @@ export function CookieConsent() {
 
         {/* Main button */}
         <button
-          onClick={() => !isSettled && setOpen((v) => !v)}
+          onClick={() => setOpen((v) => !v)}
           title="Cookie Settings"
           style={{
             ...circleBtn,
@@ -351,32 +416,56 @@ export function CookieConsent() {
 
               {/* Body */}
               <div style={{ padding: '16px 20px', flex: 1 }}>
-                <p style={{ margin: '0 0 20px', fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>
-                  Choose which cookies you allow us to use. You can change these settings at any time.
+                <p style={{ margin: '0 0 12px', fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>
+                  Choose which data collection features you allow. You can change these settings at any time.
+                </p>
+                <p style={{ margin: '0 0 20px', fontSize: 12, color: '#9ca3af', lineHeight: 1.4 }}>
+                  For full details, see our{' '}
+                  <a href="/privacy#google-analytics" style={{ color: '#52C9A0', fontWeight: 600, textDecoration: 'none' }}>
+                    Privacy Policy Section 3
+                  </a>.
                 </p>
 
                 {[
                   {
                     label: 'Necessary',
-                    description: 'Essential for the website to function properly.',
+                    description: 'Essential for the website to function properly (session state, cookie preferences, security).',
                     key: null,
                     value: true,
                   },
                   {
-                    label: 'Analytics',
-                    description: 'Help us understand how visitors use our site.',
+                    label: 'Analytics (GA4)',
+                    description: 'Google Analytics 4 — helps us understand traffic patterns, pages visited, session duration, and device information.',
                     key: 'analytics' as keyof CustomChoices,
                     value: customChoices.analytics,
                   },
                   {
-                    label: 'Marketing',
-                    description: 'Used to deliver relevant advertisements.',
-                    key: 'marketing' as keyof CustomChoices,
-                    value: customChoices.marketing,
+                    label: 'Google Signals',
+                    description: 'Aggregated demographics and interests data from signed-in Google users with Ads Personalization enabled.',
+                    key: 'googleSignals' as keyof CustomChoices,
+                    value: customChoices.googleSignals,
+                  },
+                  {
+                    label: 'User-Provided Data',
+                    description: 'Allows hashed, consented customer data (e.g., email) to improve conversion measurement in a privacy-safe way.',
+                    key: 'userProvidedData' as keyof CustomChoices,
+                    value: customChoices.userProvidedData,
+                  },
+                  {
+                    label: 'Location & Device',
+                    description: 'Collects city-level location and granular device metadata to help us optimize the site for your area and device.',
+                    key: 'locationDevice' as keyof CustomChoices,
+                    value: customChoices.locationDevice,
+                  },
+                  {
+                    label: 'Ads Personalization',
+                    description: 'Enables audience sharing with linked advertising accounts for relevant ad experiences. You can opt out anytime.',
+                    key: 'adsPersonalization' as keyof CustomChoices,
+                    value: customChoices.adsPersonalization,
                   },
                   {
                     label: 'Preferences',
-                    description: 'Remember your settings and personalization.',
+                    description: 'Remember your settings, theme choices, and personalization across visits.',
                     key: 'preferences' as keyof CustomChoices,
                     value: customChoices.preferences,
                   },

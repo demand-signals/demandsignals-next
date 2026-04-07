@@ -109,6 +109,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CookieConsent />
         <AccessibilityWidget />
         <Analytics />
+        <Script id="ga4-consent-defaults" strategy="beforeInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('consent', 'default', {
+            analytics_storage: 'denied',
+            ad_storage: 'denied',
+            ad_user_data: 'denied',
+            ad_personalization: 'denied',
+            wait_for_update: 500
+          });
+        `}</Script>
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-JYSS0XVLTY" strategy="afterInteractive" />
         <Script id="ga4-init" strategy="afterInteractive">{`
           window.dataLayer = window.dataLayer || [];
