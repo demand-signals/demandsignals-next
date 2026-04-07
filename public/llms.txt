@@ -39,8 +39,41 @@
 - [About](https://demandsignals.co/about): Our story, mission, and AI-first approach to demand generation.
 - [Our Team](https://demandsignals.co/about/team): The people and AI systems behind Demand Signals.
 - [Portfolio](https://demandsignals.co/portfolio): Client projects across construction, legal, wellness, restaurant, brewery, SaaS, recruitment, and more.
-- [Blog](https://demandsignals.co/blog): Insights on AI marketing, demand generation, GEO optimization, and AI agent deployment.
+- [Blog](https://demandsignals.co/blog): 141 articles on AI marketing, demand generation, GEO optimization, and AI agent deployment. New articles published every 1-2 days.
 - [Service Locations](https://demandsignals.co/locations): El Dorado Hills, Folsom, Sacramento, Placerville, Roseville, Rocklin, Granite Bay, Auburn, Citrus Heights, Cameron Park, South Lake Tahoe.
+
+## Blog — Recent Articles (141 total, published every 1-2 days)
+
+### AI & Agent Strategy
+- [Inside an AI Agent Farm: Running 19 Specialized Agents Day-to-Day](https://demandsignals.co/blog/ai-agent-farm-inside-look): Architecture, costs, and lessons from operating 19 named AI agents at Demand Signals.
+- [Why AI Agents Are Replacing Your Marketing Team](https://demandsignals.co/blog/ai-agents-replacing-marketing-team): Task-by-task breakdown of how AI agents are replacing review responses, social posts, blog drafts, SEO audits, and follow-up emails.
+- [AI Agent Swarms vs Single AI Tools](https://demandsignals.co/blog/ai-agent-swarms-vs-single-ai-tools): Why orchestrated agent systems beat point solutions for business processes.
+- [Private LLM vs Cloud API: Business Guide](https://demandsignals.co/blog/private-llm-vs-cloud-api-business-guide): Security, cost, and performance trade-offs of self-hosted models vs cloud APIs.
+- [Claude Mythos: Anthropic's 10-Trillion-Parameter Model](https://demandsignals.co/blog/anthropic-mythos-10-trillion-parameters): Analysis of Anthropic's frontier model and the new AI arms race.
+- [Google TurboQuant: Compression Breakthrough](https://demandsignals.co/blog/google-turboquant-ai-compression-breakthrough): 6x memory reduction, 8x inference speedup — no retraining required.
+
+### SEO, GEO & AEO
+- [SEO vs GEO vs AEO: Which Do You Need?](https://demandsignals.co/blog/seo-vs-geo-vs-aeo-which-do-you-need): Three distinct optimization strategies for Google, AI assistants, and voice search.
+- [DIY SEO vs Agency vs AI-Powered SEO in 2026](https://demandsignals.co/blog/diy-seo-vs-agency-vs-ai-seo-2026): Cost, effectiveness, and results comparison across all three models.
+- [ChatGPT vs Perplexity vs Google: Where Customers Find You](https://demandsignals.co/blog/chatgpt-vs-perplexity-vs-google-business-visibility): Market share data and optimization strategies for each discovery platform.
+- [Google Ads vs SEO vs AI Marketing: Budget Allocation](https://demandsignals.co/blog/google-ads-vs-seo-vs-ai-marketing): ROI comparison to help allocate marketing budget effectively.
+
+### AI Content & Lead Generation
+- [How Small Businesses Use AI to Generate Leads on Autopilot](https://demandsignals.co/blog/ai-lead-generation-small-business): Automated follow-up, fastest response times, and consistent content output.
+- [AI Content vs Human Content: What Ranks Better?](https://demandsignals.co/blog/ai-content-vs-human-content-what-ranks-better): Real ranking data analysis on AI vs human content performance in search.
+- [The Death of the Static Website](https://demandsignals.co/blog/death-of-static-website): Why AI-generated content wins — Google rewards freshness, AI assistants trust content depth.
+
+### Platform & Technology Comparisons
+- [WordPress vs Next.js for Local Business](https://demandsignals.co/blog/wordpress-vs-nextjs-local-business-2025): Build time, cost, SEO, AI integration, and maintenance compared.
+- [Squarespace vs WordPress vs Custom](https://demandsignals.co/blog/squarespace-vs-wordpress-vs-custom-2025): Template builders, CMS platforms, and custom development for different needs.
+- [React Native vs Flutter vs Native Mobile Apps](https://demandsignals.co/blog/react-native-vs-flutter-vs-native-mobile-apps): Cost, performance, and time-to-market across mobile frameworks.
+- [Managed WordPress vs Self-Hosted vs Vercel](https://demandsignals.co/blog/managed-wordpress-vs-self-hosted-vs-vercel): Hosting comparison for business sites across cost, performance, and scalability.
+- [AI Marketing Agency vs Hiring In-House](https://demandsignals.co/blog/ai-marketing-agency-vs-hiring-in-house): Total costs, output quality, and scalability compared.
+
+### Google Search Central Summaries (12 articles)
+Expert analysis of official Google Search Central videos covering technical SEO, crawling, rendering, UX, CSS impact, lazy loading, small business SEO, photography SEO, and HTTP/TCP debugging. Example: [How Googlebot Actually Crawls the Web](https://demandsignals.co/blog/gsc-how-googlebot-crawls-web).
+
+All 141 blog posts available at: https://demandsignals.co/blog
 
 ## Location Hubs (5 Counties, 23 Cities)
 
@@ -74,6 +107,29 @@ Service slugs: wordpress-development, react-next-webapps, mobile-apps, vibe-code
 - Email: DemandSignals@gmail.com
 - [Contact Page](https://demandsignals.co/contact)
 - [Book a Free Call](https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true)
+
+## Frequently Asked Questions
+
+**What is AI demand generation for local businesses?**
+AI demand generation uses artificial intelligence — including AI agent swarms, automated content creation, and generative engine optimization — to attract, capture, and convert local customers across Google, AI assistants like ChatGPT, and social media.
+
+**What is GEO or Generative Engine Optimization?**
+Generative Engine Optimization (GEO) is the practice of optimizing your business to appear in AI-generated answers from tools like ChatGPT, Gemini, and Perplexity. This includes entity optimization, structured data markup, AI-friendly content structure, and citation building.
+
+**How is Demand Signals different from a traditional marketing agency?**
+Demand Signals deploys AI agent swarms that run 24/7 — handling content creation, SEO monitoring, outreach, review management, and reporting automatically. This means faster results, lower cost, and continuous optimization without a large marketing team.
+
+**What areas does Demand Signals serve?**
+Primarily El Dorado County, Sacramento, Folsom, Placer County, and across Northern California. We also work remotely with businesses throughout the USA, Thailand, Australia, and beyond.
+
+**What types of businesses has Demand Signals worked with?**
+Veterinary practices, dental offices, law firms, roofing contractors, real estate brokerages, fitness studios, restaurants, craft beverage brands, auto service businesses, retail stores, and education centers. Our AI systems are industry-agnostic.
+
+**What kind of results can I expect?**
+Improved search visibility for high-intent local keywords, increased Google Maps rankings, enhanced AI citation status across ChatGPT/Gemini/Perplexity, automated lead capture and qualification, and streamlined operations through AI voice and booking systems.
+
+**How do I get started?**
+Book a free strategy call or request a free Demand Audit. The audit gives you a clear picture of your current visibility across Google, Maps, AI assistants, and social media, benchmarked against local competitors.
 
 ## Key Facts
 - AI replaces marketing employees and agency retainers
