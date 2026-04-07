@@ -46,16 +46,27 @@ const shapes = [
     `<polyline points="0,${s*0.3} ${s/2},0 ${s},${s*0.3}" fill="none" stroke="#c0ccc4" stroke-width="1.2" transform="translate(${x},${y}) rotate(${r})"/>`,
 ]
 
+// Seeded PRNG to avoid server/client hydration mismatch
+function mulberry32(seed: number) {
+  return () => {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
 function generateShapes(): string {
-  const count = 18 + Math.floor(Math.random() * 8) // 18-25 shapes
+  const rand = mulberry32(42)
+  const count = 18 + Math.floor(rand() * 8) // 18-25 shapes
   const svgParts: string[] = []
 
   for (let i = 0; i < count; i++) {
-    const shapeIdx = Math.floor(Math.random() * shapes.length)
-    const x = Math.random() * 1350 - 50 // full width with overflow
-    const y = Math.random() * 550 - 30  // full height with overflow
-    const size = 25 + Math.random() * 45 // 25-70px
-    const rotation = Math.floor(Math.random() * 360)
+    const shapeIdx = Math.floor(rand() * shapes.length)
+    const x = rand() * 1350 - 50
+    const y = rand() * 550 - 30
+    const size = 25 + rand() * 45
+    const rotation = Math.floor(rand() * 360)
     svgParts.push(shapes[shapeIdx](x, y, size, rotation))
   }
 

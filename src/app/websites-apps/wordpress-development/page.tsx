@@ -44,6 +44,12 @@ export default function WordPressDevelopmentPage() {
         { label: 'Analytics', value: 'GA4 + Google Search Console + PostHog' },
       ]}
       techDescription="Every WordPress site we build uses a custom theme — no bloated page-builder templates. Clean PHP, performant CSS, and a REST API backend that our AI agents can read and write to automatically."
+      stats={[
+        { value: 43, suffix: '%', label: 'Of the web runs WordPress' },
+        { value: 10, suffix: 'x', label: 'Content velocity with AI' },
+        { value: 99, suffix: '%', label: 'Uptime guarantee' },
+        { value: 48, suffix: 'hr', label: 'Average project scoping' },
+      ]}
       aiCalloutHeading="Your WordPress site updates itself."
       aiCalloutText="After launch, our AI systems take over content operations. They research keyword opportunities, write SEO-structured articles and service pages, and deploy them to WordPress via the REST API — all without you touching the admin panel. The result: a site that compounds in authority week over week while you focus on your customers."
       faqs={[

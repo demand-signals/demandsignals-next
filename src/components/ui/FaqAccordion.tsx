@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
-import { ScrollReveal } from '@/components/motion/ScrollReveal'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 
 type FAQ = { question: string; answer: string }
@@ -14,14 +13,26 @@ export function FaqAccordion({ faqs }: { faqs: FAQ[] }) {
   return (
     <section className="mesh-white" style={{ padding: '72px 24px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <ScrollReveal>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
           <SectionHeading eyebrow="FAQ" heading="Frequently Asked Questions" />
-        </ScrollReveal>
+        </motion.div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 900, margin: '0 auto' }}>
           {faqs.map((faq, i) => {
             const isOpen = openFaq === i
+            const fromLeft = i % 2 === 0
             return (
-              <ScrollReveal key={faq.question} delay={i * 0.05}>
+              <motion.div
+                key={faq.question}
+                initial={{ opacity: 0, x: fromLeft ? -60 : 60 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.5, delay: i * 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+              >
                 <div style={{
                   background: isOpen ? 'rgba(255,255,255,0.85)' : 'rgba(244,246,249,0.8)',
                   backdropFilter: 'blur(8px)',
@@ -66,7 +77,7 @@ export function FaqAccordion({ faqs }: { faqs: FAQ[] }) {
                     )}
                   </AnimatePresence>
                 </div>
-              </ScrollReveal>
+              </motion.div>
             )
           })}
         </div>
