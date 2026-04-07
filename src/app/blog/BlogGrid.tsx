@@ -117,7 +117,7 @@ export default function BlogGrid({ posts, filter = 'all' }: { posts: Post[]; fil
   return (
     <div
       style={{
-        maxWidth: '1100px',
+        maxWidth: '1200px',
         margin: '0 auto',
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
