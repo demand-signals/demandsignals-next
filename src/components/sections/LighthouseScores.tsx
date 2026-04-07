@@ -1,5 +1,8 @@
 'use client'
 
+import { useRef } from 'react'
+import { motion, useInView } from 'framer-motion'
+
 const mobileScores = [
   { label: 'Performance', value: 97 },
   { label: 'Accessibility', value: 94 },
@@ -36,40 +39,55 @@ function scoreColor(value: number) {
   return '#f33'
 }
 
-function ScoreRing({ value, label, size = 72 }: { value: number; label: string; size?: number }) {
+function ScoreRing({ value, label, size = 72, delay = 0, inView }: {
+  value: number; label: string; size?: number; delay?: number; inView: boolean
+}) {
   const radius = (size / 2) - 5
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (value / 100) * circumference
   const color = scoreColor(value)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.45, delay }}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}
+    >
       <div style={{ position: 'relative', width: size, height: size }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
           <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="#e5e7eb" strokeWidth="5" />
-          <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke={color} strokeWidth="5"
-            strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
-            transform={`rotate(-90 ${size/2} ${size/2})`} />
+          <motion.circle
+            cx={size/2} cy={size/2} r={radius} fill="none" stroke={color} strokeWidth="5"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={inView ? { strokeDashoffset: offset } : {}}
+            transition={{ duration: 1.1, delay: delay + 0.15, ease: [0.25, 0.1, 0.25, 1] }}
+            transform={`rotate(-90 ${size/2} ${size/2})`}
+          />
         </svg>
-        <div style={{
-          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '1.2rem', fontWeight: 800, color,
-        }}>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={inView ? { opacity: 1 } : {}}
+          transition={{ duration: 0.3, delay: delay + 0.7 }}
+          style={{
+            position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '1.2rem', fontWeight: 800, color,
+          }}
+        >
           {value}
-        </div>
+        </motion.div>
       </div>
       <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#6b7280', textAlign: 'center' }}>
         {label}
       </span>
-    </div>
+    </motion.div>
   )
 }
 
-/* Segmented performance ring with 5 labeled gaps */
-function SummaryRing({ value }: { value: number }) {
+function SummaryRing({ value, inView, delay = 0 }: { value: number; inView: boolean; delay?: number }) {
   const color = scoreColor(value)
-  // 5 segments with gaps — each segment is 60deg with 12deg gaps
-  // Labels positioned at each gap: FCP (top), LCP (right), TBT (bottom-right), CLS (bottom-left), SI (left)
   const labels = [
     { text: 'FCP', x: 100, y: 8 },
     { text: 'LCP', x: 178, y: 68 },
@@ -78,28 +96,26 @@ function SummaryRing({ value }: { value: number }) {
     { text: 'SI', x: 14, y: 68 },
   ]
 
-  // Create 5 arc segments with gaps using strokeDasharray
   const radius = 68
   const circumference = 2 * Math.PI * radius
-  const segmentLength = circumference * 0.17 // each segment ~17% of circle
-  const gapLength = circumference * 0.03 // 3% gap
+  const segmentLength = circumference * 0.17
+  const gapLength = circumference * 0.03
   const dashPattern = `${segmentLength} ${gapLength}`
-  const fillRatio = value / 100
-  const filledLength = circumference * fillRatio
+  const filledLength = circumference * (value / 100)
 
   return (
     <div style={{ position: 'relative', width: 200, height: 200, flexShrink: 0 }}>
       <svg width="200" height="200" viewBox="0 0 200 200">
-        {/* Background segmented ring */}
         <circle cx="100" cy="100" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="7"
           strokeDasharray={dashPattern} transform="rotate(-126 100 100)" />
-        {/* Filled segmented ring */}
-        <circle cx="100" cy="100" r={radius} fill="none" stroke={color} strokeWidth="7"
+        <motion.circle
+          cx="100" cy="100" r={radius} fill="none" stroke={color} strokeWidth="7"
           strokeLinecap="round"
-          strokeDasharray={`${filledLength} ${circumference}`}
-          transform="rotate(-126 100 100)" />
-
-        {/* Labels */}
+          initial={{ strokeDasharray: `0 ${circumference}` }}
+          animate={inView ? { strokeDasharray: `${filledLength} ${circumference}` } : {}}
+          transition={{ duration: 1.4, delay: delay + 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+          transform="rotate(-126 100 100)"
+        />
         {labels.map(l => (
           <text key={l.text} x={l.x} y={l.y} textAnchor="middle"
             fill="#9ca3af" fontSize="10" fontWeight="600" fontFamily="inherit">
@@ -107,16 +123,17 @@ function SummaryRing({ value }: { value: number }) {
           </text>
         ))}
       </svg>
-
-      {/* Center score */}
-      <div style={{
-        position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-      }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={inView ? { opacity: 1, scale: 1 } : {}}
+        transition={{ duration: 0.4, delay: delay + 0.9 }}
+        style={{
+          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+        }}
+      >
         <span style={{ fontSize: '3rem', fontWeight: 800, color, lineHeight: 1 }}>{value}</span>
-      </div>
-
-      {/* Label below */}
+      </motion.div>
       <div style={{ textAlign: 'center', marginTop: -4 }}>
         <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#374151' }}>Performance</span>
       </div>
@@ -124,53 +141,61 @@ function SummaryRing({ value }: { value: number }) {
   )
 }
 
-function DeviceCard({ title, icon, scores, metrics, perfScore }: {
+function DeviceCard({ title, icon, scores, metrics, perfScore, cardDelay, inView }: {
   title: string; icon: React.ReactNode
   scores: typeof mobileScores; metrics: typeof mobileMetrics; perfScore: number
+  cardDelay: number; inView: boolean
 }) {
   return (
-    <div style={{
-      background: '#fff', borderRadius: 20, padding: '32px 28px',
-      flex: 1, minWidth: 320, border: '1px solid #e5e7eb',
-      boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-    }}>
-      {/* Device header */}
+    <motion.div
+      initial={{ opacity: 0, y: 32 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.55, delay: cardDelay, ease: [0.25, 0.1, 0.25, 1] }}
+      style={{
+        background: '#fff', borderRadius: 20, padding: '32px 28px',
+        flex: 1, minWidth: 320, border: '1px solid #e5e7eb',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+      }}
+    >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
         {icon}
         <span style={{ color: '#111827', fontWeight: 700, fontSize: '1.1rem' }}>{title}</span>
       </div>
 
-      {/* Score rings row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 28, padding: '0 4px' }}>
-        {scores.map(s => (
-          <ScoreRing key={s.label} value={s.value} label={s.label} />
+        {scores.map((s, i) => (
+          <ScoreRing key={s.label} value={s.value} label={s.label} delay={cardDelay + 0.1 + i * 0.08} inView={inView} />
         ))}
       </div>
 
-      {/* Summary ring + metrics */}
       <div style={{
         display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 24,
         alignItems: 'center', borderTop: '1px solid #f0f2f5', paddingTop: 24,
       }}>
-        <SummaryRing value={perfScore} />
+        <SummaryRing value={perfScore} inView={inView} delay={cardDelay + 0.2} />
 
         <div>
           <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#9ca3af', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>
             Core Web Vitals
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {metrics.map(m => (
-              <div key={m.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {metrics.map((m, i) => (
+              <motion.div
+                key={m.label}
+                initial={{ opacity: 0, x: 12 }}
+                animate={inView ? { opacity: 1, x: 0 } : {}}
+                transition={{ duration: 0.35, delay: cardDelay + 0.4 + i * 0.07 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+              >
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: m.good ? '#0cce6b' : '#ffa400', flexShrink: 0 }} />
                 <span style={{ fontSize: '0.78rem', color: '#6b7280', flex: 1 }}>{m.label}</span>
                 <span style={{ fontSize: '0.88rem', fontWeight: 700, color: m.good ? '#0cce6b' : '#ffa400' }}>{m.value}</span>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Legend */}
       <div style={{ display: 'flex', gap: 16, marginTop: 20, paddingTop: 16, borderTop: '1px solid #f0f2f5' }}>
         {[
           { color: '#f33', label: '0-49' },
@@ -183,7 +208,7 @@ function DeviceCard({ title, icon, scores, metrics, perfScore }: {
           </div>
         ))}
       </div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -203,12 +228,19 @@ const DesktopIcon = () => (
 )
 
 export default function LighthouseScores() {
+  const ref = useRef<HTMLElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-80px' })
+
   return (
-    <section style={{ background: 'var(--dark)', padding: '80px 24px', overflow: 'hidden' }}>
+    <section ref={ref} style={{ background: 'var(--dark)', padding: '80px 24px', overflow: 'hidden' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5 }}
+          style={{ textAlign: 'center', marginBottom: 48 }}
+        >
           <span style={{
             display: 'inline-block', background: 'rgba(12, 206, 107, 0.15)', color: '#0cce6b',
             padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700,
@@ -225,16 +257,19 @@ export default function LighthouseScores() {
           <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1.05rem', lineHeight: 1.65, maxWidth: 680, margin: '0 auto' }}>
             Google uses Chrome Lighthouse audits as a direct ranking signal. Sites that score green across Performance, Accessibility, Best Practices, and SEO get preferential treatment in search results. Most agencies deliver sites scoring 40-60. We ship 90+.
           </p>
-        </div>
+        </motion.div>
 
-        {/* Two device cards */}
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 24 }}>
-          <DeviceCard title="Mobile" icon={<PhoneIcon />} scores={mobileScores} metrics={mobileMetrics} perfScore={97} />
-          <DeviceCard title="Desktop" icon={<DesktopIcon />} scores={desktopScores} metrics={desktopMetrics} perfScore={100} />
+          <DeviceCard title="Mobile" icon={<PhoneIcon />} scores={mobileScores} metrics={mobileMetrics} perfScore={97} cardDelay={0.1} inView={inView} />
+          <DeviceCard title="Desktop" icon={<DesktopIcon />} scores={desktopScores} metrics={desktopMetrics} perfScore={100} cardDelay={0.25} inView={inView} />
         </div>
 
-        {/* Live audit badge */}
-        <div style={{ textAlign: 'center' }}>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={inView ? { opacity: 1 } : {}}
+          transition={{ duration: 0.4, delay: 0.8 }}
+          style={{ textAlign: 'center' }}
+        >
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             background: 'rgba(12, 206, 107, 0.08)', border: '1px solid rgba(12, 206, 107, 0.2)',
@@ -247,7 +282,7 @@ export default function LighthouseScores() {
               Live audit of dsig.demandsignals.dev — April 2026
             </span>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   )

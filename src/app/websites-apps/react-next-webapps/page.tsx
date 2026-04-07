@@ -1,5 +1,6 @@
 import { buildMetadata } from '@/lib/metadata'
 import { ServicePageTemplate } from '@/components/templates/ServicePageTemplate'
+import LighthouseScores from '@/components/sections/LighthouseScores'
 
 export const metadata = buildMetadata({
   title:       'React & Next.js Web App Development — AI-Powered | Demand Signals',
@@ -50,6 +51,7 @@ export default function ReactNextPage() {
           { value: 99, suffix: '%', label: 'Target Lighthouse Score' },
           { value: 48, suffix: 'hr', label: 'Project Scoping Turnaround' },
         ]}
+        proofSection={<LighthouseScores />}
         aiCalloutHeading="AI isn't an add-on. It's the architecture."
         aiCalloutText="Every Next.js app we build has AI in the foundation — not bolted on after the fact. Content generation, intelligent search, automated workflows, and structured data pipelines are part of the architecture from sprint one. Your app gets smarter the longer it runs."
         faqs={[
