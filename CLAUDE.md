@@ -6,12 +6,12 @@
 
 ## 1. What This Project Is
 
-Next.js 16 rebuild of demandsignals.co — an AI-powered demand generation agency website. Currently staged at **dsig.demandsignals.dev**, will eventually replace the PHP production site at demandsignals.co.
+Next.js 16 rebuild of demandsignals.co — an AI-powered demand generation agency website. **DNS cutover in progress** — demandsignals.co is being pointed to Vercel.
 
 | Item | Value |
 |------|-------|
+| **Production URL** | https://demandsignals.co (DNS cutover to Vercel in progress) |
 | **Staging URL** | https://dsig.demandsignals.dev |
-| **Production URL** | https://demandsignals.co (PHP on Verpex — do NOT touch) |
 | **Local path** | `D:\CLAUDE\demandsignals-next` |
 | **GitHub repo** | `demand-signals/demandsignals-next` |
 | **Branch** | `master` |
@@ -208,7 +208,10 @@ src/
 │   ├── [cityService]/page.tsx        — Root-level LTPs (575 pages: /el-dorado-hills-local-seo)
 │   ├── not-found.tsx                 — Custom 404 page (noindex)
 │   ├── about/ (+ about/team/)        — Company pages
-│   ├── contact/ portfolio/ privacy/ terms/ accessibility/
+│   ├── contact/
+│   │   ├── page.tsx                  — server component (metadata export)
+│   │   └── ContactPageClient.tsx     — client component (form logic)
+│   ├── portfolio/ privacy/ terms/ accessibility/
 │   └── api/                          — contact, subscribe, report-request
 │
 ├── components/
@@ -323,16 +326,23 @@ Both templates auto-generate JSON-LD schema (Service, BreadcrumbList, FAQPage).
 - [x] Category-specific LTP content: unique discovery bullets and HowTo steps per category
 - [x] hreflang, preconnect hints, noindex on spacegame/404
 - [x] 796 static pages building clean
+- [x] Homepage scroll animations: all 8 sections with ScrollReveal/StaggerContainer/StaggerItem
+- [x] Sitemap: 6-tier priority system (1.0→0.5), dynamic date, blog daily frequency
+- [x] llms-full.txt: 517-line comprehensive LLM discovery file (141 posts, 40 FAQs, service details)
+- [x] Site-wide audit: E.164 phone, logo migration, skip link, font-display:swap, aria-hidden, metadata splits
+- [x] Contact + research-reports: server/client component split for proper metadata exports
+- [x] Favicon: removed duplicate src/app/favicon.ico (App Router convention shadowed public/favicon.ico)
 
 ---
 
 ## 11. What Is NOT Done (Open Work)
 
 ### High Priority
-1. **Roll out Section Theater** to remaining 22 service pages (pilot done on wordpress-development)
-2. **301 redirects** — ~552 redirects from old `/locations/[city]/[service]` URLs to new root-level LTPs
-3. **DNS cutover** — Vercel domain + Cloudflare + SMTP + GSC + GA4
-4. **Google Search Console** — verification pending until DNS cutover to demandsignals.co
+1. **301 redirects from PHP site** — old .co URLs are Google-indexed; need redirects now that DNS is cutting over
+2. **Roll out Section Theater** to remaining 22 service pages (pilot done on wordpress-development)
+3. **SMTP wiring** — contact form needs Gmail app password in Vercel env vars
+4. **Google Search Console** — DNS TXT record in Cloudflare for verification
+5. **GA4** — create property, add tracking code to layout
 
 ### Medium Priority
 - [ ] **Mobile menu UX** — currently a simple slide-down; .co uses full-screen overlay with animations
@@ -376,6 +386,18 @@ Both templates auto-generate JSON-LD schema (Service, BreadcrumbList, FAQPage).
 **Problem:** `Math.random()` in `useMemo` produces different values on server vs client, causing hydration errors.
 **Solution:** Use a seeded PRNG (`mulberry32` with seed 42) that produces deterministic output on both server and client.
 
+### Favicon duplication (src/app/ vs public/)
+**Problem:** `src/app/favicon.ico` triggers Next.js App Router's automatic favicon route, which shadows the explicit `<link>` tags in layout.tsx that point to `public/favicon.ico`.
+**Solution:** Only keep favicon files in `public/`. Do NOT put favicon.ico in `src/app/`.
+
+### Cloudflare + Vercel DNS
+**Problem:** Cloudflare proxy (orange cloud) intercepts TLS and conflicts with Vercel's edge network.
+**Solution:** Always use DNS Only (grey cloud) for Vercel domains. A record: `@` → `216.150.1.1`. CNAME: `www` → `cname.vercel-dns.com`. SSL mode: Full (Strict).
+
+### Contact/research-reports metadata exports
+**Problem:** Pages with `useState` (client components) can't export `metadata` or `generateMetadata` (server-only).
+**Solution:** Split into server component (page.tsx with `buildMetadata()`) + client component (PageClient.tsx with form logic).
+
 ### Generated pages (Python script)
 15 service pages were batch-generated using `generate_pages.py` (in repo root). The script is a build artifact — content can be edited directly in the page files. The script can be deleted.
 
@@ -391,6 +413,9 @@ Both templates auto-generate JSON-LD schema (Service, BreadcrumbList, FAQPage).
 - **Every page must have a unique FAQ** — SEO/GEO/AEO optimized for LLM indexing
 - **Every FAQ must be in FAQPage schema** — auto-included via templates
 - **llms.txt must be updated** when page URLs change
+- **llms-full.txt** exists in `public/` — 517-line comprehensive version with full blog archive
+- **Favicon files live in `public/` only** — never put favicon.ico in `src/app/` (App Router convention conflicts)
+- **Cloudflare proxy must be OFF** (grey cloud) for Vercel domains
 
 ---
 
