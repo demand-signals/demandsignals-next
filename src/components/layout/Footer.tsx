@@ -32,8 +32,9 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Link grid — 4 equal columns */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 40 }}>
+      {/* Link grid — 4 columns desktop, 2 columns mobile */}
+      <style>{`@media(min-width:768px){.footer-link-grid{grid-template-columns:repeat(4,1fr) !important;gap:40px !important}}`}</style>
+      <div className="footer-link-grid" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 32 }}>
 
         {/* Company */}
         <div>

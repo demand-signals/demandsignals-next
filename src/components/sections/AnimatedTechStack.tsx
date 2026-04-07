@@ -14,9 +14,10 @@ export function AnimatedTechStack({
 }) {
   return (
     <section style={{ padding: '80px 24px', position: 'relative', background: '#fff' }}>
+      <style>{`@media(min-width:768px){.tech-stack-grid{grid-template-columns:1fr 1fr !important;gap:64px !important}}`}</style>
       <ShapeBg />
       <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 40, alignItems: 'center' }} className="tech-stack-grid">
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             whileInView={{ opacity: 1, x: 0 }}
