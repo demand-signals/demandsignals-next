@@ -1,11 +1,15 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ParticleCanvas } from '@/components/sections/HeroCanvas'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { breadcrumbSchema, serviceSchema, faqSchema } from '@/lib/schema'
 import { getCityBySlug, CITY_SLUGS } from '@/lib/cities'
 import { BOOKING_URL } from '@/lib/constants'
+import { PageHero } from '@/components/sections/PageHero'
+import { AnimatedServiceCards } from '@/components/sections/AnimatedServiceCards'
+import { FaqAccordion } from '@/components/ui/FaqAccordion'
+import { AnimatedCTA } from '@/components/sections/AnimatedCTA'
+import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/motion/ScrollReveal'
 
 type Props = { params: Promise<{ city: string }> }
 
@@ -39,34 +43,46 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 const SERVICES = [
   {
+    icon: '🌐',
     title: 'AI-Powered Website',
     description: 'Fast, modern websites built to rank in Google and convert local visitors into phone calls and booked appointments. Includes local schema, city-specific landing pages, and Core Web Vitals optimization.',
     href: '/websites-apps',
+    features: ['Local schema & structured data', 'Core Web Vitals optimized', 'AI content pipeline included'],
   },
   {
+    icon: '📍',
     title: 'Local SEO & Google Maps',
     description: 'Full Google Business Profile management, local citation building, and on-page SEO targeting your city\'s highest-intent searches. We own the Map Pack for your service categories.',
     href: '/demand-generation/gbp-admin',
+    features: ['GBP management & optimization', 'Citation building & cleanup', 'Map Pack ranking strategy'],
   },
   {
+    icon: '🤖',
     title: 'AI Agent Swarms',
     description: 'Networks of AI agents handling content creation, review management, outreach, and analytics — running 24/7 without a team. One monthly cost replaces multiple vendors.',
     href: '/ai-services/ai-agent-swarms',
+    features: ['24/7 autonomous operation', 'Replaces multiple vendors', 'Content + reviews + outreach'],
   },
   {
+    icon: '🔍',
     title: 'GEO & AI Search Optimization',
     description: 'Optimize your business to appear when locals ask ChatGPT, Gemini, or Perplexity for recommendations. Structured data, entity signals, and citation authority built for the AI era.',
     href: '/demand-generation/geo-aeo-llm-optimization',
+    features: ['AI assistant citation building', 'Structured data & entity signals', 'llms.txt optimization'],
   },
   {
+    icon: '✍️',
     title: 'Content Marketing',
     description: 'City-specific blog posts, service pages, and local guides published on a consistent schedule. Builds topical authority and long-tail organic traffic month after month.',
     href: '/content-social/ai-content-generation',
+    features: ['City-specific local content', 'Consistent publishing schedule', 'Topical authority building'],
   },
   {
+    icon: '📧',
     title: 'AI Outreach',
     description: 'Automated prospecting sequences that research local leads, craft personalized messages, and route interested replies directly to your inbox. No SDR required.',
     href: '/ai-services/ai-automated-outreach',
+    features: ['Automated lead research', 'Personalized outreach sequences', 'Reply routing to your inbox'],
   },
 ]
 
@@ -107,6 +123,8 @@ export default async function CityPage({ params }: Props) {
   const city = getCityBySlug(citySlug)
   if (!city) notFound()
 
+  const faqs = getCityFaqs(city.name, city.county)
+
   return (
     <>
       <JsonLd
@@ -125,173 +143,119 @@ export default async function CityPage({ params }: Props) {
         }}
       />
       <JsonLd data={serviceSchema(`AI Marketing — ${city.name}`, city.seoDescription, `https://demandsignals.co/locations/${city.slug}`)} />
-      <JsonLd
-        data={breadcrumbSchema([
-          { name: 'Home', url: 'https://demandsignals.co' },
-          { name: 'Locations', url: 'https://demandsignals.co/locations' },
-          { name: city.name, url: `https://demandsignals.co/locations/${city.slug}` },
-        ])}
-      />
+      <JsonLd data={breadcrumbSchema([
+        { name: 'Home', url: 'https://demandsignals.co' },
+        { name: 'Locations', url: 'https://demandsignals.co/locations' },
+        { name: city.name, url: `https://demandsignals.co/locations/${city.slug}` },
+      ])} />
+      <JsonLd data={faqSchema(faqs)} />
 
-      {/* ─── Hero ─────────────────────────────────────────────── */}
-      <section style={{ minHeight: '52vh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden', backgroundColor: '#080e1f' }}>
-        <ParticleCanvas />
-        <div aria-hidden="true" style={{ position: 'absolute', inset: 0, zIndex: 20, background: 'linear-gradient(to bottom, rgba(8,14,31,0.5) 0%, rgba(8,14,31,0.7) 100%)' }} />
-        <div style={{ position: 'relative', zIndex: 30, maxWidth: 1200, margin: '0 auto', padding: '96px 24px 80px', width: '100%', textAlign: 'center' }}>
-          <div style={{ maxWidth: 760, margin: '0 auto' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(82,201,160,0.15)', border: '1px solid rgba(82,201,160,0.3)', borderRadius: 100, padding: '6px 16px', marginBottom: 24 }}>
-              <span style={{ color: '#52C9A0', fontSize: '0.85rem', fontWeight: 600 }}>{city.name}, {city.county}</span>
-            </div>
-            <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.6rem)', fontWeight: 800, lineHeight: 1.1, marginBottom: 20, color: '#fff' }}>
-              <span style={{color:'#FF6B2B'}}>AI Marketing</span> for{' '}
-              <span style={{color:'#52C9A0'}}>{city.name}</span>{' '}
-              Businesses
-            </h1>
-            <p style={{ fontSize: 'clamp(1rem, 1.6vw, 1.2rem)', color: 'rgba(255,255,255,0.72)', maxWidth: 600, margin: '0 auto 36px', lineHeight: 1.65 }}>
-              {city.heroSubtitle}
-            </p>
-            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
-              <Link href="/contact" style={{ display: 'inline-flex', alignItems: 'center', padding: '14px 32px', background: '#FF6B2B', color: '#fff', fontWeight: 700, fontSize: '1rem', borderRadius: 100, textDecoration: 'none', boxShadow: '0 4px 24px rgba(255,107,43,0.35)' }}>
-                Get a Free {city.name} Audit →
-              </Link>
-              <a href={BOOKING_URL} target="_blank" rel="noopener" style={{ display: 'inline-flex', alignItems: 'center', padding: '13px 30px', border: '2px solid rgba(255,255,255,0.5)', color: '#fff', background: 'rgba(255,255,255,0.15)', fontWeight: 600, fontSize: '1rem', borderRadius: 100, textDecoration: 'none' }}>
-                Book a Free Call
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ─── Hero — particle canvas + parallax ─────────────────── */}
+      <PageHero
+        eyebrow={`${city.name}, ${city.county}`}
+        title={<><span style={{color:'#FF6B2B'}}>AI Marketing</span> for{' '}<span style={{color:'#52C9A0'}}>{city.name}</span>{' '}Businesses</>}
+        subtitle={city.heroSubtitle}
+        ctaLabel={`Get a Free ${city.name} Audit →`}
+        ctaHref="/contact"
+        callout={<>We build <span style={{color:'#52C9A0'}}>hyper-local AI systems</span> tuned to {city.name}&apos;s specific competitors, keywords, and customers — not national templates that ignore your market.</>}
+      />
 
       {/* ─── Proof bar ────────────────────────────────────────── */}
       <section style={{ background: 'var(--dark)', padding: '40px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 24, textAlign: 'center' }}>
+        <StaggerContainer style={{ maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 24, textAlign: 'center' }}>
           {PROOF.map((p) => (
-            <div key={p.label}>
+            <StaggerItem key={p.label}>
               <div style={{ fontSize: '2rem', fontWeight: 800, color: '#52C9A0', lineHeight: 1 }}>{p.value}</div>
               <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.875rem', marginTop: 6 }}>{p.label}</div>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       </section>
 
       {/* ─── Market context ───────────────────────────────────── */}
       <section style={{ background: '#fff', padding: '80px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 64, alignItems: 'start' }}>
-          <div>
-            <p style={{ color: 'var(--teal)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>The Market</p>
-            <h2 style={{ fontSize: 'clamp(1.6rem, 2.5vw, 2.2rem)', fontWeight: 800, color: 'var(--dark)', marginBottom: 20, lineHeight: 1.2 }}>
-              Why {city.name} businesses choose AI marketing
-            </h2>
-            <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.8, marginBottom: 20 }}>
-              {city.description}
-            </p>
-            <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.8 }}>
-              Demand Signals is based in El Dorado County. We know this market — the competition, the customer behavior, and the channels that actually drive leads. Our AI systems are configured for Northern California, not cookie-cutter national campaigns.
-            </p>
-          </div>
-          <div>
-            <p style={{ color: 'var(--teal)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>Industries we serve in {city.name}</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 32 }}>
-              {city.industries.map((ind) => (
-                <span key={ind} style={{ background: 'var(--light)', border: '1px solid var(--border)', borderRadius: 100, padding: '7px 16px', fontSize: '0.875rem', color: 'var(--dark)', fontWeight: 500 }}>
-                  {ind}
-                </span>
-              ))}
+          <ScrollReveal direction="left">
+            <div>
+              <p style={{ color: 'var(--teal)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>The Market</p>
+              <h2 style={{ fontSize: 'clamp(1.6rem, 2.5vw, 2.2rem)', fontWeight: 800, color: 'var(--dark)', marginBottom: 20, lineHeight: 1.2 }}>
+                Why {city.name} businesses choose AI marketing
+              </h2>
+              <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.8, marginBottom: 20 }}>
+                {city.description}
+              </p>
+              <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.8 }}>
+                Demand Signals is based in El Dorado County. We know this market — the competition, the customer behavior, and the channels that actually drive leads. Our AI systems are configured for Northern California, not cookie-cutter national campaigns.
+              </p>
             </div>
-            <p style={{ color: 'var(--teal)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Also serving nearby</p>
-            <p style={{ color: 'var(--slate)', fontSize: '0.9rem', lineHeight: 1.7 }}>{city.nearbyAreas.join(' · ')}</p>
-          </div>
+          </ScrollReveal>
+          <ScrollReveal direction="right">
+            <div>
+              <p style={{ color: 'var(--teal)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>Industries we serve in {city.name}</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 32 }}>
+                {city.industries.map((ind) => (
+                  <span key={ind} style={{ background: 'var(--light)', border: '1px solid var(--border)', borderRadius: 100, padding: '7px 16px', fontSize: '0.875rem', color: 'var(--dark)', fontWeight: 500 }}>
+                    {ind}
+                  </span>
+                ))}
+              </div>
+              <p style={{ color: 'var(--teal)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Also serving nearby</p>
+              <p style={{ color: 'var(--slate)', fontSize: '0.9rem', lineHeight: 1.7 }}>{city.nearbyAreas.join(' · ')}</p>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* ─── Services ─────────────────────────────────────────── */}
       <section style={{ background: 'var(--light)', padding: '80px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <p style={{ color: 'var(--teal)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>What we deliver</p>
-          <h2 style={{ fontSize: 'clamp(1.6rem, 2.5vw, 2.4rem)', fontWeight: 800, color: 'var(--dark)', marginBottom: 12, maxWidth: 600 }}>
-            Full-stack AI marketing for {city.name}
-          </h2>
-          <p style={{ color: 'var(--slate)', fontSize: '1.05rem', maxWidth: 560, marginBottom: 52, lineHeight: 1.7 }}>
-            Every service below is tuned to the {city.name} market — your competitors, your customers, and the search terms that drive real local demand.
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
-            {SERVICES.map((svc) => (
-              <Link key={svc.href} href={svc.href} style={{ textDecoration: 'none' }}>
-                <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 16, padding: '28px 30px', height: '100%', display: 'flex', flexDirection: 'column', gap: 12, transition: 'box-shadow 0.2s' }}
-                  className="city-card">
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--dark)' }}>{svc.title}</h3>
-                  <p style={{ color: 'var(--slate)', lineHeight: 1.65, fontSize: '0.95rem', flex: 1 }}>{svc.description}</p>
-                  <span style={{ color: '#FF6B2B', fontWeight: 600, fontSize: '0.875rem' }}>Learn more →</span>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <ScrollReveal direction="up">
+            <p style={{ color: 'var(--teal)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>What we deliver</p>
+            <h2 style={{ fontSize: 'clamp(1.6rem, 2.5vw, 2.4rem)', fontWeight: 800, color: 'var(--dark)', marginBottom: 12, maxWidth: 600 }}>
+              Full-stack AI marketing for {city.name}
+            </h2>
+            <p style={{ color: 'var(--slate)', fontSize: '1.05rem', maxWidth: 560, marginBottom: 52, lineHeight: 1.7 }}>
+              Every service below is tuned to the {city.name} market — your competitors, your customers, and the search terms that drive real local demand.
+            </p>
+          </ScrollReveal>
+          <AnimatedServiceCards services={SERVICES} />
         </div>
       </section>
 
-      {/* ─── What sets us apart ───────────────────────────────── */}
+      {/* ─── What sets us apart — dark section ────────────────── */}
       <section style={{ background: 'var(--dark)', padding: '80px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <p style={{ color: 'var(--teal)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Why Demand Signals</p>
-          <h2 style={{ fontSize: 'clamp(1.6rem, 2.5vw, 2.2rem)', fontWeight: 800, color: '#fff', marginBottom: 48, maxWidth: 560, lineHeight: 1.2 }}>
-            We replace a marketing team — not just a single tactic
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
+          <ScrollReveal direction="up">
+            <p style={{ color: 'var(--teal)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Why Demand Signals</p>
+            <h2 style={{ fontSize: 'clamp(1.6rem, 2.5vw, 2.2rem)', fontWeight: 800, color: '#fff', marginBottom: 48, maxWidth: 560, lineHeight: 1.2 }}>
+              We replace a marketing team — not just a single tactic
+            </h2>
+          </ScrollReveal>
+          <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
             {city.features.map((f) => (
-              <div key={f.title} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '28px 28px' }}>
-                <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '1.05rem', marginBottom: 12 }}>{f.title}</h3>
-                <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.65, fontSize: '0.95rem' }}>{f.description}</p>
-              </div>
+              <StaggerItem key={f.title}>
+                <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '28px 28px', height: '100%' }}>
+                  <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '1.05rem', marginBottom: 12 }}>{f.title}</h3>
+                  <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.65, fontSize: '0.95rem', margin: 0 }}>{f.description}</p>
+                </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
-      {/* ─── FAQ ──────────────────────────────────────────────── */}
-      {(() => {
-        const faqs = getCityFaqs(city.name, city.county)
-        return (
-          <>
-            <JsonLd data={faqSchema(faqs)} />
-            <section style={{ background: '#fff', padding: '72px 24px' }}>
-              <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-                <div style={{ textAlign: 'center', marginBottom: 48 }}>
-                  <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>FAQ</span>
-                  <h2 style={{ color: 'var(--dark)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, margin: '14px 0 0' }}>Frequently Asked Questions</h2>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                  {faqs.map(faq => (
-                    <div key={faq.question} style={{ background: 'var(--light)', borderRadius: 14, padding: '24px 28px' }}>
-                      <h3 style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '1rem', marginBottom: 10, lineHeight: 1.4 }}>{faq.question}</h3>
-                      <p style={{ color: 'var(--slate)', fontSize: '0.93rem', lineHeight: 1.7, margin: 0 }}>{faq.answer}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
-          </>
-        )
-      })()}
+      {/* ─── FAQ — animated accordion ─────────────────────────── */}
+      <FaqAccordion faqs={faqs} />
 
       {/* ─── CTA ──────────────────────────────────────────────── */}
-      <section style={{ background: 'var(--light)', padding: '88px 24px', textAlign: 'center' }}>
-        <div style={{ maxWidth: 600, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', fontWeight: 800, color: 'var(--dark)', marginBottom: 16 }}>
-            Ready to grow your {city.name} business?
-          </h2>
-          <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.7, marginBottom: 36 }}>
-            Book a free 15-minute call. We'll audit your current local search presence, show you exactly where competitors are beating you, and lay out what AI marketing fixes it.
-          </p>
-          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Link href="/contact" style={{ display: 'inline-flex', alignItems: 'center', padding: '15px 36px', background: '#FF6B2B', color: '#fff', fontWeight: 700, fontSize: '1rem', borderRadius: 100, textDecoration: 'none' }}>
-              Get a Free {city.name} Audit →
-            </Link>
-            <a href={BOOKING_URL} target="_blank" rel="noopener" style={{ display: 'inline-flex', alignItems: 'center', padding: '14px 32px', border: '2px solid rgba(0,0,0,0.15)', color: 'var(--dark)', background: '#fff', fontWeight: 600, fontSize: '1rem', borderRadius: 100, textDecoration: 'none' }}>
-              Book a Free Call
-            </a>
-          </div>
-        </div>
-      </section>
+      <AnimatedCTA
+        heading={`Ready to grow your ${city.name} business?`}
+        text={`Book a free 15-minute call. We'll audit your current local search presence, show you exactly where competitors are beating you, and lay out what AI marketing fixes it.`}
+        primaryLabel={`Get a Free ${city.name} Audit →`}
+        primaryHref="/contact"
+        secondaryLabel="Book a Free Call"
+        secondaryHref={BOOKING_URL}
+      />
     </>
   )
 }
