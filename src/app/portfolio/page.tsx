@@ -1,5 +1,4 @@
 import { buildMetadata } from '@/lib/metadata';
-import ProofTable from '@/components/sections/ProofTable';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { faqSchema, breadcrumbSchema } from '@/lib/schema';
 import { FaqAccordion } from '@/components/ui/FaqAccordion';
@@ -147,9 +146,6 @@ export default function PortfolioPage() {
           </p>
         </div>
       </section>
-
-      {/* Proof Table */}
-      <ProofTable />
 
       {/* Client Grid */}
       <section style={{ background: 'var(--light)', padding: '72px 24px' }}>
