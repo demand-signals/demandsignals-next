@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer'
 import { NextRequest, NextResponse } from 'next/server'
 import { CONTACT_EMAIL } from '@/lib/constants'
 import { apiGuard, escapeHtml, isValidEmail, sanitizeField, safeErrorResponse } from '@/lib/api-security'
+import { trackGA4Event, getGA4Context } from '@/lib/ga4'
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -57,6 +58,16 @@ export async function POST(req: NextRequest) {
       subject: `FREE REPORT REQUEST: ${sanitizeField(body.report_type, 100)} — ${sanitizeField(body.business, 100)}`,
       html,
     })
+
+    // Fire server-side GA4 conversion event (non-blocking)
+    trackGA4Event({
+      name: 'generate_lead',
+      params: {
+        event_category: 'report_request',
+        report_type: report_type || 'not_specified',
+        industry: industry || 'not_specified',
+      },
+    }, getGA4Context(req)).catch(() => {})
 
     return NextResponse.json({ success: true })
   } catch (err) {
