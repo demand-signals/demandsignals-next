@@ -125,7 +125,7 @@ export function FeatureShowcase({ eyebrow, heading, features }: {
       >
         <div style={{
           position: 'sticky', top: 72,
-          minHeight: 0,
+          minHeight: 'calc(100vh - 72px)',
           overflow: 'hidden',
           backgroundColor: '#f8fafb',
           backgroundImage: 'radial-gradient(circle, rgba(104,197,173,0.1) 1px, transparent 1px)',
