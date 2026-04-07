@@ -48,20 +48,24 @@ const SERVICES = [
 
 const FAQS = [
   {
-    question: 'What is LLM optimization and why does it matter in 2026?',
-    answer: 'LLM optimization (also called GEO — Generative Engine Optimization) ensures your business appears in AI-generated answers from ChatGPT, Perplexity, Gemini, and Google AI Overviews. With over 800 million weekly ChatGPT users and AI-referred traffic converting at 2.47% — higher than paid search or Google Shopping — businesses that aren\'t optimized for AI discovery are invisible to a growing percentage of buyers.',
+    question: 'How quickly can demand generation campaigns start producing results?',
+    answer: 'Local SEO improvements are typically visible within 60–90 days as Google reindexes and re-evaluates your authority signals. GBP optimization and citation building produce ranking lifts in Google Maps within 30–45 days. AI search citation rates improve within weeks of publishing properly structured content. We provide monthly reporting so you can see exactly what\'s moving.',
   },
   {
-    question: 'How is demand generation different from traditional SEO?',
-    answer: 'Traditional SEO focuses on Google\'s blue links. Demand generation encompasses all discovery channels: Google organic, Google Maps, AI-generated answers (ChatGPT, Perplexity, Gemini), voice search, and social. We build systems that make your business discoverable everywhere buyers search — not just one platform.',
+    question: 'What is the difference between SEO, GEO, and AEO — and why do all three matter?',
+    answer: 'Traditional SEO targets Google and Bing. Generative Engine Optimization (GEO) targets AI-powered search summaries like ChatGPT and Perplexity, which now answer millions of queries before users ever click a link. Answer Engine Optimization (AEO) targets featured snippets and voice search. Running all three simultaneously creates a discovery layer most of your competitors haven\'t built yet.',
   },
   {
-    question: 'How quickly can I expect to see results from local SEO?',
-    answer: 'Most businesses see measurable improvements within 60-90 days. Map Pack rankings often improve faster — within 30-45 days with active GBP management. Organic ranking improvements compound over time as our AI systems continuously optimize your pages and create new content targeting buyer search terms.',
+    question: 'Can you help if my competitors are already dominating local search?',
+    answer: 'Yes — and this is often where we do our best work. We analyze your competitors\' authority signals, content gaps, and citation profile, then build a strategy that overtakes them systematically. Dominant competitors have weaknesses. Our research agents find them and we exploit them with consistent, high-quality signals that compound over time.',
   },
   {
-    question: 'Do you work with businesses outside Northern California?',
-    answer: 'Yes. While we specialize in Northern California — particularly El Dorado County, Sacramento, Placer County, and the surrounding areas — our demand generation systems work for any geographic market. The same AI-powered approach applies whether you serve one city or fifty.',
+    question: 'Do I need to already have a website for demand generation to work?',
+    answer: 'You need a solid online presence, but it doesn\'t have to be perfect before we start. Many clients come to us with an outdated site and we run demand generation in parallel with a rebuild. GBP optimization, citation building, and review management can begin immediately, while the new website adds fuel once it launches.',
+  },
+  {
+    question: 'How do AI-powered demand systems outperform traditional agencies?',
+    answer: 'Traditional agencies bill hours for manual tasks — writing one blog post at a time, manually checking rankings, sending monthly reports. Our systems monitor your search presence daily, update content automatically, respond to reviews in real time, and push your business into new ranking positions continuously. The output is higher, the speed is faster, and the cost is a fraction of a traditional retainer.',
   },
 ]
 
@@ -71,6 +75,7 @@ export default function DemandGenerationPage() {
       eyebrow="Demand Generation"
       titleHtml={<><span style={{color:'#52C9A0'}}>AI-Powered Demand Generation</span> — <span style={{color:'#FF6B2B'}}>Every Channel. Always On.</span></>}
       subtitle="Search, AI answers, Maps, and local discovery — we build the systems that put your business in front of buyers across every channel that matters."
+      calloutHtml={<>We run a <span style={{color:'#52C9A0'}}>three-layer discovery strategy</span> — traditional SEO, Generative Engine Optimization, and Answer Engine Optimization — so your business gets found everywhere customers are searching, including AI chat.</>}
       services={SERVICES}
       faqs={FAQS}
       breadcrumbName="Demand Generation"

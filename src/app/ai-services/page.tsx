@@ -62,20 +62,24 @@ const SERVICES = [
 
 const FAQS = [
   {
-    question: 'What business functions can AI realistically replace today?',
-    answer: 'In 2026, AI can effectively replace or augment: social media management, content writing, review response management, SEO monitoring and optimization, basic customer service, data entry, appointment scheduling, report generation, email outreach, and marketing coordination. We\'ve done all of these across our client deployments.',
+    question: 'What business problems are AI agents best at solving?',
+    answer: 'AI agents excel at high-volume, repetitive, research-intensive tasks that currently eat up your team\'s time. Lead qualification and outreach, content generation at scale, competitive monitoring, data extraction and aggregation, customer review management, appointment scheduling, and internal reporting are all areas where agents outperform humans in speed, consistency, and cost — often by a factor of 10x or more.',
   },
   {
-    question: 'How much can I save by replacing roles with AI agents?',
-    answer: 'The math varies by role, but typical savings are 60-85% versus human labor costs. A social media manager at $3,000+/month is replaced by AI systems at $800-1,200/month. An SEO consultant at $1,500-3,000/month is replaced by automated monitoring and optimization at a fraction of the cost. We run the numbers for your specific situation during the free consultation.',
+    question: 'How long does it take to implement AI systems for my business?',
+    answer: 'Most initial AI system deployments take 2–4 weeks from kickoff to live operation. Simpler automations like review responders or AI content pipelines can go live in under a week. More complex agent swarms — such as full lead research and outreach systems or multi-department workflow automation — typically take 4–8 weeks to design, build, test, and tune. We always start with a discovery phase to identify your highest-ROI use case and build there first.',
   },
   {
-    question: 'What is an AI agent swarm?',
-    answer: 'An AI agent swarm is a network of specialized AI agents that handle different business functions, coordinated through a shared database. Each agent has a specific role — one monitors search rankings, another generates content, another handles review responses, another manages social media. They run 24/7, report results to your portal, and escalate only what needs human attention.',
+    question: 'What is the return on investment for AI workforce automation?',
+    answer: 'The ROI depends on what you\'re automating, but replacing a single full-time marketing or admin role with an AI system that costs a fraction of the monthly salary is the most common win. Clients who implement our outreach agents routinely generate 3–5x more qualified prospect touchpoints per week than their sales team could manage manually. The key is identifying the right processes to automate first — which is exactly what our adoption strategy service does.',
   },
   {
-    question: 'Do I need technical knowledge to use your AI services?',
-    answer: 'No. Everything is accessible through a simple portal where you approve content, review performance, and manage settings. The technical infrastructure — databases, APIs, pipelines, monitoring — is fully managed by us. You spend 10-15 minutes per week in the portal. We handle everything else.',
+    question: 'Do I need technical staff to manage the AI systems you deploy?',
+    answer: 'No. We build every system to be managed by non-technical business owners. Dashboards are simple, alerts are plain-language, and we handle all the maintenance, updates, and model improvements behind the scenes. Your team interacts with the outputs — leads, content, reports, responses — not with the infrastructure. If something needs attention, your dedicated strategist handles it.',
+  },
+  {
+    question: 'What makes a private LLM different from just using ChatGPT?',
+    answer: 'A private LLM runs on your infrastructure with your data, your customizations, and your security controls. It can be trained or fine-tuned on your company\'s specific knowledge — products, pricing, policies, past conversations — so it answers questions the way your business would. Nothing leaves your environment, which matters for industries with privacy requirements like healthcare, legal, and finance. It also doesn\'t share your competitive intelligence with a public model.',
   },
 ]
 
@@ -85,6 +89,7 @@ export default function AIServicesPage() {
       eyebrow="AI & Agent Services"
       titleHtml={<><span style={{color:'#52C9A0'}}>AI Agent Services</span> — <span style={{color:'#FF6B2B'}}>The Future of Business Operations.</span></>}
       subtitle="From strategy to implementation — we build and deploy AI systems that replace manual processes, reduce costs, and deliver better results than the teams they replace."
+      calloutHtml={<>Our AI agent systems work 24/7 so your team <span style={{color:'#52C9A0'}}>stops doing the tasks AI does better</span> — and starts focusing on the strategy, relationships, and decisions that only humans can handle.</>}
       services={SERVICES}
       faqs={FAQS}
       breadcrumbName="AI & Agent Services"

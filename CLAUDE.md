@@ -206,21 +206,35 @@ src/
 │
 ├── components/
 │   ├── layout/                       — Header, Footer, MobileMenu, NavDropdown, ContactBot, etc.
-│   ├── sections/                     — Homepage sections (HeroCanvas, ServicesGrid, ProofTable, etc.)
+│   ├── sections/                     — Page sections
+│   │   ├── PageHero.tsx              — Parallax hero with particle canvas
+│   │   ├── FeatureShowcase.tsx       — Scroll-pinned feature carousel (desktop) / stacked cards (mobile)
+│   │   ├── StatsCounter.tsx          — Animated stat counters with dark gradient band
+│   │   ├── AnimatedTechStack.tsx     — Two-col tech stack with blur-reveal (responsive)
+│   │   ├── AnimatedAICallout.tsx     — Dark section with pulsing glow + bullet spring-in
+│   │   ├── AnimatedCTA.tsx           — Gradient hue-shift CTA on scroll
+│   │   ├── HomeBlogSection.tsx       — Featured post + marquee (responsive)
+│   │   └── (HeroCanvas, ServicesGrid, etc.)
 │   ├── templates/                    — Reusable page templates
-│   │   ├── ServicePageTemplate.tsx   — Hero + Features + Tech Stack + AI Callout + FAQ + CTA
+│   │   ├── ServicePageTemplate.tsx   — Hero → Features → Stats → Tech → Proof → AI → Blog → FAQ → CTA
 │   │   └── CategoryIndexTemplate.tsx — Hero + Service Cards + FAQ + CTA
+│   ├── motion/                       — ScrollReveal wrapper
 │   ├── seo/                          — JsonLd
-│   └── ui/                           — shadcn primitives
+│   └── ui/                           — GlassCard, FaqAccordion, ShapeBg, SectionHeading, shadcn
 │
-├── content/blog/                     — 10 MDX blog posts
+├── content/blog/                     — 141 MDX blog posts
+│
+├── hooks/
+│   └── useCountUp.ts                 — RAF counter animation hook
 │
 └── lib/
     ├── constants.ts                  — All nav data, site URLs, contact info
     ├── metadata.ts                   — buildMetadata() helper
     ├── schema.ts                     — JSON-LD schema generators
+    ├── icons.ts                      — Lucide icon resolver
     ├── cities.ts                     — City data for location pages
-    ├── blog.ts                       — MDX blog loader
+    ├── blog.ts                       — MDX blog loader (141 posts, 7 categories)
+    ├── api-security.ts               — Rate limiting, CSRF, input validation
     └── utils.ts                      — cn() utility
 ```
 
@@ -229,7 +243,11 @@ src/
 ## 7. Page Templates
 
 ### ServicePageTemplate (`src/components/templates/ServicePageTemplate.tsx`)
-Used by all individual service pages. Sections: PageHero → Features Grid → Tech Stack (optional) → AI Callout (optional) → FAQ with FAQPage schema → CTA.
+Server component (cannot use 'use client' — imports blog.ts which uses `fs`). All motion is in extracted client components.
+
+Section order: PageHero (parallax) → FeatureShowcase (scroll-pinned carousel) → StatsCounter (optional) → AnimatedTechStack (optional) → Proof Section (optional) → AnimatedAICallout (optional) → HomeBlogSection → FaqAccordion → AnimatedCTA.
+
+Props include optional `stats` (animated counters) and `aiCalloutBullets`.
 
 ### CategoryIndexTemplate (`src/components/templates/CategoryIndexTemplate.tsx`)
 Used by category index pages (`/websites-apps`, `/demand-generation`, `/content-social`, `/ai-services`). Sections: Dark Hero → Service Cards grid → FAQ with FAQPage schema → CTA.
@@ -273,37 +291,35 @@ Both templates auto-generate JSON-LD schema (Service, BreadcrumbList, FAQPage).
 - [x] Sitemap updated with all new routes
 - [x] llms.txt updated with new URL structure
 - [x] About/Team page
-- [x] Blog: 10 MDX posts, index + [slug] pages
+- [x] Blog: 141 MDX posts across 7 categories, index + [slug] pages
 - [x] Tools: demand-audit, research-reports, demand-links, dynamic-qr
 - [x] Locations: 11 city pages
 - [x] Contact page with form
 - [x] JSON-LD: org, website, service, breadcrumb, FAQ schemas
 - [x] Vercel auto-deploy from GitHub master
+- [x] Section Theater motion upgrade (pilot: wordpress-development page)
+- [x] Security hardening: API routes, headers, git history purge
+- [x] Accessibility widget (WCAG 2.1 AA)
+- [x] Card game easter egg (ArcCardGame in layout.tsx)
+- [x] Mobile responsive: tech stack, blog featured, footer all stack on mobile
 
 ---
 
 ## 11. What Is NOT Done (Open Work)
 
-### High Priority (before prospecting)
-- [ ] **Verify Vercel deployment** — confirm new nav and pages are live at dsig.demandsignals.dev
-- [ ] **Visual polish on service pages** — some pages use inline styles, match .co visual quality
-- [ ] **Mobile menu UX** — currently a simple slide-down; .co uses full-screen overlay with animations
-- [ ] **OG image** — `/og-image.png` is placeholder, needs real branded asset
-- [ ] **Legacy route cleanup** — old `/services/*` and `/ai-agents/*` page files still exist (redirects handle them but files should eventually be removed)
+### High Priority — Current Progression
+1. **Roll out Section Theater** to remaining 22 service pages (add stats props, verify mobile)
+2. **Longtail templates** — design template for /[cityService] pages (11 cities x 15 services = 165 pages)
+3. **Longtail pages** — generate 165 programmatic pages
+4. **DNS cutover** — Vercel domain + Cloudflare + SMTP + GSC + GA4
 
 ### Medium Priority
-- [ ] **Location longtail architecture** — County → City → Service programmatic pages
-  - Route structure: `/locations/[county]/[city]/[service]`
-  - County pages list cities + service categories
-  - City pages list services with links to longtails
-  - Longtail pages only reachable via search, GEO, or city pages
-  - Each longtail page needs unique FAQ content
-- [ ] **FAQ strategy execution** — every page should have unique, page-specific FAQ optimized for LLM citation
+- [ ] **Mobile menu UX** — currently a simple slide-down; .co uses full-screen overlay with animations
+- [ ] **OG image** — `/og-image.png` is placeholder, needs real branded asset
 - [ ] **SMTP wiring** — real credentials in Vercel env vars for contact form
 - [ ] **Google Search Console** — verification code is `"pending"`
-- [ ] **Analytics** — GA4 or equivalent
+- [ ] **Analytics** — GA4 or equivalent (Vercel Analytics installed)
 - [ ] **Portfolio page** — needs real client case studies with results data
-- [ ] **Real client case study content** on service pages
 
 ### Lower Priority
 - [ ] Blog: more posts targeting buyer search terms
@@ -331,6 +347,14 @@ Both templates auto-generate JSON-LD schema (Service, BreadcrumbList, FAQPage).
 ### Header sticky vs fixed
 **Problem:** `position: sticky` with solid bg doesn't match .co.
 **Solution:** Use `position: fixed` with scroll listener + `paddingTop: '72px'` on `<main>`.
+
+### ServicePageTemplate must stay a server component
+**Problem:** Adding `'use client'` to ServicePageTemplate breaks the build because it imports `blog.ts` which uses Node `fs`.
+**Solution:** Extract all animated/motion sections into separate client components (AnimatedTechStack, AnimatedAICallout, AnimatedCTA, etc.) and import them into the server-side template.
+
+### ShapeBg hydration mismatch
+**Problem:** `Math.random()` in `useMemo` produces different values on server vs client, causing hydration errors.
+**Solution:** Use a seeded PRNG (`mulberry32` with seed 42) that produces deterministic output on both server and client.
 
 ### Generated pages (Python script)
 15 service pages were batch-generated using `generate_pages.py` (in repo root). The script is a build artifact — content can be edited directly in the page files. The script can be deleted.

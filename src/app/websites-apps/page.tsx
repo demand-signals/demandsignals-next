@@ -55,20 +55,24 @@ const SERVICES = [
 
 const FAQS = [
   {
-    question: 'What platform should I choose — WordPress or Next.js?',
-    answer: 'WordPress is ideal for content-heavy marketing sites, blogs, and e-commerce stores where non-technical staff need to update content. Next.js is better for custom web applications, platforms with user accounts, and businesses that need high performance and AI features deeply integrated. We\'ll recommend the right platform based on your business goals during your free consultation.',
+    question: 'What results can I realistically expect from a new website?',
+    answer: 'A professionally built, AI-optimized site typically delivers measurable improvements within 60–90 days — higher search rankings, more inbound leads, and improved conversion rates from existing traffic. Our clients routinely see first-page local rankings within 90 days and double-digit increases in qualified leads within six months. We back every engagement with real performance reporting, not vanity metrics.',
   },
   {
-    question: 'How long does it take to build a website or app?',
-    answer: 'A standard WordPress marketing site takes 2-4 weeks. A Next.js web application takes 4-8 weeks depending on complexity. Vibe-coded apps can be prototyped in days and production-ready in 1-2 weeks. Mobile apps typically take 6-10 weeks including App Store submission.',
+    question: 'How long until my new site starts generating leads?',
+    answer: 'Most sites begin attracting organic traffic within 30–60 days of launch once indexed by Google and AI search engines. Paid and local search results can come even faster. The AI content pipelines we connect to your site keep it fresh and relevant, which accelerates ranking velocity compared to a static site that never updates itself.',
   },
   {
-    question: 'Do you build websites that work with AI search engines like ChatGPT?',
-    answer: 'Yes — every site we build includes GEO (Generative Engine Optimization) from day one. This means structured data, FAQ schema, llms.txt files, and content architecture designed to be cited by ChatGPT, Perplexity, Gemini, and Google AI Overviews. This is built into every project, not an add-on.',
+    question: 'Will my website show up in AI search results, not just Google?',
+    answer: 'Yes — every site we build is optimized for traditional SEO, Generative Engine Optimization (GEO), and Answer Engine Optimization (AEO). That means structured data, llms.txt, clear semantic markup, and content written to be cited by ChatGPT, Perplexity, Claude, and other AI assistants. Most agencies ignore this entirely. We prioritize it.',
   },
   {
-    question: 'What does hosting cost for a Demand Signals website?',
-    answer: 'Hosting is included in our monthly management fee. We use enterprise-grade infrastructure — Vercel Pro for Next.js sites, DSIG managed WordPress hosting, and Cloudflare CDN for all projects. You never deal with server management, SSL certificates, or uptime monitoring.',
+    question: 'Can you build something custom if my business has unique needs?',
+    answer: 'Custom is our default. Whether you need a booking system, client portal, AI-powered search, multi-location management, or e-commerce with complex inventory rules — we scope and build exactly what your business requires. We don\'t force clients into templates that almost fit.',
+  },
+  {
+    question: 'What ongoing support do you provide after launch?',
+    answer: 'We offer managed services that keep your site performing long after launch — AI-generated content updates, technical SEO maintenance, Core Web Vitals monitoring, security patching, and continuous schema optimization. Think of it less as a website handoff and more as an ongoing intelligence operation working for your business.',
   },
 ]
 
@@ -78,6 +82,7 @@ export default function WebsitesAppsPage() {
       eyebrow="Websites & Apps"
       titleHtml={<><span style={{color:'#52C9A0'}}>AI-Powered Websites & Apps</span> — <span style={{color:'#FF6B2B'}}>Built to Perform.</span></>}
       subtitle="From WordPress marketing sites to full-stack Next.js platforms and mobile apps — every build includes AI features, GEO optimization, and continuous improvement from day one."
+      calloutHtml={<>We don&apos;t build websites that look pretty and sit idle. Every site we ship is <span style={{color:'#52C9A0'}}>actively generating leads</span>, ranking in AI search results, and improving itself — 24 hours a day, 7 days a week.</>}
       services={SERVICES}
       faqs={FAQS}
       breadcrumbName="Websites & Apps"

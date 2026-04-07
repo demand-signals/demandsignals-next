@@ -48,20 +48,24 @@ const SERVICES = [
 
 const FAQS = [
   {
-    question: 'How does AI content generation maintain my brand voice?',
-    answer: 'We train our AI systems on your existing content, brand guidelines, and tone preferences during onboarding. The AI produces drafts that match your voice, and everything goes through an approval workflow — you review and approve in your portal before anything publishes. Over time, the AI learns from your feedback and gets more aligned with your brand.',
+    question: 'How much content can AI actually produce without losing quality?',
+    answer: 'At scale, our AI content systems produce 30–50 pieces of content per month per client — blog posts, social updates, GBP posts, review responses, and email sequences — all reviewed for brand voice and accuracy before publishing. Quality is enforced through editorial guidelines, brand voice profiles, and human review checkpoints. Volume without quality is noise; we do both.',
   },
   {
-    question: 'What does AI content generation replace in terms of cost?',
-    answer: 'A social media manager costs $3,000+/month and produces 3-4 posts per week. A content writer costs $1,500-3,000/month. A reputation management service costs $300-500/month. Our AI content systems handle all three functions for $800-2,500/month depending on volume — better output, lower cost, zero sick days.',
+    question: 'Will AI-generated content hurt my search rankings?',
+    answer: 'Not when it\'s done correctly. Google\'s guidelines target low-quality, spammy content — not AI-assisted content that is accurate, helpful, and well-structured. Our content is researched with real data, written to match your brand voice, reviewed by a human strategist, and optimized with proper headings, schema, and internal linking. It performs as well or better than content produced manually.',
   },
   {
-    question: 'Can AI really write content that ranks in Google?',
-    answer: 'Yes — when structured correctly. The key isn\'t just generating words. Our AI produces content with direct-answer structure, question-format headers, FAQ schema, and citable data — the specific signals that both Google and AI search engines prioritize. Every piece is optimized for both traditional SEO and GEO (Generative Engine Optimization).',
+    question: 'How does AI manage social media without sounding robotic?',
+    answer: 'We build a detailed brand voice profile for every client — tone, vocabulary, topics to lean into, topics to avoid, and examples of content you love. Our AI uses this profile to generate social content that sounds like you, not like a chatbot. A human reviewer approves anything that goes out under your name, so nothing reaches your audience without passing a quality check.',
   },
   {
-    question: 'How much of my time does this require per week?',
-    answer: 'About 10 minutes. You log into your portal, review upcoming posts and content drafts, approve or request changes, and you\'re done. The AI handles research, writing, scheduling, publishing, and performance tracking. Your job is quality control — the AI does everything else.',
+    question: 'What is AI review auto-responding and how does it protect my reputation?',
+    answer: 'Our review management system monitors new reviews across Google, Yelp, Facebook, and other platforms in real time. When a review comes in, an AI drafts a professional, brand-appropriate response within minutes. Positive reviews get personalized thanks. Negative reviews get calm, solution-oriented replies designed to demonstrate responsiveness. A human approves all responses before they post, or you can approve them yourself through a simple dashboard.',
+  },
+  {
+    question: 'How often will content be published across my channels?',
+    answer: 'Publication frequency is set based on your goals and channels. A standard content package typically includes 4–8 blog posts per month, daily or near-daily social media posts, 4 GBP posts per month, and real-time review responses. Higher-tier packages include video scripts, email sequences, and content repurposing across multiple formats from each primary piece.',
   },
 ]
 
@@ -71,6 +75,7 @@ export default function ContentSocialPage() {
       eyebrow="Content & Social"
       titleHtml={<><span style={{color:'#52C9A0'}}>AI Content & Social</span> — <span style={{color:'#FF6B2B'}}>Replace Your Content Team.</span></>}
       subtitle="AI writes your content, manages your social media, responds to your reviews, and publishes your blog — 24/7, at a fraction of the cost of a marketing coordinator."
+      calloutHtml={<>Your content engine <span style={{color:'#52C9A0'}}>never sleeps, never runs dry</span>, and never misses a post — so you stay top of mind with customers while you focus on running your business.</>}
       services={SERVICES}
       faqs={FAQS}
       breadcrumbName="Content & Social"
