@@ -1,15 +1,16 @@
 'use client'
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/motion/ScrollReveal'
 
 const clients = [
-  { name: 'SB Construction', category: 'Contractor', location: 'El Dorado Hills, CA' },
-  { name: 'Hangtown Range', category: 'Firearms Retail', location: 'Placerville, CA' },
-  { name: 'Southside MMA', category: 'MMA Gym', location: 'Phuket, Thailand' },
-  { name: 'Hill McGlynn', category: 'Recruitment', location: 'Northern CA' },
-  { name: 'Sphere Drafting', category: 'Engineering', location: 'Northern CA' },
-  { name: 'Jack Russell Farm Brewery', category: 'Brewery', location: 'Camino, CA' },
+  { name: 'Savia Azul Tequila', category: 'Spirits', location: 'Jalisco, Mexico', image: '/client_savia_azul_tequila_v1a.jpg' },
+  { name: 'SB Construction', category: 'Contractor', location: 'California, USA', image: '/client_sb_construction_v1a.jpg' },
+  { name: 'Dockside Fuel Delivery', category: 'Fuel Delivery', location: 'Michigan, USA', image: '/client_doskside_fuel_v1a.jpg' },
+  { name: 'Jack Russell Brewery', category: 'Brewery', location: 'California, USA', image: '/client_jack_russell_brewery_v1a.jpg' },
+  { name: 'Sphere Drafting', category: 'Engineering', location: 'Melbourne, Australia', image: '/client_sphere_drafting_v1a.jpg' },
+  { name: 'Hill McGlynn Recruiting', category: 'Recruitment', location: 'Melbourne, Australia', image: '/client_hill_mcglynn_recruiting_v1a.jpg' },
 ];
 
 export default function PortfolioGrid() {
@@ -52,21 +53,28 @@ export default function PortfolioGrid() {
                 boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
               }}
             >
-              {/* Placeholder image area */}
+              {/* Client image */}
               <div
                 style={{
                   height: 200,
-                  background: 'var(--dark-2)',
                   position: 'relative',
                   overflow: 'hidden',
+                  background: 'var(--dark-2)',
                 }}
               >
+                <Image
+                  src={client.image}
+                  alt={client.name}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  style={{ objectFit: 'cover' }}
+                />
                 <div
                   style={{
                     position: 'absolute',
                     inset: 0,
                     background:
-                      'linear-gradient(135deg, rgba(104,197,173,0.25) 0%, rgba(29,35,48,0.6) 100%)',
+                      'linear-gradient(to top, rgba(29,35,48,0.55) 0%, transparent 50%)',
                   }}
                 />
                 <div
