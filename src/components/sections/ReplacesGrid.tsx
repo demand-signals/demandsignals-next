@@ -26,7 +26,7 @@ export default function ReplacesGrid() {
             The Window Is Closing
           </span>
           <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, color: '#fff', lineHeight: 1.2, margin: '14px 0 20px' }}>
-            Your Team Just Got a Lot Bigger.
+            We Deliver More Results in Less Time with Smaller Budgets.
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1.1rem', lineHeight: 1.7, maxWidth: 900, margin: '0 auto 16px' }}>
             Right now, <span style={{ color: '#FF6B2B', fontWeight: 700 }}>95% of corporate AI projects are failing</span>. Fortune 500 companies are firing thousands of humans only to burn millions on AI replacements that never ship. Their committees are still debating frameworks while their budgets evaporate.
