@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link';
+import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/motion/ScrollReveal'
 
 const clients = [
   { name: 'SB Construction', category: 'Contractor', location: 'El Dorado Hills, CA' },
@@ -18,19 +21,21 @@ export default function PortfolioGrid() {
       }}
     >
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            Recent Work
-          </span>
-          <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, color: 'var(--dark)', lineHeight: 1.2, margin: '14px 0 16px' }}>
-            We Don&apos;t Talk About Results. We Ship Them.
-          </h2>
-          <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.6, maxWidth: 580, margin: '0 auto' }}>
-            Real businesses we&apos;ve launched in the last 6 months — every one ranking, converting, and running on AI.
-          </p>
-        </div>
+        <ScrollReveal direction="up">
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              Recent Work
+            </span>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, color: 'var(--dark)', lineHeight: 1.2, margin: '14px 0 16px' }}>
+              We Don&apos;t Talk About Results. We Ship Them.
+            </h2>
+            <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.6, maxWidth: 580, margin: '0 auto' }}>
+              Real businesses we&apos;ve launched in the last 6 months — every one ranking, converting, and running on AI.
+            </p>
+          </div>
+        </ScrollReveal>
 
-        <div
+        <StaggerContainer
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
@@ -38,7 +43,7 @@ export default function PortfolioGrid() {
           }}
         >
           {clients.map((client) => (
-            <div
+            <StaggerItem
               key={client.name}
               style={{
                 borderRadius: 12,
@@ -116,26 +121,28 @@ export default function PortfolioGrid() {
                   {client.location}
                 </p>
               </div>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
 
-        <div style={{ textAlign: 'center', marginTop: 44 }}>
-          <Link
-            href="/portfolio"
-            style={{
-              color: 'var(--teal-dark)',
-              fontWeight: 700,
-              fontSize: '1rem',
-              textDecoration: 'none',
-              borderBottom: '2px solid var(--teal)',
-              paddingBottom: 2,
-              transition: 'color var(--t)',
-            }}
-          >
-            View Full Portfolio →
-          </Link>
-        </div>
+        <ScrollReveal direction="up" delay={0.15}>
+          <div style={{ textAlign: 'center', marginTop: 44 }}>
+            <Link
+              href="/portfolio"
+              style={{
+                color: 'var(--teal-dark)',
+                fontWeight: 700,
+                fontSize: '1rem',
+                textDecoration: 'none',
+                borderBottom: '2px solid var(--teal)',
+                paddingBottom: 2,
+                transition: 'color var(--t)',
+              }}
+            >
+              View Full Portfolio →
+            </Link>
+          </div>
+        </ScrollReveal>
       </div>
     </section>
   );

@@ -1,3 +1,7 @@
+'use client'
+
+import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/motion/ScrollReveal'
+
 const industries = [
   { emoji: '🔨', label: 'Contractors & Construction' },
   { emoji: '⚖️', label: 'Legal & Professional Services' },
@@ -20,19 +24,21 @@ export default function IndustriesGrid() {
       }}
     >
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            Industries We Serve
-          </span>
-          <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, color: 'var(--dark)', lineHeight: 1.2, margin: '14px 0 16px' }}>
-            Built for Businesses That Can&apos;t Afford to Be Invisible.
-          </h2>
-          <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.6, maxWidth: 580, margin: '0 auto' }}>
-            Whether you pour concrete or pour lattes — if your customers are local, our AI systems will find them before your competitors do.
-          </p>
-        </div>
+        <ScrollReveal direction="up">
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <span style={{ display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)', padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              Industries We Serve
+            </span>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, color: 'var(--dark)', lineHeight: 1.2, margin: '14px 0 16px' }}>
+              Built for Businesses That Can&apos;t Afford to Be Invisible.
+            </h2>
+            <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.6, maxWidth: 580, margin: '0 auto' }}>
+              Whether you pour concrete or pour lattes — if your customers are local, our AI systems will find them before your competitors do.
+            </p>
+          </div>
+        </ScrollReveal>
 
-        <div
+        <StaggerContainer
           style={{
             display: 'flex',
             flexWrap: 'wrap',
@@ -41,7 +47,7 @@ export default function IndustriesGrid() {
           }}
         >
           {industries.map((item) => (
-            <div
+            <StaggerItem
               key={item.label}
               style={{
                 background: 'var(--light)',
@@ -69,9 +75,9 @@ export default function IndustriesGrid() {
               >
                 {item.label}
               </span>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       </div>
     </section>
   );

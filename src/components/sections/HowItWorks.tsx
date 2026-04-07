@@ -1,4 +1,7 @@
+'use client'
+
 import { BOOKING_URL } from '@/lib/constants'
+import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/motion/ScrollReveal'
 
 const advantages = [
   {
@@ -36,23 +39,25 @@ export default function HowItWorks() {
       }}
     >
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <span style={{
-            display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)',
-            padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700,
-            letterSpacing: '0.1em', textTransform: 'uppercase',
-          }}>
-            Why Demand Signals
-          </span>
-          <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, color: 'var(--dark)', lineHeight: 1.2, margin: '14px 0 16px' }}>
-            This Is All We Do. All Day. Every Day.
-          </h2>
-          <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.65, maxWidth: 640, margin: '0 auto' }}>
-            We don&apos;t dabble in AI marketing — we live it. Our human + AI teams build sites, apps, and demand generation systems faster, better, and cheaper than any traditional agency. And we never stop optimizing.
-          </p>
-        </div>
+        <ScrollReveal direction="up">
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <span style={{
+              display: 'inline-block', background: 'rgba(104,197,173,0.12)', color: 'var(--teal)',
+              padding: '6px 18px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 700,
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+            }}>
+              Why Demand Signals
+            </span>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, color: 'var(--dark)', lineHeight: 1.2, margin: '14px 0 16px' }}>
+              This Is All We Do. All Day. Every Day.
+            </h2>
+            <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.65, maxWidth: 640, margin: '0 auto' }}>
+              We don&apos;t dabble in AI marketing — we live it. Our human + AI teams build sites, apps, and demand generation systems faster, better, and cheaper than any traditional agency. And we never stop optimizing.
+            </p>
+          </div>
+        </ScrollReveal>
 
-        <div
+        <StaggerContainer
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
@@ -61,7 +66,7 @@ export default function HowItWorks() {
           }}
         >
           {advantages.map((item) => (
-            <div
+            <StaggerItem
               key={item.title}
               style={{
                 background: '#fff',
@@ -83,24 +88,26 @@ export default function HowItWorks() {
               <p style={{ fontSize: '0.9rem', color: 'var(--slate)', lineHeight: 1.65, margin: 0 }}>
                 {item.description}
               </p>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
 
-        <div style={{ textAlign: 'center' }}>
-          <a
-            href={BOOKING_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-block', background: '#FF6B2B', color: '#fff',
-              fontWeight: 700, fontSize: '0.95rem', padding: '14px 32px',
-              borderRadius: 100, textDecoration: 'none',
-            }}
-          >
-            See What We Can Build for You →
-          </a>
-        </div>
+        <ScrollReveal direction="up" delay={0.2}>
+          <div style={{ textAlign: 'center' }}>
+            <a
+              href={BOOKING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-block', background: '#FF6B2B', color: '#fff',
+                fontWeight: 700, fontSize: '0.95rem', padding: '14px 32px',
+                borderRadius: 100, textDecoration: 'none',
+              }}
+            >
+              See What We Can Build for You →
+            </a>
+          </div>
+        </ScrollReveal>
       </div>
     </section>
   );

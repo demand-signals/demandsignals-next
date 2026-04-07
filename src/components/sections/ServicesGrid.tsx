@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link'
+import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/motion/ScrollReveal'
 
 const services = [
   {
@@ -47,29 +50,35 @@ export function ServicesGrid() {
   return (
     <section aria-labelledby="services-heading" style={{ background: 'var(--light)', padding: '96px 24px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <h2 id="services-heading" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, color: 'var(--dark)', lineHeight: 1.2, margin: 0 }}>
-            Everything You Need to{' '}
-            <span style={{ color: 'var(--teal)' }}>Dominate Your Market</span>
-          </h2>
-          <p style={{ color: 'var(--slate)', maxWidth: 640, margin: '20px auto 0', fontSize: '1.05rem', lineHeight: 1.65 }}>
-            From brand identity to AI-powered outreach — we build and run the systems that make you impossible to ignore.
-          </p>
-        </div>
+        <ScrollReveal direction="up">
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <h2 id="services-heading" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 800, color: 'var(--dark)', lineHeight: 1.2, margin: 0 }}>
+              Everything You Need to{' '}
+              <span style={{ color: 'var(--teal)' }}>Dominate Your Market</span>
+            </h2>
+            <p style={{ color: 'var(--slate)', maxWidth: 640, margin: '20px auto 0', fontSize: '1.05rem', lineHeight: 1.65 }}>
+              From brand identity to AI-powered outreach — we build and run the systems that make you impossible to ignore.
+            </p>
+          </div>
+        </ScrollReveal>
 
         {/* Top row: 3 cards */}
-        <div className="services-grid-top" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 24 }}>
+        <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 24 }}>
           {services.slice(0, 3).map(s => (
-            <ServiceCard key={s.href} {...s} />
+            <StaggerItem key={s.href}>
+              <ServiceCard {...s} />
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
 
         {/* Bottom row: 2 cards centered */}
-        <div className="services-grid-bottom" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, maxWidth: 800, margin: '0 auto' }}>
+        <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, maxWidth: 800, margin: '0 auto' }}>
           {services.slice(3).map(s => (
-            <ServiceCard key={s.href} {...s} />
+            <StaggerItem key={s.href}>
+              <ServiceCard {...s} />
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       </div>
 
       <style>{`
@@ -93,7 +102,8 @@ function ServiceCard({ icon, color, eyebrow, title, href, desc }: {
       background: '#fff', borderRadius: 16, padding: '32px 28px',
       border: '1.5px solid #edf0f4', display: 'flex', flexDirection: 'column',
       borderBottom: `4px solid ${color}`,
-      transition: 'box-shadow 0.22s, border-color 0.22s',
+      transition: 'box-shadow 0.22s, border-color 0.22s, transform 0.22s',
+      height: '100%',
     }}>
       <div style={{
         width: 48, height: 48, borderRadius: 12,

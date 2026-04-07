@@ -1,5 +1,8 @@
+'use client'
+
 import Link from 'next/link';
 import { BOOKING_URL } from '@/lib/constants';
+import { ScrollReveal } from '@/components/motion/ScrollReveal'
 
 export default function CtaBand() {
   return (
@@ -10,77 +13,79 @@ export default function CtaBand() {
         textAlign: 'center',
       }}
     >
-      <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center' }}>
-        <h2
-          style={{
-            fontSize: 'clamp(1.8rem, 4vw, 2.6rem)',
-            fontWeight: 800,
-            color: '#fff',
-            lineHeight: 1.15,
-            margin: 0,
-          }}
-        >
-          Ready To Be The Signal?
-        </h2>
-        <p
-          style={{
-            fontSize: '1.1rem',
-            color: 'rgba(255,255,255,0.65)',
-            lineHeight: 1.6,
-            margin: 0,
-            maxWidth: 520,
-          }}
-        >
-          Most of your competitors are still running the old playbook. The window is open right now.
-        </p>
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 14,
-            justifyContent: 'center',
-            marginTop: 12,
-          }}
-        >
-          <Link
-            href="/contact"
+      <ScrollReveal direction="up">
+        <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center' }}>
+          <h2
             style={{
-              display: 'inline-block',
-              background: 'var(--dark)',
+              fontSize: 'clamp(1.8rem, 4vw, 2.6rem)',
+              fontWeight: 800,
               color: '#fff',
-              fontWeight: 700,
-              fontSize: '1rem',
-              padding: '15px 32px',
-              borderRadius: 100,
-              textDecoration: 'none',
-              transition: 'background var(--t)',
-              whiteSpace: 'nowrap',
+              lineHeight: 1.15,
+              margin: 0,
             }}
           >
-            Start the Conversation →
-          </Link>
-          <a
-            href={BOOKING_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+            Ready To Be The Signal?
+          </h2>
+          <p
             style={{
-              display: 'inline-block',
-              background: 'rgba(255,255,255,0.15)',
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: '1rem',
-              padding: '15px 32px',
-              borderRadius: 100,
-              textDecoration: 'none',
-              border: '2px solid rgba(255,255,255,0.5)',
-              transition: 'border-color var(--t)',
-              whiteSpace: 'nowrap',
+              fontSize: '1.1rem',
+              color: 'rgba(255,255,255,0.65)',
+              lineHeight: 1.6,
+              margin: 0,
+              maxWidth: 520,
             }}
           >
-            Book a Free 30-Min Call
-          </a>
+            Most of your competitors are still running the old playbook. The window is open right now.
+          </p>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 14,
+              justifyContent: 'center',
+              marginTop: 12,
+            }}
+          >
+            <Link
+              href="/contact"
+              style={{
+                display: 'inline-block',
+                background: 'var(--dark)',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: '1rem',
+                padding: '15px 32px',
+                borderRadius: 100,
+                textDecoration: 'none',
+                transition: 'background var(--t)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Start the Conversation →
+            </Link>
+            <a
+              href={BOOKING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-block',
+                background: 'rgba(255,255,255,0.15)',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: '1rem',
+                padding: '15px 32px',
+                borderRadius: 100,
+                textDecoration: 'none',
+                border: '2px solid rgba(255,255,255,0.5)',
+                transition: 'border-color var(--t)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Book a Free 30-Min Call
+            </a>
+          </div>
         </div>
-      </div>
+      </ScrollReveal>
     </section>
   );
 }
