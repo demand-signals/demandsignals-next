@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { HeroCanvas } from '@/components/sections/HeroCanvas'
-import { StatsBar } from '@/components/sections/StatsBar'
 import { ServicesGrid } from '@/components/sections/ServicesGrid'
+import WebPresenceV1 from '@/components/sections/WebPresenceV1'
 import ReplacesGrid from '@/components/sections/ReplacesGrid'
 import IndustriesGrid from '@/components/sections/IndustriesGrid'
 import HowItWorks from '@/components/sections/HowItWorks'
@@ -78,8 +78,8 @@ export default function HomePage() {
     <>
       <JsonLd data={homeFaqSchema} />
       <HeroCanvas />
-      <StatsBar />
       <ServicesGrid />
+      <WebPresenceV1 />
       <ReplacesGrid />
       <IndustriesGrid />
       <HowItWorks />

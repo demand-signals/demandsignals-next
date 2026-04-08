@@ -52,7 +52,7 @@ export default function HowItWorks() {
               This Is All We Do. All Day. Every Day.
             </h2>
             <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.65, maxWidth: 640, margin: '0 auto' }}>
-              We don&apos;t dabble in AI marketing — we live it. Our human + AI teams build sites, apps, and demand generation systems faster, better, and cheaper than any traditional agency. And we never stop optimizing.
+              We don&apos;t dabble in AI systems — we live them day and night. Our human + AI teams build sites, apps, and demand generation systems faster, better, and cheaper than any traditional agency. And we never stop optimizing.
             </p>
           </div>
         </ScrollReveal>
