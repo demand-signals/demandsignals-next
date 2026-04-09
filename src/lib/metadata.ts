@@ -52,6 +52,7 @@ export function buildMetadata({
         width:  1200,
         height: 630,
         alt:    ogTitle ?? title,
+        type:   'image/png',
       }],
     },
 

@@ -12,6 +12,9 @@ export const metadata: Metadata = {
     description: 'Terms and conditions governing your use of the Demand Signals website and AI-powered demand generation services.',
     url: 'https://demandsignals.co/terms',
     siteName: 'Demand Signals',
+    locale: 'en_US',
+    type: 'website',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Terms of Service — Demand Signals', type: 'image/png' }],
   },
   twitter: {
     card: 'summary',

@@ -54,7 +54,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `Best ${service.searchIntentName} in ${city.name}, ${city.state}`,
       description,
       url,
-      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: `${service.searchIntentName} in ${city.name} — Demand Signals` }],
+      siteName: 'Demand Signals',
+      locale: 'en_US',
+      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: `${service.searchIntentName} in ${city.name} — Demand Signals`, type: 'image/png' }],
     },
     twitter: {
       card: 'summary_large_image',

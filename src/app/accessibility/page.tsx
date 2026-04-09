@@ -12,6 +12,9 @@ export const metadata: Metadata = {
     description: 'Our commitment to digital accessibility and WCAG 2.1 Level AA conformance.',
     url: 'https://demandsignals.co/accessibility',
     siteName: 'Demand Signals',
+    locale: 'en_US',
+    type: 'website',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Accessibility Statement — Demand Signals', type: 'image/png' }],
   },
   twitter: {
     card: 'summary',

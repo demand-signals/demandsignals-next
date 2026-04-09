@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { MDXRemote } from 'next-mdx-remote/rsc'
-import { getAllPosts, getPostBySlug, getPostsByContentCategory, CONTENT_CATEGORY_LABELS, CONTENT_CATEGORY_COLORS } from '@/lib/blog'
+import { getAllPosts, getPostBySlug, getPostsByContentCategory, CONTENT_CATEGORY_LABELS, CONTENT_CATEGORY_COLORS, type ContentCategory } from '@/lib/blog'
 import { BlogInfographic } from '@/components/blog/BlogInfographic'
 import { ParticleCanvas } from '@/components/sections/HeroCanvas'
 import { BlogCategoryNav } from '@/components/blog/BlogCategoryNav'
@@ -22,8 +22,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = getPostBySlug(slug)
   if (!post) return {}
   const url = `https://demandsignals.co/blog/${slug}`
+  const categoryLabel = CONTENT_CATEGORY_LABELS[post.category as ContentCategory] ?? 'Industry Trends'
   return {
-    title: `${post.title} | Demand Signals`,
+    title: post.title,
     description: post.excerpt,
     keywords: post.tags,
     alternates: { canonical: url },
@@ -32,7 +33,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: post.excerpt,
       url,
       type: 'article',
-      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: post.title }],
+      siteName: 'Demand Signals',
+      locale: 'en_US',
+      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: post.title, type: 'image/png' }],
+      publishedTime: new Date(post.date).toISOString(),
+      modifiedTime: new Date(post.date).toISOString(),
+      authors: [post.author],
+      section: categoryLabel,
+      tags: post.tags,
     },
     twitter: {
       card: 'summary_large_image',

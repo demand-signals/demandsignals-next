@@ -12,6 +12,9 @@ export const metadata: Metadata = {
     description: 'How Demand Signals collects, uses, protects, and shares your personal information.',
     url: 'https://demandsignals.co/privacy',
     siteName: 'Demand Signals',
+    locale: 'en_US',
+    type: 'website',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Privacy Policy — Demand Signals', type: 'image/png' }],
   },
   twitter: {
     card: 'summary',
