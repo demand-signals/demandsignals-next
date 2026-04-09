@@ -48,6 +48,7 @@ export const metadata: Metadata = {
       follow: true,
       'max-image-preview': 'large',
       'max-snippet': -1,
+      'max-video-preview': -1,
     },
   },
   openGraph: {
@@ -72,6 +73,7 @@ export const metadata: Metadata = {
     title: 'Demand Signals — AI-Powered Demand Generation',
     description: 'AI agents + AI websites + automated marketing for local businesses.',
     images: ['/og-image.png'],
+    site: '@demandsignals',
     creator: '@demandsignals',
   },
   alternates: {
@@ -94,6 +96,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32" />
         <link rel="icon" type="image/png" href="/favicon-16.png" sizes="16x16" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="alternate" type="application/rss+xml" title="Demand Signals Blog" href="/feed.xml" />
+        <link rel="alternate" type="application/atom+xml" title="Demand Signals Blog" href="/atom.xml" />
+        <link rel="alternate" type="application/feed+json" title="Demand Signals Blog" href="/feed.json" />
+        <link rel="search" type="application/opensearchdescription+xml" title="Demand Signals" href="/opensearch.xml" />
         <JsonLd data={orgSchema} />
         <JsonLd data={websiteSchema} />
       </head>

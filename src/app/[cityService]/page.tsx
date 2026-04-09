@@ -60,6 +60,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: 'summary_large_image',
       title: `Best ${service.searchIntentName} in ${city.name}`,
       description,
+      site: '@demandsignals',
+      creator: '@demandsignals',
     },
     alternates: { canonical: url },
   }

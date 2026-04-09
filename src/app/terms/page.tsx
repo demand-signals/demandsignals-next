@@ -17,6 +17,8 @@ export const metadata: Metadata = {
     card: 'summary',
     title: 'Terms of Service — Demand Signals',
     description: 'Terms and conditions governing your use of the Demand Signals website and AI-powered demand generation services.',
+    site: '@demandsignals',
+    creator: '@demandsignals',
   },
 };
 

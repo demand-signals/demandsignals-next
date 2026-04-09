@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url,
       images: [{ url: '/og-image.png', width: 1200, height: 630, alt: `Demand Signals — ${city.name} AI Marketing` }],
     },
-    twitter: { card: 'summary_large_image', title, description },
+    twitter: { card: 'summary_large_image', title, description, site: '@demandsignals', creator: '@demandsignals' },
     alternates: { canonical: url },
   }
 }

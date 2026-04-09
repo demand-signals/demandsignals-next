@@ -39,6 +39,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: post.title,
       description: post.excerpt,
       images: ['/og-image.png'],
+      site: '@demandsignals',
+      creator: '@demandsignals',
     },
   }
 }

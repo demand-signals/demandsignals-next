@@ -37,7 +37,7 @@ export function buildMetadata({
     /* ── Indexing ─────────────────────────────────────── */
     robots: noIndex
       ? { index: false, follow: false }
-      : { index: true, follow: true, googleBot: { index: true, follow: true } },
+      : { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large' as const, 'max-snippet': -1, 'max-video-preview': -1 } },
 
     /* ── Open Graph (social preview cards) ───────────── */
     openGraph: {
@@ -61,6 +61,7 @@ export function buildMetadata({
       title:       twitterTitle ?? ogTitle ?? title,
       description: twitterDescription ?? ogDescription ?? description,
       images:      [OG_IMAGE],
+      site:        '@demandsignals',
       creator:     '@demandsignals',
     },
 

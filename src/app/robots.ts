@@ -28,6 +28,26 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: 'ClaudeBot',
         allow: '/',
       },
+      {
+        userAgent: 'OAI-SearchBot',
+        allow: '/',
+      },
+      {
+        userAgent: 'Claude-SearchBot',
+        allow: '/',
+      },
+      {
+        userAgent: 'Claude-User',
+        allow: '/',
+      },
+      {
+        userAgent: 'anthropic-ai',
+        allow: '/',
+      },
+      {
+        userAgent: 'Applebot-Extended',
+        allow: '/',
+      },
     ],
     sitemap: 'https://demandsignals.co/sitemap.xml',
     host:    'https://demandsignals.co',

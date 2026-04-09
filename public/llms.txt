@@ -136,8 +136,42 @@ Improved search visibility for high-intent local keywords, increased Google Maps
 **How do I get started?**
 Book a free strategy call or request a free Demand Audit. The audit gives you a clear picture of your current visibility across Google, Maps, AI assistants, and social media, benchmarked against local competitors.
 
+## Content API — Machine-Readable Endpoints
+
+Demand Signals exposes its entire site as machine-readable content for AI agents and LLM crawlers.
+
+### Content Directory
+- [Content API Index (JSON)](https://demandsignals.co/content-index.json): Self-describing directory of all available endpoints
+
+### Blog Feeds
+- [RSS Feed](https://demandsignals.co/feed.xml): RSS 2.0 with WebSub hub
+- [Atom Feed](https://demandsignals.co/atom.xml): Atom 1.0 with WebSub hub
+- [JSON Feed](https://demandsignals.co/feed.json): JSON Feed 1.1 — native to LLM APIs
+
+### Master Files
+- [Master FAQ](https://demandsignals.co/faqs.md): 250+ FAQs from every page, organized by category with cross-links
+- [Services Directory](https://demandsignals.co/feeds/services.md): All 23 services as markdown
+- [Blog Index](https://demandsignals.co/feeds/blog.md): All 142 blog posts as markdown index
+- [Locations Directory](https://demandsignals.co/feeds/locations.md): All 5 counties, 23 cities, 529 LTP pages
+
+### Per-Page Markdown (token-efficient content, supports ?detail=summary|full)
+- Blog posts: `https://demandsignals.co/feeds/blog/{slug}`
+- Services: `https://demandsignals.co/feeds/services/{slug}`
+- Categories: `https://demandsignals.co/feeds/categories/{slug}`
+- Counties: `https://demandsignals.co/feeds/locations/{county}`
+- Cities: `https://demandsignals.co/feeds/locations/{county}/{city}`
+- LTP pages: `https://demandsignals.co/feeds/ltp/{city-service}`
+- Static pages: `/feeds/pages/home`, `/feeds/pages/contact`, `/feeds/pages/portfolio`, `/feeds/pages/team`, `/feeds/pages/terms`, `/feeds/pages/privacy`, `/feeds/pages/accessibility`, `/feeds/pages/tools`, `/feeds/pages/tools/{slug}`, `/feeds/about`
+
+### Discovery Files
+- [llms.txt](https://demandsignals.co/llms.txt): This file — AI discovery overview
+- [llms-full.txt](https://demandsignals.co/llms-full.txt): Complete site content for LLM context
+- [OpenSearch](https://demandsignals.co/opensearch.xml): Browser search integration
+- [Security Contact](https://demandsignals.co/.well-known/security.txt): RFC 9116 security contact
+
 ## Key Facts
 - AI replaces marketing employees and agency retainers
 - Three-layer discovery strategy: SEO + GEO + AEO
 - Based in Northern California, serving clients across the USA, Thailand, Australia and Beyond
 - Built on Next.js, React, WordPress, Claude API, Supabase, Vercel
+- 740+ machine-readable markdown endpoints covering every page on the site

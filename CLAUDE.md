@@ -161,6 +161,33 @@ src/
 │   ├── globals.css                   — CSS vars, Tailwind, base styles
 │   ├── sitemap.ts                    — sitemap generation
 │   ├── robots.ts / manifest.ts
+│   ├── feed.xml/route.ts           — RSS 2.0 blog feed
+│   ├── atom.xml/route.ts           — Atom 1.0 blog feed
+│   ├── feed.json/route.ts          — JSON Feed 1.1
+│   ├── faqs.md/route.ts            — Master FAQ markdown (250+ questions)
+│   ├── content-index.json/route.ts — Content API directory (JSON)
+│   ├── feeds/                       — Content API markdown endpoints
+│   │   ├── about/route.ts          — Company about markdown
+│   │   ├── services.md/route.ts    — Services directory
+│   │   ├── blog.md/route.ts        — Blog index
+│   │   ├── locations.md/route.ts   — Locations directory
+│   │   ├── locations/route.ts      — Locations index
+│   │   ├── locations/[county]/     — County hub markdown (5)
+│   │   ├── locations/[county]/[city]/ — City hub markdown (23)
+│   │   ├── blog/[slug]/route.ts    — Per-blog-post markdown (142)
+│   │   ├── services/[slug]/route.ts — Per-service markdown (23)
+│   │   ├── categories/[slug]/route.ts — Per-category markdown (4)
+│   │   ├── ltp/[cityService]/route.ts — Per-LTP markdown (529)
+│   │   └── pages/                  — Static page markdown
+│   │       ├── home/route.ts
+│   │       ├── contact/route.ts
+│   │       ├── portfolio/route.ts
+│   │       ├── team/route.ts
+│   │       ├── terms/route.ts
+│   │       ├── privacy/route.ts
+│   │       ├── accessibility/route.ts
+│   │       ├── tools/route.ts
+│   │       └── tools/[slug]/route.ts
 │   │
 │   ├── websites-apps/               — CATEGORY: Websites & Apps
 │   │   ├── page.tsx                  — index (CategoryIndexTemplate)
@@ -232,6 +259,8 @@ src/
 │   ├── seo/                          — JsonLd
 │   └── ui/                           — GlassCard, FaqAccordion, ShapeBg, SectionHeading, shadcn
 │
+├── middleware.ts                    — HTTP Link headers for markdown discovery
+│
 ├── content/blog/                     — 141 MDX blog posts
 │
 ├── hooks/
@@ -248,6 +277,9 @@ src/
     ├── city-service-slugs.ts         — LTP slug lookup table (575 entries)
     ├── blog.ts                       — MDX blog loader (141 posts, 7 categories)
     ├── api-security.ts               — Rate limiting, CSRF, input validation
+    ├── feed-utils.ts                 — Feed helpers (ETag, cache, detail levels)
+    ├── all-faqs.ts                   — Centralized FAQ registry (250+ FAQs)
+    ├── category-content.ts           — Category page content data
     └── utils.ts                      — cn() utility
 ```
 
@@ -332,6 +364,18 @@ Both templates auto-generate JSON-LD schema (Service, BreadcrumbList, FAQPage).
 - [x] Site-wide audit: E.164 phone, logo migration, skip link, font-display:swap, aria-hidden, metadata splits
 - [x] Contact + research-reports: server/client component split for proper metadata exports
 - [x] Favicon: removed duplicate src/app/favicon.ico (App Router convention shadowed public/favicon.ico)
+- [x] Content API: RSS 2.0, Atom 1.0, JSON Feed 1.1 blog feeds
+- [x] Content API: Per-page markdown endpoints for every page (740+ endpoints)
+- [x] Content API: Master FAQ aggregation (250+ FAQs with cross-links)
+- [x] Content API: Self-describing content-index.json API directory
+- [x] Content API: HTTP Link headers via middleware for markdown discovery
+- [x] Content API: OpenSearch, security.txt, WebSub hub references
+- [x] Content API: ETags + Last-Modified on all feed endpoints
+- [x] Content API: Progressive detail levels (?detail=summary|full)
+- [x] Meta tags: max-video-preview:-1, twitter:site added site-wide
+- [x] Robots: 5 additional AI bot user-agents allowlisted
+- [x] Schema: Enhanced org schema with knowsAbout (15), hasOfferCatalog (23 services), expanded areaServed
+- [x] dsig-rank-system.md: Complete ranking system methodology document
 
 ---
 
@@ -464,3 +508,61 @@ Demand Signals is an AI-first demand generation agency. The positioning:
 - Competitive advantage: three-layer discovery strategy (SEO + GEO + AEO), domain loop architecture, llms.txt, continuous AI optimization
 
 The site itself is a demo of what DSIG delivers — it should look, perform, and rank like the best example of our own work.
+
+---
+
+## 17. Content API & Feed Infrastructure
+
+### Overview
+Every page on the site has a machine-readable markdown version accessible via HTTP. 740+ content endpoints serve token-efficient markdown to AI crawlers while HTML pages remain canonical for Google.
+
+### Key Endpoints
+| Endpoint | Purpose |
+|----------|---------|
+| `/feed.xml` | RSS 2.0 (WebSub-enabled) |
+| `/atom.xml` | Atom 1.0 (WebSub-enabled) |
+| `/feed.json` | JSON Feed 1.1 |
+| `/faqs.md` | Master FAQ (250+ questions) |
+| `/content-index.json` | Self-describing API directory |
+| `/feeds/services.md` | Services directory |
+| `/feeds/blog.md` | Blog index |
+| `/feeds/locations.md` | Locations directory |
+
+### Dynamic Endpoints
+| Pattern | Count | Source |
+|---------|-------|--------|
+| `/feeds/blog/{slug}` | 142 | blog.ts getAllPosts() |
+| `/feeds/services/{slug}` | 23 | services.ts SERVICES |
+| `/feeds/categories/{slug}` | 4 | category-content.ts |
+| `/feeds/locations/{county}` | 5 | counties.ts |
+| `/feeds/locations/{county}/{city}` | 23 | cities.ts |
+| `/feeds/ltp/{city-service}` | 529 | city-service-slugs.ts |
+| `/feeds/pages/*` | 12 | Hardcoded content |
+
+### Duplicate Content Prevention
+- All feed/markdown endpoints return `X-Robots-Tag: noindex, follow`
+- Not included in sitemap.xml
+- Each endpoint links to canonical HTML version
+- Google only indexes HTML; AI crawlers get markdown
+
+### Content Operations Checklist
+
+**Adding a new blog post:**
+- Drop MDX in `src/content/blog/` → auto-appears in all feeds/indexes
+- Run `npm run ping-hub` to notify WebSub subscribers
+- Update llms-full.txt if high-value post
+
+**Adding a new service:**
+- Add to SERVICES array in `services.ts` → auto-populates feeds
+- Add to `category-content.ts` category listing
+- Update middleware.ts SERVICE_SLUGS
+- Update llms.txt + llms-full.txt
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `src/lib/feed-utils.ts` | ETag, cache headers, detail level parsing |
+| `src/lib/all-faqs.ts` | Centralized FAQ registry (250+ FAQs) |
+| `src/lib/category-content.ts` | Category page content data |
+| `src/middleware.ts` | HTTP Link headers for markdown discovery |
+| `dsig-rank-system.md` | Full ranking system methodology |

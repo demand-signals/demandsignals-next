@@ -515,3 +515,51 @@ A: No. We build every system to be managed by non-technical business owners. Das
 
 **Q: What makes a private LLM different from just using ChatGPT?**
 A: A private LLM runs on your infrastructure with your data, your customizations, and your security controls. It can be trained or fine-tuned on your company's specific knowledge — products, pricing, policies, past conversations — so it answers questions the way your business would. Nothing leaves your environment.
+
+---
+
+## Content API — Machine-Readable Endpoints
+
+Demand Signals exposes its entire site as machine-readable content for AI agents and LLM crawlers. Every page has a token-efficient markdown version accessible via HTTP.
+
+### Content Directory
+- **Content API Index:** https://demandsignals.co/content-index.json — Self-describing JSON directory of all endpoints
+
+### Blog Feeds (3 formats)
+- **RSS 2.0:** https://demandsignals.co/feed.xml (with WebSub hub for real-time push)
+- **Atom 1.0:** https://demandsignals.co/atom.xml (with WebSub hub)
+- **JSON Feed 1.1:** https://demandsignals.co/feed.json (native to LLM APIs)
+
+### Master Aggregation Files
+- **Master FAQ (250+ questions):** https://demandsignals.co/faqs.md
+- **Services Directory (23 services):** https://demandsignals.co/feeds/services.md
+- **Blog Index (142 posts):** https://demandsignals.co/feeds/blog.md
+- **Locations Directory (5 counties, 23 cities, 529 LTP pages):** https://demandsignals.co/feeds/locations.md
+
+### Per-Page Markdown Endpoints
+All support `?detail=summary` (compact, ~100 tokens) and `?detail=full` (complete content).
+
+- **Blog posts (142):** https://demandsignals.co/feeds/blog/{slug}
+- **Services (23):** https://demandsignals.co/feeds/services/{slug}
+- **Categories (4):** https://demandsignals.co/feeds/categories/{slug}
+- **About:** https://demandsignals.co/feeds/about
+- **Counties (5):** https://demandsignals.co/feeds/locations/{county}
+- **Cities (23):** https://demandsignals.co/feeds/locations/{county}/{city}
+- **Long-tail pages (529):** https://demandsignals.co/feeds/ltp/{city-service}
+- **Homepage:** https://demandsignals.co/feeds/pages/home
+- **Contact:** https://demandsignals.co/feeds/pages/contact
+- **Portfolio:** https://demandsignals.co/feeds/pages/portfolio
+- **Team:** https://demandsignals.co/feeds/pages/team
+- **Tools index:** https://demandsignals.co/feeds/pages/tools
+- **Individual tools (4):** https://demandsignals.co/feeds/pages/tools/{slug}
+- **Terms:** https://demandsignals.co/feeds/pages/terms
+- **Privacy:** https://demandsignals.co/feeds/pages/privacy
+- **Accessibility:** https://demandsignals.co/feeds/pages/accessibility
+
+### HTTP Discovery
+- HTML pages include `Link: <markdown-url>; rel=alternate; type=text/markdown` headers
+- Feed discovery via `<link rel="alternate">` in HTML `<head>`
+- OpenSearch: https://demandsignals.co/opensearch.xml
+- Security contact (RFC 9116): https://demandsignals.co/.well-known/security.txt
+
+**Total content endpoints: 740+** covering every page on the site.

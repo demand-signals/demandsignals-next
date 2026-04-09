@@ -17,6 +17,8 @@ export const metadata: Metadata = {
     card: 'summary',
     title: 'Accessibility Statement — Demand Signals',
     description: 'Our commitment to digital accessibility and WCAG 2.1 Level AA conformance.',
+    site: '@demandsignals',
+    creator: '@demandsignals',
   },
 };
 

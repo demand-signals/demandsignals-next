@@ -17,6 +17,8 @@ export const metadata: Metadata = {
     card: 'summary',
     title: 'Privacy Policy — Demand Signals',
     description: 'How Demand Signals collects, uses, protects, and shares your personal information.',
+    site: '@demandsignals',
+    creator: '@demandsignals',
   },
 };
 
