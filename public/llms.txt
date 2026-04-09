@@ -42,12 +42,13 @@
   - Tiffany, Chief Technology Officer — Former VP of Engineering with deep expertise in LLM orchestration, retrieval-augmented generation, and AI infrastructure.
   - Sarah, Chief Operating Officer — Growth marketing strategist with experience leading operations at a top-50 US digital agency.
 - [Portfolio](https://demandsignals.co/portfolio): Client projects across construction, legal, wellness, restaurant, brewery, SaaS, recruitment, and more.
-- [Blog](https://demandsignals.co/blog): 141 articles on AI marketing, demand generation, GEO optimization, and AI agent deployment. New articles published every 1-2 days.
+- [Blog](https://demandsignals.co/blog): 142 articles on AI marketing, demand generation, GEO optimization, and AI agent deployment. New articles published every 1-2 days.
 - [Service Locations](https://demandsignals.co/locations): El Dorado Hills, Folsom, Sacramento, Placerville, Roseville, Rocklin, Granite Bay, Auburn, Citrus Heights, Cameron Park, South Lake Tahoe.
 
-## Blog — Recent Articles (141 total, published every 1-2 days)
+## Blog — Recent Articles (142 total, published every 1-2 days)
 
 ### AI & Agent Strategy
+- [Anthropic's Managed Agents: Why Harness Design Just Got a Lot More Interesting](https://demandsignals.co/blog/anthropic-managed-agents): Anthropic's brain/hands/session architecture for long-horizon agents. Harness-as-cattle, credentials-out-of-sandbox, and session-as-external-memory patterns.
 - [Inside an AI Agent Farm: Running 19 Specialized Agents Day-to-Day](https://demandsignals.co/blog/ai-agent-farm-inside-look): Architecture, costs, and lessons from operating 19 named AI agents at Demand Signals.
 - [Why AI Agents Are Replacing Your Marketing Team](https://demandsignals.co/blog/ai-agents-replacing-marketing-team): Task-by-task breakdown of how AI agents are replacing review responses, social posts, blog drafts, SEO audits, and follow-up emails.
 - [AI Agent Swarms vs Single AI Tools](https://demandsignals.co/blog/ai-agent-swarms-vs-single-ai-tools): Why orchestrated agent systems beat point solutions for business processes.

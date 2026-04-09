@@ -1,0 +1,98 @@
+---
+title: "Anthropic's Managed Agents: Why Harness Design Just Got a Lot More Interesting"
+date: "2026-04-09"
+author: "Hunter"
+excerpt: "Anthropic just published the architecture behind their Managed Agents service — a hosted platform for long-horizon agent work. We've been running agents at scale for clients for two years. Here's what caught our attention."
+tags: ["AI Agents", "Anthropic", "Agent Infrastructure", "AI News"]
+category: "ai-engineering"
+serviceCategories: ["ai-services"]
+readTime: "7 min read"
+source: "https://www.anthropic.com/engineering/managed-agents"
+featured: true
+infographic:
+  headline: "Managed Agents: Brain-Hands-Session Architecture"
+  type: "stats"
+  stats:
+    - { label: "p50 TTFT Improvement", value: "~60%" }
+    - { label: "p95 TTFT Improvement", value: ">90%" }
+    - { label: "Architecture Layers", value: "3" }
+    - { label: "Key Pattern", value: "Cattle" }
+---
+
+Anthropic published an engineering deep-dive this week on [Managed Agents](https://www.anthropic.com/engineering/managed-agents) — their hosted platform for running long-horizon agent work. It's written for developers, but the architectural thinking behind it has real implications for anyone building or buying AI agent systems.
+
+We've been deploying agents for demand generation clients for a couple of years now — content agents, outreach agents, research agents, SEO monitors. So when Anthropic's team writes about what breaks at scale and how they fixed it, we read carefully.
+
+Here's what stood out.
+
+## The Problem They Solved: Harnesses Go Stale
+
+The core insight in the post is deceptively simple: every agent harness encodes assumptions about what the model *can't* do on its own. The problem is that models keep getting smarter, so those assumptions expire — and the harness becomes dead weight, or worse, a constraint that limits performance.
+
+Their example is sharp. They found that Claude Sonnet 4.5 would wrap up tasks prematurely as it sensed its context limit approaching — a behavior they called "context anxiety." They patched it in the harness with context resets. Then they ran the same harness on Claude Opus 4.5 and found the behavior was gone. The model had outgrown the fix. The resets were now just friction.
+
+This is a real problem we've hit. Guardrails you build for one model become limitations for the next. Managed Agents is their structural answer: design the interfaces to outlast the implementations behind them.
+
+![Managed Agents architecture overview — session, harness, and sandbox as separate virtualized components](/images/blog/managed-agents-architecture.png)
+*Source: Anthropic Engineering — [Scaling Managed Agents](https://www.anthropic.com/engineering/managed-agents)*
+
+## Decoupling the Brain from the Hands
+
+The architectural move they made is clean: separate the **brain** (Claude + the harness loop) from the **hands** (sandboxes, tools, execution environments) and the **session** (the durable log of everything that happened).
+
+Previously, all three lived in one container. That made the container a pet — something you had to nurse when it failed. When a container went down, you lost session state, you lost context, and debugging meant opening a shell inside an environment that also held user data.
+
+By pulling them apart:
+
+- If a sandbox container dies, the harness catches it as a tool-call error and provisions a new one. No state loss.
+- If the harness itself crashes, a new one can boot, call `wake(sessionId)`, replay the event log with `getSession()`, and resume exactly where it stopped.
+- Security improves because credentials never touch the sandbox where Claude's generated code runs. Auth tokens are held in a vault; the sandbox calls out through a proxy that fetches credentials without ever exposing them to the agent.
+
+![Brain/hands decoupling diagram — harness outside the container, sandbox provisioned on demand](/images/blog/managed-agents-decoupling.png)
+*Source: Anthropic Engineering — [Scaling Managed Agents](https://www.anthropic.com/engineering/managed-agents)*
+
+For us, the sandbox-as-cattle framing is the most operationally useful part. We've had similar "nursed containers" problems in our own stack. The pattern they describe — `provision({resources})` on demand, `execute(name, input) → string` as the universal interface — is something we're evaluating for our own agent infrastructure.
+
+## The Session as External Memory
+
+The other piece we found genuinely interesting is how they handle context beyond the model's context window.
+
+Long-horizon tasks routinely exceed what fits in a single context window. The usual approaches — compaction, trimming, summarization — all involve irreversible decisions about what to throw away. Get it wrong and the agent loses context it needed three steps later.
+
+Their solution: the session log is durable and lives *outside* the context window. The interface `getEvents()` lets the harness pull positional slices of the event stream — rewinding to a specific moment, replaying lead-up context before an action, or picking up from the last checkpoint. The harness can transform what it pulls before passing it to Claude, enabling smart context engineering without destroying the underlying record.
+
+![Session vs context window — durable event log outside Claude's context window](/images/blog/managed-agents-session.png)
+*Source: Anthropic Engineering — [Scaling Managed Agents](https://www.anthropic.com/engineering/managed-agents)*
+
+This is a meaningful improvement over the compaction approaches we've been using. Recoverable context means you can tune context engineering per-model without losing historical fidelity.
+
+## Scaling to Many Brains, Many Hands
+
+One concrete outcome they share: p50 time-to-first-token dropped roughly 60%, and p95 dropped over 90% after the decoupling.
+
+The reason is structural. When the brain lived in the container, every session paid the full container setup cost upfront — even sessions that never needed a sandbox. Once the brain is stateless and sandboxes are provisioned on demand via tool call, inference starts immediately. Container overhead only materializes if the task actually needs it.
+
+The same architecture also unlocks multi-agent patterns cleanly. Each hand is just `execute(name, input) → string` — a name and input go in, a string comes out. The harness doesn't know whether the sandbox is a container, a phone, or a Pokémon emulator (their words). Brains can pass hands to one another.
+
+![Many brains, many hands — stateless harnesses connecting to any sandbox via unified tool interface](/images/blog/managed-agents-many-brains.png)
+*Source: Anthropic Engineering — [Scaling Managed Agents](https://www.anthropic.com/engineering/managed-agents)*
+
+## Our Take
+
+Agents are not new to us. We've been running content pipelines, outreach sequences, research loops, and SEO monitors at scale across client accounts. What Anthropic published here isn't a new concept — it's a mature architecture for a problem we've been solving with duct tape and strong opinions.
+
+The specific contributions worth noting:
+
+**Harness-as-cattle** is a cleaner mental model than what most teams are running. If your harness can't be stateless, you have a reliability problem waiting to happen.
+
+**Credentials-out-of-sandbox** is security hygiene that a lot of DIY agent stacks skip. Putting OAuth tokens in a vault with a proxy layer is the right pattern.
+
+**Session-as-external-memory** is the most novel piece architecturally. Recoverable, queryable context history is a better primitive than compaction for long-running work.
+
+For clients we're onboarding into agent infrastructure, this architecture is consistent with what we're building toward. For teams that are earlier in their AI journey, Anthropic's hosted Managed Agents service is a reasonable place to start — it handles the hard infrastructure problems so you can focus on what the agent actually does.
+
+The docs are at [platform.claude.com/docs/en/managed-agents/overview](https://platform.claude.com/docs/en/managed-agents/overview). Worth reading if you're building anything long-horizon.
+
+---
+
+*Demand Signals builds and operates AI agent systems for demand generation — content, outreach, SEO, and research automation. If you're evaluating agent infrastructure for your business, [let's talk](/contact).*
