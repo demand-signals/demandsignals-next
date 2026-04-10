@@ -124,7 +124,7 @@ This is not science fiction. The technology is mature, the models are capable, a
 
 **The core stack:**
 
-- **Model:** Open-weight LLMs (Llama 3, Mistral, Qwen, DeepSeek) fine-tuned on legal corpora. These run locally without any external API calls.
+- **Model:** Open-weight LLMs (Llama 3, Gemma 4, Mistral, Qwen, DeepSeek) fine-tuned on legal corpora. These run locally without any external API calls.
 - **Hardware:** A single enterprise GPU server (NVIDIA A100 or H100) handles a model serving 10-50 concurrent attorneys. Total hardware cost: $30K-80K — a one-time capital expense.
 - **Interface:** Internal web application accessible only on firm VPN or local network. Looks and feels like ChatGPT. Attorneys see no difference in daily workflow.
 - **Document pipeline:** Case files, briefs, contracts, and correspondence indexed locally for retrieval-augmented generation (RAG). The model searches your firm's documents to inform its responses — without ever sending those documents anywhere.
@@ -155,6 +155,14 @@ Our deployments include:
 - **Ongoing support** — model updates, performance tuning, user training
 
 We also deploy [AI agent infrastructure](/ai-services/ai-agent-infrastructure) for firms that want to automate document review, contract analysis, due diligence, and research workflows — all running on-premise, all privilege-safe.
+
+**For solo practitioners and small firms**, the barrier to entry is lower than most attorneys expect:
+
+- **Single attorney practice:** A complete private LLM deployment — hardware, model, document onboarding, RAG pipeline, secure interface, and networking — runs **$8,500 to $15,000** all-in. That's a one-time investment. No monthly API fees, no per-query pricing, no third-party data exposure. Less than most firms spend on a single expert witness.
+
+- **Small firm (3–10 attorneys):** A shared on-premise system serving your full team — with role-based access, practice-area document indexing, internal agent workflows, and secure remote access via VPN — runs **$25,000 to $50,000** depending on model size and concurrent usage requirements. That's the cost of a junior paralegal for six months, and it operates 24/7 without privilege risk.
+
+Both tiers include full onboarding of your existing document corpus, deployment of internal research and drafting agents, physical hardware installation, internal network configuration, and secure internet access for remote work — all within your firm's security perimeter.
 
 Post-Heppner, this is not a technology preference. It is a risk management decision.
 
