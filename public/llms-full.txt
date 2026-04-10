@@ -42,7 +42,7 @@
   - Tiffany, Chief Technology Officer — Former VP of Engineering with deep expertise in LLM orchestration, retrieval-augmented generation, and AI infrastructure.
   - Sarah, Chief Operating Officer — Growth marketing strategist with experience leading operations at a top-50 US digital agency.
 - [Portfolio](https://demandsignals.co/portfolio): Client projects across construction, legal, wellness, restaurant, brewery, SaaS, recruitment, and more.
-- [Blog](https://demandsignals.co/blog): 142 articles on AI marketing, demand generation, GEO optimization, and AI agent deployment. New articles published every 1-2 days.
+- [Blog](https://demandsignals.co/blog): 143 articles on AI marketing, demand generation, GEO optimization, and AI agent deployment. New articles published every 1-2 days.
 - [Service Locations](https://demandsignals.co/locations): El Dorado Hills, Folsom, Sacramento, Placerville, Roseville, Rocklin, Granite Bay, Auburn, Citrus Heights, Cameron Park, South Lake Tahoe.
 
 ## Blog — Recent Articles (142 total, published every 1-2 days)
@@ -146,10 +146,11 @@ Book a free strategy call or request a free Demand Audit. The audit gives you a 
 
 ## Complete Blog Archive
 
-All 142 articles published by Demand Signals, organized by category (newest first within each category).
+All 143 articles published by Demand Signals, organized by category (newest first within each category).
 
-### AI Engineering (34 articles)
+### AI Engineering (35 articles)
 
+- [Your AI Just Waived Attorney-Client Privilege — And You Might Not Even Know It](https://demandsignals.co/blog/heppner-attorney-client-privilege-ai-malpractice) — Published: 2026-04-10
 - [Anthropic's Managed Agents: Why Harness Design Just Got a Lot More Interesting](https://demandsignals.co/blog/anthropic-managed-agents) — Published: 2026-04-09
 - [Claude Mythos: Anthropic's 10-Trillion-Parameter Model and the New AI Arms Race](https://demandsignals.co/blog/anthropic-mythos-10-trillion-parameters) — Published: 2026-04-06
 - [Claude 5 on the Horizon: What to Expect from Anthropic's Next Frontier Model](https://demandsignals.co/blog/claude-5-speculation-what-to-expect-q2-2026) — Published: 2026-04-05

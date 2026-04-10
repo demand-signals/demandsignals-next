@@ -1,0 +1,180 @@
+---
+title: "Your AI Just Waived Attorney-Client Privilege — And You Might Not Even Know It"
+date: "2026-04-10"
+author: "Hunter"
+excerpt: "A federal court just ruled that anything entered into a public AI tool is discoverable and not privileged. If your firm uses ChatGPT, Claude, Gemini, or Copilot on cloud APIs — even through 'legal AI' platforms — you have an active malpractice attack surface. Here's why on-premise private LLMs are the only architecture that guarantees privilege preservation."
+tags: ["Attorney-Client Privilege", "Private LLM", "AI Malpractice", "Legal AI", "Heppner", "On-Premise AI"]
+category: "ai-engineering"
+serviceCategories: ["ai-services"]
+readTime: "9 min read"
+source: "https://harvardlawreview.org/blog/2026/03/united-states-v-heppner/"
+featured: true
+infographic:
+  headline: "Heppner: The Privilege Waiver Ruling Every Firm Must Know"
+  type: "stats"
+  stats:
+    - { label: "Ruling Date", value: "Feb 2026" }
+    - { label: "Privilege Protected", value: "0%" }
+    - { label: "Attack Surface", value: "Every Prompt" }
+    - { label: "Only Safe Architecture", value: "On-Prem" }
+---
+
+On February 10, 2026, Judge Jed S. Rakoff of the Southern District of New York issued a ruling that should keep every managing partner in America awake tonight.
+
+In [*United States v. Heppner*](https://www.justice.gov/usao-sdny/us-v-heppner-25-cr-503) (25-cr-503), the court held that **documents generated using a public AI tool are not protected by attorney-client privilege or the work product doctrine**. The defendant — a financial services executive charged with securities fraud — had used Anthropic's Claude to research legal strategy after retaining counsel. The government subpoenaed those AI conversations. The defense moved to quash.
+
+They lost. On every count.
+
+This is not a narrow ruling about a single defendant's poor judgment. This is a structural precedent that exposes every law firm in the country that touches a cloud-based AI model to discoverable communications, privilege waiver, and — we'll say it plainly — **malpractice liability**.
+
+## What the Court Actually Held
+
+Judge Rakoff's [written memorandum](https://harvardlawreview.org/blog/2026/03/united-states-v-heppner/) (issued February 17, 2026) dismantled the privilege claim on three independent grounds:
+
+**1. No attorney-client relationship exists with an AI.**
+Claude is not an attorney. It expressly disclaims providing legal advice and has no fiduciary obligation. Communications with it are not communications with counsel — period.
+
+**2. No reasonable expectation of confidentiality.**
+Anthropic's privacy policy permits data collection, model training on user inputs, and disclosure to "governmental regulatory authorities." The court held that feeding information into a platform with these terms is equivalent to sharing it with any third party. Privilege is destroyed.
+
+**3. Work product doctrine does not apply.**
+Even if the materials were prepared in anticipation of litigation, they were not prepared by or at the direction of an attorney. Heppner consulted the AI on his own initiative. The [Kovel doctrine](https://www.lawfaremedia.org/article/ai-and-privilege-after-united-states-v.-heppner) — which extends privilege to third-party experts working under counsel's direction — was inapplicable because counsel never directed the AI use.
+
+Three independent grounds. Any one of them is sufficient. Together, they create an airtight precedent.
+
+## Why This Reaches Far Beyond One Defendant
+
+If you're a partner reading this and thinking "my attorneys would never do something that reckless" — stop. The ruling's logic extends well beyond a defendant using a consumer chatbot on his own.
+
+**The privacy policy is the kill shot.** Rakoff didn't just say *this particular use* lacked confidentiality. He said the *platform's terms of service* destroyed any reasonable expectation of confidentiality. Read that again.
+
+Now look at the privacy policies of the tools your firm actually uses:
+
+- **OpenAI (ChatGPT, GPT-4):** Retains inputs for abuse monitoring. Reserves the right to share data with law enforcement. Enterprise tier has different terms — but [the API tier that most legal tech vendors use](https://www.insideprivacy.com/artificial-intelligence/ai-and-legal-privilege-key-takeaways-from-us-v-heppner/) may not.
+- **Anthropic (Claude):** The exact platform in the Heppner ruling. Consumer and Pro tiers permit training and government disclosure.
+- **Google (Gemini):** Consumer tier feeds data into model improvement. Enterprise terms differ but involve Google Cloud data processing.
+- **Microsoft (Copilot):** Consumer Copilot processes data through Microsoft's cloud. Enterprise Copilot has different terms — but the boundary between them is a licensing agreement, not an air gap.
+
+Under Rakoff's reasoning, **any platform whose terms permit data collection, training, or government disclosure fails the confidentiality test**. The privilege waiver doesn't depend on whether data *was* disclosed. It depends on whether the terms *permit* disclosure.
+
+## The Hidden Risk: "Legal AI" Platforms That Phone Home
+
+Here is where firms are most exposed and least aware.
+
+A growing ecosystem of legal AI tools — contract analyzers, research assistants, brief drafters, deposition prep tools — market themselves as purpose-built for law firms. They use words like "secure," "enterprise-grade," and "SOC 2 compliant."
+
+But look under the hood. **The vast majority of these platforms are API wrappers around the same public foundation models.** Your privileged case facts go into a prompt. That prompt hits OpenAI's API, or Anthropic's API, or Google's API. The response comes back through the vendor's interface.
+
+The vendor's SOC 2 certification covers *their* infrastructure — the wrapper. It says nothing about what happens once the data reaches the model provider's servers. And the model provider's terms — the ones Judge Rakoff just used to destroy privilege — govern that leg of the journey.
+
+**This is the attack surface most firms don't see:**
+
+1. Attorney drafts a motion using a "legal AI" tool
+2. The tool sends the prompt — containing case facts, legal strategy, client communications — to a cloud API
+3. The API provider's terms permit data retention, training, and government disclosure
+4. Under Heppner, privilege over those communications is waived
+5. Opposing counsel subpoenas the AI provider's records
+6. Everything is discoverable
+
+The attorney didn't use "ChatGPT." The attorney used an approved, enterprise legal tool. But the privileged data left the firm's control and entered a third-party system whose terms don't guarantee confidentiality.
+
+That is a malpractice claim.
+
+## The Malpractice Exposure Is Real
+
+Let's be direct about what Heppner creates for the defense bar.
+
+ABA Model Rule 1.6 requires attorneys to make "reasonable efforts to prevent the inadvertent or unauthorized disclosure of, or unauthorized access to, information relating to the representation of a client." [ABA Formal Ethics Opinion 477R](https://www.joneswalker.com/en/insights/blogs/ai-law-blog/your-ai-conversations-are-not-privileged-what-a-new-sdny-ruling-means-for-every.html) specifically addresses cloud services and requires attorneys to understand how client data is stored, transmitted, and accessed.
+
+Post-Heppner, the standard is clear: if you route client data through a platform whose terms permit disclosure or training, you have not made "reasonable efforts" to prevent disclosure. You have affirmatively chosen a tool that — by its own terms — reserves the right to disclose.
+
+The malpractice theory writes itself:
+
+- **Duty:** Attorney owed duty of confidentiality under Rule 1.6 and engagement letter
+- **Breach:** Attorney used AI platform whose terms permit data disclosure and model training
+- **Causation:** Privileged communications were discoverable because privilege was waived by third-party disclosure under Heppner
+- **Damages:** Client suffered adverse outcome because opposing counsel obtained privileged strategy materials
+
+This is not a theoretical risk. [Husch Blackwell's analysis](https://www.huschblackwell.com/newsandinsights/heppner-v-claude-the-first-privilege-waiver-by-ai-rulingwhat-lawyers-and-clients-must-know) recommends that firms now ask clients at intake whether they've discussed their legal matter with any AI tool — and revisit that question throughout representation. Discovery protocols should include AI usage questions in depositions.
+
+If firms are already preparing to discover *opposing counsel's* AI usage, how long before they discover *your firm's* AI usage?
+
+## The Only Architecture That Guarantees Privilege
+
+There is exactly one AI architecture that eliminates Heppner exposure entirely: **on-premise private LLMs that never transmit data to any third party.**
+
+Not "enterprise cloud" with better terms of service. Not "private instances" on someone else's servers. Not API calls with a BAA. **On-premise. On your hardware. On your network. Under your physical control.**
+
+Here's why the distinction matters:
+
+| Architecture | Data Leaves Your Control? | Third-Party Terms Apply? | Privilege Risk Under Heppner |
+|---|---|---|---|
+| Public AI (ChatGPT, Claude, Gemini) | Yes — to model provider | Yes — consumer ToS | **Total waiver** |
+| "Legal AI" SaaS (API wrappers) | Yes — to vendor AND model provider | Yes — vendor + provider ToS | **High — privilege waiver likely** |
+| Enterprise cloud AI (Azure OpenAI, etc.) | Yes — to cloud provider | Yes — enterprise agreement | **Moderate — depends on specific terms** |
+| **On-premise private LLM** | **No** | **No** | **Zero** |
+
+An on-premise LLM runs on hardware your firm controls. Client data enters the model and never leaves. There is no third-party privacy policy because there is no third party. There is no API call to subpoena because no API call was made. There are no terms of service permitting disclosure because the software runs on your iron.
+
+Under Heppner's framework, this is the only architecture where a reasonable expectation of confidentiality is inarguable.
+
+## What an On-Premise Legal AI Stack Looks Like
+
+This is not science fiction. The technology is mature, the models are capable, and the hardware costs less than a first-year associate's salary.
+
+**The core stack:**
+
+- **Model:** Open-weight LLMs (Llama 3, Mistral, Qwen, DeepSeek) fine-tuned on legal corpora. These run locally without any external API calls.
+- **Hardware:** A single enterprise GPU server (NVIDIA A100 or H100) handles a model serving 10-50 concurrent attorneys. Total hardware cost: $30K-80K — a one-time capital expense.
+- **Interface:** Internal web application accessible only on firm VPN or local network. Looks and feels like ChatGPT. Attorneys see no difference in daily workflow.
+- **Document pipeline:** Case files, briefs, contracts, and correspondence indexed locally for retrieval-augmented generation (RAG). The model searches your firm's documents to inform its responses — without ever sending those documents anywhere.
+- **Audit trail:** Every prompt and response logged to firm-controlled storage. Full audit trail for ethics compliance. Discoverable only through the firm's own e-discovery obligations — not through third-party subpoena.
+- **Updates:** Model weights updated periodically from open-source releases. No ongoing API subscription. No per-token pricing. No usage metering by a third party.
+
+**What attorneys get:**
+
+- Legal research assistance with zero privilege exposure
+- Contract review and clause extraction on firm hardware
+- Brief drafting with case law retrieval from firm document stores
+- Deposition preparation with confidential fact pattern analysis
+- Client communication summarization without third-party disclosure
+
+Everything a cloud AI tool does — running entirely within the firm's security perimeter.
+
+## What We Build
+
+Demand Signals deploys [private LLM infrastructure](/ai-services/private-llms) for professional services firms — law firms, accounting firms, financial advisors, and healthcare organizations — where confidentiality is not optional.
+
+Our deployments include:
+
+- **Hardware specification and procurement** — right-sized GPU servers for your firm's concurrent usage
+- **Model selection and fine-tuning** — legal-domain models trained on your jurisdiction's case law, your firm's document templates, and your practice areas
+- **RAG pipeline** — your firm's document corpus indexed and searchable by the model, running on your servers
+- **User interface** — clean, familiar chat interface accessible to every attorney, no command line required
+- **Security hardening** — network isolation, access controls, audit logging, encryption at rest
+- **Ongoing support** — model updates, performance tuning, user training
+
+We also deploy [AI agent infrastructure](/ai-services/ai-agent-infrastructure) for firms that want to automate document review, contract analysis, due diligence, and research workflows — all running on-premise, all privilege-safe.
+
+Post-Heppner, this is not a technology preference. It is a risk management decision.
+
+## What Your Firm Should Do This Week
+
+**1. Audit your AI exposure immediately.**
+Catalog every AI tool in use across the firm — including tools individual attorneys may have adopted without IT approval. For each tool, obtain the current privacy policy and terms of service. Flag any tool whose terms permit data retention, model training, or government disclosure.
+
+**2. Issue a firm-wide advisory.**
+Every attorney needs to understand that under Heppner, anything entered into a public or cloud-based AI tool may be discoverable. This includes "approved" legal AI platforms that use cloud APIs on the backend.
+
+**3. Update engagement letters.**
+Add explicit warnings about AI tool usage and privilege implications. [Husch Blackwell recommends](https://www.huschblackwell.com/newsandinsights/heppner-v-claude-the-first-privilege-waiver-by-ai-rulingwhat-lawyers-and-clients-must-know) asking clients at intake whether they've discussed their legal matter with any AI tool.
+
+**4. Add AI usage to discovery protocols.**
+Include AI usage questions in depositions and document requests. If opposing counsel's AI conversations are discoverable under Heppner, you should be asking for them — and preparing for the same questions directed at your firm.
+
+**5. Evaluate on-premise alternatives.**
+The gap between cloud AI convenience and on-premise AI capability has closed. Modern open-weight models match or exceed the legal reasoning capabilities of cloud APIs. The only remaining difference is where the data lives — and after Heppner, that difference is existential.
+
+---
+
+*Demand Signals builds private, on-premise AI infrastructure for law firms and professional services organizations. If Heppner has your firm re-evaluating its AI strategy, [we should talk](/contact).*
