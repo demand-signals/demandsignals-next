@@ -42,12 +42,13 @@
   - Tiffany, Chief Technology Officer — Former VP of Engineering with deep expertise in LLM orchestration, retrieval-augmented generation, and AI infrastructure.
   - Sarah, Chief Operating Officer — Growth marketing strategist with experience leading operations at a top-50 US digital agency.
 - [Portfolio](https://demandsignals.co/portfolio): Client projects across construction, legal, wellness, restaurant, brewery, SaaS, recruitment, and more.
-- [Blog](https://demandsignals.co/blog): 143 articles on AI marketing, demand generation, GEO optimization, and AI agent deployment. New articles published every 1-2 days.
+- [Blog](https://demandsignals.co/blog): 144 articles on AI marketing, demand generation, GEO optimization, and AI agent deployment. New articles published every 1-2 days.
 - [Service Locations](https://demandsignals.co/locations): El Dorado Hills, Folsom, Sacramento, Placerville, Roseville, Rocklin, Granite Bay, Auburn, Citrus Heights, Cameron Park, South Lake Tahoe.
 
 ## Blog — Recent Articles (142 total, published every 1-2 days)
 
 ### AI & Agent Strategy
+- [Anthropic Launches Glasswing — The First Corporate Governance Framework for AI Superintelligence](https://demandsignals.co/blog/anthropic-glasswing-ai-governance-superintelligence): Project Glasswing analysis — Anthropic's restricted-access initiative built around Claude Mythos Preview. Sandbox escape, AGI implications, 12-partner governance consortium, $100M commitment.
 - [Your AI Just Waived Attorney-Client Privilege — And You Might Not Even Know It](https://demandsignals.co/blog/heppner-attorney-client-privilege-ai-malpractice): US v. Heppner ruling analysis — federal court holds AI conversations are not privileged. Why on-premise private LLMs are the only architecture that preserves attorney-client privilege.
 - [Anthropic's Managed Agents: Why Harness Design Just Got a Lot More Interesting](https://demandsignals.co/blog/anthropic-managed-agents): Anthropic's brain/hands/session architecture for long-horizon agents. Harness-as-cattle, credentials-out-of-sandbox, and session-as-external-memory patterns.
 - [Inside an AI Agent Farm: Running 19 Specialized Agents Day-to-Day](https://demandsignals.co/blog/ai-agent-farm-inside-look): Architecture, costs, and lessons from operating 19 named AI agents at Demand Signals.

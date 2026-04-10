@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { MDXRemote } from 'next-mdx-remote/rsc'
+import remarkGfm from 'remark-gfm'
 import { getAllPosts, getPostBySlug, getPostsByContentCategory, CONTENT_CATEGORY_LABELS, CONTENT_CATEGORY_COLORS, type ContentCategory } from '@/lib/blog'
 import { BlogInfographic } from '@/components/blog/BlogInfographic'
 import { ParticleCanvas } from '@/components/sections/HeroCanvas'
@@ -154,7 +155,7 @@ export default async function BlogPostPage({ params }: Props) {
             <BlogInfographic data={post.infographic} title={post.title} />
           )}
           <div className="prose">
-            <MDXRemote source={post.content} />
+            <MDXRemote source={post.content} options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }} />
           </div>
         </div>
       </section>
