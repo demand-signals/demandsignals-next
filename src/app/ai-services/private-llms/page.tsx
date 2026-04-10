@@ -1,5 +1,6 @@
 import { buildMetadata } from '@/lib/metadata'
 import { ServicePageTemplate } from '@/components/templates/ServicePageTemplate'
+import Link from 'next/link'
 
 export const metadata = buildMetadata({
   title:       'Private LLMs — Self-Hosted AI for Sensitive Data | Demand Signals',
@@ -7,6 +8,36 @@ export const metadata = buildMetadata({
   path:        '/ai-services/private-llms',
   keywords:    ['private LLM', 'self-hosted AI', 'on-premise LLM', 'enterprise AI', 'data sovereignty AI'],
 })
+
+const featuredArticle = (
+  <section style={{ background: 'var(--dark)', padding: '72px 24px' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ display: 'inline-block', padding: '6px 18px', borderRadius: 999, background: 'rgba(242,133,0,0.12)', color: 'var(--orange)', fontSize: '0.78rem', fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 20 }}>
+        Critical — Attorney-Client Privilege &amp; AI
+      </div>
+      <h2 style={{ color: '#fff', fontSize: 'clamp(1.6rem, 3.5vw, 2.2rem)', fontWeight: 800, lineHeight: 1.25, marginBottom: 16 }}>
+        A Federal Court Just Ruled Your AI Conversations Are Discoverable
+      </h2>
+      <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '1.05rem', lineHeight: 1.7, marginBottom: 20 }}>
+        In <em>United States v. Heppner</em> (SDNY, February 2026), Judge Rakoff held that <strong style={{ color: '#fff' }}>documents generated using a public AI tool are not protected by attorney-client privilege</strong>. The court found that Anthropic&apos;s privacy policy — which permits data collection, model training, and disclosure to governmental authorities — destroyed any reasonable expectation of confidentiality. Privilege was waived the moment the data entered the platform.
+      </p>
+      <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '1.05rem', lineHeight: 1.7, marginBottom: 20 }}>
+        This ruling doesn&apos;t just apply to consumer chatbots. <strong style={{ color: '#FF6B2B' }}>Most &ldquo;legal AI&rdquo; SaaS platforms are API wrappers around the same public models.</strong> Your case facts travel from the vendor to OpenAI, Anthropic, or Google&apos;s servers — where the provider&apos;s terms govern. Under Heppner, that&apos;s a third-party disclosure. Privilege is gone. And that is a malpractice attack surface.
+      </p>
+      <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '1.05rem', lineHeight: 1.7, marginBottom: 32 }}>
+        <strong style={{ color: 'var(--teal)' }}>On-premise private LLMs are the only architecture where privilege is inarguable.</strong> No third-party terms of service. No API calls to subpoena. No data leaving your firm&apos;s network. We deploy complete systems — hardware, model, document onboarding, internal agents, and secure networking — for solo practitioners starting at <strong style={{ color: '#fff' }}>$8,500</strong> and small firms from <strong style={{ color: '#fff' }}>$25,000</strong>.
+      </p>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        <Link href="/blog/heppner-attorney-client-privilege-ai-malpractice" style={{ display: 'inline-block', padding: '14px 32px', borderRadius: 8, background: '#FF6B2B', color: '#fff', fontWeight: 700, fontSize: '0.95rem', textDecoration: 'none' }}>
+          Read the Full Heppner Analysis →
+        </Link>
+        <Link href="/contact" style={{ display: 'inline-block', padding: '14px 32px', borderRadius: 8, background: 'transparent', color: 'var(--teal)', fontWeight: 700, fontSize: '0.95rem', textDecoration: 'none', border: '2px solid var(--teal)' }}>
+          Assess My Firm&apos;s Exposure →
+        </Link>
+      </div>
+    </div>
+  </section>
+)
 
 export default function Page() {
   return (
@@ -42,6 +73,7 @@ export default function Page() {
         { label: 'Security', value: 'Air-gapped or VPN-isolated networks' },
       ]}
       techDescription="Private LLMs run on your infrastructure — on-premise hardware or a dedicated private cloud instance. We handle model selection, deployment, fine-tuning, and ongoing maintenance. Your data never leaves your network."
+      proofSection={featuredArticle}
       stats={[
         { value: 61, suffix: '%', label: 'Cite Privacy as Top AI Barrier' },
         { value: 3, label: 'Open-Source Model Families' },
