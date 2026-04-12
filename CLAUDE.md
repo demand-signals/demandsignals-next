@@ -29,7 +29,8 @@ Next.js 16 rebuild of demandsignals.co — an AI-powered demand generation agenc
 | Language | TypeScript (strict) | Zero TS errors required before push |
 | Styling | Tailwind CSS v4 + CSS Modules for layout | CSS vars in `globals.css` |
 | Animation | Framer Motion | |
-| Blog | MDX via `next-mdx-remote` + `gray-matter` | 141 posts in `src/content/blog/` |
+| Maps | Leaflet + react-leaflet + OpenStreetMap | Prospect detail map, no API key |
+| Blog | MDX via `next-mdx-remote` + `gray-matter` | 145 posts in `src/content/blog/` |
 | Forms | Nodemailer (API routes) | SMTP not fully wired yet |
 | Sitemap | `next-sitemap` | |
 | UI primitives | shadcn (base-ui), lucide-react | |
@@ -156,7 +157,7 @@ The nav was refactored from 3 dropdowns (Services, AI & Agents, Tools) to 5 drop
 ```
 src/
 ├── app/
-│   ├── layout.tsx                    — root layout, Header + Footer + ContactBot
+│   ├── layout.tsx                    — root layout, Header + Footer + ContactBot + AnalyticsTracker
 │   ├── page.tsx                      — homepage (assembles all sections)
 │   ├── globals.css                   — CSS vars, Tailwind, base styles
 │   ├── sitemap.ts                    — sitemap generation
@@ -239,10 +240,33 @@ src/
 │   │   ├── page.tsx                  — server component (metadata export)
 │   │   └── ContactPageClient.tsx     — client component (form logic)
 │   ├── portfolio/ privacy/ terms/ accessibility/
+│   ├── admin/                        — Admin portal
+│   │   ├── page.tsx                  — Dashboard
+│   │   ├── prospects/                — Prospect table + [id] detail (with map + activity form)
+│   │   ├── pipeline/                 — Pipeline board (Kanban)
+│   │   ├── demos/                    — Demo tracker (score badges)
+│   │   ├── import/                   — Import wizard (CSV/JSON)
+│   │   ├── agents/                   — Agent registry
+│   │   ├── long-tails/               — LTP admin (575+ pages, search/filter)
+│   │   ├── blog/                     — Blog admin (145 posts, search/filter)
+│   │   └── analytics/                — Visitor analytics dashboard
+│   ├── admin-login/                  — Google OAuth login page
 │   └── api/                          — contact, subscribe, report-request
+│       ├── admin/                    — Admin APIs (prospects, demos, deals, activities, import, score, analytics, blog, long-tails)
+│       ├── analytics/                — Pageview collection (collect, init, weekly-report)
+│       ├── agents/                   — Agent webhooks (scorer)
+│       └── webhooks/                 — Supabase webhooks
 │
 ├── components/
-│   ├── layout/                       — Header, Footer (+footer.module.css), MobileMenu, NavDropdown, ContactBot
+│   ├── admin/                        — Admin portal components
+│   │   ├── admin-sidebar.tsx         — Sidebar with Prospecting/Content/Insights nav groups
+│   │   ├── analytics-dashboard.tsx   — Visitor analytics (trends, sources, geo, devices, UTM)
+│   │   ├── blog-table.tsx            — Blog posts admin table
+│   │   ├── ltp-table.tsx             — Long-tail pages admin table
+│   │   ├── prospect-map.tsx          — Leaflet/OSM map for prospect detail
+│   │   ├── prospect-score-badge.tsx  — Diamond/Gold/Silver/Bronze tier badges
+│   │   └── stat-card.tsx             — Reusable stat card component
+│   ├── layout/                       — Header, Footer (+footer.module.css), MobileMenu, NavDropdown, ContactBot, AnalyticsTracker
 │   ├── sections/                     — Page sections
 │   │   ├── PageHero.tsx              — Parallax hero with particle canvas
 │   │   ├── FeatureShowcase.tsx       — Scroll-pinned feature carousel (desktop) / stacked cards (mobile)
@@ -261,7 +285,7 @@ src/
 │
 ├── middleware.ts                    — HTTP Link headers for markdown discovery
 │
-├── content/blog/                     — 141 MDX blog posts
+├── content/blog/                     — 145 MDX blog posts
 │
 ├── hooks/
 │   └── useCountUp.ts                 — RAF counter animation hook
@@ -275,7 +299,10 @@ src/
     ├── services.ts                   — 23 services, keyword/FAQ templates with {city}/{county} vars
     ├── counties.ts                   — County data + getCountiesWithCities()
     ├── city-service-slugs.ts         — LTP slug lookup table (575 entries)
-    ├── blog.ts                       — MDX blog loader (141 posts, 7 categories)
+    ├── blog.ts                       — MDX blog loader (145 posts, 7 categories)
+    ├── analytics-db.ts               — Pageview insertion + visitor hashing (Vercel Postgres)
+    ├── admin-auth.ts                  — Admin authentication (requireAdmin)
+    ├── scoring.ts                     — 5-signal prospect scoring engine
     ├── api-security.ts               — Rate limiting, CSRF, input validation
     ├── feed-utils.ts                 — Feed helpers (ETag, cache, detail levels)
     ├── all-faqs.ts                   — Centralized FAQ registry (250+ FAQs)
@@ -376,24 +403,42 @@ Both templates auto-generate JSON-LD schema (Service, BreadcrumbList, FAQPage).
 - [x] Robots: 5 additional AI bot user-agents allowlisted
 - [x] Schema: Enhanced org schema with knowsAbout (15), hasOfferCatalog (23 services), expanded areaServed
 - [x] dsig-rank-system.md: Complete ranking system methodology document
+- [x] Admin portal: CRM spine with Google OAuth, 8 Supabase tables, RLS, scoring engine
+- [x] Admin portal: Dashboard, Prospects (table + detail), Pipeline (Kanban), Demos, Import, Agents
+- [x] Admin portal: 5-signal prospect scoring (review authority, digital vulnerability, industry value, close probability, revenue potential)
+- [x] Admin portal: Diamond/Gold/Silver/Bronze tier classification with badges
+- [x] Admin portal: Prospect detail map (Leaflet/OSM + Nominatim geocoding + Google Maps link)
+- [x] Admin portal: Activity form (note/call/email/meeting logging on prospect detail)
+- [x] Admin portal: Long-Tails admin page (575+ LTP pages with search, city, category filters)
+- [x] Admin portal: Blog Posts admin page (145 MDX posts with search, category, featured filters)
+- [x] Admin portal: Visitor Analytics dashboard (pageviews, visitors, trends, sources, geo, devices, UTM)
+- [x] Admin portal: Sidebar restructured — DSIG ADMIN PORTAL, Prospecting/Content/Insights nav groups
+- [x] AnalyticsTracker: privacy-preserving pageview tracking (SHA256 visitor hash, no cookies, no PII)
+- [x] 843 static pages building clean
 
 ---
 
 ## 11. What Is NOT Done (Open Work)
 
-### High Priority
+### High Priority — CRM / Agency OS
+1. **First Google sign-in** at demandsignals.co/admin-login with demandsignals@gmail.com
+2. **Seed admin_users** — SQL INSERT after first sign-in (see project_crm_deployment.md)
+3. **Add SUPABASE_WEBHOOK_SECRET** to Vercel env vars
+4. **Import 142 prospects** via /admin/import using data/prospects-import.json
+5. **Demo Factory (Module 2)** — auto-generate demo sites
+6. **Outreach Engine (Module 3)** — email/SMS/voice via Resend/Twilio/Vapi
+
+### High Priority — Site
 1. **301 redirects from PHP site** — old .co URLs are Google-indexed; need redirects now that DNS is cutting over
 2. **Roll out Section Theater** to remaining 22 service pages (pilot done on wordpress-development)
 3. **SMTP wiring** — contact form needs Gmail app password in Vercel env vars
 4. **Google Search Console** — DNS TXT record in Cloudflare for verification
-5. **GA4** — create property, add tracking code to layout
 
 ### Medium Priority
 - [ ] **Mobile menu UX** — currently a simple slide-down; .co uses full-screen overlay with animations
 - [ ] **OG image** — `/og-image.png` is placeholder, needs real branded asset
-- [ ] **SMTP wiring** — real credentials in Vercel env vars for contact form
-- [ ] **Analytics** — GA4 or equivalent (Vercel Analytics installed)
 - [ ] **Portfolio page** — needs real client case studies with results data
+- [ ] **GA4** — optional now that custom analytics tracker is deployed (Vercel Analytics also installed)
 
 ### Lower Priority
 - [ ] Blog: more posts targeting buyer search terms
@@ -492,6 +537,11 @@ SMTP_USER=DemandSignals@gmail.com
 SMTP_PASS=<gmail app password>
 CONTACT_EMAIL=DemandSignals@gmail.com
 NEXT_PUBLIC_SITE_URL=https://demandsignals.co
+NEXT_PUBLIC_SUPABASE_URL=https://uoekjqkawssbskfkziwz.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<supabase anon key>
+SUPABASE_SERVICE_ROLE_KEY=<supabase service role key>
+SUPABASE_WEBHOOK_SECRET=<webhook secret for scorer agent>
+POSTGRES_URL=<vercel postgres connection string for analytics>
 ```
 
 ---

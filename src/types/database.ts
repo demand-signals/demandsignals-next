@@ -128,6 +128,20 @@ export type AdminUser = {
   created_at: string
 }
 
+export type AgentRun = {
+  id: string
+  agent_name: string
+  status: 'running' | 'completed' | 'failed'
+  started_at: string
+  completed_at: string | null
+  input_data: Record<string, any>
+  output_data: Record<string, any>
+  error: string | null
+  prospects_created: number
+  prospects_updated: number
+  created_at: string
+}
+
 export type ProspectWithRelations = Prospect & {
   demos?: Demo[]
   deals?: Deal[]

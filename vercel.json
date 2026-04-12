@@ -1,4 +1,8 @@
 {
+  "crons": [
+    { "path": "/api/agents/daily", "schedule": "0 14 * * 1-5" },
+    { "path": "/api/analytics/weekly-report", "schedule": "0 16 * * 1" }
+  ],
   "redirects": [
     { "source": "/research",      "destination": "/tools/research-reports",                    "permanent": true },
     { "source": "/reports",       "destination": "/tools/research-reports",                    "permanent": true },

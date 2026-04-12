@@ -82,19 +82,38 @@ function calcDigitalVulnerability(p) {
   const issues = website.issues || rd.opportunities || []
   const issueStr = issues.join(' ').toLowerCase()
   let issueScore = 0
+  // Critical issues (from structured data)
   if (issueStr.includes('broken_ssl') || issueStr.includes('ssl') || issueStr.includes('no_website') || issueStr.includes('no website')) issueScore += 30
   if (issueStr.includes('broken_contact') || issueStr.includes('contact form')) issueScore += 20
+  // Moderate issues (from structured data)
   if (issueStr.includes('dated') || issueStr.includes('template') || issueStr.includes('placeholder') || issueStr.includes('stock')) issueScore += 15
   if (issueStr.includes('no_mobile') || issueStr.includes('not mobile') || issueStr.includes('no_seo')) issueScore += 10
   if (issueStr.includes('unprofessional') || issueStr.includes('gmail') || issueStr.includes('comcast') || issueStr.includes('yahoo')) issueScore += 8
+  // Notes-based issue detection (catches signals that research_data missed)
   if (notes.includes('broken ssl') || notes.includes('ssl broken')) issueScore += 25
   if (notes.includes('no website') || notes.includes('no site')) issueScore += 25
+  if (notes.includes('zero blog') || notes.includes('no blog') || notes.includes('no content')) issueScore += 15
+  if (notes.includes('no social') || notes.includes('no instagram') || notes.includes('no facebook')) issueScore += 10
+  if (notes.includes('no gmb') || notes.includes('no google business')) issueScore += 15
+  if ((notes.includes('no local seo') || notes.includes('no seo') || notes.includes('zero seo')) && !issueStr.includes('no_seo')) issueScore += 10
+  if ((notes.includes('dated') || notes.includes('outdated') || notes.includes('basic template')) && !issueStr.includes('dated')) issueScore += 10
+  // Missing channels — when social data was never researched, assume worst case
+  const hasSocialData = social.facebook !== undefined || social.instagram !== undefined || social.google_business !== undefined
   let missingChannels = 0
-  if (!social.facebook && social.facebook !== true) missingChannels++
-  if (!social.instagram && social.instagram !== true) missingChannels++
-  if (social.google_business === false) missingChannels += 2
+  if (hasSocialData) {
+    if (!social.facebook && social.facebook !== true) missingChannels++
+    if (!social.instagram && social.instagram !== true) missingChannels++
+    if (social.google_business === false) missingChannels += 2
+  } else {
+    missingChannels = 3 // No social data collected — assume all channels missing
+  }
   const channelScore = missingChannels * 10
-  let score = Math.min(100, Math.round(platformScore * 0.35 + Math.min(60, issueScore) * 0.35 + channelScore * 0.30))
+  let score = Math.min(100, Math.round(platformScore * 0.30 + Math.min(80, issueScore) * 0.35 + channelScore * 0.35))
+  // Research completeness floor: sparse data = unknown vulnerabilities
+  const hasWebsiteData = !!website.platform
+  const hasReviews = !!(rd.reviews && Object.keys(rd.reviews).length > 0)
+  const researchDimensions = [hasWebsiteData, hasSocialData, hasReviews].filter(Boolean).length
+  if (researchDimensions <= 1) score = Math.max(score, 35)
   // Critical override: broken SSL = customers can't reach the site
   const sslBroken = website.ssl_valid === false || issueStr.includes('broken_ssl') || notes.includes('broken ssl') || notes.includes('ssl broken')
   if (sslBroken) score = Math.max(score, 70)
@@ -105,7 +124,7 @@ function calcIndustryValue(p) {
   const base = INDUSTRY_VALUES[p.industry || 'other'] || 30
   const rd = p.research_data || {}
   let geoPremium = 0
-  const city = (rd.city || p.city || '').toLowerCase()
+  const city = (p.city || rd.city || '').toLowerCase()
   if (city === 'el dorado hills' || city === 'folsom') geoPremium = 10
   else if (city === 'cameron park' || city === 'shingle springs') geoPremium = 5
   return { score: Math.min(100, base + geoPremium), detail: { industry: p.industry, base_value: base, geo_premium: geoPremium } }
@@ -144,7 +163,17 @@ function calcRevenuePotential(p) {
   const tags = p.tags || []
   let score = 30
   const opps = rd.opportunities || []
-  score += Math.min(25, opps.length * 5)
+  // Infer additional opportunities from notes text
+  let inferredCount = opps.length
+  if ((notes.includes('zero blog') || notes.includes('no blog') || notes.includes('no content')) && !opps.includes('content_marketing')) inferredCount++
+  if ((notes.includes('no social') || notes.includes('no instagram') || notes.includes('no facebook')) && !opps.includes('social_media')) inferredCount++
+  if ((notes.includes('no local seo') || notes.includes('no seo') || notes.includes('zero seo')) && !opps.includes('local_seo')) inferredCount++
+  if ((notes.includes('no gmb') || notes.includes('no google business')) && !opps.includes('gmb_optimization')) inferredCount++
+  // Multiple services listed = complex site opportunity
+  const serviceKeywords = notes.match(/\b(grading|excavat|driveway|pond|septic|retaining|remodel|deck|fence|roof|plumb|hvac|electrical|paint|floor|landscape|hardscape|demolit|concrete|foundation|framing|paving|pool|spa|kitchen|bathroom|solar|gutter|siding|window|door|carpet|tile|counter|cabinet)\w*/gi) || []
+  if (serviceKeywords.length >= 3 && !opps.includes('website_redesign')) inferredCount++
+  if (serviceKeywords.length >= 5) inferredCount++
+  score += Math.min(25, Math.max(inferredCount, opps.length) * 5)
   // Deal estimate from research_data or notes
   const dealStr = (rd.deal_estimate || '') + ' ' + notes
   const dealMatch = dealStr.match(/\$([\d,]+)\s*[kK]?\s*[-\u2013]\s*\$([\d,]+)\s*[kK]/i) || dealStr.match(/deal value:\s*\$?([\d,]+)/i) || dealStr.match(/\$([\d,]+)\s*[kK]/i)

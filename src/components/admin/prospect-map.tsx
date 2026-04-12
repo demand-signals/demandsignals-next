@@ -74,20 +74,31 @@ export function ProspectMap({ address, businessName }: ProspectMapProps) {
     if (!address) return
 
     setLoading(true)
-    const query = `${businessName}, ${address}`
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
-      headers: { 'User-Agent': 'DemandSignals-Admin/1.0' },
-    })
-      .then(r => r.json())
-      .then(results => {
-        if (results.length > 0) {
-          setCoords({ lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) })
-        } else {
-          setError(true)
-        }
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false))
+
+    // Try address-only first (most reliable for Nominatim), then fall back to business name + city
+    const queries = [
+      address,
+      `${businessName}, ${address}`,
+    ]
+
+    async function tryGeocode() {
+      for (const query of queries) {
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=us`,
+            { headers: { 'User-Agent': 'DemandSignals-Admin/1.0' } }
+          )
+          const results = await res.json()
+          if (results.length > 0) {
+            setCoords({ lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) })
+            return
+          }
+        } catch { /* try next query */ }
+      }
+      setError(true)
+    }
+
+    tryGeocode().finally(() => setLoading(false))
   }, [address, businessName])
 
   const mapsUrl = getGoogleMapsUrl(businessName, address)

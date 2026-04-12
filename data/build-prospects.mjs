@@ -120,6 +120,18 @@ function buildResearchData(prospect) {
   for (const [re, label] of oppPatterns) {
     if (re.test(prospect.notes || '')) opportunities.push(label)
   }
+
+  // Cross-reference: detected issues → inferred opportunities
+  if (issues.includes('no_seo') && !opportunities.includes('local_seo')) opportunities.push('local_seo')
+  if (issues.includes('no_seo') && !opportunities.includes('content_marketing')) opportunities.push('content_marketing')
+  if (issues.includes('no_social') && !opportunities.includes('social_media')) opportunities.push('social_media')
+  if (issues.includes('no_gmb') && !opportunities.includes('gmb_optimization')) opportunities.push('gmb_optimization')
+  if ((issues.includes('dated_design') || issues.includes('no_mobile')) && !opportunities.includes('website_redesign')) opportunities.push('website_redesign')
+
+  // Multi-service businesses → website redesign opportunity
+  const serviceKeywords = (prospect.notes || '').match(/\b(grading|excavat|driveway|pond|septic|retaining|remodel|deck|roofing|plumbing|hvac|heating|cooling|landscap|fencing|concrete|paving|demolition|painting|electrical|flooring)\w*/gi) || []
+  if (serviceKeywords.length >= 3 && !opportunities.includes('website_redesign')) opportunities.push('website_redesign')
+
   // Default opportunities if none detected
   if (opportunities.length === 0 && prospect.stage === 'researched') {
     opportunities.push('website_redesign', 'local_seo', 'gmb_optimization')
