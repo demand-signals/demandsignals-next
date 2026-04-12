@@ -29,8 +29,8 @@ export function AdminSidebar() {
   }
 
   return (
-    <aside className="w-64 bg-[var(--dark-2)] border-r border-white/10 flex flex-col h-screen sticky top-0">
-      <div className="p-4 border-b border-white/10">
+    <aside className="w-64 bg-[#1a1f2e] border-r border-white/10 flex flex-col h-screen sticky top-0">
+      <div className="p-4 border-b border-white/15">
         <Link href="/admin" className="text-lg font-bold text-white">
           DSIG <span className="text-[var(--teal)] font-normal text-sm">admin</span>
         </Link>
@@ -48,8 +48,8 @@ export function AdminSidebar() {
               className={cn(
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                 active
-                  ? 'bg-[var(--teal)]/15 text-[var(--teal)]'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
+                  ? 'bg-[var(--teal)]/20 text-[var(--teal)] font-medium'
+                  : 'text-white/80 hover:text-white hover:bg-white/8'
               )}
             >
               <Icon className="w-4 h-4" />
@@ -62,7 +62,7 @@ export function AdminSidebar() {
       <div className="p-3 border-t border-white/10">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-white/40 hover:text-white hover:bg-white/5 w-full transition-colors"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/8 w-full transition-colors"
         >
           <LogOut className="w-4 h-4" />
           Sign Out
