@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
 // Service slugs for all 23 services
 const SERVICE_SLUGS = new Set([
@@ -20,8 +21,47 @@ const CATEGORY_SERVICE_MAP: Record<string, Set<string>> = {
   'ai-services': new Set(['ai-automation-strategies', 'ai-workforce-automation', 'ai-agent-infrastructure', 'ai-automated-outreach', 'ai-agent-swarms', 'private-llms', 'clawbot-setup']),
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // ============================================================
+  // ADMIN ROUTE PROTECTION
+  // ============================================================
+  if (pathname.startsWith('/admin')) {
+    let response = NextResponse.next({ request })
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value)
+            )
+            response = NextResponse.next({ request })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options)
+            )
+          },
+        },
+      }
+    )
+
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user && pathname !== '/admin-login') {
+      const redirectUrl = new URL('/admin-login', request.url)
+      redirectUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    return response
+  }
+
   const response = NextResponse.next()
 
   // Skip feed/API/static paths
@@ -129,6 +169,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/admin/:path*',
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2)).*)',
   ],
 }
