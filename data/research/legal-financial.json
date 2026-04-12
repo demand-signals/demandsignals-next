@@ -1,0 +1,731 @@
+[
+  {
+    "business_name": "Law Office of David J. Cramer",
+    "city": "Placerville",
+    "website_url": "https://www.callcramerlaw.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.callcramerlaw.com/",
+        "platform": "Unknown (403 on fetch — likely WordPress or custom)",
+        "issues": [
+          "Site returned 403 on automated fetch — possible bot blocking",
+          "Listed as 'Cramer & Hoch Law' in prospect notes but actual firm name is 'Law Office of David J. Cramer'",
+          "Mixed reviews suggest reputation management needed"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null,
+        "linkedin": null
+      },
+      "reviews": {
+        "google": { "rating": 3.9, "count": 5 },
+        "avvo": { "rating": null },
+        "yelp": { "rating": null, "count": null }
+      },
+      "opportunities": [
+        "Low Google review count (only 5) — review generation campaign needed",
+        "No visible social media presence",
+        "Firm name inconsistency between directories (Cramer & Hoch vs David J. Cramer)",
+        "Criminal defense niche is highly competitive for local SEO",
+        "21+ years experience is strong trust signal not being leveraged online"
+      ],
+      "pitch_angle": "With 21 years of criminal defense experience but only 5 Google reviews and a 3.9 rating, a review generation system and local SEO campaign could establish you as the go-to defense attorney in El Dorado County."
+    },
+    "google_rating": 3.9,
+    "google_review_count": 5
+  },
+  {
+    "business_name": "Aaron B. Dosh, Attorney at Law",
+    "city": "Placerville",
+    "website_url": null,
+    "research_data": {
+      "website": {
+        "url": null,
+        "platform": "No website found",
+        "issues": [
+          "No dedicated website — relies entirely on directory listings (Yelp, Avvo, Justia, Martindale)",
+          "Inconsistent firm name across directories (Dosh and Dosh vs Aaron B Dosh Attorney at Law)",
+          "Mixed online reviews with billing complaints"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null,
+        "linkedin": null
+      },
+      "reviews": {
+        "google": { "rating": 3.8, "count": null },
+        "avvo": { "rating": null },
+        "yelp": { "rating": null, "count": 31 }
+      },
+      "opportunities": [
+        "No website at all — massive opportunity for a new build",
+        "31 Yelp reviews show significant client volume that should be captured on owned property",
+        "Family law is high-value, high-competition niche needing strong local presence",
+        "Established since 2009 — needs digital presence to match tenure",
+        "No social media presence"
+      ],
+      "pitch_angle": "You have 31 Yelp reviews proving strong client volume but no website to capture leads — a professional site with review management would convert the traffic you are currently losing to competitors."
+    },
+    "google_rating": 3.8,
+    "google_review_count": null
+  },
+  {
+    "business_name": "Adam Weiner Attorney at Law",
+    "city": "El Dorado Hills",
+    "website_url": "https://weinerlawoffices.com/",
+    "research_data": {
+      "website": {
+        "url": "https://weinerlawoffices.com/",
+        "platform": "WordPress",
+        "issues": [
+          "Heavy inline CSS impacts load performance",
+          "Outdated jQuery usage with multiple implementations",
+          "Analytics duplication — both Google Tag Manager and Google Analytics loaded separately",
+          "Large CSS payload from TM Finance theme"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/weinerlawoffices/",
+        "instagram": null,
+        "linkedin": null
+      },
+      "reviews": {
+        "google": { "rating": 3.5, "count": 12 },
+        "avvo": { "rating": null },
+        "yelp": { "rating": 4.5, "count": 12 }
+      },
+      "opportunities": [
+        "WordPress site needs performance optimization — heavy inline CSS and duplicate analytics",
+        "3.5 Google rating is below average — needs review response strategy",
+        "Gap between Yelp (4.5) and Google (3.5) ratings suggests review management opportunity",
+        "20,000+ courtroom hours is a powerful differentiator not well-leveraged in SEO",
+        "No Instagram or LinkedIn presence for professional visibility",
+        "Criminal/juvenile defense since 1997 — authority content opportunity"
+      ],
+      "pitch_angle": "Your 20,000+ courtroom hours is an incredible differentiator, but a sluggish WordPress site and 3.5 Google rating are costing you leads — a modern rebuild with review management would fix both."
+    },
+    "google_rating": 3.5,
+    "google_review_count": 12
+  },
+  {
+    "business_name": "George Cilley, Attorney at Law",
+    "city": "Placerville",
+    "website_url": "https://www.cilleylaw.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.cilleylaw.com/",
+        "platform": "Squarespace",
+        "issues": [
+          "Hero section uses placeholder image with 'Placeholder' alt text",
+          "Email and phone links are broken — href points to squarespace.com instead of actual contact info",
+          "Contact form shows 'This form needs a storage option' warning — submissions may not be working",
+          "Incomplete Squarespace template customization"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null,
+        "linkedin": "https://www.linkedin.com/in/gcilley/"
+      },
+      "reviews": {
+        "google": { "rating": null, "count": 4 },
+        "avvo": { "rating": null },
+        "yelp": { "rating": null, "count": null }
+      },
+      "opportunities": [
+        "CRITICAL: Contact form may not be working — potential leads being lost",
+        "Broken phone/email links mean visitors cannot contact from website",
+        "Only 4 Google reviews — very low for an established practice",
+        "Placeholder images show incomplete site setup",
+        "Estate planning niche has high lifetime client value — worth investment",
+        "No Facebook or Instagram presence"
+      ],
+      "pitch_angle": "Your Squarespace site has broken contact links and a non-functional form — you may be losing every lead that visits your website, and with only 4 Google reviews, a proper site rebuild with review automation is urgent."
+    },
+    "google_rating": null,
+    "google_review_count": 4
+  },
+  {
+    "business_name": "Laura Rose Nelson-Becker, Attorney at Law",
+    "city": "Placerville",
+    "website_url": "https://www.lauranelsonlaw.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.lauranelsonlaw.com/",
+        "platform": "Wix",
+        "issues": [
+          "Built on Wix — limited SEO capabilities compared to custom solutions",
+          "Heavy JavaScript payload from Wix Thunderbolt rendering engine",
+          "Performance overhead from Wix platform scripts and security hardening"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null,
+        "linkedin": null
+      },
+      "reviews": {
+        "google": { "rating": 4.2, "count": 5 },
+        "avvo": { "rating": null },
+        "yelp": { "rating": null, "count": null }
+      },
+      "opportunities": [
+        "Certified Legal Specialist designation is a strong differentiator — not enough SEO leverage",
+        "Wix platform limits SEO performance vs custom build",
+        "Only 5 Google reviews for a specialist attorney",
+        "Also part of Becker Nelson Center & James firm — dual branding opportunity",
+        "No social media presence at all",
+        "16 Avvo reviews show client engagement not being captured on Google",
+        "Estate planning specialist since 2017 — authority content underutilized"
+      ],
+      "pitch_angle": "As one of few Certified Legal Specialists in Estate Planning in El Dorado County, your Wix site and 5 Google reviews do not reflect your credential — a proper website and review strategy would match your online presence to your expertise."
+    },
+    "google_rating": 4.2,
+    "google_review_count": 5
+  },
+  {
+    "business_name": "Law Office of Gregory S. Clark",
+    "city": "Placerville",
+    "website_url": "https://www.gregclarklaw.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.gregclarklaw.com/",
+        "platform": "Duda",
+        "issues": [
+          "Built on Duda platform — limited flexibility and SEO customization",
+          "AudioEye accessibility overlay (band-aid approach vs true accessibility)",
+          "Standard template-based design — not differentiated from competitors"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null,
+        "linkedin": "https://www.linkedin.com/in/gregory-clark-48017922/"
+      },
+      "reviews": {
+        "google": { "rating": null, "count": 9 },
+        "avvo": { "rating": null },
+        "yelp": { "rating": null, "count": null }
+      },
+      "opportunities": [
+        "Duda platform limits SEO potential — custom build would improve rankings",
+        "20+ years experience across family law, criminal defense, and estate planning",
+        "9 Birdeye reviews — moderate but could be much higher",
+        "Serves Placerville, South Lake Tahoe, and foothill communities — broad geo-targeting opportunity",
+        "No Facebook or Instagram presence",
+        "AudioEye overlay suggests awareness of accessibility but using band-aid solution"
+      ],
+      "pitch_angle": "With 20+ years of multi-practice experience but a template Duda site and only 9 reviews, a custom-built website with local SEO targeting Placerville, South Lake Tahoe, and surrounding areas would capture significantly more leads."
+    },
+    "google_rating": null,
+    "google_review_count": 9
+  },
+  {
+    "business_name": "Law Office of Paul R. Kraft",
+    "city": "El Dorado Hills",
+    "website_url": "https://kraftlawoffice.com/",
+    "research_data": {
+      "website": {
+        "url": "https://kraftlawoffice.com/",
+        "platform": "Unknown (excessive font loading, minimal identifiable platform markers)",
+        "issues": [
+          "Excessive Google Fonts loading — multiple weights and subsets hurting performance",
+          "Platform could not be definitively identified from page source",
+          "Minimal content visible in initial page load"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null,
+        "linkedin": "https://www.linkedin.com/in/paulkraftesq/"
+      },
+      "reviews": {
+        "google": { "rating": null, "count": null },
+        "avvo": { "rating": null },
+        "yelp": { "rating": 4.0, "count": null }
+      },
+      "opportunities": [
+        "Former law professor (2008-2012) — authority positioning opportunity",
+        "Estate planning and probate focus — high lifetime client value",
+        "Toll-free number (844-715-3574) suggests professional positioning",
+        "Serves Sacramento, El Dorado, and Placer counties — broad targeting",
+        "No Facebook or Instagram presence",
+        "Google review count unknown — likely needs review generation"
+      ],
+      "pitch_angle": "Your background as a former law professor combined with estate planning expertise is a powerful trust signal that your current website does not showcase — a modern site with content marketing would position you as the authority in El Dorado Hills probate law."
+    },
+    "google_rating": null,
+    "google_review_count": null
+  },
+  {
+    "business_name": "Layla Cordero Law",
+    "city": "Placerville",
+    "website_url": "https://laylacorderolaw.com/",
+    "research_data": {
+      "website": {
+        "url": "https://laylacorderolaw.com/",
+        "platform": "GoDaddy Website Builder",
+        "issues": [
+          "Built on GoDaddy Website Builder — very limited SEO and customization",
+          "Duplicate content in practice areas section — categories listed multiple times",
+          "Redundant mobile navigation",
+          "Missing or generic alt text on practice area images",
+          "Cookie banner adds friction"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": "https://www.instagram.com/that_lawyer_layla/",
+        "linkedin": "https://www.linkedin.com/in/layla-cordero-25b87420b/"
+      },
+      "reviews": {
+        "google": { "rating": 5.0, "count": 3 },
+        "avvo": { "rating": null },
+        "yelp": { "rating": null, "count": null }
+      },
+      "opportunities": [
+        "Perfect 5.0 Google rating but only 3 reviews — review generation would be high impact",
+        "GoDaddy builder severely limits SEO and professional presentation",
+        "Domestic violence expertise is strong differentiator in family law niche",
+        "Active Instagram presence shows marketing awareness — could expand",
+        "Graduated cum laude, Dean's List, Faculty Achievement Award — credentials not leveraged online",
+        "Young practice (2019) — growth phase where digital investment has highest ROI"
+      ],
+      "pitch_angle": "You have a perfect 5.0 rating and impressive credentials but are limited by a GoDaddy website with only 3 reviews — a professional site rebuild with review automation could rapidly establish you as the top family law attorney in Placerville."
+    },
+    "google_rating": 5.0,
+    "google_review_count": 3
+  },
+  {
+    "business_name": "MTZ Legal",
+    "city": "Placerville",
+    "website_url": "https://mtzlegal.com/",
+    "research_data": {
+      "website": {
+        "url": "https://mtzlegal.com/",
+        "platform": "Squarespace",
+        "issues": [
+          "Two conflicting addresses listed (El Dorado Hills and Placerville)",
+          "Metadata says 'Criminal Defense, Civil Litigation, Real Estate, Personal Injury' but practice focuses 100% on family law — SEO mismatch",
+          "Broken navigation — several menu items lack functional content pages",
+          "Incomplete Squarespace setup"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null,
+        "linkedin": null
+      },
+      "reviews": {
+        "google": { "rating": null, "count": null },
+        "avvo": { "rating": 9.9 },
+        "yelp": { "rating": null, "count": null }
+      },
+      "opportunities": [
+        "9.9 Avvo rating is exceptional — not being leveraged on website or in SEO",
+        "Metadata/content mismatch hurting search rankings (says criminal defense, does family law)",
+        "Conflicting addresses confuse Google Business Profile and local SEO",
+        "Broken navigation pages mean potential clients hit dead ends",
+        "Bilingual (Spanish/English) — undermarketed differentiator in the area",
+        "Cambridge degree is strong trust signal not prominently featured",
+        "No social media presence at all"
+      ],
+      "pitch_angle": "Your 9.9 Avvo rating and bilingual capability are exceptional differentiators, but your Squarespace site has conflicting addresses, broken pages, and metadata that advertises the wrong practice areas — a rebuild would unlock the leads you are missing."
+    },
+    "google_rating": null,
+    "google_review_count": null
+  },
+  {
+    "business_name": "El Dorado Law",
+    "city": "Placerville",
+    "website_url": "https://www.eldoradolaw.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.eldoradolaw.com/",
+        "platform": "Locable",
+        "issues": [
+          "Brick-and-mortar office closed December 2021",
+          "Site running on Locable platform — very basic, community-oriented platform not designed for lead generation",
+          "Redirects to /profile/ page — unusual for a law firm site",
+          "May be operating remotely or semi-retired"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null,
+        "linkedin": null
+      },
+      "reviews": {
+        "google": { "rating": null, "count": null },
+        "avvo": { "rating": 7.3 },
+        "yelp": { "rating": null, "count": 16 }
+      },
+      "opportunities": [
+        "Office closed in 2021 — may not be actively seeking new clients",
+        "If still practicing remotely, needs a proper website for virtual consultations",
+        "16 Yelp reviews for Adam C. Clark under personal name listing",
+        "Locable is a community platform, not a legal practice website",
+        "7.3 Avvo rating is moderate — room for improvement"
+      ],
+      "pitch_angle": "If you are still practicing after closing your physical office, a modern website optimized for virtual consultations would let you serve clients across El Dorado County without the overhead of a brick-and-mortar location."
+    },
+    "google_rating": null,
+    "google_review_count": null
+  },
+  {
+    "business_name": "Moseley Collins Law",
+    "city": "El Dorado Hills",
+    "website_url": "https://www.moseleycollins.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.moseleycollins.com/",
+        "platform": "Justia",
+        "issues": [
+          "Contact form uses non-encrypted email — security concern for sensitive client info",
+          "Multiple overlapping tracking scripts (GTM, GA4, TV Squared, Bing Ads)",
+          "Justia template limits differentiation from other Justia law firm sites",
+          "reCAPTCHA dependency adds friction to contact forms"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null,
+        "linkedin": "https://www.linkedin.com/in/moseleycollins/"
+      },
+      "reviews": {
+        "google": { "rating": null, "count": null },
+        "avvo": { "rating": null },
+        "yelp": { "rating": null, "count": null }
+      },
+      "opportunities": [
+        "46 years experience and founding president of MADD Santa Clara — legendary credentials",
+        "Justia template site limits branding and differentiation",
+        "Non-encrypted contact form is a liability for a PI firm handling sensitive medical/injury cases",
+        "Multi-office presence (Sacramento, El Dorado Hills) — strong geo-targeting opportunity",
+        "Phone number 916-444-4444 is highly memorable — marketing asset",
+        "Personal injury is highest-value legal niche for digital marketing ROI"
+      ],
+      "pitch_angle": "With 46 years of experience, a founding role in MADD, and the memorable 916-444-4444 number, your Justia template site and non-encrypted contact form do not match the caliber of your practice — a custom site would convert more of the traffic you already get."
+    },
+    "google_rating": null,
+    "google_review_count": null
+  },
+  {
+    "business_name": "Cantorbridge Financial",
+    "city": "El Dorado Hills",
+    "website_url": "https://www.cantorbridge.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.cantorbridge.com/",
+        "platform": "Squarespace",
+        "issues": [
+          "Squarespace limits advanced SEO and lead generation features",
+          "No obvious client portal or secure document sharing",
+          "Limited content marketing — no blog or educational resources visible"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/cantorbridge/",
+        "instagram": null,
+        "linkedin": "https://www.linkedin.com/in/cantorbridgecr/"
+      },
+      "reviews": {
+        "google": { "rating": null, "count": null },
+        "avvo": { "rating": null },
+        "yelp": { "rating": null, "count": null }
+      },
+      "opportunities": [
+        "Independent fiduciary positioning is strong differentiator — needs more SEO content",
+        "$500K+ AUM client focus means high-value clients worth investing in digital presence",
+        "Squarespace limits lead gen and content marketing capabilities",
+        "No blog or educational content for financial planning topics — missed SEO opportunity",
+        "El Dorado Hills Town Center location is premium — should leverage local SEO",
+        "Chris Rasmussen AAMS/CRPS credentials need prominent display",
+        "No Instagram presence — missed opportunity for brand visibility"
+      ],
+      "pitch_angle": "As an independent fiduciary serving $500K+ AUM clients, your Squarespace site lacks the authority content and lead generation tools that high-net-worth prospects expect — a custom site with financial planning content would attract the clients you want."
+    },
+    "google_rating": null,
+    "google_review_count": null
+  },
+  {
+    "business_name": "J. Hoffman, CPA",
+    "city": "Placerville",
+    "website_url": "https://jhoffmancpa.com/",
+    "research_data": {
+      "website": {
+        "url": "https://jhoffmancpa.com/",
+        "platform": "GoDaddy Website Builder",
+        "issues": [
+          "Multiple broken placeholder images (data:image/gif base64 placeholders)",
+          "Excessive CSS bloat from GoDaddy builder",
+          "Missing alt text on images including logo",
+          "Multiple Google Font variants loading — performance hit",
+          "Accessibility concerns throughout"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/people/J-Hoffman-CPA/100088318298313/",
+        "instagram": null,
+        "linkedin": "https://www.linkedin.com/in/jenee-hoffman-0897377/"
+      },
+      "reviews": {
+        "google": { "rating": null, "count": 1 },
+        "avvo": { "rating": null },
+        "yelp": { "rating": null, "count": null }
+      },
+      "opportunities": [
+        "Only 1 Google review — critical need for review generation",
+        "GoDaddy site has broken images and poor performance",
+        "Women-owned business — differentiator in accounting space",
+        "Accepting new clients — needs better online presence to capture them",
+        "Appointment-only model could benefit from online scheduling integration",
+        "No Instagram presence",
+        "Tax season is cyclical — content marketing could drive year-round visibility"
+      ],
+      "pitch_angle": "With only 1 Google review and a GoDaddy site with broken images, you are invisible to the clients actively searching for a CPA in Placerville — a professional website with review automation and online scheduling would transform your client pipeline."
+    },
+    "google_rating": null,
+    "google_review_count": 1
+  },
+  {
+    "business_name": "Vukovich Insurance",
+    "city": "Placerville",
+    "website_url": "http://www.vukovichinsurance.com/",
+    "research_data": {
+      "website": {
+        "url": "http://www.vukovichinsurance.com/",
+        "platform": "Unknown (site refused connection — likely very old/basic hosting)",
+        "issues": [
+          "Site connection refused on fetch — may be down or have hosting issues",
+          "HTTP only (no HTTPS) — major security and SEO penalty",
+          "If site is up, likely very dated design given HTTP-only URL",
+          "Multiple Vukovich family members run separate insurance operations — brand fragmentation"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null,
+        "linkedin": null
+      },
+      "reviews": {
+        "google": { "rating": 4.4, "count": 7 },
+        "avvo": { "rating": null },
+        "yelp": { "rating": null, "count": null }
+      },
+      "opportunities": [
+        "70+ year family business since 1954 — incredible heritage story not told online",
+        "HTTP-only site is a serious SEO and trust penalty — needs HTTPS immediately",
+        "Site may be experiencing downtime — losing leads",
+        "Brand fragmentation across Troy Vukovich (Farmers), Aimee Vukovich, and Matich|Vukovich",
+        "First Farmers Insurance Agency in El Dorado County — marketing gold not leveraged",
+        "4.4 Google rating is solid but only 7 reviews",
+        "No social media presence despite multi-generational community roots"
+      ],
+      "pitch_angle": "As El Dorado County's first Farmers Insurance agency since 1954, your 70-year legacy deserves better than an HTTP-only website that may be experiencing downtime — a modern site telling your family's story would honor that heritage and bring in new clients."
+    },
+    "google_rating": 4.4,
+    "google_review_count": 7
+  },
+  {
+    "business_name": "Weston & Tuttle CPAs",
+    "city": "Cameron Park",
+    "website_url": "https://www.westonandtuttle.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.westonandtuttle.com/",
+        "platform": "CPA Site Solutions",
+        "issues": [
+          "Uses deprecated Universal Analytics (UA) instead of GA4",
+          "Duplicate analytics — both Google Analytics and Matomo tracking running",
+          "Heavy inline JavaScript for form handling and cookie management",
+          "Specialized CPA platform limits customization and modern design"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/people/Weston-Tuttle-CPAs/100075691646828/",
+        "instagram": null,
+        "linkedin": "https://www.linkedin.com/company/weston-and-tuttle"
+      },
+      "reviews": {
+        "google": { "rating": null, "count": null },
+        "avvo": { "rating": null },
+        "yelp": { "rating": null, "count": 19 }
+      },
+      "opportunities": [
+        "Decades of experience — strong authority positioning opportunity",
+        "Also run Weston & Tuttle Wealth Advisors (wtwealthadvisors.com) — cross-selling opportunity",
+        "19 Yelp reviews with strong positive sentiment",
+        "CPA Site Solutions platform is limiting — custom build would differentiate",
+        "Deprecated Google Analytics setup means they are losing tracking data",
+        "Cameron Park location is growing market — local SEO opportunity",
+        "Tax + wealth management dual service is rare — should be featured prominently",
+        "100% Facebook recommendation rate from 8 reviews"
+      ],
+      "pitch_angle": "Your decades-long reputation and dual tax/wealth management practice are unique in Cameron Park, but a dated CPA template site with broken analytics is not capturing the full value — a modern site connecting both practices would be a game-changer."
+    },
+    "google_rating": null,
+    "google_review_count": null
+  },
+  {
+    "business_name": "ISU Insurance Services - Atwood Agency",
+    "city": "Placerville",
+    "website_url": "https://www.atwoodins.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.atwoodins.com/",
+        "platform": "WordPress (Zywave insurance platform)",
+        "issues": [
+          "Heavy JavaScript dependencies impacting load speed",
+          "Multiple tracking systems (GTM, GA, Heap Analytics) running simultaneously",
+          "Significant inline CSS hurting caching efficiency",
+          "Basic cookie consent implementation",
+          "reCAPTCHA adds friction to forms"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/ISU.Insurance.Atwood.Agency/",
+        "instagram": null,
+        "linkedin": "https://www.linkedin.com/company/isu-insurance-services---atwood-agency"
+      },
+      "reviews": {
+        "google": { "rating": null, "count": null },
+        "avvo": { "rating": null },
+        "yelp": { "rating": null, "count": null }
+      },
+      "opportunities": [
+        "Operating since 1919 — 107 years of heritage is incredible marketing asset",
+        "Access to 350+ insurance companies — massive selection advantage",
+        "WordPress/Zywave platform is functional but heavy and template-driven",
+        "Two locations (Placerville and Georgetown) — local SEO for both",
+        "24/7 availability claim is strong differentiator",
+        "Positive customer testimonials but unknown Google review count",
+        "No Instagram presence despite strong community ties"
+      ],
+      "pitch_angle": "107 years in business with access to 350+ carriers is an unmatched story in El Dorado County — your current template site does not tell that story or capture the local search traffic that a proper website and SEO strategy would deliver."
+    },
+    "google_rating": null,
+    "google_review_count": null
+  },
+  {
+    "business_name": "Tom R. Johnson, Attorney at Law",
+    "city": "Sacramento",
+    "website_url": "https://sacramentoworkcompattorney.com/",
+    "research_data": {
+      "website": {
+        "url": "https://sacramentoworkcompattorney.com/",
+        "platform": "Justia (custom/proprietary)",
+        "issues": [
+          "Broken internal links with malformed URLs",
+          "Incomplete CSS styling — empty color declarations visible",
+          "Mixed raw CSS imports visible in HTML",
+          "Custom form submission may have validation issues",
+          "Duplicated navigation in HTML structure",
+          "Also has secondary site at forinjuryadvice.com — brand fragmentation"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/SacramentoWorkCompAttorney/",
+        "instagram": null,
+        "linkedin": null
+      },
+      "reviews": {
+        "google": { "rating": 4.7, "count": null },
+        "avvo": { "rating": null },
+        "yelp": { "rating": null, "count": null }
+      },
+      "opportunities": [
+        "Two separate websites (sacramentoworkcompattorney.com + forinjuryadvice.com) fragmenting SEO",
+        "Broken links and incomplete CSS make site look unprofessional",
+        "4.7 rating on TrustAnalytica is strong — should be leveraged more",
+        "30+ years experience and former law professor — authority positioning",
+        "Workers comp is a high-value, recurring-referral niche",
+        "No LinkedIn or Instagram presence",
+        "Justia platform and domain name are strong for SEO but execution is poor"
+      ],
+      "pitch_angle": "Your 30+ years of workers comp experience and strong 4.7 rating are undermined by a site with broken links and incomplete styling across two fragmented domains — consolidating into one professional site would maximize your search visibility."
+    },
+    "google_rating": 4.7,
+    "google_review_count": null
+  },
+  {
+    "business_name": "Law Office of Wraymond K. Plummer",
+    "city": "Sacramento",
+    "website_url": "https://plummerlaw.net/",
+    "research_data": {
+      "website": {
+        "url": "https://plummerlaw.net/",
+        "platform": "WordPress (site may be down — connection refused)",
+        "issues": [
+          "Website connection refused on fetch — may be offline",
+          "Law office is 'not currently active' per website notice",
+          "Former clients directed to email for case information",
+          "Practice may be winding down or transitioning"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null,
+        "linkedin": null
+      },
+      "reviews": {
+        "google": { "rating": null, "count": null },
+        "avvo": { "rating": null },
+        "yelp": { "rating": null, "count": null }
+      },
+      "opportunities": [
+        "Office is not currently active — may not be a viable prospect",
+        "20+ years juvenile defense experience — if reopening, strong positioning",
+        "McGeorge School of Law with distinction — strong credentials",
+        "If transitioning practice, could need a refreshed web presence",
+        "Website appears to be offline — no immediate opportunity unless practice resumes"
+      ],
+      "pitch_angle": "If you are considering reactivating your practice, a modern website showcasing your 20+ years of juvenile defense expertise and distinguished McGeorge credentials would immediately re-establish your presence in Sacramento and Placer County courts."
+    },
+    "google_rating": null,
+    "google_review_count": null
+  },
+  {
+    "business_name": "The Swenson Law Firm",
+    "city": "Orangevale",
+    "website_url": "https://www.swensonlawfirm.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.swensonlawfirm.com/",
+        "platform": "Duda",
+        "issues": [
+          "Built on Duda platform — template-based with limited differentiation",
+          "Large unoptimized inline CSS and JavaScript assets",
+          "Deprecated jQuery patterns throughout",
+          "Mixed third-party dependencies add complexity",
+          "Multiple analytics and integration platforms loaded"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/SwensonLaw/",
+        "instagram": null,
+        "linkedin": null
+      },
+      "reviews": {
+        "google": { "rating": null, "count": null },
+        "avvo": { "rating": null },
+        "yelp": { "rating": null, "count": 14 }
+      },
+      "opportunities": [
+        "BBB Board of Directors member since 2015 — strong trust signal",
+        "Dual estate planning + business law practice — unique positioning",
+        "MyCase integration suggests organized practice management — good sign",
+        "14 Yelp reviews with strong positive sentiment",
+        "Duda template limits branding and SEO customization",
+        "Chinese language proficiency (Utah undergrad major) — undermarketed differentiator",
+        "No LinkedIn or Instagram presence",
+        "Orangevale/Sacramento market is competitive — needs stronger SEO"
+      ],
+      "pitch_angle": "Your BBB Board membership and dual estate planning/business law practice set you apart in Orangevale, but a Duda template site with 14 Yelp reviews not being captured on Google means you are leaving visibility on the table — a custom site would fix that."
+    },
+    "google_rating": null,
+    "google_review_count": null
+  }
+]

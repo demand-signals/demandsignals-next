@@ -11,10 +11,10 @@ export async function POST(request: NextRequest) {
   const { prospect_id } = body
 
   if (prospect_id) {
-    // Score single prospect
+    // Score single prospect — fetch all fields for full intelligence scoring
     const { data: prospect, error: fetchError } = await supabaseAdmin
       .from('prospects')
-      .select('id, google_rating, google_review_count, site_quality_score, industry, score_factors')
+      .select('*')
       .eq('id', prospect_id)
       .single()
 
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Prospect not found' }, { status: 404 })
     }
 
-    const { score, factors } = calculateProspectScore(prospect)
+    const { score, tier, factors } = calculateProspectScore(prospect)
 
     const { error: updateError } = await supabaseAdmin
       .from('prospects')
@@ -33,13 +33,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
 
-    return NextResponse.json({ scored: 1, score })
+    return NextResponse.json({ scored: 1, score, tier })
   }
 
-  // Batch score all prospects
+  // Batch score all prospects — fetch all fields for full intelligence scoring
   const { data: prospects, error: fetchError } = await supabaseAdmin
     .from('prospects')
-    .select('id, google_rating, google_review_count, site_quality_score, industry, score_factors')
+    .select('*')
 
   if (fetchError) {
     return NextResponse.json({ error: fetchError.message }, { status: 500 })
@@ -50,15 +50,19 @@ export async function POST(request: NextRequest) {
   }
 
   let scored = 0
+  const tierCounts: Record<string, number> = {}
   for (const prospect of prospects) {
-    const { score, factors } = calculateProspectScore(prospect)
+    const { score, tier, factors } = calculateProspectScore(prospect)
     const { error: updateError } = await supabaseAdmin
       .from('prospects')
       .update({ prospect_score: score, score_factors: factors })
       .eq('id', prospect.id)
 
-    if (!updateError) scored++
+    if (!updateError) {
+      scored++
+      tierCounts[tier] = (tierCounts[tier] || 0) + 1
+    }
   }
 
-  return NextResponse.json({ scored })
+  return NextResponse.json({ scored, tiers: tierCounts })
 }

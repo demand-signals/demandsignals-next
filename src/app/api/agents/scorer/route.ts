@@ -26,13 +26,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Prospect not found' }, { status: 404 })
   }
 
-  // Calculate score
-  const { score, factors } = calculateProspectScore({
+  // Calculate score with full intelligence signals
+  const { score, tier, factors } = calculateProspectScore({
     google_rating: prospect.google_rating,
     google_review_count: prospect.google_review_count,
+    yelp_rating: prospect.yelp_rating,
+    yelp_review_count: prospect.yelp_review_count,
     site_quality_score: prospect.site_quality_score,
     industry: prospect.industry,
-    score_factors: prospect.score_factors,
+    stage: prospect.stage,
+    tags: prospect.tags,
+    research_data: prospect.research_data,
+    owner_name: prospect.owner_name,
+    business_email: prospect.business_email,
+    business_phone: prospect.business_phone,
+    notes: prospect.notes,
   })
 
   const auto_demo_eligible = score >= 70
@@ -58,7 +66,7 @@ export async function POST(request: NextRequest) {
     prospect_id,
     type: 'note',
     subject: `Score updated: ${score}${auto_demo_eligible ? ' (auto-demo eligible)' : ''}`,
-    body: `Factors: review_signal=${factors.review_signal}, site_gap=${factors.site_gap}, industry_value=${factors.industry_value}`,
+    body: `Tier: ${tier} | Review: ${factors.review_authority} | Vulnerability: ${factors.digital_vulnerability} | Close: ${factors.close_probability} | Revenue: ${factors.revenue_potential}`,
     created_by: 'agent:scorer',
   })
 

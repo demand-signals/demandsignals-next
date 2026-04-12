@@ -1,0 +1,515 @@
+[
+  {
+    "business_name": "Edwards & Everhart Dental",
+    "city": "El Dorado Hills",
+    "address": "4695 Golden Foothill Pkwy, El Dorado Hills, CA 95762",
+    "phone": "(916) 939-9912",
+    "website_url": "https://www.edwardseverhartdental.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.edwardseverhartdental.com/",
+        "platform": "ProSites",
+        "ssl_valid": true,
+        "issues": [
+          "Contact form explicitly broken — site displays 'Note: Do NOT use the contact form below, it is currently having technical issues'",
+          "ProSites template — cookie-cutter dental platform with limited customization",
+          "Users directed to email or phone instead of form, losing lead capture",
+          "Template design looks dated compared to modern dental practices"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/EdwardsEverhartDental/",
+        "instagram": null,
+        "google_business": true,
+        "yelp": "https://www.yelp.com/biz/edwards-everhart-dental-el-dorado-hills"
+      },
+      "reviews": {
+        "google": { "rating": 4.9, "count": 171 },
+        "yelp": { "rating": 4.5, "count": 32 },
+        "other": [
+          { "platform": "Birdeye", "rating": 4.9, "count": 171 },
+          { "platform": "Nextdoor", "rating": null, "count": null }
+        ]
+      },
+      "opportunities": [
+        "Broken contact form is losing leads — immediate pain point",
+        "ProSites template limits SEO and differentiation from competitors",
+        "No Instagram presence — missing visual marketing for cosmetic dentistry",
+        "Practice moved to brand new facility in 2021 but website doesn't reflect modern image",
+        "Strong review profile (4.9 with 171 Google reviews) not leveraged on site",
+        "AI review management and automated social could amplify their reputation"
+      ],
+      "deal_estimate": "$8K-$15K",
+      "pitch_angle": "Your broken contact form is actively losing new patient leads — we can replace the ProSites template with a modern, AI-powered site that converts visitors and matches the quality of your new facility."
+    },
+    "google_rating": 4.9,
+    "google_review_count": 171,
+    "yelp_rating": 4.5,
+    "yelp_review_count": 32
+  },
+  {
+    "business_name": "D. Martel Plumbing Service & Repair",
+    "city": "El Dorado Hills",
+    "address": "1136 Suncast Ln, Suite 6, El Dorado Hills, CA 95762",
+    "phone": "(916) 933-6363",
+    "website_url": "https://dmartelplumbing.com/",
+    "research_data": {
+      "website": {
+        "url": "https://dmartelplumbing.com/",
+        "platform": "WordPress (Sydney theme)",
+        "ssl_valid": true,
+        "issues": [
+          "WordPress with Sydney theme — functional but template-heavy",
+          "Multiple plugins detected (Contact Form 7, WPForms Lite, WooCommerce, Instagram Feed) — potential security and performance concerns",
+          "Dual form plugins (CF7 + WPForms) suggests ad-hoc plugin management",
+          "Veteran-owned business not prominently featured as a differentiator"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": "https://www.instagram.com/dmartelplumbing/",
+        "google_business": true,
+        "yelp": "https://www.yelp.com/biz/d-martel-plumbing-el-dorado-hills"
+      },
+      "reviews": {
+        "google": { "rating": 4.7, "count": 99 },
+        "yelp": { "rating": 4.5, "count": 223 },
+        "other": [
+          { "platform": "Angi", "rating": 4.9, "count": null },
+          { "platform": "Houzz", "rating": 5.0, "count": null },
+          { "platform": "BBB", "rating": "A+", "count": null },
+          { "platform": "Nextdoor", "rating": null, "count": null, "note": "Neighborhood Favorite 2017-2024" }
+        ]
+      },
+      "opportunities": [
+        "223 Yelp reviews is massive for a plumber — this review velocity is an asset to protect and amplify",
+        "WordPress plugin sprawl creates maintenance burden and security surface",
+        "No Facebook page found — missing a key local marketing channel",
+        "Instagram has only 132 followers despite 131 posts — low engagement ROI",
+        "Veteran-owned status could be a stronger brand differentiator",
+        "30+ years in business with BBB A+ — legacy brand deserving premium web presence",
+        "AI-powered review management could consolidate their multi-platform dominance"
+      ],
+      "deal_estimate": "$8K-$18K",
+      "pitch_angle": "With 223 Yelp reviews and 30+ years of trust, your web presence should match your reputation — we'll replace the plugin-heavy WordPress site with a fast, secure platform that turns your review dominance into a lead machine."
+    },
+    "google_rating": 4.7,
+    "google_review_count": 99,
+    "yelp_rating": 4.5,
+    "yelp_review_count": 223
+  },
+  {
+    "business_name": "Good Guys Heating & Cooling",
+    "city": "Shingle Springs",
+    "address": "4400 Business Dr, Suite 100, Shingle Springs, CA 95682",
+    "phone": "(530) 391-9339",
+    "website_url": "https://www.goodguysheatingcooling.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.goodguysheatingcooling.com/",
+        "platform": "Scorpion (proprietary HVAC platform)",
+        "ssl_valid": true,
+        "issues": [
+          "Built on Scorpion's proprietary platform — vendor lock-in with limited customization",
+          "Custom JavaScript framework makes SEO optimization difficult outside Scorpion's ecosystem",
+          "Footer credits 'Internet Marketing Experts' (Scorpion) — not differentiated from competitors using same platform",
+          "Likely paying premium monthly fees to Scorpion for website + marketing bundle"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/goodguysheatingcooling/",
+        "instagram": "https://www.instagram.com/goodguysheating/",
+        "google_business": true,
+        "yelp": "https://www.yelp.com/biz/good-guys-heating-and-cooling-shingle-springs"
+      },
+      "reviews": {
+        "google": { "rating": 4.9, "count": 832 },
+        "yelp": { "rating": 4.5, "count": 98 },
+        "other": [
+          { "platform": "Birdeye", "rating": 4.9, "count": 1048 },
+          { "platform": "HomeAdvisor", "rating": 5.0, "count": null },
+          { "platform": "Angi", "rating": 5.0, "count": null },
+          { "platform": "ONE AllRatings", "rating": 4.9, "count": 884 }
+        ]
+      },
+      "opportunities": [
+        "832 Google reviews at 4.9 is exceptional — this is a review generation machine",
+        "Currently locked into Scorpion's proprietary platform with ongoing fees",
+        "Founded 2019 but already dominating reviews — aggressive growth company",
+        "Strong social media presence (Facebook 1200+ likes, Instagram, Twitter/X)",
+        "Multiple service areas (Shingle Springs, Folsom, Yuba City, Sacramento) — needs geo-targeted landing pages",
+        "AI content generation could fuel their multi-location SEO strategy",
+        "Breaking free from Scorpion vendor lock-in is a compelling cost-savings story"
+      ],
+      "deal_estimate": "$15K-$25K",
+      "pitch_angle": "You're paying Scorpion for a platform you don't own — we'll build you a site you control with AI-powered content that dominates every service area, while keeping your 832-review engine running with automated review management."
+    },
+    "google_rating": 4.9,
+    "google_review_count": 832,
+    "yelp_rating": 4.5,
+    "yelp_review_count": 98
+  },
+  {
+    "business_name": "Golden Foothills Oral, Facial, & Dental Implant Surgery",
+    "city": "El Dorado Hills",
+    "address": "4901 Golden Foothill Pkwy, El Dorado Hills, CA 95762",
+    "phone": "(916) 941-9860",
+    "website_url": "https://goldenfoothillsimplants.com/",
+    "research_data": {
+      "website": {
+        "url": "https://goldenfoothillsimplants.com/",
+        "platform": "Custom React (Blueprint UI framework)",
+        "ssl_valid": true,
+        "issues": [
+          "Custom React/Blueprint UI app — unusual for a dental practice, likely built by a specialty vendor",
+          "Also has secondary domain eldoradohillsoralsurgery.com — split SEO authority",
+          "Heavy CSS bundle with Blueprint 3 framework — potential performance issues",
+          "Three locations (EDH, Folsom, Auburn) but website may not optimize for local SEO across all"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/GoldenFoothillsOralFacialSurgeryCenter/",
+        "instagram": "https://www.instagram.com/goldenfoothillsoralsurgery/",
+        "google_business": true,
+        "yelp": "https://www.yelp.com/biz/golden-foothills-oral-and-facial-surgery-center-el-dorado-hills-3"
+      },
+      "reviews": {
+        "google": { "rating": 4.6, "count": 130 },
+        "yelp": { "rating": 4.0, "count": 25 },
+        "other": [
+          { "platform": "Birdeye", "rating": 4.6, "count": 138 }
+        ]
+      },
+      "opportunities": [
+        "Dual domains splitting SEO juice — consolidation opportunity",
+        "Cosmetic services (BOTOX, fillers, rhinoplasty, scar revision) are high-margin and undertargeted",
+        "Three locations need dedicated geo-targeted landing pages",
+        "Board-certified surgeons are a premium differentiator not fully leveraged online",
+        "Low Instagram following (17 followers) despite offering visual cosmetic procedures",
+        "CBCT scanning and 3D surgical guides are tech differentiators worth showcasing",
+        "AI content could target high-value procedures like full-arch restoration and dental implants"
+      ],
+      "deal_estimate": "$15K-$25K",
+      "pitch_angle": "Your cosmetic and implant services deserve better than split domains and 17 Instagram followers — we'll unify your web presence, create geo-targeted pages for all three locations, and use AI content to capture high-value implant and cosmetic surgery searches."
+    },
+    "google_rating": 4.6,
+    "google_review_count": 130,
+    "yelp_rating": 4.0,
+    "yelp_review_count": 25
+  },
+  {
+    "business_name": "G & O Body Shop Inc.",
+    "city": "Placerville",
+    "address": "7515 Green Valley Rd, Placerville, CA 95667",
+    "phone": "(530) 622-3367",
+    "website_url": "http://www.gandobodyshop.com/",
+    "research_data": {
+      "website": {
+        "url": "http://www.gandobodyshop.com/",
+        "platform": "Unknown (basic HTML/template)",
+        "ssl_valid": false,
+        "issues": [
+          "SSL CERTIFICATE EXPIRED — site shows security warning to visitors, actively losing trust",
+          "Still serving on HTTP — not HTTPS, major trust and SEO penalty",
+          "Website design appears basic and dated for a 50+ year business",
+          "No evident CMS — likely a static template site with limited updateability",
+          "50+ year legacy business with a website that doesn't reflect its reputation"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null,
+        "google_business": true,
+        "yelp": "https://www.yelp.com/biz/g-and-o-body-shop-placerville"
+      },
+      "reviews": {
+        "google": { "rating": 4.5, "count": 78 },
+        "yelp": { "rating": 5.0, "count": 50 },
+        "other": [
+          { "platform": "Carwise", "rating": 4.8, "count": 1206, "note": "Primary auto body review platform" },
+          { "platform": "BBB", "rating": "A+", "count": null, "note": "Accredited since 1991" },
+          { "platform": "G&O Towing (sister company)", "yelp_reviews": 111 }
+        ]
+      },
+      "opportunities": [
+        "EXPIRED SSL is the #1 emergency — visitors see security warnings, Google penalizes ranking",
+        "1,206 Carwise reviews is extraordinary — this social proof is completely hidden from their website",
+        "50+ year family business with no social media presence at all",
+        "No Facebook or Instagram — missing all social channels for a business this established",
+        "BBB A+ since 1991 not displayed on website",
+        "Sister towing company (G&O Towing, 111 Yelp reviews) could be cross-promoted",
+        "Lifetime warranty, free estimates, insurance assistance — strong USPs not featured"
+      ],
+      "deal_estimate": "$8K-$15K",
+      "pitch_angle": "Your SSL certificate is expired and visitors see security warnings — with 1,206 Carwise reviews and 50+ years of trust, you deserve a modern, secure site that showcases your dominance and finally puts you on social media."
+    },
+    "google_rating": 4.5,
+    "google_review_count": 78,
+    "yelp_rating": 5.0,
+    "yelp_review_count": 50
+  },
+  {
+    "business_name": "OBO' Italian Table & Bar",
+    "city": "El Dorado Hills",
+    "address": "4370 Town Center Blvd, Suite 120, El Dorado Hills, CA 95762",
+    "phone": null,
+    "website_url": "https://oboitalian.com/",
+    "research_data": {
+      "website": {
+        "url": "https://oboitalian.com/",
+        "platform": "WordPress (custom 'obo-sfr' theme)",
+        "ssl_valid": true,
+        "issues": [
+          "WordPress with custom theme shared across restaurant group (obo-sfr)",
+          "Uses Gravity Forms and ACF — moderate plugin dependency",
+          "EDH location is new (replaced Selland's Jan 2026) — still building local SEO authority",
+          "Toast Tab used for ordering — split between website and ordering platform"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/oboitalian/",
+        "instagram": null,
+        "google_business": true,
+        "yelp": "https://www.yelp.com/biz/obo-italian-table-and-bar-el-dorado-hills"
+      },
+      "reviews": {
+        "google": { "rating": null, "count": null },
+        "yelp": { "rating": null, "count": null, "note": "EDH location too new for significant Yelp reviews; Sacramento location has 1,225 reviews" },
+        "other": [
+          { "platform": "TripAdvisor", "rating": 3.0, "count": 1, "note": "EDH location — very early, limited reviews" },
+          { "platform": "DoorDash", "rating": null, "count": null },
+          { "platform": "Postmates", "rating": null, "count": null }
+        ]
+      },
+      "opportunities": [
+        "Brand new EDH location (Jan 2026) — blank slate for local SEO dominance from day one",
+        "TripAdvisor rating is 3.0 with only 1 review — needs review generation ASAP",
+        "Sacramento location has 1,225 Yelp reviews — EDH needs to build fast to match",
+        "Replaced Selland's — need to capture the existing customer base searching for the old name",
+        "Spacious patio overlooking lake and amphitheater — visual content goldmine for social",
+        "Walk-in only (no reservations) — needs strong local discovery to drive foot traffic",
+        "AI review auto-responders could help manage reputation across two locations"
+      ],
+      "deal_estimate": "$10K-$20K",
+      "pitch_angle": "Your EDH location replaced Selland's and needs to own local search immediately — we'll build a geo-optimized presence that captures Selland's old traffic, generates reviews fast, and turns that lakeside patio into an Instagram magnet."
+    },
+    "google_rating": null,
+    "google_review_count": null,
+    "yelp_rating": null,
+    "yelp_review_count": null
+  },
+  {
+    "business_name": "Platt Group (South Fork Grille / Sienna / Land Ocean)",
+    "city": "El Dorado Hills",
+    "address": "4364 Town Center Blvd, Suite 124, El Dorado Hills, CA 95762",
+    "phone": null,
+    "website_url": "https://southforkrestaurants.com/",
+    "research_data": {
+      "website": {
+        "url_south_fork": "https://southforkrestaurants.com/",
+        "url_sienna": "https://siennarestaurants.com/",
+        "url_land_ocean": "https://landoceanrestaurants.com/",
+        "platform": "WordPress (Avada theme for South Fork; custom themes for others)",
+        "ssl_valid": true,
+        "issues": [
+          "Three separate websites for three restaurant brands — fragmented digital presence",
+          "South Fork uses Avada (premium WordPress theme) with Fusion Builder — heavy page builder",
+          "No unified brand hub for the Platt Group portfolio",
+          "Multiple locations across EDH, Folsom, Roseville, Reno, Meridian — geo-SEO complexity"
+        ]
+      },
+      "social": {
+        "facebook_south_fork": "https://www.facebook.com/SouthForkGrilleEDH/",
+        "facebook_land_ocean": "https://www.facebook.com/LOFolsom/",
+        "instagram": null,
+        "google_business": true,
+        "yelp_south_fork": "https://www.yelp.com/biz/south-fork-grille-el-dorado-hills",
+        "yelp_sienna": "https://www.yelp.com/biz/sienna-restaurant-el-dorado-hills-el-dorado-hills-4",
+        "yelp_land_ocean": "https://www.yelp.com/biz/land-ocean-restaurant-folsom-folsom-2"
+      },
+      "reviews": {
+        "google": { "rating": null, "count": null, "note": "Multiple locations; Sienna EDH ~4.4 on Google" },
+        "yelp": {
+          "south_fork": { "rating": null, "count": 514 },
+          "sienna_edh": { "rating": 3.9, "count": 1312 },
+          "land_ocean_folsom": { "rating": null, "count": 1265 },
+          "combined_yelp": 3091
+        },
+        "other": [
+          { "platform": "TripAdvisor (South Fork)", "rating": 5.0, "count": 4 },
+          { "platform": "TripAdvisor (Sienna)", "rating": 4.1, "count": 290 },
+          { "platform": "TripAdvisor (Land Ocean)", "rating": 4.1, "count": 259 },
+          { "platform": "OpenTable (Sienna)", "rating": 4.3, "count": 1015 }
+        ]
+      },
+      "opportunities": [
+        "3,091 combined Yelp reviews across 3 brands — massive review footprint to manage",
+        "Three separate WordPress sites means 3x the maintenance, hosting, and update burden",
+        "Multi-location empire (EDH, Folsom, Roseville, Reno, Meridian) needs unified strategy",
+        "Mark and Karoline Platt are local celebrities — personal brand not leveraged digitally",
+        "Sienna EDH has 1,312 Yelp reviews — review management at this scale needs AI",
+        "No unified Platt Group website to cross-promote all three brands",
+        "AI-powered social media management across 3 brands and 6+ locations is a massive time saver",
+        "This is a whale account — ongoing monthly retainer for content, reviews, and social across portfolio"
+      ],
+      "deal_estimate": "$25K-$50K",
+      "pitch_angle": "Managing 3 restaurant brands with 3,091 Yelp reviews across 6+ locations is a full-time job — our AI systems handle review responses, social content, and local SEO for your entire portfolio so you can focus on the food."
+    },
+    "google_rating": null,
+    "google_review_count": null,
+    "yelp_rating": null,
+    "yelp_review_count": 3091
+  },
+  {
+    "business_name": "Cantorbridge Financial",
+    "city": "El Dorado Hills",
+    "address": "4364 Town Center Blvd, Suite 211, El Dorado Hills, CA 95762",
+    "phone": "(916) 693-5073",
+    "website_url": "https://www.cantorbridge.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.cantorbridge.com/",
+        "platform": "Squarespace (Template v7.1)",
+        "ssl_valid": true,
+        "issues": [
+          "Squarespace 7.1 template — limited customization and SEO ceiling",
+          "Internal Squarespace URL visible: hibiscus-lobster-4brw.squarespace.com — unprofessional if exposed",
+          "Squarespace commerce scripts loading despite being a financial advisory firm — unnecessary bloat",
+          "Template-based design doesn't convey the premium, trust-heavy image a fiduciary needs",
+          "Limited ability to add dynamic content, blog, or thought leadership at scale on Squarespace"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/cantorbridge/",
+        "instagram": null,
+        "google_business": true,
+        "yelp": "https://www.yelp.com/biz/cantorbridge-financial-el-dorado-hills"
+      },
+      "reviews": {
+        "google": { "rating": null, "count": null, "note": "Financial advisors typically have limited public reviews" },
+        "yelp": { "rating": null, "count": null },
+        "other": [
+          { "platform": "LinkedIn", "url": "https://www.linkedin.com/in/cantorbridgecr/", "note": "Chris Rasmussen, AAMS CRPS" },
+          { "platform": "Nextdoor", "rating": null, "count": null }
+        ]
+      },
+      "opportunities": [
+        "Squarespace is a ceiling for a fiduciary firm that needs to project authority and trust",
+        "No thought leadership content or blog — missing SEO and credibility opportunity",
+        "Independent fiduciary positioning is a powerful differentiator not fully exploited online",
+        "Chris Rasmussen has AAMS and CRPS credentials — personal brand authority not leveraged",
+        "Financial advisors in EDH Town Center competing for affluent demographic",
+        "No Instagram presence — missing the visual branding that affluent clients expect",
+        "AI-generated thought leadership content (market commentary, planning guides) builds trust at scale",
+        "Compliance-friendly content automation is a unique DSIG capability for financial services"
+      ],
+      "deal_estimate": "$10K-$20K",
+      "pitch_angle": "A fiduciary advisor serving affluent El Dorado Hills clients deserves more than a Squarespace template — we'll build a trust-projecting platform with AI-generated thought leadership content that positions you as the go-to independent advisor in the foothills."
+    },
+    "google_rating": null,
+    "google_review_count": null,
+    "yelp_rating": null,
+    "yelp_review_count": null
+  },
+  {
+    "business_name": "Vera Dooley, DDS",
+    "city": "Placerville",
+    "address": "708 Main St, Placerville, CA 95667",
+    "phone": "(530) 622-3256",
+    "website_url": "https://dooleydds.com/",
+    "research_data": {
+      "website": {
+        "url": "https://dooleydds.com/",
+        "platform": "WordPress (Genesis framework, Infinity Pro child theme)",
+        "ssl_valid": true,
+        "issues": [
+          "Genesis/Infinity Pro theme — solid but aging WordPress framework",
+          "Contact Form 7 for forms — functional but basic",
+          "Lazy Sizes plugin for images — indicates performance wasn't handled natively",
+          "Genesis framework is no longer actively developed by StudioPress/WP Engine — tech debt risk"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/VeraDooleyDDS/",
+        "instagram": null,
+        "google_business": true,
+        "yelp": "https://www.yelp.com/biz/vera-dooley-dds-placerville"
+      },
+      "reviews": {
+        "google": { "rating": 5.0, "count": 86 },
+        "yelp": { "rating": null, "count": null },
+        "other": [
+          { "platform": "Birdeye", "rating": 5.0, "count": 104 },
+          { "platform": "Chamber of Commerce", "rating": 5.0, "count": 45 },
+          { "platform": "Healthgrades", "rating": null, "count": 1 },
+          { "platform": "WebMD", "rating": null, "count": null }
+        ]
+      },
+      "opportunities": [
+        "PERFECT 5.0 Google rating with 86 reviews — this is gold that should be front and center",
+        "Genesis framework is sunset — migration to modern platform is inevitable",
+        "No Instagram for a dentist doing cosmetic/preventive work — visual platform opportunity",
+        "Main Street Placerville location — local/historic angle for content marketing",
+        "Special training in anesthesiology and special patient procedures — niche differentiator",
+        "AI review management could maintain the perfect 5.0 while scaling review generation",
+        "Family dentistry in a small town — community trust angle for content"
+      ],
+      "deal_estimate": "$8K-$15K",
+      "pitch_angle": "A perfect 5.0 Google rating is incredibly rare — your website should showcase that flawless reputation with a modern design that matches Dr. Dooley's caring approach, while AI keeps the reviews flowing and the 5-star average locked in."
+    },
+    "google_rating": 5.0,
+    "google_review_count": 86,
+    "yelp_rating": null,
+    "yelp_review_count": null
+  },
+  {
+    "business_name": "Hangtown Body Shop & Auto Glass",
+    "city": "Placerville",
+    "address": "485 Pierroz Rd, Placerville, CA 95667",
+    "phone": "(530) 622-7940",
+    "website_url": "https://www.hangtownbodyshop.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.hangtownbodyshop.com/",
+        "platform": "Google Sites",
+        "ssl_valid": true,
+        "issues": [
+          "Built on Google Sites — extremely limited platform, zero SEO capability",
+          "Google Sites footer and 'Report abuse' link visible — unprofessional for a business",
+          "No CMS, no blog capability, no dynamic content possible",
+          "Cannot run custom scripts, analytics, or conversion tracking properly",
+          "Google Sites is a free tool — signals the business hasn't invested in web presence"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/HangtownBodyShop/",
+        "instagram": null,
+        "google_business": true,
+        "yelp": "https://www.yelp.com/biz/hangtown-body-shop-and-auto-glass-placerville"
+      },
+      "reviews": {
+        "google": { "rating": 4.9, "count": 75 },
+        "yelp": { "rating": 4.5, "count": 20 },
+        "other": [
+          { "platform": "Birdeye", "rating": 4.9, "count": 93 },
+          { "platform": "Chamber of Commerce", "rating": 4.9, "count": 71 }
+        ]
+      },
+      "opportunities": [
+        "Google Sites is the lowest possible web platform — massive upgrade opportunity",
+        "4.9 rating with 75 Google reviews is excellent for an auto body shop",
+        "Auto body + auto glass is a dual-service differentiator not leveraged on site",
+        "No Instagram — before/after collision repair photos are social media gold",
+        "Insurance company partnerships should be highlighted for trust",
+        "Competitor G&O has expired SSL — Hangtown can capitalize on being the modern choice",
+        "AI content could target specific repair types (collision, glass, paintless dent repair)"
+      ],
+      "deal_estimate": "$5K-$12K",
+      "pitch_angle": "A 4.9-star body shop running on Google Sites is leaving money on the table — we'll build a real website with before/after galleries, insurance partner logos, and AI-powered local SEO that puts you ahead of competitors with expired SSL certificates."
+    },
+    "google_rating": 4.9,
+    "google_review_count": 75,
+    "yelp_rating": 4.5,
+    "yelp_review_count": 20
+  }
+]

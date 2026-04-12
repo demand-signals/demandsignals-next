@@ -2,9 +2,9 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User } from 'lucide-react'
+import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign } from 'lucide-react'
 import Link from 'next/link'
-import { ProspectScoreBadge } from '@/components/admin/prospect-score-badge'
+import { ProspectScoreBadge, TierBadge } from '@/components/admin/prospect-score-badge'
 import { ActivityTimeline } from '@/components/admin/activity-timeline'
 import { STAGES, STAGE_LABELS } from '@/types/database'
 import type { Prospect, Demo, Activity } from '@/types/database'
@@ -204,6 +204,83 @@ export default function ProspectDetailPage() {
                 </div>
               )}
             </div>
+          </Card>
+
+          {/* Intelligence Card */}
+          <Card>
+            <CardTitle>Intelligence</CardTitle>
+            {(() => {
+              const sf = prospect.score_factors || {}
+              const rd = prospect.research_data || {}
+              const signals = [
+                { label: 'Review Authority', value: sf.review_authority, icon: Star, color: 'text-amber-500' },
+                { label: 'Digital Vulnerability', value: sf.digital_vulnerability, icon: Shield, color: 'text-red-500' },
+                { label: 'Industry Value', value: sf.industry_value, icon: DollarSign, color: 'text-green-500' },
+                { label: 'Close Probability', value: sf.close_probability, icon: Target, color: 'text-blue-500' },
+                { label: 'Revenue Potential', value: sf.revenue_potential, icon: TrendingUp, color: 'text-purple-500' },
+              ]
+              return (
+                <div className="space-y-4">
+                  {/* Tier badge */}
+                  <div className="flex items-center gap-3">
+                    <TierBadge tier={sf.tier || null} />
+                    {sf.close_signals?.length > 0 && (
+                      <div className="flex gap-1">
+                        {sf.close_signals.map((s: string) => (
+                          <span key={s} className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 text-[0.6rem] font-mono">
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Signal bars */}
+                  <div className="space-y-2">
+                    {signals.map(({ label, value, icon: Icon, color }) => (
+                      <div key={label} className="flex items-center gap-2">
+                        <Icon className={cn('w-3.5 h-3.5 flex-shrink-0', color)} />
+                        <span className="text-xs text-slate-500 w-32 flex-shrink-0">{label}</span>
+                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={cn(
+                              'h-full rounded-full transition-all',
+                              (value ?? 0) >= 75 ? 'bg-green-400' :
+                              (value ?? 0) >= 50 ? 'bg-yellow-400' :
+                              (value ?? 0) >= 25 ? 'bg-orange-400' : 'bg-red-300'
+                            )}
+                            style={{ width: `${value ?? 0}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-mono text-slate-400 w-6 text-right">{value ?? '-'}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Pitch angle */}
+                  {rd.pitch_angle && (
+                    <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Zap className="w-3 h-3 text-amber-500" />
+                        <span className="text-[0.65rem] font-semibold text-slate-500 uppercase tracking-wider">Pitch Angle</span>
+                      </div>
+                      <p className="text-sm text-slate-700 leading-relaxed">{rd.pitch_angle}</p>
+                    </div>
+                  )}
+
+                  {/* Opportunities */}
+                  {rd.opportunities?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {rd.opportunities.map((opp: string) => (
+                        <span key={opp} className="px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 text-[0.65rem] border border-teal-200">
+                          {opp.replace(/_/g, ' ')}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
           </Card>
 
           {/* Tags */}

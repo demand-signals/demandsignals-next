@@ -1,0 +1,711 @@
+[
+  {
+    "business_name": "Cold Springs Dental",
+    "city": "Placerville",
+    "website_url": "http://www.coldspringsdental.com/",
+    "research_data": {
+      "website": {
+        "url": "http://www.coldspringsdental.com/",
+        "platform": "PatientConnect365 (dental template)",
+        "issues": [
+          "HTTP only — no HTTPS (TLS cert error on www subdomain)",
+          "Dated dental template design, not mobile-optimized",
+          "11x Best Dentist award not prominently displayed",
+          "No online booking visible"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/p/Cold-Springs-Dental-Office-100063619477888/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.6, "count": 10 },
+        "yelp": { "rating": 4.0, "count": 19 }
+      },
+      "opportunities": [
+        "SSL certificate broken — immediate trust issue for patients",
+        "No Instagram presence at all",
+        "11x Best Dentist award deserves hero-level placement and schema markup",
+        "Only 10 Google reviews despite being established since 1992 — needs review generation campaign",
+        "No online scheduling integration"
+      ],
+      "pitch_angle": "Your 11-time Best Dentist award is your biggest asset but your broken SSL certificate and dated website are hiding it — we can fix that and build a review engine to match your reputation."
+    },
+    "google_rating": 4.6,
+    "google_review_count": 10
+  },
+  {
+    "business_name": "Placerville Dental Care | Dr. Cynthia Russell",
+    "city": "Placerville",
+    "website_url": "https://placervilledentalcare.com",
+    "research_data": {
+      "website": {
+        "url": "https://placervilledentalcare.com",
+        "platform": "Unknown (no prominent website found — relies on directory listings)",
+        "issues": [
+          "No clear standalone website found in search results",
+          "Relies on Yelp, Birdeye, ZocDoc and directory listings for web presence",
+          "No visible branded web property"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 5.0, "count": 191 },
+        "yelp": { "rating": 4.5, "count": 12 }
+      },
+      "opportunities": [
+        "5.0 Google rating with 191 reviews is exceptional — needs a website to showcase it",
+        "No social media presence found",
+        "No online booking capability through own property",
+        "Zero brand control — entirely dependent on third-party directories",
+        "Perfect candidate for full website + social + review management build"
+      ],
+      "pitch_angle": "You have a perfect 5.0 Google rating with 191 reviews but no real website to show for it — a branded site with review showcasing and online booking would turn that reputation into a patient acquisition machine."
+    },
+    "google_rating": 5.0,
+    "google_review_count": 191
+  },
+  {
+    "business_name": "One Loose Tooth / Mountain Dental",
+    "city": "Placerville",
+    "website_url": "https://oneloosetoothdental.com/",
+    "research_data": {
+      "website": {
+        "url": "https://oneloosetoothdental.com/",
+        "platform": "Custom dental platform (proprietary template with micro-templates)",
+        "issues": [
+          "Dual branding (One Loose Tooth / Mountain Dental) creates confusion",
+          "Website focuses heavily on pediatric — adult services (Mountain Dental) less visible",
+          "Custom platform limits SEO flexibility"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/OneLooseTooth/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 5.0, "count": 316 },
+        "yelp": { "rating": 4.5, "count": 28 }
+      },
+      "opportunities": [
+        "Dual branding confusion — Mountain Dental (adults) gets buried under One Loose Tooth (kids)",
+        "No Instagram despite being a family/pediatric practice (visual goldmine)",
+        "Holistic/natural dentistry angle is trending but not leveraged in SEO",
+        "5.0 rating with 316 reviews is market-leading — deserves better digital showcase",
+        "Could split into two distinct web properties or create clear dual navigation"
+      ],
+      "pitch_angle": "Your 5.0 rating with 316 reviews makes you the top-rated dental practice in Placerville, but the dual branding between One Loose Tooth and Mountain Dental is diluting your presence — we can clarify both brands and dominate holistic dentistry search."
+    },
+    "google_rating": 5.0,
+    "google_review_count": 316
+  },
+  {
+    "business_name": "Adams Cameron Park Dentistry",
+    "city": "Cameron Park",
+    "website_url": "https://acpdds.com/",
+    "research_data": {
+      "website": {
+        "url": "https://acpdds.com/",
+        "platform": "Custom dental platform (proprietary, non-WordPress)",
+        "issues": [
+          "Domain name (acpdds.com) is not memorable or brandable",
+          "Template-style design, functional but not distinctive",
+          "Limited visual storytelling for a practice established since 1981"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/cameronpark.dentistry/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.7, "count": 85 },
+        "yelp": { "rating": 4.0, "count": 21 }
+      },
+      "opportunities": [
+        "43-year legacy (since 1981) is undersold — needs heritage storytelling",
+        "Father-son practice (John & Nathan Adams) is a compelling narrative",
+        "No Instagram presence",
+        "Domain name is hard to remember — could benefit from branded domain",
+        "Facebook page has very low engagement (4 reviews, not yet rated)"
+      ],
+      "pitch_angle": "A 43-year father-son dental legacy deserves more than a forgettable domain and template website — we can build a brand that honors your heritage while driving new patient acquisition through AI-powered content and review management."
+    },
+    "google_rating": 4.7,
+    "google_review_count": 85
+  },
+  {
+    "business_name": "El Dorado Hills Dental",
+    "city": "El Dorado Hills",
+    "website_url": "https://www.eldoradohillsdental.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.eldoradohillsdental.com/",
+        "platform": "ProSites (dental-specific website builder, ASP.NET backend)",
+        "issues": [
+          "Aging ProSites template with ASP.NET backend",
+          "Multiple analytics trackers creating performance drag",
+          "jQuery-dependent with inline scripts — fragile maintenance",
+          "Form validation tied to specific control IDs"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.5, "count": 120 },
+        "yelp": { "rating": 4.0, "count": 75 }
+      },
+      "opportunities": [
+        "3-generation practice with IV sedation — strong differentiator not leveraged",
+        "ProSites template looks dated compared to EDH competitors",
+        "No social media presence found despite being in affluent EDH market",
+        "IV sedation specialty should be a primary SEO target",
+        "75 Yelp reviews but aging website undermines trust conversion"
+      ],
+      "pitch_angle": "Your 3-generation practice with IV sedation is a powerful differentiator in the competitive EDH market, but your aging ProSites template and zero social media presence are letting newer practices steal your patients."
+    },
+    "google_rating": 4.5,
+    "google_review_count": 120
+  },
+  {
+    "business_name": "Pediatric Dental Specialists of El Dorado Hills",
+    "city": "El Dorado Hills",
+    "website_url": "https://pdsofedhills.com/",
+    "research_data": {
+      "website": {
+        "url": "https://pdsofedhills.com/",
+        "platform": "Custom (dental-specific, clean responsive design)",
+        "issues": [
+          "Good clean design but limited content depth",
+          "Special needs niche not prominently featured in SEO",
+          "No blog or content marketing"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.5, "count": 65 },
+        "yelp": { "rating": 4.0, "count": 28 }
+      },
+      "opportunities": [
+        "Special needs pediatric dentistry is an underserved niche with high search intent",
+        "No social media found — pediatric practices thrive on Instagram/Facebook (kid-friendly content)",
+        "Dr. Joe and Dr. Ryan praised by parents — testimonial content goldmine",
+        "Could dominate 'special needs dentist Sacramento region' search vertical",
+        "No content marketing or blog to capture parent search queries"
+      ],
+      "pitch_angle": "Your special needs pediatric dentistry niche is virtually uncontested in EDH search results — with targeted content and social media showcasing your caring approach, you could own that entire search vertical across the Sacramento region."
+    },
+    "google_rating": 4.5,
+    "google_review_count": 65
+  },
+  {
+    "business_name": "Golden Grove Dental",
+    "city": "Placerville",
+    "website_url": "https://www.goldengrovedental.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.goldengrovedental.com/",
+        "platform": "WordPress (Cornerstone/Pro theme, Gravity Forms)",
+        "issues": [
+          "Solid WordPress build — one of the better dental sites in the area",
+          "UserWay accessibility widget present",
+          "Professional design with booking integration",
+          "Minor: could optimize font loading and reduce render-blocking resources"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/goldengrovedental/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.9, "count": 286 },
+        "yelp": { "rating": 3.5, "count": 20 }
+      },
+      "opportunities": [
+        "Website is already decent — harder sell but room for content/SEO improvement",
+        "Yelp rating (3.5) drags down overall perception despite strong Google (4.9)",
+        "No Instagram despite strong before/after gallery potential",
+        "Some negative Yelp reviews mention pricing — reputation management opportunity",
+        "Saturday availability is a differentiator not leveraged in search"
+      ],
+      "pitch_angle": "Your 4.9 Google rating with 286 reviews is outstanding but your 3.5 Yelp score is pulling you down — an AI review management system can address negative reviews proactively while your Saturday hours give you a search advantage competitors are missing."
+    },
+    "google_rating": 4.9,
+    "google_review_count": 286
+  },
+  {
+    "business_name": "Green Valley Dental Group",
+    "city": "El Dorado Hills",
+    "website_url": "https://www.greenvalleydg.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.greenvalleydg.com/",
+        "platform": "Smile Generation (corporate dental template)",
+        "issues": [
+          "Corporate Smile Generation template — zero brand differentiation",
+          "Looks identical to hundreds of other Smile Generation practices nationwide",
+          "Heavy JavaScript tracking overhead",
+          "No unique brand identity or local personality"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/GreenValleyDentalGroupElDoradoHills/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.3, "count": 150 },
+        "yelp": { "rating": 3.5, "count": 116 }
+      },
+      "opportunities": [
+        "Trapped in Smile Generation corporate template — zero brand differentiation",
+        "Same-day crowns and advanced tech not showcased with custom content",
+        "116 Yelp reviews but low rating (3.5) — reputation management critical",
+        "No Instagram despite having advanced dental technology worth showcasing",
+        "EDH is affluent market — cookie-cutter template undermines premium positioning"
+      ],
+      "pitch_angle": "Your Smile Generation template makes you look like every other corporate dental chain — in the affluent EDH market, a custom-branded site showcasing your same-day crown technology would let you charge premium rates and attract higher-value patients."
+    },
+    "google_rating": 4.3,
+    "google_review_count": 150
+  },
+  {
+    "business_name": "Placerville Animal Surgery Center",
+    "city": "Placerville",
+    "website_url": "https://placervilleanimalsurgerycenter.com/",
+    "research_data": {
+      "website": {
+        "url": "https://placervilleanimalsurgerycenter.com/",
+        "platform": "Squarespace",
+        "issues": [
+          "Inconsistent business hours display (page vs backend data mismatch)",
+          "Heavy Squarespace JavaScript bundles impacting load time",
+          "Limited to Wed-Fri hours display — confusing for potential clients",
+          "Basic Squarespace template — functional but not distinctive"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/p/Placerville-Animal-Surgery-Center-100078026405347/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.9, "count": 59 },
+        "yelp": { "rating": 4.5, "count": 47 }
+      },
+      "opportunities": [
+        "Dr. Raymond has passionate patient testimonials — video testimonials would convert",
+        "Low-cost surgery positioning is powerful but not SEO-targeted",
+        "No Instagram — surgical before/after content (with owner permission) would drive engagement",
+        "$25 surgery consult is an incredible offer buried in the site",
+        "ACL repair specialty not targeted in local search"
+      ],
+      "pitch_angle": "Dr. Raymond's passionate client testimonials and $25 surgery consults are buried in a basic Squarespace site — a custom build with targeted SEO for pet surgery keywords and automated review collection would fill your surgical calendar."
+    },
+    "google_rating": 4.9,
+    "google_review_count": 59
+  },
+  {
+    "business_name": "Placerville Animal Wellness",
+    "city": "Placerville",
+    "website_url": "https://placerville-wellness.edan.io/",
+    "research_data": {
+      "website": {
+        "url": "https://placerville-wellness.edan.io/",
+        "platform": "EDAN.io (directory listing, not a real website)",
+        "issues": [
+          "No real website — just an EDAN.io directory listing page",
+          "Broken redirect logic and obfuscated analytics code",
+          "Weather widget shows N/A placeholders",
+          "Mixed Yandex + Google Analytics tracking (unusual)",
+          "No branding, no custom design, no service pages"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/p/Placerville-Animal-Wellness-Clinic-100071437892577/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.7, "count": 254 },
+        "yelp": { "rating": 3.5, "count": 102 }
+      },
+      "opportunities": [
+        "Has NO real website — just a directory listing masquerading as one",
+        "254 Google reviews with 4.7 rating proves demand exists",
+        "Holistic vet (acupuncture + chiropractic) is a premium niche with zero online competition locally",
+        "$20 visit fee is incredible value — needs prominent placement",
+        "Dr. Raymond's name associated with both this clinic and the Surgery Center — could cross-promote",
+        "102 Yelp reviews but low rating (3.5) — wait time complaints need addressing"
+      ],
+      "pitch_angle": "You have 254 Google reviews and offer holistic veterinary care including acupuncture — but you literally have no website, just a directory listing — a real branded site would let you charge premium rates for your integrative services."
+    },
+    "google_rating": 4.7,
+    "google_review_count": 254
+  },
+  {
+    "business_name": "Placerville Veterinary Clinic",
+    "city": "Placerville",
+    "website_url": "https://www.placervillevet.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.placervillevet.com/",
+        "platform": "VetMatrix (iMatrix) — vet-specific template platform",
+        "issues": [
+          "VetMatrix template — dated and cookie-cutter",
+          "Redundant review sections (multiple identical blocks)",
+          "Obfuscated JavaScript and excessive tracking scripts",
+          "Modal accessibility issues",
+          "Form error handling incomplete ('Error! Close' placeholders)"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/PlacervilleVet/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.8, "count": 200 },
+        "yelp": { "rating": 4.0, "count": 38 }
+      },
+      "opportunities": [
+        "50+ year legacy (since 1974) is a trust signal not leveraged",
+        "VetMatrix template is dated — clients driving from Sacramento for quality deserve better UX",
+        "Redundant review widget blocks create confusing page layout",
+        "No Instagram despite being the longest-running vet clinic in Placerville",
+        "Heritage angle ('trusted since 1974') is powerful for local SEO"
+      ],
+      "pitch_angle": "Fifty years of trusted veterinary care is a story that sells itself, but your dated VetMatrix template and broken review widgets are hiding that heritage — a modern site with your legacy front and center would convert the Sacramento clients already driving to see you."
+    },
+    "google_rating": 4.8,
+    "google_review_count": 200
+  },
+  {
+    "business_name": "Airport Pet Clinic",
+    "city": "Cameron Park",
+    "website_url": "https://airportpetclinic.com/",
+    "research_data": {
+      "website": {
+        "url": "https://airportpetclinic.com/",
+        "platform": "WordPress (Chinchilla theme + Elementor + Slider Revolution)",
+        "issues": [
+          "Excessive code bloat from multiple plugins (Elementor + RevSlider)",
+          "Mixed styling systems creating potential conflicts",
+          "Duplicated mobile menu markup",
+          "Performance issues from unminified code",
+          "Plugin dependency creates maintenance burden"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/AirportPetClinic/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.6, "count": 130 },
+        "yelp": { "rating": 4.0, "count": 70 }
+      },
+      "opportunities": [
+        "AAHA accreditation (top 12-15% nationally) — huge trust signal underutilized",
+        "New ownership transition — perfect time for rebrand/site refresh",
+        "WordPress plugin bloat is slowing site — performance optimization needed",
+        "Since 1984 legacy + new ownership = 'trusted tradition, fresh energy' narrative",
+        "No Instagram despite AAHA accreditation being highly visual/sharable"
+      ],
+      "pitch_angle": "New ownership of a 40-year AAHA-accredited practice is the perfect moment for a digital refresh — your WordPress site is bloated with plugins and your AAHA badge (top 12-15% nationally) deserves hero placement to differentiate from uncredentialed competitors."
+    },
+    "google_rating": 4.6,
+    "google_review_count": 130
+  },
+  {
+    "business_name": "El Dorado Hills Pet Clinic",
+    "city": "El Dorado Hills",
+    "website_url": "https://eldoradohillspetclinic.com/",
+    "research_data": {
+      "website": {
+        "url": "https://eldoradohillspetclinic.com/",
+        "platform": "WordPress (Avada theme + PetSites integration)",
+        "issues": [
+          "Heavy script load (GTM, Slider Revolution, Essential Grid, WooCommerce)",
+          "Background video autoplay may impact mobile performance",
+          "Responsive breakpoint inconsistencies",
+          "Significant code bloat from unminified inline code",
+          "PetSites integration adds another layer of complexity"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/p/El-Dorado-Hills-Pet-Clinic-100033575544574/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.6, "count": 85 },
+        "yelp": { "rating": 4.5, "count": 23 }
+      },
+      "opportunities": [
+        "PetSites template integration makes it look like every other vet clinic",
+        "Dr. Garden praised as 'professional, caring and honest' — testimonial video opportunity",
+        "No Instagram despite EDH being a social-media-heavy affluent community",
+        "WordPress + Avada + PetSites creates unnecessary technical complexity",
+        "Mobile performance suffering from autoplay video and unoptimized assets"
+      ],
+      "pitch_angle": "Your PetSites template makes you indistinguishable from hundreds of other vet clinics — in the affluent EDH market where pet owners spare no expense, a custom-branded experience showcasing Dr. Garden's personal care philosophy would justify premium pricing."
+    },
+    "google_rating": 4.6,
+    "google_review_count": 85
+  },
+  {
+    "business_name": "Goldorado Animal Hospital",
+    "city": "Cameron Park",
+    "website_url": "https://www.goldoradoanimalhospital.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.goldoradoanimalhospital.com/",
+        "platform": "Next.js + Contentful CMS (Yext/NVA veterinary design system)",
+        "issues": [
+          "Massive inline CSS causing performance concerns",
+          "Complex modal implementations with accessibility gaps",
+          "Multiple GTM implementations suggest tracking conflicts",
+          "Styled-components bloat"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/goldoradoah/",
+        "instagram": "https://www.instagram.com/goldorado_animal_hospital/"
+      },
+      "reviews": {
+        "google": { "rating": 4.9, "count": 255 },
+        "yelp": { "rating": 4.0, "count": 99 }
+      },
+      "opportunities": [
+        "AAHA-accredited with strong reviews — already well-positioned",
+        "Website is modern (Next.js) but corporate NVA template — limited local personality",
+        "Instagram has 156 followers — room for growth with boarding photos content",
+        "Free 7th night boarding and photo updates are amazing differentiators to promote",
+        "Exotic pet care is a niche worth targeting in local SEO"
+      ],
+      "pitch_angle": "Your AAHA accreditation, 4.9 rating, and unique boarding perks (free 7th night + photo updates) are fantastic differentiators, but your corporate NVA template strips away local personality — a custom-branded presence would help you stand out from chain vet clinics."
+    },
+    "google_rating": 4.9,
+    "google_review_count": 255
+  },
+  {
+    "business_name": "Veterinary Healing Center of El Dorado Hills",
+    "city": "El Dorado Hills",
+    "website_url": "https://vethealingeldoradohills.com/",
+    "research_data": {
+      "website": {
+        "url": "https://vethealingeldoradohills.com/",
+        "platform": "VetCor (proprietary veterinary CMS)",
+        "issues": [
+          "VetCor corporate template — limited customization",
+          "Extensive CSS repetition and bloated stylesheet",
+          "Inline styles mixed with external CSS",
+          "Google reCAPTCHA badge hidden with opacity:0 (violates best practices)",
+          "Legacy JavaScript patterns"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/veterinaryhealingcenter/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.7, "count": 175 },
+        "yelp": { "rating": 4.0, "count": 110 }
+      },
+      "opportunities": [
+        "Western + Eastern medicine (acupuncture) combo is a premium differentiator",
+        "Dr. Brad and Dr. Holly Cahoon have 20+ year client relationships — loyalty storytelling",
+        "VetCor template hides the integrative medicine specialization",
+        "No Instagram despite acupuncture/holistic care being highly visual and trending",
+        "110 Yelp reviews is strong — but integrative vet niche deserves dedicated landing pages"
+      ],
+      "pitch_angle": "Your integrative approach combining Western and Eastern veterinary medicine is a premium differentiator that the VetCor template completely buries — a custom site with dedicated acupuncture/wellness content would attract the affluent EDH pet owners who want more than conventional care."
+    },
+    "google_rating": 4.7,
+    "google_review_count": 175
+  },
+  {
+    "business_name": "Culture Aesthetics & Salon",
+    "city": "El Dorado Hills",
+    "website_url": "https://www.cultureaestheticsandsalon.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.cultureaestheticsandsalon.com/",
+        "platform": "Wix",
+        "issues": [
+          "Injectable bar services buried in sub-navigation",
+          "Wix platform limitations for medical aesthetics SEO",
+          "Heavy JavaScript dependency for rendering core content",
+          "Content hidden behind pre-JS loading states",
+          "Medical aesthetic services need better compliance/trust signals"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/p/Culture-Aesthetics-and-Salon-100077477953774/",
+        "instagram": "https://www.instagram.com/culture_aestheticsandsalon/"
+      },
+      "reviews": {
+        "google": { "rating": 4.8, "count": 45 },
+        "yelp": { "rating": 4.0, "count": 8 }
+      },
+      "opportunities": [
+        "Injectable bar is their highest-margin service but it's buried in sub-navigation",
+        "Wix SEO limitations prevent ranking for competitive medspa keywords",
+        "Dual identity (salon + medical aesthetics) needs clear information architecture",
+        "Botox/filler/threadlifting services need dedicated landing pages with before/after",
+        "Instagram present but needs medical aesthetics-focused content strategy"
+      ],
+      "pitch_angle": "Your injectable bar is your highest-margin service but Wix buries it three clicks deep — a custom site with dedicated aesthetics landing pages and before/after galleries would let the medspa side of your business drive revenue instead of hiding behind the salon."
+    },
+    "google_rating": 4.8,
+    "google_review_count": 45
+  },
+  {
+    "business_name": "The MD Aesthetics",
+    "city": "El Dorado Hills",
+    "website_url": "https://www.themdaesthetics.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.themdaesthetics.com/",
+        "platform": "Tebra/PatientPop (healthcare-specific platform)",
+        "issues": [
+          "50KB+ inline CSS causing performance bloat",
+          "Tebra platform limits design customization",
+          "Complex component architecture — hard to maintain",
+          "Heavy JavaScript dependencies affecting Core Web Vitals",
+          "No visible performance optimization"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/TheMdAesthetics/",
+        "instagram": "https://www.instagram.com/themdaesthetics/"
+      },
+      "reviews": {
+        "google": { "rating": 5.0, "count": 27 },
+        "yelp": { "rating": null, "count": 0 }
+      },
+      "opportunities": [
+        "Dr. Kaur's board-certified credentials are a major trust signal for medical aesthetics",
+        "Perfect 5.0 Google rating but only 27 reviews — needs review volume campaign",
+        "Instagram has 1,093 followers — decent base to build on",
+        "Facebook has only 363 likes — needs social growth strategy",
+        "Tebra template limits brand differentiation in competitive EDH medspa market",
+        "Zero Yelp presence — missing a key discovery channel"
+      ],
+      "pitch_angle": "Dr. Kaur's board certification and perfect 5.0 rating are powerful trust signals, but only 27 reviews and a template Tebra site keep you invisible against competitors with hundreds of reviews — an AI-powered review engine and custom brand presence would change that fast."
+    },
+    "google_rating": 5.0,
+    "google_review_count": 27
+  },
+  {
+    "business_name": "Asante Spa",
+    "city": "El Dorado Hills",
+    "website_url": "https://www.sparetimesportsclubs.com/day-spas/el-dorado-hills-spa/",
+    "research_data": {
+      "website": {
+        "url": "https://www.sparetimesportsclubs.com/day-spas/el-dorado-hills-spa/",
+        "platform": "Spare Time Sports Clubs corporate site (spa buried inside gym website)",
+        "issues": [
+          "No standalone website — entirely buried inside Spare Time Sports Clubs site",
+          "asantespaedh.com exists but redirects to Spare Time corporate pages",
+          "Spa identity completely subsumed by gym branding",
+          "Medical enhancement services hidden among massage listings",
+          "No independent search presence or brand identity"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/AsanteSpa/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.3, "count": 80 },
+        "yelp": { "rating": 3.5, "count": 96 }
+      },
+      "opportunities": [
+        "Spa is entirely trapped inside the gym website — zero independent brand identity",
+        "asantespaedh.com domain exists but just redirects to Spare Time corporate site",
+        "Medical enhancements (Botox, fillers) hidden among standard massage listings",
+        "96 Yelp reviews but 3.5 rating dragged down by gym-related complaints",
+        "7 private treatment rooms and tranquility patio deserve independent showcase",
+        "No Instagram despite being a visual spa business"
+      ],
+      "pitch_angle": "Your spa is completely buried inside the Spare Time Sports Club website — nobody searching for 'medspa El Dorado Hills' will ever find you — a standalone site with its own brand identity and SEO would let Asante compete on its own merits instead of being a gym afterthought."
+    },
+    "google_rating": 4.3,
+    "google_review_count": 80
+  },
+  {
+    "business_name": "Spa-520",
+    "city": "Placerville",
+    "website_url": "https://www.spa-520.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.spa-520.com/",
+        "platform": "Wix",
+        "issues": [
+          "Wix platform limits medical aesthetics SEO capabilities",
+          "Limited operating hours (Wed/Fri/Sat/Sun only) not prominently communicated",
+          "Boutique positioning needs stronger visual branding",
+          "Medical services (Botox, filler, laser) mixed with spa services without clear hierarchy"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/Spa520Placerville/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.8, "count": 35 },
+        "yelp": { "rating": 4.0, "count": 8 }
+      },
+      "opportunities": [
+        "Only full-service day spa in Placerville — own that keyword",
+        "Hydrafacials + Botox + weight loss services = high-margin mix undersold",
+        "Wix limits ability to rank for medical spa keywords",
+        "Very limited hours (4 days/week) — needs clear communication and online booking",
+        "Groupon presence suggests price sensitivity — need to reposition as premium",
+        "No Instagram despite being a visual beauty business"
+      ],
+      "pitch_angle": "As Placerville's only full-service day spa with medical aesthetics, you own a market of one — but your Wix site and Groupon presence position you as budget when your Hydrafacials and Botox services should command premium pricing with a site that matches."
+    },
+    "google_rating": 4.8,
+    "google_review_count": 35
+  },
+  {
+    "business_name": "Morgan Taylor Salon",
+    "city": "El Dorado Hills",
+    "website_url": "https://morgantaylorsalon.com/",
+    "research_data": {
+      "website": {
+        "url": "https://morgantaylorsalon.com/",
+        "platform": "WordPress (custom theme, Instagram Feed Pro, Aura Salon Ware booking)",
+        "issues": [
+          "Actually a solid WordPress site — well-designed and professional",
+          "Instagram feed integration working well",
+          "Booking system integrated (Aura Salon Ware)",
+          "Minor: could optimize for Core Web Vitals"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/morgantaylorsalonedh/",
+        "instagram": "https://www.instagram.com/morgantaylorsalon/"
+      },
+      "reviews": {
+        "google": { "rating": 4.5, "count": 95 },
+        "yelp": { "rating": 4.0, "count": 110 }
+      },
+      "opportunities": [
+        "Website is already competent — harder sell for full rebuild",
+        "Aveda concept salon positioning could be stronger in local search",
+        "110 Yelp reviews but some complaints about scheduling — process optimization",
+        "Instagram integration exists but content strategy could be more medical-aesthetics focused",
+        "Lash lifts and facials represent medspa-adjacent services to grow",
+        "Could add dedicated landing pages for high-margin services (facials, extensions)"
+      ],
+      "pitch_angle": "Your WordPress site is solid but your 110 Yelp reviews include scheduling complaints that an AI booking and review management system would eliminate — plus dedicated landing pages for your high-margin facial and extension services would drive more of the revenue that matters."
+    },
+    "google_rating": 4.5,
+    "google_review_count": 95
+  }
+]

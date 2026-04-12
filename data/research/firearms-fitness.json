@@ -1,0 +1,321 @@
+[
+  {
+    "business_name": "Loyal Arms",
+    "city": "Folsom",
+    "address": "1008 Riley St, Suite 4, Folsom, CA 95630",
+    "phone": "(916) 680-9888",
+    "website_url": "https://loyalarms.com",
+    "google_rating": 4.3,
+    "google_review_count": 83,
+    "yelp_rating": 4.3,
+    "yelp_review_count": 81,
+    "business_email": "info@loyalarms.com",
+    "research_data": {
+      "website": {
+        "url": "https://loyalarms.com",
+        "platform": "unknown",
+        "ssl_valid": false,
+        "issues": ["broken_ssl_certificate", "split_domains", "ssl_unable_to_verify_first_certificate"]
+      },
+      "ecommerce": {
+        "url": "https://shop.loyalarms.com",
+        "platform": "gearfire",
+        "notes": "Separate e-commerce subdomain on Gearfire platform with age verification gate"
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/loyalarms1/",
+        "instagram": "https://www.instagram.com/loyalarmsguns/",
+        "google_business": true,
+        "yelp": true
+      },
+      "reviews": {
+        "google": { "rating": 4.3, "count": 83 },
+        "yelp": { "rating": 4.3, "count": 81 }
+      },
+      "opportunities": ["ssl_fix", "domain_consolidation", "website_redesign", "ecommerce_integration", "review_generation"],
+      "pitch_angle": "Your SSL cert is literally broken -- browsers warn customers away before they even see your inventory, and splitting traffic between loyalarms.com and shop.loyalarms.com kills your SEO authority.",
+      "hours": "Mon-Fri 9am-8pm, Sat-Sun 10am-4pm",
+      "services": "Firearms sales, ammunition, FFL transfers, training, consignment, LCP membership program",
+      "ffl_note": "Previous address was 101 Parkshore Dr (FFL expired 8/1/2020). Current FFL at 1008 Riley St.",
+      "established": 2017,
+      "loyalty_program": "LCP membership: 5% annual or 10% lifetime discount, household shareable"
+    }
+  },
+  {
+    "business_name": "Foothill Ammo",
+    "city": "Shingle Springs",
+    "address": "3977 Durock Rd, Suite 204, Shingle Springs, CA 95682",
+    "phone": "(530) 677-5280",
+    "website_url": "https://www.foothillammo.com",
+    "google_rating": 5.0,
+    "google_review_count": 49,
+    "yelp_rating": 4.5,
+    "yelp_review_count": 14,
+    "business_email": null,
+    "owner_name": "Chris Puehse",
+    "research_data": {
+      "website": {
+        "url": "https://www.foothillammo.com",
+        "platform": "weebly",
+        "ssl_valid": true,
+        "issues": ["dated_design", "no_ecommerce", "dead_analytics_deprecated_gaq", "excessive_inline_css", "weebly_bloat"]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/Foothillammo",
+        "instagram": "https://www.instagram.com/foothill_ammo/",
+        "google_business": true,
+        "yelp": true
+      },
+      "reviews": {
+        "google": { "rating": 5.0, "count": 49 },
+        "yelp": { "rating": 4.5, "count": 14 }
+      },
+      "opportunities": ["website_redesign", "ecommerce", "analytics_modernization", "local_seo", "review_generation"],
+      "pitch_angle": "Perfect 5.0 Google rating but your Weebly site still runs deprecated Google Analytics from 3+ years ago -- your reputation deserves a site that actually converts visitors into foot traffic.",
+      "hours": "Wed-Fri 10am-6pm, Sat 10am-5pm, Sun-Tue Closed",
+      "services": "Ammunition, reloading supplies, gunsmith services, sporting goods, tactical gear, pepper spray",
+      "note": "El Dorado county's premier ammunition supplier. Instagram has 881 followers."
+    }
+  },
+  {
+    "business_name": "Bighorn Gunshop",
+    "city": "El Dorado",
+    "address": "6271 Pleasant Valley Rd, El Dorado, CA 95623",
+    "phone": "(530) 642-1892",
+    "website_url": "https://bighorngunstore.com",
+    "google_rating": 4.0,
+    "google_review_count": 34,
+    "yelp_rating": 4.0,
+    "yelp_review_count": 42,
+    "business_email": "bighorngun@comcast.net",
+    "owner_name": "Flynn Fahlbusch",
+    "research_data": {
+      "website": {
+        "url": "https://bighorngunstore.com",
+        "platform": "godaddy",
+        "ssl_valid": true,
+        "issues": ["godaddy_template", "getty_stock_photos", "placeholder_content", "minimal_content", "no_inventory_listings", "comcast_email"]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/bighorngunshop",
+        "instagram": null,
+        "google_business": true,
+        "yelp": true
+      },
+      "reviews": {
+        "google": { "rating": 4.0, "count": 34 },
+        "yelp": { "rating": 4.0, "count": 42 }
+      },
+      "opportunities": ["website_redesign", "reputation_management", "local_seo", "ecommerce", "professional_email", "social_media_instagram"],
+      "pitch_angle": "48 years in business since 1977, but your GoDaddy template with Getty stock photos and a comcast.net email doesn't tell that story -- a proper site and review strategy could turn your legacy into a local landmark brand.",
+      "established": 1977,
+      "hours": "Tue 10am-5:30pm, Wed 12pm-5:30pm, Fri 10am-5:30pm, Mon/Thu/Sat/Sun Closed",
+      "services": "Buy, sell, trade, consign firearms (shotguns, rifles, handguns new & used), reloading equipment & supplies, ammo, CCW and basic handgun classes",
+      "ffl_expires": "2026-11-01"
+    }
+  },
+  {
+    "business_name": "Sierra Mountain Firearms",
+    "city": "Shingle Springs",
+    "address": "4050 Durock Rd #17, Shingle Springs, CA 95682",
+    "phone": "(530) 387-0110",
+    "website_url": "https://sierramountainfirearms.com",
+    "google_rating": 4.5,
+    "google_review_count": 21,
+    "yelp_rating": null,
+    "yelp_review_count": 26,
+    "business_email": "morgan@sierramountainfirearms.com",
+    "owner_name": "Morgan Lowder",
+    "research_data": {
+      "website": {
+        "url": "https://sierramountainfirearms.com",
+        "platform": "godaddy",
+        "ssl_valid": true,
+        "issues": ["godaddy_template", "test_credentials_visible", "basic_layout", "filler_email_in_interface"]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/p/Sierra-Mountain-Firearms-61557070825436/",
+        "instagram": "https://www.instagram.com/sierramountainfirearms/",
+        "google_business": true,
+        "yelp": true
+      },
+      "reviews": {
+        "google": { "rating": 4.5, "count": 21 },
+        "yelp": { "count": 26 },
+        "bbb": { "rating": "A", "accredited_since": "2024-09-19" }
+      },
+      "opportunities": ["website_redesign", "local_seo", "review_generation", "gmb_optimization", "social_media_growth"],
+      "pitch_angle": "BBB A-rated and voted Readers Choice best firearms shop in Mt Democrat, but your GoDaddy template site still has test account credentials visible -- a custom build would match the reputation you've already earned.",
+      "hours": "Tue-Fri 10am-5pm, Sat 10am-2pm, Sun-Mon Closed",
+      "services": "New and consigned firearms, ammunition, accessories, training (intro to CCW), FFL and ammo transfers",
+      "ffl_expires": "2026-12-01",
+      "also_known_as": "Sierra Shield Firearms and Training Academy",
+      "social_stats": {
+        "facebook_likes": 34,
+        "instagram_followers": 97,
+        "instagram_posts": 11
+      },
+      "press": "Mountain Democrat Business Spotlight feature, Readers Choice winner"
+    }
+  },
+  {
+    "business_name": "Lock n Load Concealed Carry Training",
+    "city": "El Dorado Hills",
+    "address": "1061 Suncast Ln, El Dorado Hills, CA 95762",
+    "phone": "(916) 705-2258",
+    "website_url": "https://www.locknloadconcealedcarry.com",
+    "google_rating": 5.0,
+    "google_review_count": 8,
+    "yelp_rating": 5.0,
+    "yelp_review_count": 8,
+    "owner_name": "Dr. David Lungren",
+    "business_email": "locknloadccw@gmail.com",
+    "research_data": {
+      "website": {
+        "url": "https://www.locknloadconcealedcarry.com",
+        "platform": "wordpress",
+        "wordpress_version": "6.9.1",
+        "ssl_valid": true,
+        "issues": ["dated_design", "unprofessional_gmail_email", "accessibility_concerns_clip_path_hiding", "large_inline_css", "deprecated_vendor_prefixes", "woocommerce_installed_but_underused"]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null,
+        "google_business": true,
+        "yelp": true
+      },
+      "reviews": {
+        "google": { "rating": 5.0, "count": 8 },
+        "yelp": { "rating": 5.0, "count": 8 }
+      },
+      "opportunities": ["website_redesign", "social_media_creation", "review_generation", "local_seo", "email_professionalization", "online_booking_improvement"],
+      "pitch_angle": "Perfect 5.0 across every platform but only 16 total reviews and zero social media -- a review generation campaign plus Instagram/Facebook presence could 5x your visibility in the EDH market.",
+      "training_location": "Holiday Inn Express, 4360 Town Center Blvd, El Dorado Hills CA 95762",
+      "instructors": [
+        "Dr. David Lungren - CA DOJ, Utah BCI, NRA Pistol & Personal Protection certified",
+        "Justin Lungren - Approved CCW Instructor"
+      ],
+      "services": "Initial & Renewal CCW classes for El Dorado, Placer, Sacramento, Yolo counties. Utah multi-state CCW. Advanced/intermediate/basic defensive shooting.",
+      "counties_served": ["El Dorado", "Placer", "Sacramento", "San Joaquin", "Sutter", "Yolo"]
+    }
+  },
+  {
+    "business_name": "Vintage Tactical Arms LLC",
+    "city": "El Dorado Hills",
+    "address": "3083 Warren Lane, El Dorado Hills, CA 95762",
+    "phone": "(916) 586-0361",
+    "website_url": null,
+    "google_rating": null,
+    "google_review_count": 0,
+    "yelp_rating": null,
+    "yelp_review_count": 0,
+    "business_email": null,
+    "research_data": {
+      "website": {
+        "url": null,
+        "platform": "none",
+        "ssl_valid": null,
+        "issues": ["no_website"]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null,
+        "google_business": false,
+        "yelp": false
+      },
+      "reviews": {},
+      "opportunities": ["website_creation", "gmb_setup", "social_media_creation", "basic_online_presence"],
+      "pitch_angle": "Zero online presence for a licensed FFL in one of the wealthiest zip codes in El Dorado County -- even a single-page site with Google Business Profile would start generating transfer inquiries.",
+      "ffl_number": "9-68-017-07-6K-05830",
+      "ffl_expires": "2026-10-01",
+      "note": "Home-based FFL at residential address. Likely does transfers only, not a full retail storefront. No website, no social media, no Google listing, no Yelp page found. Smallest opportunity but lowest effort sale."
+    }
+  },
+  {
+    "business_name": "Na Martial Arts",
+    "city": "Folsom",
+    "address": "2766 E Bidwell St, Ste H500, Folsom, CA 95630",
+    "phone": "(916) 805-5743",
+    "website_url": "https://www.namartialarts.com",
+    "google_rating": 5.0,
+    "google_review_count": 45,
+    "yelp_rating": 5.0,
+    "yelp_review_count": 30,
+    "business_email": "taekwondonana@gmail.com",
+    "research_data": {
+      "website": {
+        "url": "https://www.namartialarts.com",
+        "platform": "wix",
+        "wix_engine": "thunderbolt v1.17110.0",
+        "ssl_valid": true,
+        "issues": ["wix_performance_heavy_js_bundle", "standard_wix_template", "no_custom_domain_email"]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/p/Na-Martial-Arts-100052680014715/",
+        "instagram": "https://www.instagram.com/namartialarts/",
+        "google_business": true,
+        "yelp": true
+      },
+      "reviews": {
+        "google": { "rating": 5.0, "count": 45 },
+        "yelp": { "rating": 5.0, "count": 30 }
+      },
+      "opportunities": ["website_redesign", "seo_optimization", "content_marketing", "email_professionalization", "video_marketing"],
+      "pitch_angle": "World-medalist instructor with 15+ international gold medals and perfect 5.0 ratings everywhere, but a generic Wix template doesn't convey that elite pedigree -- a custom site could command premium class pricing.",
+      "hours": "Mon-Fri 10am-8pm, Sat-Sun Closed",
+      "services": "Taekwondo training (kids, teens, adults), self-defense, 1:1 sessions, fitness",
+      "head_instructor": "Master HyungKyung Na",
+      "credentials": "Kukkiwon Certified, 15+ international gold medals in Korean National and international Taekwondo Championships",
+      "women_owned": true,
+      "location_note": "Broadstone Marketplace, Folsom",
+      "social_stats": {
+        "facebook_likes": 683,
+        "instagram_handle": "@namartialarts"
+      },
+      "wheelchair_accessible": true
+    }
+  },
+  {
+    "business_name": "Southside MMA",
+    "city": "Phuket",
+    "address": "40/3, Rawai, Mueang Phuket District, Phuket 83130, Thailand",
+    "phone": null,
+    "website_url": "https://southside-mma.com",
+    "google_rating": 5.0,
+    "google_review_count": 5,
+    "yelp_rating": null,
+    "yelp_review_count": 0,
+    "business_email": "info@southside-mma.com",
+    "status": "WON",
+    "research_data": {
+      "website": {
+        "url": "https://southside-mma.com",
+        "platform": "clickfunnels",
+        "ssl_valid": true,
+        "issues": ["clickfunnels_landing_page_platform", "redundant_facebook_pixels_3x", "multiple_google_analytics_configs", "placeholder_images_base64", "generic_testimonial_placeholders", "poor_seo_structure", "excessive_inline_css"]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/southsidemmathailand/",
+        "instagram": "https://www.instagram.com/southsidemma_thailand/",
+        "google_business": true,
+        "yelp": false,
+        "tripadvisor": true
+      },
+      "reviews": {
+        "google": { "rating": 5.0, "count": 5 },
+        "facebook": { "rating": 5.0, "recommend_pct": 100 },
+        "tripadvisor": { "reviews": 265, "note": "Overwhelmingly positive" }
+      },
+      "opportunities": ["website_rebuild_from_clickfunnels", "seo_optimization", "booking_system", "content_marketing", "review_generation_google"],
+      "pitch_angle": "Already won -- site exists on ClickFunnels with placeholder content and redundant tracking pixels. Full rebuild opportunity for a proper gym website with class scheduling, membership management, and SEO.",
+      "hours": "Mon-Fri 8am-7:30pm, Sat 8am-12pm, Sun Closed",
+      "services": "MMA, Wrestling, Muay Thai, Brazilian Jiu Jitsu, Boxing, Judo, meal prep, physical therapy by Physiofit",
+      "social_stats": {
+        "instagram_followers": 36000,
+        "instagram_handle": "@southsidemma_thailand"
+      },
+      "amenities": ["On-site accommodation", "Cafe and Juice Bar", "Physical therapy by Physiofit", "Oceanfront location", "Sauna", "Cold plunge"],
+      "packages": ["Fighter Experience (6-week)", "Solo Classes Silver Membership", "Various training packages"]
+    }
+  }
+]

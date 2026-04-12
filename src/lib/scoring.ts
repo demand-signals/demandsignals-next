@@ -1,52 +1,339 @@
+// ─── Demand Signals Intelligence Engine v2 ───
+// 5-signal composite scoring with diamond classification
+
 type ScoreInput = {
   google_rating?: number | null
   google_review_count?: number | null
+  yelp_rating?: number | null
+  yelp_review_count?: number | null
   site_quality_score?: number | null
   industry?: string | null
-  score_factors?: Record<string, any>
+  stage?: string | null
+  tags?: string[] | null
+  research_data?: Record<string, any> | null
+  owner_name?: string | null
+  business_email?: string | null
+  business_phone?: string | null
+  notes?: string | null
+}
+
+// Diamond classification tiers
+export type ProspectTier = 'diamond' | 'gold' | 'silver' | 'bronze'
+
+export const TIER_LABELS: Record<ProspectTier, string> = {
+  diamond: 'Diamond',
+  gold: 'Gold',
+  silver: 'Silver',
+  bronze: 'Bronze',
 }
 
 const INDUSTRY_VALUES: Record<string, number> = {
-  dental: 90, medical: 90, medspa: 80,
+  dental: 90, medical: 90, medspa: 85,
   legal: 85,
   chiropractic: 75, hvac: 75, plumbing: 75,
-  restaurant: 70,
-  firearms: 65,
+  restaurant: 70, financial: 70,
+  firearms: 65, veterinary: 65,
   auto: 60,
   fitness: 55, contractor: 55,
-  financial: 70, veterinary: 60,
   retail: 40, other: 30,
 }
 
-export function calculateProspectScore(prospect: ScoreInput): {
-  score: number
-  factors: Record<string, any>
-} {
-  const rating = prospect.google_rating || 0
-  const count = prospect.google_review_count || 0
-  const reviewSignal = Math.min(100, count * 0.5 + rating * 10)
+// Platforms ranked by weakness (higher = worse for them = better for us)
+const PLATFORM_WEAKNESS: Record<string, number> = {
+  none: 100,         // no website at all
+  godaddy: 85,       // template sites
+  weebly: 80,        // end of life
+  'clickfunnels': 75, // landing page tool
+  prosites: 70,      // dental template
+  petsites: 70,      // vet template
+  imagepro: 70,      // real estate template
+  demandforce: 65,   // dated template
+  wix: 55,           // ok but limited
+  squarespace: 40,   // decent
+  wordpress: 30,     // flexible
+  custom: 15,        // likely has dev team
+}
 
-  const siteQuality = prospect.site_quality_score ?? 50
-  const siteGap = 100 - siteQuality
+// Premium zip codes (El Dorado Hills, Folsom, etc.)
+const PREMIUM_ZIPS = new Set([
+  '95762', // El Dorado Hills
+  '95630', // Folsom
+])
 
-  const industryValue = INDUSTRY_VALUES[prospect.industry || 'other'] || 30
+// ─── Signal 1: Review Authority (0-100) ───
+// Cross-platform review presence and strength
+function calcReviewAuthority(p: ScoreInput): { score: number; detail: Record<string, any> } {
+  const rd = p.research_data || {}
+  const reviews = rd.reviews || {}
 
-  const score = Math.round(
-    reviewSignal * 0.4 +
-    siteGap * 0.4 +
-    industryValue * 0.2
-  )
+  // Gather all review sources
+  let totalCount = 0
+  let weightedRatingSum = 0
+  let totalWeight = 0
+  let platformCount = 0
+
+  const addReviewSource = (rating: number | null | undefined, count: number | null | undefined) => {
+    const c = count || 0
+    totalCount += c
+    if (rating && c > 0) {
+      weightedRatingSum += rating * c
+      totalWeight += c
+    }
+    if (c > 0) platformCount++
+  }
+
+  // Google
+  const gRating = reviews.google?.rating ?? p.google_rating
+  const gCount = reviews.google?.count ?? p.google_review_count ?? 0
+  addReviewSource(gRating, gCount)
+
+  // Yelp
+  const yRating = reviews.yelp?.rating ?? p.yelp_rating
+  const yCount = reviews.yelp?.count ?? p.yelp_review_count ?? 0
+  addReviewSource(yRating, yCount)
+
+  // Other platforms from research
+  for (const [key, val] of Object.entries(reviews)) {
+    if (key === 'google' || key === 'yelp' || !val || typeof val !== 'object') continue
+    const rv = val as Record<string, any>
+    addReviewSource(rv.rating, rv.count)
+  }
+
+  const avgRating = totalWeight > 0 ? weightedRatingSum / totalWeight : 0
+
+  // Score: volume matters, rating matters, diversity matters
+  const volumeScore = Math.min(40, totalCount * 0.04) // caps at 1000 reviews
+  const ratingScore = avgRating * 8 // max 40 for 5.0
+  const diversityBonus = Math.min(20, platformCount * 5) // up to 4 platforms
+
+  const score = Math.min(100, Math.round(volumeScore + ratingScore + diversityBonus))
 
   return {
-    score: Math.min(100, Math.max(0, score)),
-    factors: {
-      review_signal: Math.round(reviewSignal),
-      site_gap: Math.round(siteGap),
-      industry_value: industryValue,
-      google_rating: rating,
-      google_review_count: count,
-      site_quality_score: siteQuality,
-      ...prospect.score_factors,
+    score,
+    detail: {
+      total_reviews: totalCount,
+      avg_rating: Math.round(avgRating * 10) / 10,
+      platforms: platformCount,
+      google_rating: gRating ?? null,
+      google_count: gCount,
+      yelp_rating: yRating ?? null,
+      yelp_count: yCount,
     },
   }
+}
+
+// ─── Signal 2: Digital Vulnerability (0-100) ───
+// How broken/weak their online presence is. HIGHER = more opportunity for us
+function calcDigitalVulnerability(p: ScoreInput): { score: number; detail: Record<string, any> } {
+  const rd = p.research_data || {}
+  const website = rd.website || {}
+  const social = rd.social || {}
+  const notes = (p.notes || '').toLowerCase()
+
+  // Platform weakness (0-100)
+  let platformName = website.platform || null
+  if (platformName) platformName = platformName.toLowerCase().split(' ')[0] // "PatientConnect365 (dental template)" → "patientconnect365"
+  const platformScore = PLATFORM_WEAKNESS[platformName as string] ?? 50
+
+  // Issue severity scoring
+  const issues: string[] = website.issues || rd.opportunities || []
+  const issueStr = issues.join(' ').toLowerCase()
+  let issueScore = 0
+  // Critical issues
+  if (issueStr.includes('broken_ssl') || issueStr.includes('ssl') || issueStr.includes('no_website') || issueStr.includes('no website')) issueScore += 30
+  if (issueStr.includes('broken_contact') || issueStr.includes('contact form')) issueScore += 20
+  // Moderate issues
+  if (issueStr.includes('dated') || issueStr.includes('template') || issueStr.includes('placeholder') || issueStr.includes('stock')) issueScore += 15
+  if (issueStr.includes('no_mobile') || issueStr.includes('not mobile') || issueStr.includes('no_seo')) issueScore += 10
+  if (issueStr.includes('unprofessional') || issueStr.includes('gmail') || issueStr.includes('comcast') || issueStr.includes('yahoo')) issueScore += 8
+  // Notes-based detection
+  if (notes.includes('broken ssl') || notes.includes('ssl broken')) issueScore += 25
+  if (notes.includes('no website') || notes.includes('no site')) issueScore += 25
+
+  // Missing channels
+  let missingChannels = 0
+  if (!social.facebook && social.facebook !== true) missingChannels++
+  if (!social.instagram && social.instagram !== true) missingChannels++
+  if (social.google_business === false) missingChannels += 2 // no GMB is critical
+  const channelScore = missingChannels * 10
+
+  const score = Math.min(100, Math.round(
+    platformScore * 0.35 +
+    Math.min(60, issueScore) * 0.35 +
+    channelScore * 0.30
+  ))
+
+  return {
+    score,
+    detail: {
+      platform: platformName,
+      platform_weakness: platformScore,
+      issue_count: issues.length,
+      missing_channels: missingChannels,
+    },
+  }
+}
+
+// ─── Signal 3: Industry & Market Value (0-100) ───
+function calcIndustryValue(p: ScoreInput): { score: number; detail: Record<string, any> } {
+  const base = INDUSTRY_VALUES[p.industry || 'other'] || 30
+
+  // Geographic premium
+  const rd = p.research_data || {}
+  let geoPremium = 0
+  const city = (rd.city || '').toLowerCase()
+  if (city === 'el dorado hills' || city === 'folsom') geoPremium = 10
+  else if (city === 'cameron park' || city === 'shingle springs') geoPremium = 5
+
+  const score = Math.min(100, base + geoPremium)
+  return { score, detail: { industry: p.industry, base_value: base, geo_premium: geoPremium } }
+}
+
+// ─── Signal 4: Close Probability (0-100) ───
+// Signals that predict likelihood of closing the deal
+function calcCloseProbability(p: ScoreInput): { score: number; detail: Record<string, any> } {
+  const tags = p.tags || []
+  const rd = p.research_data || {}
+  const notes = (p.notes || '').toLowerCase()
+
+  let score = 20 // baseline
+
+  // Demo built = massive signal (+25)
+  if (p.stage === 'demo_built') score += 25
+
+  // Whale tag (+15)
+  if (tags.includes('whale')) score += 15
+  // Top-10 tag (+10)
+  if (tags.includes('top-10')) score += 10
+
+  // Contact info completeness
+  if (p.owner_name) score += 5
+  if (p.business_email || p.business_phone) score += 5
+  if (p.business_email && p.business_phone) score += 5 // both = bonus
+
+  // Urgency signals
+  if (rd.urgency === 'high' || tags.includes('urgent')) score += 10
+  if (notes.includes('time sensitive') || notes.includes('time-sensitive')) score += 10
+  if (notes.includes('broken ssl') || notes.includes('ssl broken')) score += 5
+  if (notes.includes('ownership change') || notes.includes('replaced') || notes.includes('new ownership')) score += 5
+
+  // Won stage is 100
+  if (p.stage === 'won') score = 100
+
+  const signals: string[] = []
+  if (p.stage === 'demo_built') signals.push('demo_built')
+  if (tags.includes('whale')) signals.push('whale')
+  if (tags.includes('top-10')) signals.push('top_10')
+  if (rd.urgency === 'high' || tags.includes('urgent')) signals.push('urgency')
+  if (p.owner_name && (p.business_email || p.business_phone)) signals.push('contact_complete')
+
+  return {
+    score: Math.min(100, score),
+    detail: { signals, contact_completeness: [p.owner_name, p.business_email, p.business_phone].filter(Boolean).length },
+  }
+}
+
+// ─── Signal 5: Revenue Potential (0-100) ───
+function calcRevenuePotential(p: ScoreInput): { score: number; detail: Record<string, any> } {
+  const rd = p.research_data || {}
+  const notes = (p.notes || '').toLowerCase()
+  const tags = p.tags || []
+
+  let score = 30 // baseline
+
+  // Opportunity count — more problems = bigger deal
+  const opps = rd.opportunities || []
+  score += Math.min(25, opps.length * 5)
+
+  // Deal estimate from notes
+  const dealMatch = notes.match(/deal value:\s*\$?([\d,]+)/i) || notes.match(/\$([\d,]+)k/i)
+  if (dealMatch) {
+    const val = parseInt(dealMatch[1].replace(/,/g, ''), 10)
+    if (val >= 15) score += 25  // $15K+
+    else if (val >= 8) score += 15
+    else if (val >= 3) score += 8
+  }
+
+  // Multi-location / group deal
+  if (tags.includes('platt-group') || notes.includes('group deal') || notes.includes('multiple location')) score += 15
+
+  // Business maturity
+  const estMatch = notes.match(/(\d+)\+?\s*years/i) || notes.match(/since\s*(19|20)\d{2}/i)
+  if (estMatch) score += 5
+
+  // Whale tag implies high-value
+  if (tags.includes('whale')) score += 10
+
+  return {
+    score: Math.min(100, score),
+    detail: {
+      opportunity_count: opps.length,
+      has_deal_estimate: !!dealMatch,
+    },
+  }
+}
+
+// ─── COMPOSITE SCORE ───
+export function calculateProspectScore(prospect: ScoreInput): {
+  score: number
+  tier: ProspectTier
+  factors: Record<string, any>
+} {
+  const review = calcReviewAuthority(prospect)
+  const vulnerability = calcDigitalVulnerability(prospect)
+  const industry = calcIndustryValue(prospect)
+  const close = calcCloseProbability(prospect)
+  const revenue = calcRevenuePotential(prospect)
+
+  // Weighted composite
+  const composite = Math.round(
+    review.score * 0.15 +          // established businesses worth pursuing
+    vulnerability.score * 0.30 +    // biggest weight — the GAP is the opportunity
+    industry.score * 0.15 +         // industry dictates deal size
+    close.score * 0.25 +            // close probability = ROI on effort
+    revenue.score * 0.15            // deal size potential
+  )
+
+  const score = Math.min(100, Math.max(0, composite))
+
+  // Diamond classification
+  let tier: ProspectTier
+  if (score >= 75 && close.score >= 60) tier = 'diamond'
+  else if (score >= 60) tier = 'gold'
+  else if (score >= 40) tier = 'silver'
+  else tier = 'bronze'
+
+  return {
+    score,
+    tier,
+    factors: {
+      review_authority: review.score,
+      digital_vulnerability: vulnerability.score,
+      industry_value: industry.score,
+      close_probability: close.score,
+      revenue_potential: revenue.score,
+      tier,
+      // Detailed breakdowns
+      review_detail: review.detail,
+      vulnerability_detail: vulnerability.detail,
+      close_signals: close.detail.signals,
+      opportunity_count: revenue.detail.opportunity_count,
+      // Legacy fields for backwards compat
+      review_signal: review.score,
+      site_gap: vulnerability.score,
+      google_rating: prospect.google_rating || 0,
+      google_review_count: prospect.google_review_count || 0,
+      site_quality_score: prospect.site_quality_score ?? 50,
+    },
+  }
+}
+
+// Get pitch angle from research data
+export function getPitchAngle(prospect: ScoreInput): string | null {
+  return prospect.research_data?.pitch_angle || null
+}
+
+// Get top opportunities from research data
+export function getOpportunities(prospect: ScoreInput): string[] {
+  return prospect.research_data?.opportunities || []
 }

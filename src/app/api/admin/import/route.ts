@@ -54,12 +54,21 @@ export async function POST(request: NextRequest) {
       continue
     }
 
-    // Calculate score
-    const { score, factors } = calculateProspectScore({
+    // Calculate score with full intelligence signals
+    const { score, tier, factors } = calculateProspectScore({
       google_rating: rest.google_rating,
       google_review_count: rest.google_review_count,
+      yelp_rating: rest.yelp_rating,
+      yelp_review_count: rest.yelp_review_count,
       site_quality_score: rest.site_quality_score,
       industry: rest.industry,
+      stage: rest.stage,
+      tags: rest.tags,
+      research_data: rest.research_data,
+      owner_name: rest.owner_name,
+      business_email: rest.business_email,
+      business_phone: rest.business_phone,
+      notes: rest.notes,
     })
 
     const stage = demo_url ? 'demo_built' : (rest.stage ?? 'researched')

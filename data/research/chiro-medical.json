@@ -1,0 +1,566 @@
+[
+  {
+    "business_name": "Fan Chiropractic",
+    "city": "Placerville",
+    "website_url": "https://www.fanchiropractic.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.fanchiropractic.com/",
+        "platform": "Locable",
+        "issues": [
+          "Niche CMS with limited SEO flexibility",
+          "No Instagram or social media links beyond Facebook",
+          "Unminified JavaScript visible in source",
+          "No online booking integration visible on homepage"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/placervilleca/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 5.0, "count": 65 },
+        "yelp": { "rating": 5.0, "count": 6 }
+      },
+      "opportunities": [
+        "Platform migration from Locable to modern framework",
+        "No Instagram presence — missing visual content channel",
+        "Low Yelp review count vs Google — Yelp growth campaign",
+        "No-insurance cash-pay model is a differentiator worth featuring",
+        "Local SEO optimization for Placerville + surrounding areas"
+      ],
+      "pitch_angle": "Perfect 5.0 Google rating with a unique no-insurance cash-pay model — a modern website with local SEO and social media presence would turn Dr. Fan's stellar reputation into a patient acquisition engine."
+    },
+    "google_rating": 5.0,
+    "google_review_count": 65
+  },
+  {
+    "business_name": "Hall Chiropractic",
+    "city": "Placerville",
+    "website_url": "https://www.drestherhall.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.drestherhall.com/",
+        "platform": "Wix",
+        "issues": [
+          "Large initial JavaScript bundle typical of Wix",
+          "Template-based design limits customization",
+          "Limited SEO control on Wix platform",
+          "Social media links not prominently displayed"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/ConnectionChiropractic/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.9, "count": 45 },
+        "yelp": { "rating": 5.0, "count": 7 }
+      },
+      "opportunities": [
+        "Wix-to-custom migration for better performance and SEO",
+        "Pediatric/prenatal niche is undermarketed online",
+        "No Instagram — missing key demographic for pregnant moms",
+        "Webster Technique certification is a strong differentiator",
+        "Content marketing around pediatric chiropractic topics"
+      ],
+      "pitch_angle": "Third-generation chiropractor with Webster Technique certification and a pediatric/prenatal niche stuck on a Wix template — a purpose-built site with content strategy would dominate the pregnant mom and family wellness search space in El Dorado County."
+    },
+    "google_rating": 4.9,
+    "google_review_count": 45
+  },
+  {
+    "business_name": "Jackson Chiropractic",
+    "city": "Cameron Park",
+    "website_url": "https://www.jacksonchiropractic.org/",
+    "research_data": {
+      "website": {
+        "url": "https://www.jacksonchiropractic.org/",
+        "platform": "ProfessionalPlanets (custom CMS)",
+        "issues": [
+          "Severely outdated design with deprecated Flash references",
+          "Old Google Analytics syntax needs updating",
+          "Visible admin link is a security risk",
+          "Legacy JavaScript validation code",
+          "No responsive/mobile-first design indicators",
+          "References to deprecated browser checks (Internet Explorer)"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/p/Jackson-Chiropractic-Inc-100067475255160/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.8, "count": 70 },
+        "yelp": { "rating": 4.5, "count": 22 }
+      },
+      "opportunities": [
+        "Complete website rebuild — current site is critically outdated",
+        "34+ years experience is massive trust signal not leveraged online",
+        "Holistic health + nutrition angle needs dedicated content",
+        "No Instagram or modern social presence",
+        "Flash references and IE checks signal decade-old technology",
+        "Security vulnerability with visible admin link"
+      ],
+      "pitch_angle": "34 years of practice with 70 Google reviews trapped behind a website with Flash references and IE browser checks — Dr. Jackson desperately needs a modern rebuild that converts his deep community trust into new patient bookings."
+    },
+    "google_rating": 4.8,
+    "google_review_count": 70
+  },
+  {
+    "business_name": "Cameron Park Chiropractic",
+    "city": "Cameron Park",
+    "website_url": "https://cameronparkchiropractor.com/",
+    "research_data": {
+      "website": {
+        "url": "https://cameronparkchiropractor.com/",
+        "platform": "WordPress (Astra theme + Elementor)",
+        "issues": [
+          "Massive inline CSS in page head instead of external files",
+          "Previous Yelp listing marked as CLOSED (old location at 3091 Alhambra Dr)",
+          "New location at 3370 Country Club Dr needs stronger online presence",
+          "Relatively new practice with limited review history",
+          "Heavy page weight from inline styles"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 5.0, "count": 15 },
+        "yelp": { "rating": 4.0, "count": 3 }
+      },
+      "opportunities": [
+        "Young practice needs review generation strategy",
+        "Old Yelp listing shows CLOSED — reputation management needed",
+        "No social media presence at all",
+        "Shockwave/laser therapy services need dedicated landing pages",
+        "Local young doctor angle appeals to younger demographic",
+        "WordPress site needs performance optimization"
+      ],
+      "pitch_angle": "New practice with a perfect Google rating but a confusing Yelp situation (old listing marked CLOSED) and zero social media — needs reputation management cleanup and a growth strategy to establish Dr. Sattler in a competitive Cameron Park market."
+    },
+    "google_rating": 5.0,
+    "google_review_count": 15
+  },
+  {
+    "business_name": "Cambridge Chiropractic",
+    "city": "Cameron Park",
+    "website_url": "https://www.cameronparkhealthandwellness.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.cameronparkhealthandwellness.com/",
+        "platform": "Roya (chiropractic CMS)",
+        "issues": [
+          "CRITICAL: Plain-text password exposed in JavaScript source code",
+          "Inconsistent office hours between schema markup and display",
+          "Duplicate Google Analytics tracking code",
+          "Generic form error messages (Dynamic Error Description)",
+          "Domain name doesn't match business name (cameronparkhealthandwellness vs Cambridge Chiropractic)"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/cambridgechiropracticcameronpark/",
+        "instagram": "https://www.instagram.com/drpetrice/"
+      },
+      "reviews": {
+        "google": { "rating": 4.9, "count": 50 },
+        "yelp": { "rating": 5.0, "count": 18 }
+      },
+      "opportunities": [
+        "SECURITY ISSUE: Password exposed in page source needs immediate fix",
+        "Domain mismatch hurts brand consistency and SEO",
+        "Schema markup conflicts with displayed hours",
+        "Pediatric/family wellness niche has strong review support",
+        "20+ year established practice deserves premium web presence",
+        "Duplicate analytics causing inflated metrics"
+      ],
+      "pitch_angle": "Established 20+ year pediatric and family practice with a password literally visible in their website source code and mismatched schema data — lead with the security vulnerability to open the conversation about a proper rebuild."
+    },
+    "google_rating": 4.9,
+    "google_review_count": 50
+  },
+  {
+    "business_name": "Advanced Chiropractic & Sports",
+    "city": "Placerville",
+    "website_url": "https://www.drscotthale.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.drscotthale.com/",
+        "platform": "Custom/Legacy HTML",
+        "issues": [
+          "Severely outdated design with deprecated browser checks (IE/Trident)",
+          "Limited responsive design capabilities",
+          "No social media integration whatsoever",
+          "Broken/unoptimized image elements with missing alt text",
+          "Inline JavaScript and CSS mixed with HTML",
+          "Relies on third-party DemandForce for reviews/scheduling",
+          "No clear call-to-action structure",
+          "Accessibility concerns — minimal ARIA labels"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.7, "count": 30 },
+        "yelp": { "rating": 4.5, "count": 7 }
+      },
+      "opportunities": [
+        "Complete website rebuild — site is one of the most outdated in the area",
+        "40 years experience (since 1985) with zero social media presence",
+        "Husband-wife team is a warmth story angle for content",
+        "Sports rehabilitation niche needs dedicated landing pages",
+        "DemandForce dependency should be replaced with owned platform",
+        "Functional medicine/nutrition angle completely unmarketted"
+      ],
+      "pitch_angle": "40 years in practice with a website that still checks for Internet Explorer — Dr. Hale's husband-wife operation is the definition of an established practice that has never invested in digital, making it ripe for a complete transformation."
+    },
+    "google_rating": 4.7,
+    "google_review_count": 30
+  },
+  {
+    "business_name": "NorCal Spine & Sport",
+    "city": "El Dorado Hills",
+    "website_url": "https://norcalchiro.com/",
+    "research_data": {
+      "website": {
+        "url": "https://norcalchiro.com/",
+        "platform": "Squarespace",
+        "issues": [
+          "Squarespace code bloat with massive inline framework code",
+          "Redundant mobile/desktop navigation duplicating DOM",
+          "Multiple tracking systems without visible privacy notices",
+          "Limited SEO customization on Squarespace platform",
+          "Over-engineered CSS grid for simple content"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": "https://www.instagram.com/norcalspine/"
+      },
+      "reviews": {
+        "google": { "rating": 4.8, "count": 40 },
+        "yelp": { "rating": 4.5, "count": 21 }
+      },
+      "opportunities": [
+        "Squarespace migration for better performance and SEO control",
+        "Sports therapy niche in affluent EDH market is high-value",
+        "Active Release and Graston certifications need dedicated content",
+        "No Facebook page found — missing major referral channel",
+        "El Dorado Hills demographic supports premium positioning",
+        "Classes page suggests community engagement worth amplifying"
+      ],
+      "pitch_angle": "Sports chiropractic practice in the affluent El Dorado Hills market with Active Release and Graston certifications, held back by a bloated Squarespace site — a performance-optimized custom build with local SEO would capture the active lifestyle demographic."
+    },
+    "google_rating": 4.8,
+    "google_review_count": 40
+  },
+  {
+    "business_name": "Lowrey Chiropractic",
+    "city": "El Dorado Hills",
+    "website_url": "https://www.lowreychiropractic.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.lowreychiropractic.com/",
+        "platform": "ChiroMatrix (chiropractic CMS)",
+        "issues": [
+          "Accessibility modal code with potential display conflicts",
+          "Malformed JavaScript with excessive backslash escaping",
+          "Multiple overlapping lazy-load systems causing redundancy",
+          "Multiple overlapping tracking systems (Piwik, GA, call tracking)",
+          "Email obfuscation partially broken",
+          "Industry-specific CMS limits design flexibility"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/LowreyChiropracticWellness/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.8, "count": 55 },
+        "yelp": { "rating": 4.5, "count": 23 }
+      },
+      "opportunities": [
+        "ChiroMatrix CMS migration to modern platform",
+        "20+ years ART/Graston certified — premium positioning opportunity",
+        "Palmer West grad is a strong credential to feature",
+        "No Instagram for visual content in fitness-oriented practice",
+        "Overlapping analytics creating data quality issues",
+        "EDH/Folsom dual-market positioning needs local landing pages"
+      ],
+      "pitch_angle": "20+ year Palmer West grad with ART and Graston certifications locked into a ChiroMatrix template with broken JavaScript and overlapping analytics — deserves a site that matches his elite training credentials and the upscale EDH market."
+    },
+    "google_rating": 4.8,
+    "google_review_count": 55
+  },
+  {
+    "business_name": "Gold Country Chiropractic & Spa",
+    "city": "Placerville",
+    "website_url": null,
+    "research_data": {
+      "website": {
+        "url": null,
+        "platform": "No website found",
+        "issues": [
+          "NO WEBSITE — relies entirely on directory listings and Facebook",
+          "Business has no web presence beyond social and directories",
+          "Two locations but no central online hub",
+          "Started in 1995 with zero web investment"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/p/Gold-Country-Chiropractic-Spa-100063633698853/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.7, "count": 17 },
+        "yelp": { "rating": 5.0, "count": 5 }
+      },
+      "opportunities": [
+        "GREENFIELD: No website at all — complete build opportunity",
+        "Chiro + Spa combo is unique value prop worth featuring",
+        "Two locations need a unified web presence",
+        "30 years in business with no digital footprint",
+        "Spa services add upsell/cross-sell content opportunities",
+        "Low review counts across all platforms — review generation campaign"
+      ],
+      "pitch_angle": "A 30-year-old chiropractic AND spa practice with two locations and literally no website — this is the ultimate greenfield opportunity to build their entire digital presence from scratch."
+    },
+    "google_rating": 4.7,
+    "google_review_count": 17
+  },
+  {
+    "business_name": "Revive Chiropractic",
+    "city": "Diamond Springs",
+    "website_url": "https://revivechiropractor.com/",
+    "research_data": {
+      "website": {
+        "url": "https://revivechiropractor.com/",
+        "platform": "WordPress (Elementor)",
+        "issues": [
+          "Mixed HTTP/HTTPS content creating security warnings",
+          "Excessive inline CSS and JavaScript bloat",
+          "Aggressive prefetch script impacts slow connections",
+          "Stock imagery in testimonials section lacks authenticity",
+          "No email contact method listed publicly",
+          "New practice still building online authority"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/p/Revive-Chiropractic-61570209616973/",
+        "instagram": "https://www.instagram.com/revive_cco/"
+      },
+      "reviews": {
+        "google": { "rating": 5.0, "count": 20 },
+        "yelp": { "rating": 5.0, "count": 3 }
+      },
+      "opportunities": [
+        "New practice — foundational digital marketing opportunity",
+        "Mixed content security issues need immediate fix",
+        "Custom orthotics + foot/ankle specialty is differentiator",
+        "Diamond Springs/Somerset/Camino areas underserved",
+        "WordPress site needs performance hardening",
+        "YouTube channel exists but needs content strategy",
+        "Review generation while ratings are perfect"
+      ],
+      "pitch_angle": "New practice with perfect 5.0 ratings and a unique foot/ankle orthotics specialty in an underserved Diamond Springs market — catching them early with a growth-oriented digital strategy while reviews are pristine would build a long-term client relationship."
+    },
+    "google_rating": 5.0,
+    "google_review_count": 20
+  },
+  {
+    "business_name": "Fitzpatrick Physical Therapy",
+    "city": "Placerville",
+    "website_url": "https://www.fitzpatrickpt.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.fitzpatrickpt.com/",
+        "platform": "Squarespace",
+        "issues": [
+          "Social media links point to Squarespace corporate accounts instead of business profiles",
+          "No actual business social profiles connected to site",
+          "Squarespace template limitations for healthcare SEO",
+          "No direct online booking integration visible",
+          "Founded 2002 but site feels generic/template"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/p/Fitzpatrick-Physical-Therapy-100063689947594/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.8, "count": 95 },
+        "yelp": { "rating": 4.0, "count": 12 }
+      },
+      "opportunities": [
+        "Social links on site point to Squarespace, not the business — broken setup",
+        "95 Google reviews is strong social proof not leveraged on site",
+        "Two locations (Placerville + Jackson) need location-specific pages",
+        "Rock Steady boxing partnership is unique content angle",
+        "Squarespace migration for better local SEO",
+        "4.0 Yelp rating could benefit from reputation management"
+      ],
+      "pitch_angle": "95 Google reviews and two locations but a Squarespace site where the social links literally point to Squarespace's own accounts instead of the business — a professional rebuild with proper integrations and multi-location SEO would unlock significant growth."
+    },
+    "google_rating": 4.8,
+    "google_review_count": 95
+  },
+  {
+    "business_name": "Reset Physical Therapy",
+    "city": "El Dorado Hills",
+    "website_url": "https://www.goresetphysicaltherapy.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.goresetphysicaltherapy.com/",
+        "platform": "Wix",
+        "issues": [
+          "Large JavaScript bundle typical of Wix framework",
+          "No social media integration anywhere on site",
+          "Minimal online presence beyond basic website",
+          "No visible review integration or testimonials",
+          "Wix SEO limitations for local search",
+          "Solo practitioner site needs stronger credentialing content"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 5.0, "count": 10 },
+        "yelp": { "rating": null, "count": 0 }
+      },
+      "opportunities": [
+        "Jiu-Jitsu specialization is unique niche worth owning online",
+        "Partnership with EDH Brazilian Jiu Jitsu gym for cross-referrals",
+        "Zero social media — entire social strategy needed",
+        "Wix platform limiting growth potential",
+        "Solo practitioner branding around Amanda Morgan",
+        "Orthopedic Clinical Specialist credential underutilized",
+        "No Yelp presence at all"
+      ],
+      "pitch_angle": "Solo practitioner with a Jiu-Jitsu rehabilitation niche and Orthopedic Clinical Specialist credentials, stuck on Wix with zero social media — owning the martial arts recovery niche in EDH with a custom site and content strategy would create an uncontested market position."
+    },
+    "google_rating": 5.0,
+    "google_review_count": 10
+  },
+  {
+    "business_name": "Sierra Orthopaedic & Athletic Rehabilitation (SOAR)",
+    "city": "Placerville",
+    "website_url": "https://www.sierraorthopt.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.sierraorthopt.com/",
+        "platform": "Custom static HTML",
+        "issues": [
+          "Copyright stuck at 2021 — no updates in years",
+          "Commented-out code (Spry menu) shows abandoned functionality",
+          "No contact information visible on homepage",
+          "Zero social media links or presence",
+          "No responsive/mobile design indicators",
+          "Static HTML with no CMS for easy updates",
+          "Relies on animated GIF header — extremely dated"
+        ]
+      },
+      "social": {
+        "facebook": null,
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.9, "count": 32 },
+        "yelp": { "rating": 5.0, "count": 5 }
+      },
+      "opportunities": [
+        "Complete website rebuild — static HTML from 2021 or earlier",
+        "Wide range of specialties (vestibular, TMJ, neuro) need dedicated pages",
+        "No social media at all — full digital strategy needed",
+        "State-of-the-art facility deserves matching web presence",
+        "SOAR brand name is strong but underutilized",
+        "4.9 Google rating with specialties not marketed online",
+        "Custom orthotics and biomechanical assessments are premium services"
+      ],
+      "pitch_angle": "State-of-the-art facility with 8+ specialties including vestibular rehab and TMJ therapy, hidden behind a static HTML site with a 2021 copyright and an animated GIF header — the gap between their clinical capabilities and their web presence is enormous."
+    },
+    "google_rating": 4.9,
+    "google_review_count": 32
+  },
+  {
+    "business_name": "Healix Physical Therapy",
+    "city": "Diamond Springs",
+    "website_url": "https://healixtherapy.com/",
+    "research_data": {
+      "website": {
+        "url": "https://healixtherapy.com/",
+        "platform": "WordPress (Flatsome theme)",
+        "issues": [
+          "Excessive inline CSS affecting page load performance",
+          "Multiple tracking and analytics scripts adding weight (Wordfence, Smart Slider)",
+          "Heavy JavaScript bloat from plugin stack",
+          "Lazy loading inconsistently applied",
+          "Built by Front Street Media — third-party dependency"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/p/Healix-Therapy-100068334048808/",
+        "instagram": "https://www.instagram.com/healixtherapy/"
+      },
+      "reviews": {
+        "google": { "rating": 5.0, "count": 15 },
+        "yelp": { "rating": 5.0, "count": 2 }
+      },
+      "opportunities": [
+        "Mobile PT model is highly differentiated — needs featured positioning",
+        "Holistic approach (yoga, Ayurvedic, Kundalini) is unique in the area",
+        "WordPress performance optimization needed",
+        "Telehealth services need dedicated landing pages for search",
+        "Pinterest account exists but appears inactive",
+        "YouTube channel needs content strategy",
+        "Rob Linson's unique credentials (AFS, FMR, TPS, Ayurvedic) are a story"
+      ],
+      "pitch_angle": "The only mobile/home-visit PT in El Dorado County with Ayurvedic and Kundalini yoga certifications — the holistic wellness angle is completely unique but buried under a bloated WordPress theme; a streamlined site with the right SEO would own the mobile PT niche."
+    },
+    "google_rating": 5.0,
+    "google_review_count": 15
+  },
+  {
+    "business_name": "Cameron Park Physical Therapy Center",
+    "city": "Cameron Park",
+    "website_url": "https://www.cameronparkpt.com/",
+    "research_data": {
+      "website": {
+        "url": "https://www.cameronparkpt.com/",
+        "platform": "WordPress",
+        "issues": [
+          "CRITICAL: Image alt text references 'Murrells Inlet SC' and 'Myrtle Beach SC' instead of Cameron Park CA",
+          "Template clearly not customized for this location — South Carolina references throughout",
+          "Location-specific content mismatch confuses patients and actively hurts local SEO",
+          "Generic template design despite award-winning practice",
+          "Alt text poisoning sending wrong geographic signals to Google"
+        ]
+      },
+      "social": {
+        "facebook": "https://www.facebook.com/CameronParkPhysicalTherapy/",
+        "instagram": null
+      },
+      "reviews": {
+        "google": { "rating": 4.8, "count": 60 },
+        "yelp": { "rating": 4.5, "count": 21 }
+      },
+      "opportunities": [
+        "ALT TEXT DISASTER: South Carolina references in a California PT site killing local SEO",
+        "Award-winning practice (Style Magazine, Sacramento Business Journal) poorly represented online",
+        "25 years in business deserves a custom-built site not a template",
+        "Image alt text actively hurting local SEO for Cameron Park queries",
+        "No Instagram presence for community engagement",
+        "100% Facebook recommendation rate is strong untapped social proof",
+        "Physical Therapy Center of the Year award not featured prominently"
+      ],
+      "pitch_angle": "An award-winning 25-year practice recognized by Style Magazine and Sacramento Business Journal, whose website has image alt text referencing 'Murrells Inlet, SC' instead of Cameron Park — lead with this SEO-killing template mistake to demonstrate immediate value."
+    },
+    "google_rating": 4.8,
+    "google_review_count": 60
+  }
+]

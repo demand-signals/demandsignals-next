@@ -19,6 +19,7 @@ type ProspectRow = {
   google_rating: number | null
   google_review_count: number | null
   prospect_score: number | null
+  score_factors: Record<string, any> | null
   stage: string
   demos?: { id: string }[]
 }
@@ -200,7 +201,7 @@ export function ProspectTable() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <ProspectScoreBadge score={p.prospect_score} />
+                    <ProspectScoreBadge score={p.prospect_score} tier={p.score_factors?.tier} />
                   </td>
                   <td className="px-4 py-3">
                     <span

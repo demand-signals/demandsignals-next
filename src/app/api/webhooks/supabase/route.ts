@@ -49,7 +49,7 @@ async function scoreProspect(prospectId: string) {
     return
   }
 
-  const { score, factors } = calculateProspectScore(prospect)
+  const { score, tier, factors } = calculateProspectScore(prospect)
 
   await supabaseAdmin
     .from('prospects')
@@ -65,7 +65,7 @@ async function scoreProspect(prospectId: string) {
     type: 'note',
     channel: 'system',
     direction: 'internal',
-    subject: `Auto-scored: ${score}/100${score >= 70 ? ' (demo eligible)' : ''}`,
+    subject: `Auto-scored: ${score}/100 [${tier}]${score >= 70 ? ' (demo eligible)' : ''}`,
     body: JSON.stringify(factors),
     created_by: 'agent:scorer',
   })
