@@ -9,9 +9,9 @@ export const metadata = {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <QueryProvider>
-      <div className="flex min-h-screen bg-[var(--dark)]">
+      <div className="flex min-h-screen bg-slate-50">
         <AdminSidebar />
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-6 overflow-auto text-slate-800">
           {children}
         </main>
       </div>

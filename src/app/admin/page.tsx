@@ -61,12 +61,12 @@ export default function AdminDashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-white/40 text-sm mt-1">Agency OS overview</p>
+        <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
+        <p className="text-slate-500 text-sm mt-1">Agency OS overview</p>
       </div>
 
       {isLoading ? (
-        <div className="text-white/40 text-sm">Loading…</div>
+        <div className="text-slate-400 text-sm">Loading…</div>
       ) : (
         <>
           {/* Stat Cards */}
@@ -99,26 +99,25 @@ export default function AdminDashboardPage() {
 
           {/* Stage Breakdown */}
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wider">
+            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
               Stage Breakdown
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
               {STAGES.map(stage => (
                 <div
                   key={stage}
-                  className="rounded-xl border border-white/10 p-3 text-center space-y-1"
+                  className="rounded-xl border bg-white p-3 text-center space-y-1 shadow-sm"
                   style={{
-                    backgroundColor: `${STAGE_BOX_COLORS[stage] ?? '#6b7280'}14`,
-                    borderColor: `${STAGE_BOX_COLORS[stage] ?? '#6b7280'}30`,
+                    borderColor: `${STAGE_BOX_COLORS[stage] ?? '#6b7280'}40`,
                   }}
                 >
                   <div
                     className="text-2xl font-bold"
-                    style={{ color: STAGE_BOX_COLORS[stage] ?? '#fff' }}
+                    style={{ color: STAGE_BOX_COLORS[stage] ?? '#6b7280' }}
                   >
                     {stageCounts[stage] ?? 0}
                   </div>
-                  <div className="text-xs text-white/50 leading-tight">
+                  <div className="text-xs text-slate-500 leading-tight">
                     {STAGE_LABELS[stage]}
                   </div>
                 </div>
