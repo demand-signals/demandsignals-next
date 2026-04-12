@@ -28,10 +28,10 @@ async function fetchDemos(): Promise<DemoRow[]> {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-white/10 text-white/50',
-  ready: 'bg-blue-500/20 text-blue-400',
-  sent: 'bg-orange-500/20 text-orange-400',
-  viewed: 'bg-green-500/20 text-green-400',
+  draft: 'bg-slate-100 text-slate-500',
+  ready: 'bg-blue-100 text-blue-700',
+  sent: 'bg-orange-100 text-orange-700',
+  viewed: 'bg-green-100 text-green-700',
 }
 
 export default function DemosPage() {
@@ -55,44 +55,44 @@ export default function DemosPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Demos</h1>
+        <h1 className="text-2xl font-bold text-slate-800">Demos</h1>
         {!isLoading && (
-          <span className="text-white/40 text-sm">{demos.length} demos</span>
+          <span className="text-slate-400 text-sm">{demos.length} demos</span>
         )}
       </div>
 
-      <div className="rounded-xl border border-white/10 overflow-hidden">
+      <div className="rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-white/5 border-b border-white/10">
-                <th className="text-left px-4 py-3 text-white/50 font-medium">Business</th>
-                <th className="text-left px-4 py-3 text-white/50 font-medium">Demo URL</th>
-                <th className="text-left px-4 py-3 text-white/50 font-medium">Platform</th>
-                <th className="text-left px-4 py-3 text-white/50 font-medium">Status</th>
-                <th className="text-left px-4 py-3 text-white/50 font-medium">Views</th>
-                <th className="text-left px-4 py-3 text-white/50 font-medium">Method</th>
-                <th className="text-left px-4 py-3 text-white/50 font-medium w-10"></th>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                <th className="text-left px-4 py-3 text-slate-500 font-medium">Business</th>
+                <th className="text-left px-4 py-3 text-slate-500 font-medium">Demo URL</th>
+                <th className="text-left px-4 py-3 text-slate-500 font-medium">Platform</th>
+                <th className="text-left px-4 py-3 text-slate-500 font-medium">Status</th>
+                <th className="text-left px-4 py-3 text-slate-500 font-medium">Views</th>
+                <th className="text-left px-4 py-3 text-slate-500 font-medium">Method</th>
+                <th className="text-left px-4 py-3 text-slate-500 font-medium w-10"></th>
               </tr>
             </thead>
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-white/40">
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
                     Loading…
                   </td>
                 </tr>
               )}
               {isError && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-red-400">
+                  <td colSpan={7} className="px-4 py-8 text-center text-red-500">
                     Failed to load demos.
                   </td>
                 </tr>
               )}
               {!isLoading && !isError && demos.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-white/40">
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
                     No demos yet.
                   </td>
                 </tr>
@@ -100,14 +100,14 @@ export default function DemosPage() {
               {demos.map(d => (
                 <tr
                   key={d.id}
-                  className="border-b border-white/5 hover:bg-white/3 transition-colors"
+                  className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
                 >
                   <td className="px-4 py-3">
-                    <div className="text-white font-medium">
+                    <div className="text-slate-800 font-medium">
                       {d.prospects?.business_name ?? '—'}
                     </div>
                     {d.prospects?.city && (
-                      <div className="text-white/40 text-xs">{d.prospects.city}</div>
+                      <div className="text-slate-400 text-xs">{d.prospects.city}</div>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -116,39 +116,39 @@ export default function DemosPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={e => e.stopPropagation()}
-                      className="flex items-center gap-1.5 text-[var(--teal)] hover:underline max-w-[260px] truncate"
+                      className="flex items-center gap-1.5 text-[var(--teal-dark)] hover:underline max-w-[260px] truncate"
                     >
                       <ExternalLink className="w-3 h-3 flex-shrink-0" />
                       <span className="truncate">{d.demo_url}</span>
                     </a>
                   </td>
-                  <td className="px-4 py-3 text-white/60 capitalize">
+                  <td className="px-4 py-3 text-slate-500 capitalize">
                     {d.platform ?? '—'}
                   </td>
                   <td className="px-4 py-3">
                     <span
                       className={cn(
                         'inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize',
-                        STATUS_COLORS[d.status] ?? 'bg-white/10 text-white/50'
+                        STATUS_COLORS[d.status] ?? 'bg-slate-100 text-slate-500'
                       )}
                     >
                       {d.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-white/60 font-mono text-xs">
+                  <td className="px-4 py-3 text-slate-500 font-mono text-xs">
                     {d.view_count ?? 0}
                   </td>
-                  <td className="px-4 py-3 text-white/50 capitalize text-xs">
+                  <td className="px-4 py-3 text-slate-500 capitalize text-xs">
                     {d.generation_method ?? '—'}
                   </td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => handleCopy(d.id, d.demo_url)}
                       title="Copy link"
-                      className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                     >
                       {copiedId === d.id ? (
-                        <Check className="w-4 h-4 text-green-400" />
+                        <Check className="w-4 h-4 text-green-500" />
                       ) : (
                         <Copy className="w-4 h-4" />
                       )}

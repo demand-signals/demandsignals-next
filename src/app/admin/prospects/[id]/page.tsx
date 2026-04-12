@@ -11,14 +11,14 @@ import type { Prospect, Demo, Activity } from '@/types/database'
 import { cn } from '@/lib/utils'
 
 const STAGE_BADGE_COLORS: Record<string, string> = {
-  researched: 'bg-white/10 text-white/60',
-  demo_built: 'bg-blue-500/20 text-blue-400',
-  outreach: 'bg-purple-500/20 text-purple-400',
-  engaged: 'bg-yellow-500/20 text-yellow-400',
-  meeting: 'bg-orange-500/20 text-orange-400',
-  proposal: 'bg-teal-500/20 text-teal-400',
-  won: 'bg-green-500/20 text-green-400',
-  lost: 'bg-red-500/20 text-red-400',
+  researched: 'bg-slate-100 text-slate-500',
+  demo_built: 'bg-blue-100 text-blue-700',
+  outreach: 'bg-purple-100 text-purple-700',
+  engaged: 'bg-yellow-100 text-yellow-700',
+  meeting: 'bg-orange-100 text-orange-700',
+  proposal: 'bg-teal-100 text-teal-700',
+  won: 'bg-green-100 text-green-700',
+  lost: 'bg-red-100 text-red-700',
 }
 
 async function fetchAllProspects(): Promise<{ data: (Prospect & { demos?: Demo[] })[] }> {
@@ -44,24 +44,24 @@ async function patchProspectStage(id: string, stage: string): Promise<void> {
 
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn('bg-white/5 border border-white/10 rounded-xl p-4', className)}>
+    <div className={cn('bg-white border border-slate-200 rounded-xl p-4 shadow-sm', className)}>
       {children}
     </div>
   )
 }
 
 function CardTitle({ children }: { children: React.ReactNode }) {
-  return <h3 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">{children}</h3>
+  return <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">{children}</h3>
 }
 
 function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | null | undefined }) {
   if (!value) return null
   return (
     <div className="flex items-start gap-2 text-sm">
-      <Icon className="w-4 h-4 text-white/30 mt-0.5 flex-shrink-0" />
+      <Icon className="w-4 h-4 text-slate-300 mt-0.5 flex-shrink-0" />
       <div>
-        <span className="text-white/40 text-xs block">{label}</span>
-        <span className="text-white/80">{value}</span>
+        <span className="text-slate-400 text-xs block">{label}</span>
+        <span className="text-slate-700">{value}</span>
       </div>
     </div>
   )
@@ -97,7 +97,7 @@ export default function ProspectDetailPage() {
 
   if (prospectsQuery.isLoading) {
     return (
-      <div className="flex items-center justify-center h-64 text-white/40">
+      <div className="flex items-center justify-center h-64 text-slate-400">
         Loading…
       </div>
     )
@@ -106,10 +106,10 @@ export default function ProspectDetailPage() {
   if (!prospect) {
     return (
       <div className="space-y-4">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
+        <button onClick={() => router.back()} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 text-sm transition-colors">
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
-        <p className="text-red-400">Prospect not found.</p>
+        <p className="text-red-500">Prospect not found.</p>
       </div>
     )
   }
@@ -126,15 +126,15 @@ export default function ProspectDetailPage() {
       <div className="space-y-3">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors"
+          className="flex items-center gap-2 text-slate-500 hover:text-slate-800 text-sm transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Prospects
         </button>
 
         <div className="flex flex-wrap items-start gap-3">
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold text-white leading-tight">{prospect.business_name}</h1>
-            <p className="text-white/50 text-sm mt-0.5">
+            <h1 className="text-2xl font-bold text-slate-800 leading-tight">{prospect.business_name}</h1>
+            <p className="text-slate-500 text-sm mt-0.5">
               {[locationLine, prospect.industry].filter(Boolean).join(' · ')}
             </p>
           </div>
@@ -147,12 +147,12 @@ export default function ProspectDetailPage() {
               onChange={e => stageMutation.mutate(e.target.value)}
               disabled={stageMutation.isPending}
               className={cn(
-                'bg-white/5 border border-white/10 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[var(--teal)] appearance-none disabled:opacity-50',
-                STAGE_BADGE_COLORS[prospect.stage] ?? 'text-white/60'
+                'bg-white border border-slate-200 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[var(--teal)] appearance-none disabled:opacity-50',
+                STAGE_BADGE_COLORS[prospect.stage] ?? 'text-slate-500'
               )}
             >
               {STAGES.map(s => (
-                <option key={s} value={s} className="bg-[#1a1a2e] text-white">
+                <option key={s} value={s}>
                   {STAGE_LABELS[s]}
                 </option>
               ))}
@@ -177,14 +177,14 @@ export default function ProspectDetailPage() {
               <InfoRow icon={MapPin} label="Address" value={addressLine || null} />
               {prospect.website_url && (
                 <div className="flex items-start gap-2 text-sm">
-                  <Globe className="w-4 h-4 text-white/30 mt-0.5 flex-shrink-0" />
+                  <Globe className="w-4 h-4 text-slate-300 mt-0.5 flex-shrink-0" />
                   <div>
-                    <span className="text-white/40 text-xs block">Website</span>
+                    <span className="text-slate-400 text-xs block">Website</span>
                     <a
                       href={prospect.website_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[var(--teal)] hover:underline break-all"
+                      className="text-[var(--teal-dark)] hover:underline break-all"
                     >
                       {prospect.website_url}
                     </a>
@@ -193,12 +193,12 @@ export default function ProspectDetailPage() {
               )}
               {prospect.google_rating != null && (
                 <div className="flex items-start gap-2 text-sm">
-                  <Star className="w-4 h-4 text-white/30 mt-0.5 flex-shrink-0" />
+                  <Star className="w-4 h-4 text-slate-300 mt-0.5 flex-shrink-0" />
                   <div>
-                    <span className="text-white/40 text-xs block">Google Rating</span>
-                    <span className="text-white/80">
+                    <span className="text-slate-400 text-xs block">Google Rating</span>
+                    <span className="text-slate-700">
                       {prospect.google_rating}★{' '}
-                      <span className="text-white/40 text-xs">({prospect.google_review_count ?? 0} reviews)</span>
+                      <span className="text-slate-400 text-xs">({prospect.google_review_count ?? 0} reviews)</span>
                     </span>
                   </div>
                 </div>
@@ -214,7 +214,7 @@ export default function ProspectDetailPage() {
                 {prospect.tags.map(tag => (
                   <span
                     key={tag}
-                    className="px-2.5 py-0.5 rounded-full bg-white/10 text-white/60 text-xs"
+                    className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs"
                   >
                     {tag}
                   </span>
@@ -227,7 +227,7 @@ export default function ProspectDetailPage() {
           <Card>
             <CardTitle>Demos</CardTitle>
             {!prospect.demos || prospect.demos.length === 0 ? (
-              <p className="text-white/30 text-sm">No demos yet</p>
+              <p className="text-slate-400 text-sm">No demos yet</p>
             ) : (
               <div className="space-y-2">
                 {prospect.demos.map(demo => (
@@ -236,14 +236,14 @@ export default function ProspectDetailPage() {
                       href={demo.demo_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-[var(--teal)] hover:underline truncate"
+                      className="text-sm text-[var(--teal-dark)] hover:underline truncate"
                     >
                       {demo.demo_url}
                     </a>
                     <span
                       className={cn(
                         'ml-3 flex-shrink-0 text-xs px-2 py-0.5 rounded',
-                        demo.status === 'live' ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-white/40'
+                        demo.status === 'live' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-400'
                       )}
                     >
                       {demo.status}
@@ -258,7 +258,7 @@ export default function ProspectDetailPage() {
           {prospect.notes && (
             <Card>
               <CardTitle>Notes</CardTitle>
-              <p className="text-sm text-white/70 whitespace-pre-wrap leading-relaxed">{prospect.notes}</p>
+              <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{prospect.notes}</p>
             </Card>
           )}
         </div>
@@ -268,7 +268,7 @@ export default function ProspectDetailPage() {
           <Card>
             <CardTitle>Activity</CardTitle>
             {activitiesQuery.isLoading ? (
-              <p className="text-white/30 text-sm py-4 text-center">Loading…</p>
+              <p className="text-slate-400 text-sm py-4 text-center">Loading…</p>
             ) : (
               <ActivityTimeline activities={activities} />
             )}

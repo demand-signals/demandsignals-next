@@ -42,7 +42,7 @@ interface ActivityTimelineProps {
 export function ActivityTimeline({ activities }: ActivityTimelineProps) {
   if (!activities || activities.length === 0) {
     return (
-      <p className="text-white/30 text-sm py-4 text-center">No activity yet</p>
+      <p className="text-slate-400 text-sm py-4 text-center">No activity yet</p>
     )
   }
 
@@ -54,34 +54,34 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
           <div key={activity.id} className="flex gap-3">
             {/* Icon column */}
             <div className="flex flex-col items-center">
-              <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
-                <Icon className="w-3.5 h-3.5 text-white/60" />
+              <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                <Icon className="w-3.5 h-3.5 text-slate-500" />
               </div>
               {idx < activities.length - 1 && (
-                <div className="w-px flex-1 bg-white/10 mt-1" />
+                <div className="w-px flex-1 bg-slate-200 mt-1" />
               )}
             </div>
 
             {/* Content */}
             <div className="flex-1 min-w-0 pb-4">
               {activity.subject && (
-                <p className="text-sm text-white font-medium leading-snug">
+                <p className="text-sm text-slate-800 font-medium leading-snug">
                   {activity.subject}
                 </p>
               )}
               {activity.body && (
-                <p className="text-xs text-white/50 mt-0.5 line-clamp-2 leading-relaxed">
+                <p className="text-xs text-slate-500 mt-0.5 line-clamp-2 leading-relaxed">
                   {activity.body}
                 </p>
               )}
               <div className="flex items-center gap-1.5 mt-1">
-                <span className="text-xs text-white/30">
+                <span className="text-xs text-slate-400">
                   {formatTimestamp(activity.created_at)}
                 </span>
                 {activity.created_by && (
                   <>
-                    <span className="text-white/20 text-xs">·</span>
-                    <span className="text-xs text-white/30 truncate max-w-[120px]">
+                    <span className="text-slate-300 text-xs">·</span>
+                    <span className="text-xs text-slate-400 truncate max-w-[120px]">
                       {activity.created_by}
                     </span>
                   </>

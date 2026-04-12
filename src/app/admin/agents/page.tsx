@@ -41,8 +41,8 @@ const AGENTS: AgentCard[] = [
 ]
 
 const STATUS_STYLES: Record<AgentStatus, string> = {
-  active: 'bg-green-500/20 text-green-400',
-  planned: 'bg-white/10 text-white/40',
+  active: 'bg-green-100 text-green-700',
+  planned: 'bg-slate-100 text-slate-400',
 }
 
 async function fetchAgentActivities(): Promise<Activity[]> {
@@ -62,8 +62,8 @@ export default function AgentsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">Agents</h1>
-        <p className="text-white/40 text-sm mt-1">Autonomous micro-agents that run in the background to research, score, and build demos.</p>
+        <h1 className="text-2xl font-bold text-slate-800">Agents</h1>
+        <p className="text-slate-500 text-sm mt-1">Autonomous micro-agents that run in the background to research, score, and build demos.</p>
       </div>
 
       {/* Agent cards */}
@@ -73,11 +73,11 @@ export default function AgentsPage() {
           return (
             <div
               key={agent.name}
-              className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3"
+              className="bg-white border border-slate-200 rounded-xl p-5 space-y-3 shadow-sm"
             >
               <div className="flex items-start justify-between gap-2">
-                <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-5 h-5 text-white/70" />
+                <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-5 h-5 text-slate-500" />
                 </div>
                 <span
                   className={cn(
@@ -90,12 +90,12 @@ export default function AgentsPage() {
               </div>
 
               <div>
-                <h3 className="text-base font-semibold text-white">{agent.name}</h3>
-                <p className="text-sm text-white/50 mt-1 leading-relaxed">{agent.description}</p>
+                <h3 className="text-base font-semibold text-slate-800">{agent.name}</h3>
+                <p className="text-sm text-slate-500 mt-1 leading-relaxed">{agent.description}</p>
               </div>
 
-              <div className="border-t border-white/10 pt-3">
-                <p className="text-xs text-white/30 leading-relaxed">{agent.trigger}</p>
+              <div className="border-t border-slate-100 pt-3">
+                <p className="text-xs text-slate-400 leading-relaxed">{agent.trigger}</p>
               </div>
             </div>
           )
@@ -103,14 +103,14 @@ export default function AgentsPage() {
       </div>
 
       {/* Recent agent activity */}
-      <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-        <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-4">
+      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">
           Recent Agent Activity
         </h2>
         {isLoading ? (
-          <p className="text-white/30 text-sm text-center py-4">Loading…</p>
+          <p className="text-slate-400 text-sm text-center py-4">Loading…</p>
         ) : agentActivities.length === 0 ? (
-          <p className="text-white/30 text-sm text-center py-4">
+          <p className="text-slate-400 text-sm text-center py-4">
             No agent activity yet. Import prospects to trigger the scorer.
           </p>
         ) : (

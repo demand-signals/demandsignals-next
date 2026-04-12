@@ -10,18 +10,18 @@ interface ProspectScoreBadgeProps {
 export function ProspectScoreBadge({ score, className }: ProspectScoreBadgeProps) {
   if (score === null || score === undefined) {
     return (
-      <span className={cn('text-white/30 text-sm font-mono', className)}>—</span>
+      <span className={cn('text-slate-300 text-sm font-mono', className)}>—</span>
     )
   }
 
   const colorClass =
     score >= 80
-      ? 'bg-green-500/20 text-green-400'
+      ? 'bg-green-100 text-green-700'
       : score >= 60
-      ? 'bg-yellow-500/20 text-yellow-400'
+      ? 'bg-yellow-100 text-yellow-700'
       : score >= 40
-      ? 'bg-orange-500/20 text-orange-400'
-      : 'bg-red-500/20 text-red-400'
+      ? 'bg-orange-100 text-orange-700'
+      : 'bg-red-100 text-red-700'
 
   return (
     <span

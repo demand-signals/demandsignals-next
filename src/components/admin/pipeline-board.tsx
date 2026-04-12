@@ -37,23 +37,23 @@ async function updateProspectStage(id: string, stage: string) {
 const VISIBLE_STAGES = STAGES.filter(s => s !== 'lost')
 
 const STAGE_COLORS: Record<string, string> = {
-  researched: 'border-white/15',
-  demo_built: 'border-blue-500/40',
-  outreach: 'border-purple-500/40',
-  engaged: 'border-yellow-500/40',
-  meeting: 'border-orange-500/40',
-  proposal: 'border-teal-500/40',
-  won: 'border-green-500/40',
+  researched: 'border-slate-200',
+  demo_built: 'border-blue-200',
+  outreach: 'border-purple-200',
+  engaged: 'border-yellow-200',
+  meeting: 'border-orange-200',
+  proposal: 'border-teal-200',
+  won: 'border-green-200',
 }
 
 const STAGE_HEADER_COLORS: Record<string, string> = {
-  researched: 'text-white/60',
-  demo_built: 'text-blue-400',
-  outreach: 'text-purple-400',
-  engaged: 'text-yellow-400',
-  meeting: 'text-orange-400',
-  proposal: 'text-teal-400',
-  won: 'text-green-400',
+  researched: 'text-slate-500',
+  demo_built: 'text-blue-600',
+  outreach: 'text-purple-600',
+  engaged: 'text-yellow-600',
+  meeting: 'text-orange-600',
+  proposal: 'text-teal-600',
+  won: 'text-green-600',
 }
 
 export function PipelineBoard() {
@@ -69,7 +69,6 @@ export function PipelineBoard() {
     mutationFn: ({ id, stage }: { id: string; stage: string }) =>
       updateProspectStage(id, stage),
     onMutate: async ({ id, stage }) => {
-      // Optimistic update
       await queryClient.cancelQueries({ queryKey: ['pipeline-prospects'] })
       const prev = queryClient.getQueryData<PipelineProspect[]>(['pipeline-prospects'])
       queryClient.setQueryData<PipelineProspect[]>(['pipeline-prospects'], old =>
@@ -112,11 +111,11 @@ export function PipelineBoard() {
   }, {} as Record<string, PipelineProspect[]>)
 
   if (isLoading) {
-    return <div className="text-white/40 text-sm py-10 text-center">Loading pipeline…</div>
+    return <div className="text-slate-400 text-sm py-10 text-center">Loading pipeline…</div>
   }
 
   if (isError) {
-    return <div className="text-red-400 text-sm py-10 text-center">Failed to load pipeline.</div>
+    return <div className="text-red-500 text-sm py-10 text-center">Failed to load pipeline.</div>
   }
 
   return (
@@ -127,18 +126,18 @@ export function PipelineBoard() {
           <div
             key={stage}
             className={cn(
-              'flex-shrink-0 w-64 flex flex-col rounded-xl border bg-white/3',
-              STAGE_COLORS[stage] ?? 'border-white/15'
+              'flex-shrink-0 w-64 flex flex-col rounded-xl border bg-slate-50',
+              STAGE_COLORS[stage] ?? 'border-slate-200'
             )}
             onDragOver={handleDragOver}
             onDrop={e => handleDrop(e, stage)}
           >
             {/* Column Header */}
-            <div className="flex items-center justify-between px-3 py-3 border-b border-white/10">
-              <span className={cn('text-sm font-semibold', STAGE_HEADER_COLORS[stage] ?? 'text-white/70')}>
+            <div className="flex items-center justify-between px-3 py-3 border-b border-slate-200">
+              <span className={cn('text-sm font-semibold', STAGE_HEADER_COLORS[stage] ?? 'text-slate-600')}>
                 {STAGE_LABELS[stage]}
               </span>
-              <span className="text-xs bg-white/10 text-white/50 px-2 py-0.5 rounded-full font-medium">
+              <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-medium">
                 {cols.length}
               </span>
             </div>
@@ -154,21 +153,21 @@ export function PipelineBoard() {
                     draggable
                     onDragStart={e => handleDragStart(e, p.id)}
                     onClick={() => router.push(`/admin/prospects/${p.id}`)}
-                    className="bg-[var(--dark)] border border-white/10 rounded-lg p-3 cursor-pointer hover:border-white/25 hover:bg-white/5 transition-all select-none space-y-1.5"
+                    className="bg-white border border-slate-200 rounded-lg p-3 cursor-pointer hover:border-slate-300 hover:shadow-sm transition-all select-none space-y-1.5"
                   >
-                    <div className="text-white text-sm font-medium leading-tight line-clamp-2">
+                    <div className="text-slate-800 text-sm font-medium leading-tight line-clamp-2">
                       {p.business_name}
                     </div>
                     {(p.city || p.industry) && (
-                      <div className="text-white/40 text-xs truncate">
+                      <div className="text-slate-400 text-xs truncate">
                         {[p.city, p.industry].filter(Boolean).join(' · ')}
                       </div>
                     )}
                     <div className="flex items-center justify-between gap-2">
                       <ProspectScoreBadge score={p.prospect_score} />
-                      <div className="flex items-center gap-2 text-white/40 text-xs">
+                      <div className="flex items-center gap-2 text-slate-400 text-xs">
                         {dealValue != null && (
-                          <span className="text-[var(--teal)]">
+                          <span className="text-[var(--teal-dark)]">
                             ${dealValue.toLocaleString()}
                           </span>
                         )}
@@ -181,7 +180,7 @@ export function PipelineBoard() {
                 )
               })}
               {cols.length === 0 && (
-                <div className="py-6 text-center text-white/20 text-xs">Drop here</div>
+                <div className="py-6 text-center text-slate-300 text-xs">Drop here</div>
               )}
             </div>
           </div>

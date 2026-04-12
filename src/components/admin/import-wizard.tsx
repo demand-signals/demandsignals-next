@@ -130,19 +130,19 @@ export function ImportWizard() {
         onDrop={handleDrop}
         onClick={() => fileRef.current?.click()}
         className={cn(
-          'border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors',
+          'border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors bg-white',
           isDragging
             ? 'border-[var(--teal)] bg-[var(--teal)]/5'
-            : 'border-white/15 hover:border-white/30 hover:bg-white/3'
+            : 'border-slate-300 hover:border-slate-400 hover:bg-slate-50'
         )}
       >
-        <Upload className="w-8 h-8 mx-auto mb-3 text-white/40" />
-        <p className="text-white/60 text-sm">
-          Drop a <strong className="text-white/80">CSV</strong> or <strong className="text-white/80">JSON</strong> file here,
-          or <span className="text-[var(--teal)]">click to browse</span>
+        <Upload className="w-8 h-8 mx-auto mb-3 text-slate-400" />
+        <p className="text-slate-500 text-sm">
+          Drop a <strong className="text-slate-700">CSV</strong> or <strong className="text-slate-700">JSON</strong> file here,
+          or <span className="text-[var(--teal-dark)]">click to browse</span>
         </p>
         {fileName && (
-          <div className="mt-3 flex items-center justify-center gap-2 text-white/70 text-sm">
+          <div className="mt-3 flex items-center justify-center gap-2 text-slate-600 text-sm">
             <FileText className="w-4 h-4" />
             {fileName}
           </div>
@@ -158,16 +158,16 @@ export function ImportWizard() {
 
       {/* Paste Area */}
       <div className="space-y-2">
-        <label className="text-sm text-white/60 font-medium">Or paste JSON / CSV directly</label>
+        <label className="text-sm text-slate-600 font-medium">Or paste JSON / CSV directly</label>
         <textarea
           value={rawText}
           onChange={e => { setRawText(e.target.value); setPreview(null); setResult(null); setParseError(null) }}
           rows={8}
           placeholder={'[{"business_name": "Example Dental", "city": "Folsom", ...}]'}
-          className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl px-4 py-3 font-mono placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-[var(--teal)] resize-y"
+          className="w-full bg-white border border-slate-200 text-slate-800 text-sm rounded-xl px-4 py-3 font-mono placeholder:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[var(--teal)] resize-y"
         />
         {rawText && (
-          <p className="text-white/40 text-xs">
+          <p className="text-slate-400 text-xs">
             {rowCount} row{rowCount !== 1 ? 's' : ''} detected
           </p>
         )}
@@ -175,7 +175,7 @@ export function ImportWizard() {
 
       {/* Parse Error */}
       {parseError && (
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
           {parseError}
         </div>
@@ -186,7 +186,7 @@ export function ImportWizard() {
         <button
           onClick={handlePreview}
           disabled={!rawText.trim()}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 text-sm text-white/70 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <Eye className="w-4 h-4" />
           Preview (first 5 rows)
@@ -204,7 +204,7 @@ export function ImportWizard() {
         {(rawText || result) && (
           <button
             onClick={() => { setRawText(''); setFileName(undefined); setPreview(null); setResult(null); setParseError(null) }}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/10 text-sm text-white/40 hover:text-white hover:bg-white/5 transition-colors ml-auto"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors ml-auto"
           >
             <X className="w-4 h-4" />
             Clear
@@ -215,13 +215,13 @@ export function ImportWizard() {
       {/* Preview Table */}
       {preview && preview.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm text-white/50 font-medium">Preview — first {preview.length} rows</p>
-          <div className="rounded-xl border border-white/10 overflow-x-auto">
+          <p className="text-sm text-slate-500 font-medium">Preview — first {preview.length} rows</p>
+          <div className="rounded-xl border border-slate-200 overflow-x-auto bg-white shadow-sm">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-white/5 border-b border-white/10">
+                <tr className="bg-slate-50 border-b border-slate-200">
                   {Object.keys(preview[0]).slice(0, 10).map(col => (
-                    <th key={col} className="px-3 py-2 text-left text-white/50 font-medium whitespace-nowrap">
+                    <th key={col} className="px-3 py-2 text-left text-slate-500 font-medium whitespace-nowrap">
                       {col}
                     </th>
                   ))}
@@ -229,9 +229,9 @@ export function ImportWizard() {
               </thead>
               <tbody>
                 {preview.map((row, i) => (
-                  <tr key={i} className="border-b border-white/5">
+                  <tr key={i} className="border-b border-slate-100">
                     {Object.keys(preview[0]).slice(0, 10).map(col => (
-                      <td key={col} className="px-3 py-2 text-white/70 whitespace-nowrap max-w-[160px] truncate">
+                      <td key={col} className="px-3 py-2 text-slate-600 whitespace-nowrap max-w-[160px] truncate">
                         {String(row[col] ?? '—')}
                       </td>
                     ))}
@@ -245,34 +245,34 @@ export function ImportWizard() {
 
       {/* Import Result */}
       {result && (
-        <div className="rounded-xl border border-white/10 p-5 space-y-4 bg-white/3">
-          <div className="flex items-center gap-2 text-green-400 font-medium">
+        <div className="rounded-xl border border-slate-200 p-5 space-y-4 bg-white shadow-sm">
+          <div className="flex items-center gap-2 text-green-600 font-medium">
             <CheckCircle className="w-5 h-5" />
             Import Complete
           </div>
           <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="rounded-lg bg-green-500/10 p-3">
-              <div className="text-2xl font-bold text-green-400">{result.imported}</div>
-              <div className="text-xs text-white/50 mt-1">Imported</div>
+            <div className="rounded-lg bg-green-50 p-3">
+              <div className="text-2xl font-bold text-green-600">{result.imported}</div>
+              <div className="text-xs text-slate-500 mt-1">Imported</div>
             </div>
-            <div className="rounded-lg bg-yellow-500/10 p-3">
-              <div className="text-2xl font-bold text-yellow-400">{result.skipped}</div>
-              <div className="text-xs text-white/50 mt-1">Skipped</div>
+            <div className="rounded-lg bg-yellow-50 p-3">
+              <div className="text-2xl font-bold text-yellow-600">{result.skipped}</div>
+              <div className="text-xs text-slate-500 mt-1">Skipped</div>
             </div>
-            <div className="rounded-lg bg-red-500/10 p-3">
-              <div className="text-2xl font-bold text-red-400">{result.errors.length}</div>
-              <div className="text-xs text-white/50 mt-1">Errors</div>
+            <div className="rounded-lg bg-red-50 p-3">
+              <div className="text-2xl font-bold text-red-600">{result.errors.length}</div>
+              <div className="text-xs text-slate-500 mt-1">Errors</div>
             </div>
           </div>
           {result.errors.length > 0 && (
             <div className="space-y-1">
-              <p className="text-sm text-white/50 font-medium">Errors</p>
-              <ul className="space-y-1 text-xs text-red-400/80">
+              <p className="text-sm text-slate-500 font-medium">Errors</p>
+              <ul className="space-y-1 text-xs text-red-500">
                 {result.errors.slice(0, 20).map((e, i) => (
                   <li key={i} className="truncate">{e}</li>
                 ))}
                 {result.errors.length > 20 && (
-                  <li className="text-white/40">…and {result.errors.length - 20} more</li>
+                  <li className="text-slate-400">…and {result.errors.length - 20} more</li>
                 )}
               </ul>
             </div>
