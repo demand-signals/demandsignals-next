@@ -92,17 +92,27 @@ function calcReviewAuthority(p: ScoreInput): { score: number; detail: Record<str
   const yCount = reviews.yelp?.count ?? p.yelp_review_count ?? 0
   addReviewSource(yRating, yCount)
 
-  // Other platforms from research
+  // Other platforms from research (handles both object and array formats)
   for (const [key, val] of Object.entries(reviews)) {
     if (key === 'google' || key === 'yelp' || !val || typeof val !== 'object') continue
-    const rv = val as Record<string, any>
-    addReviewSource(rv.rating, rv.count)
+    if (Array.isArray(val)) {
+      // reviews.other: [{platform: "Birdeye", rating: 4.9, count: 171}, ...]
+      for (const entry of val) {
+        if (entry && typeof entry === 'object') {
+          addReviewSource(entry.rating, entry.count)
+        }
+      }
+    } else {
+      const rv = val as Record<string, any>
+      addReviewSource(rv.rating, rv.count)
+    }
   }
 
   const avgRating = totalWeight > 0 ? weightedRatingSum / totalWeight : 0
 
   // Score: volume matters, rating matters, diversity matters
-  const volumeScore = Math.min(40, totalCount * 0.04) // caps at 1000 reviews
+  // Logarithmic curve: 50 reviews=20, 100=28, 200=33, 500=40
+  const volumeScore = totalCount > 0 ? Math.min(40, Math.round(8 * Math.log2(totalCount))) : 0
   const ratingScore = avgRating * 8 // max 40 for 5.0
   const diversityBonus = Math.min(20, platformCount * 5) // up to 4 platforms
 
@@ -245,13 +255,19 @@ function calcRevenuePotential(p: ScoreInput): { score: number; detail: Record<st
   const opps = rd.opportunities || []
   score += Math.min(25, opps.length * 5)
 
-  // Deal estimate from notes
-  const dealMatch = notes.match(/deal value:\s*\$?([\d,]+)/i) || notes.match(/\$([\d,]+)k/i)
+  // Deal estimate from research_data or notes (e.g., "$8K-$15K", "deal value: $5,000")
+  const dealStr = (rd.deal_estimate || '') + ' ' + notes
+  const dealMatch = dealStr.match(/\$([\d,]+)\s*[kK]?\s*[-–]\s*\$([\d,]+)\s*[kK]/i) || dealStr.match(/deal value:\s*\$?([\d,]+)/i) || dealStr.match(/\$([\d,]+)\s*[kK]/i)
   if (dealMatch) {
-    const val = parseInt(dealMatch[1].replace(/,/g, ''), 10)
-    if (val >= 15) score += 25  // $15K+
-    else if (val >= 8) score += 15
-    else if (val >= 3) score += 8
+    // Use the highest number found (for ranges like $8K-$15K, use 15)
+    const nums = dealStr.match(/\$(\d[\d,]*)\s*[kK]?/g)?.map(m => {
+      const n = parseInt(m.replace(/[$,kK]/g, ''), 10)
+      return m.toLowerCase().includes('k') ? n : (n >= 100 ? n / 1000 : n)
+    }) || []
+    const maxVal = Math.max(...nums, 0)
+    if (maxVal >= 15) score += 25  // $15K+
+    else if (maxVal >= 8) score += 15
+    else if (maxVal >= 3) score += 8
   }
 
   // Multi-location / group deal
