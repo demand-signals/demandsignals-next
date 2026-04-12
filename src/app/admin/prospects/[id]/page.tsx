@@ -1,8 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign } from 'lucide-react'
+import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Share2, Copy, Check } from 'lucide-react'
 import Link from 'next/link'
 import { ProspectScoreBadge, TierBadge } from '@/components/admin/prospect-score-badge'
 import { ActivityTimeline } from '@/components/admin/activity-timeline'
@@ -282,6 +283,239 @@ export default function ProspectDetailPage() {
               )
             })()}
           </Card>
+
+          {/* Digital Health Card */}
+          {(() => {
+            const rd = prospect.research_data || {}
+            const website = rd.website || {}
+            const sf = prospect.score_factors || {}
+            const vd = sf.vulnerability_detail || {}
+            const siteScore = prospect.site_quality_score ?? null
+            const hasWebsiteData = website.platform || website.issues?.length || website.ssl_valid !== undefined || siteScore !== null
+
+            if (!hasWebsiteData) return null
+
+            const qualityLabel = siteScore === null ? null :
+              siteScore <= 20 ? 'Critical' : siteScore <= 40 ? 'Poor' :
+              siteScore <= 60 ? 'Fair' : siteScore <= 80 ? 'Good' : 'Strong'
+            const qualityColor = siteScore === null ? '' :
+              siteScore <= 20 ? 'text-red-600 bg-red-50' : siteScore <= 40 ? 'text-orange-600 bg-orange-50' :
+              siteScore <= 60 ? 'text-yellow-600 bg-yellow-50' : siteScore <= 80 ? 'text-green-600 bg-green-50' : 'text-emerald-600 bg-emerald-50'
+            const barColor = siteScore === null ? 'bg-slate-300' :
+              siteScore <= 20 ? 'bg-red-400' : siteScore <= 40 ? 'bg-orange-400' :
+              siteScore <= 60 ? 'bg-yellow-400' : siteScore <= 80 ? 'bg-green-400' : 'bg-emerald-400'
+
+            return (
+              <Card>
+                <CardTitle>Digital Health</CardTitle>
+                <div className="space-y-3">
+                  {/* Site Quality Score */}
+                  {siteScore !== null && (
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-slate-500">Site Quality</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-mono font-semibold text-slate-700">{siteScore}/100</span>
+                            <span className={cn('text-[0.65rem] font-semibold px-1.5 py-0.5 rounded', qualityColor)}>
+                              {qualityLabel}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div className={cn('h-full rounded-full', barColor)} style={{ width: `${siteScore}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SSL Status */}
+                  {website.ssl_valid !== undefined && (
+                    <div className="flex items-center gap-2">
+                      {website.ssl_valid === false ? (
+                        <>
+                          <Unlock className="w-4 h-4 text-red-500" />
+                          <span className="text-sm font-medium text-red-600">SSL: BROKEN</span>
+                          <span className="text-xs text-red-400">— browsers block visitors</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-4 h-4 text-green-500" />
+                          <span className="text-sm text-green-600">SSL: Valid</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Platform */}
+                  {website.platform && (
+                    <div className="flex items-center gap-2">
+                      <Monitor className="w-4 h-4 text-slate-400" />
+                      <span className="text-sm text-slate-600">
+                        Platform: <span className="font-medium">{website.platform}</span>
+                      </span>
+                      {vd.platform_weakness != null && vd.platform_weakness >= 65 && (
+                        <span className="text-[0.6rem] px-1.5 py-0.5 rounded bg-orange-50 text-orange-600 font-medium">Weak</span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* E-commerce */}
+                  {rd.ecommerce && (
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-slate-400" />
+                      <span className="text-sm text-slate-600">
+                        E-commerce: <span className="font-medium">{rd.ecommerce.platform || 'Unknown'}</span>
+                      </span>
+                      {rd.ecommerce.url && (
+                        <a href={rd.ecommerce.url} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--teal-dark)] hover:underline flex items-center gap-0.5">
+                          {rd.ecommerce.url.replace(/^https?:\/\//, '')} <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Issues */}
+                  {website.issues?.length > 0 && (
+                    <div className="mt-2">
+                      <span className="text-xs text-slate-500 font-medium">Issues Found:</span>
+                      <ul className="mt-1 space-y-1">
+                        {website.issues.map((issue: string, i: number) => {
+                          const isCritical = issue.toLowerCase().includes('ssl') || issue.toLowerCase().includes('broken') || issue.toLowerCase().includes('no_website')
+                          return (
+                            <li key={i} className="flex items-start gap-1.5 text-sm">
+                              <AlertTriangle className={cn('w-3.5 h-3.5 mt-0.5 flex-shrink-0', isCritical ? 'text-red-400' : 'text-yellow-400')} />
+                              <span className={cn(isCritical ? 'text-red-600' : 'text-slate-600')}>
+                                {issue.replace(/_/g, ' ')}
+                              </span>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Website link */}
+                  {website.url && (
+                    <a href={website.url} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-[var(--teal-dark)] hover:underline mt-1">
+                      {website.url.replace(/^https?:\/\//, '')} <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+              </Card>
+            )
+          })()}
+
+          {/* Social & Reviews Card */}
+          {(() => {
+            const rd = prospect.research_data || {}
+            const reviews = rd.reviews || {}
+            const social = rd.social || {}
+            const hasSocialData = Object.keys(social).length > 0 || Object.keys(reviews).length > 0
+
+            if (!hasSocialData) return null
+
+            // Collect review platforms
+            const reviewPlatforms: { name: string; rating: number | null; count: number | null }[] = []
+            if (reviews.google) reviewPlatforms.push({ name: 'Google', rating: reviews.google.rating, count: reviews.google.count })
+            else if (prospect.google_rating) reviewPlatforms.push({ name: 'Google', rating: prospect.google_rating, count: prospect.google_review_count })
+            if (reviews.yelp) reviewPlatforms.push({ name: 'Yelp', rating: reviews.yelp.rating, count: reviews.yelp.count })
+            else if (prospect.yelp_rating) reviewPlatforms.push({ name: 'Yelp', rating: prospect.yelp_rating, count: prospect.yelp_review_count })
+            if (Array.isArray(reviews.other)) {
+              for (const r of reviews.other) {
+                if (r?.platform) reviewPlatforms.push({ name: r.platform, rating: r.rating, count: r.count })
+              }
+            }
+
+            const totalReviews = reviewPlatforms.reduce((sum, r) => sum + (r.count || 0), 0)
+
+            // Social channels
+            const socialChannels = Object.entries(social).map(([key, val]) => ({
+              name: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+              value: val as string | boolean | null,
+              isPresent: val === true || (typeof val === 'string' && val.length > 0),
+              url: typeof val === 'string' && val.startsWith('http') ? val as string : null,
+            }))
+
+            return (
+              <Card>
+                <CardTitle>Social & Reviews</CardTitle>
+                <div className="space-y-4">
+                  {/* Review Platforms */}
+                  {reviewPlatforms.length > 0 && (
+                    <div className="space-y-2">
+                      {reviewPlatforms.map(r => (
+                        <div key={r.name} className="flex items-center gap-2">
+                          <span className="text-xs text-slate-500 w-20 flex-shrink-0">{r.name}</span>
+                          {r.rating != null && (
+                            <span className="text-sm font-medium text-amber-600 w-10">{r.rating}★</span>
+                          )}
+                          {r.count != null && (
+                            <>
+                              <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[120px]">
+                                <div className="h-full rounded-full bg-amber-300" style={{ width: `${Math.min(100, (r.count / 5))}%` }} />
+                              </div>
+                              <span className="text-xs text-slate-400">({r.count})</span>
+                            </>
+                          )}
+                        </div>
+                      ))}
+                      <div className="text-xs text-slate-400 mt-1">
+                        Total: {totalReviews} reviews across {reviewPlatforms.length} platform{reviewPlatforms.length !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Social Presence */}
+                  {socialChannels.length > 0 && (
+                    <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                      <span className="text-xs text-slate-500 font-medium">Social Presence</span>
+                      {socialChannels.map(ch => (
+                        <div key={ch.name} className="flex items-center gap-2">
+                          {ch.isPresent ? (
+                            <CheckCircle className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                          ) : (
+                            <XCircle className="w-3.5 h-3.5 text-red-300 flex-shrink-0" />
+                          )}
+                          <span className={cn('text-sm', ch.isPresent ? 'text-slate-700' : 'text-slate-400')}>
+                            {ch.name}
+                          </span>
+                          {ch.url && (
+                            <a href={ch.url} target="_blank" rel="noopener noreferrer"
+                              className="text-[0.65rem] text-[var(--teal-dark)] hover:underline truncate max-w-[200px] flex items-center gap-0.5">
+                              {ch.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+                              <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
+                            </a>
+                          )}
+                          {!ch.isPresent && (
+                            <span className="text-[0.6rem] text-red-400">Missing</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Deal Estimate */}
+                  {rd.deal_estimate && (
+                    <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-green-500" />
+                      <span className="text-sm font-medium text-slate-700">Deal Estimate: </span>
+                      <span className="text-sm font-semibold text-green-600">{rd.deal_estimate}</span>
+                    </div>
+                  )}
+
+                  {/* Hours / Established */}
+                  {(rd.hours || rd.established) && (
+                    <div className="pt-2 border-t border-slate-100 space-y-1 text-xs text-slate-500">
+                      {rd.hours && <div>Hours: {rd.hours}</div>}
+                      {rd.established && <div>Established: {rd.established}</div>}
+                    </div>
+                  )}
+                </div>
+              </Card>
+            )
+          })()}
 
           {/* Tags */}
           {prospect.tags && prospect.tags.length > 0 && (

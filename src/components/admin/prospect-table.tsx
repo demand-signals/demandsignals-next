@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { STAGES, STAGE_LABELS, INDUSTRIES } from '@/types/database'
 import { ProspectScoreBadge } from './prospect-score-badge'
@@ -57,13 +57,16 @@ const STAGE_BADGE_COLORS: Record<string, string> = {
 
 export function ProspectTable() {
   const router = useRouter()
-  const [search, setSearch] = useState('')
-  const [stage, setStage] = useState('')
-  const [industry, setIndustry] = useState('')
+  const searchParams = useSearchParams()
+
+  // Seed initial filter state from URL params (for dashboard click-through)
+  const [search, setSearch] = useState(searchParams.get('search') ?? '')
+  const [stage, setStage] = useState(searchParams.get('stage') ?? '')
+  const [industry, setIndustry] = useState(searchParams.get('industry') ?? '')
   const [page, setPage] = useState(1)
 
   // Debounced search value
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('search') ?? '')
   const [searchTimer, setSearchTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
 
   function handleSearchChange(val: string) {

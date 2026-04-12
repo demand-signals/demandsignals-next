@@ -94,8 +94,11 @@ function calcDigitalVulnerability(p) {
   if (!social.instagram && social.instagram !== true) missingChannels++
   if (social.google_business === false) missingChannels += 2
   const channelScore = missingChannels * 10
-  const score = Math.min(100, Math.round(platformScore * 0.35 + Math.min(60, issueScore) * 0.35 + channelScore * 0.30))
-  return { score, detail: { platform: platformName, platform_weakness: platformScore, issue_count: issues.length, missing_channels: missingChannels } }
+  let score = Math.min(100, Math.round(platformScore * 0.35 + Math.min(60, issueScore) * 0.35 + channelScore * 0.30))
+  // Critical override: broken SSL = customers can't reach the site
+  const sslBroken = website.ssl_valid === false || issueStr.includes('broken_ssl') || notes.includes('broken ssl') || notes.includes('ssl broken')
+  if (sslBroken) score = Math.max(score, 70)
+  return { score, detail: { platform: platformName, platform_weakness: platformScore, issue_count: issues.length, missing_channels: missingChannels, ssl_broken: sslBroken } }
 }
 
 function calcIndustryValue(p) {
@@ -114,7 +117,9 @@ function calcCloseProbability(p) {
   const notes = (p.notes || '').toLowerCase()
   let score = 20
   if (p.stage === 'demo_built') score += 25
-  if (tags.includes('whale')) score += 15
+  if (tags.includes('whale')) score += 20
+  if (tags.includes('whale') && p.stage === 'demo_built') score += 5
+  if (tags.includes('platt-group')) score += 10
   if (tags.includes('top-10')) score += 10
   if (p.owner_name) score += 5
   if (p.business_email || p.business_phone) score += 5
@@ -157,6 +162,7 @@ function calcRevenuePotential(p) {
   const estMatch = notes.match(/(\d+)\+?\s*years/i) || notes.match(/since\s*(19|20)\d{2}/i)
   if (estMatch) score += 5
   if (tags.includes('whale')) score += 10
+  if (tags.includes('whale') && !dealMatch) score += 15
   return { score: Math.min(100, score), detail: { opportunity_count: opps.length, has_deal_estimate: !!dealMatch } }
 }
 

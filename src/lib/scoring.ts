@@ -167,11 +167,18 @@ function calcDigitalVulnerability(p: ScoreInput): { score: number; detail: Recor
   if (social.google_business === false) missingChannels += 2 // no GMB is critical
   const channelScore = missingChannels * 10
 
-  const score = Math.min(100, Math.round(
+  let score = Math.min(100, Math.round(
     platformScore * 0.35 +
     Math.min(60, issueScore) * 0.35 +
     channelScore * 0.30
   ))
+
+  // Critical override: broken SSL = customers literally can't reach the site
+  const sslBroken = website.ssl_valid === false ||
+    issueStr.includes('broken_ssl') ||
+    notes.includes('broken ssl') ||
+    notes.includes('ssl broken')
+  if (sslBroken) score = Math.max(score, 70)
 
   return {
     score,
@@ -180,6 +187,7 @@ function calcDigitalVulnerability(p: ScoreInput): { score: number; detail: Recor
       platform_weakness: platformScore,
       issue_count: issues.length,
       missing_channels: missingChannels,
+      ssl_broken: sslBroken,
     },
   }
 }
@@ -211,8 +219,12 @@ function calcCloseProbability(p: ScoreInput): { score: number; detail: Record<st
   // Demo built = massive signal (+25)
   if (p.stage === 'demo_built') score += 25
 
-  // Whale tag (+15)
-  if (tags.includes('whale')) score += 15
+  // Whale tag (+20, was +15)
+  if (tags.includes('whale')) score += 20
+  // Whale + demo = hot lead
+  if (tags.includes('whale') && p.stage === 'demo_built') score += 5
+  // Group deal (Platt Group etc.) = higher close likelihood
+  if (tags.includes('platt-group')) score += 10
   // Top-10 tag (+10)
   if (tags.includes('top-10')) score += 10
 
@@ -279,6 +291,8 @@ function calcRevenuePotential(p: ScoreInput): { score: number; detail: Record<st
 
   // Whale tag implies high-value
   if (tags.includes('whale')) score += 10
+  // Whales without explicit deal estimates still have high potential
+  if (tags.includes('whale') && !dealMatch) score += 15
 
   return {
     score: Math.min(100, score),
