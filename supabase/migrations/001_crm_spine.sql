@@ -4,22 +4,7 @@
 -- ============================================================
 
 -- ============================================================
--- HELPER: is_admin() function
--- ============================================================
-CREATE OR REPLACE FUNCTION is_admin()
-RETURNS boolean
-LANGUAGE sql
-SECURITY DEFINER
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM admin_users
-    WHERE user_id = auth.uid()
-    AND is_active = true
-  );
-$$;
-
--- ============================================================
--- TABLE: admin_users
+-- STEP 1: admin_users table (no RLS policies yet)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS admin_users (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -34,6 +19,24 @@ CREATE TABLE IF NOT EXISTS admin_users (
 CREATE INDEX IF NOT EXISTS idx_admin_users_user_id ON admin_users (user_id);
 CREATE INDEX IF NOT EXISTS idx_admin_users_email ON admin_users (email);
 
+-- ============================================================
+-- STEP 2: is_admin() function (needs admin_users to exist)
+-- ============================================================
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM admin_users
+    WHERE user_id = auth.uid()
+    AND is_active = true
+  );
+$$;
+
+-- ============================================================
+-- STEP 3: admin_users RLS (needs is_admin() to exist)
+-- ============================================================
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Admins can read admin_users"

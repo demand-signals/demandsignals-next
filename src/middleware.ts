@@ -27,6 +27,11 @@ export async function middleware(request: NextRequest) {
   // ============================================================
   // ADMIN ROUTE PROTECTION
   // ============================================================
+  // Allow auth callback and login page through without auth check
+  if (pathname.startsWith('/auth/callback')) {
+    return NextResponse.next({ request })
+  }
+
   if (pathname.startsWith('/admin')) {
     let response = NextResponse.next({ request })
 
@@ -170,6 +175,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/admin/:path*',
+    '/auth/:path*',
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2)).*)',
   ],
 }
