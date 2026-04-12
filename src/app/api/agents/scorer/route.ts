@@ -3,6 +3,12 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { calculateProspectScore } from '@/lib/scoring'
 
 export async function POST(request: NextRequest) {
+  const authHeader = request.headers.get('authorization')
+  const internalSecret = process.env.SUPABASE_WEBHOOK_SECRET
+  if (authHeader !== `Bearer ${internalSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const { prospect_id } = await request.json() as { prospect_id: string }
 
   if (!prospect_id) {

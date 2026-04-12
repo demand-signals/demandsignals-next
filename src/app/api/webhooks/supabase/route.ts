@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
+import { calculateProspectScore } from '@/lib/scoring'
 
 export async function POST(request: NextRequest) {
   // Verify webhook secret
@@ -19,7 +21,7 @@ export async function POST(request: NextRequest) {
 
   // Route: prospects INSERT → trigger scorer
   if (table === 'prospects' && type === 'INSERT') {
-    await callScorer(record.id)
+    await scoreProspect(record.id)
   }
 
   // Route: prospects UPDATE with new research_data → trigger scorer
@@ -29,19 +31,42 @@ export async function POST(request: NextRequest) {
     record.research_data !== null &&
     record.research_data !== old_record?.research_data
   ) {
-    await callScorer(record.id)
+    await scoreProspect(record.id)
   }
 
   return NextResponse.json({ received: true })
 }
 
-async function callScorer(prospectId: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  await fetch(`${baseUrl}/api/agents/scorer`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prospect_id: prospectId }),
-  }).catch(err => {
-    console.error('[webhook] Failed to call scorer agent:', err)
+async function scoreProspect(prospectId: string) {
+  const { data: prospect } = await supabaseAdmin
+    .from('prospects')
+    .select('*')
+    .eq('id', prospectId)
+    .single()
+
+  if (!prospect) {
+    console.error('[webhook] Prospect not found for scoring:', prospectId)
+    return
+  }
+
+  const { score, factors } = calculateProspectScore(prospect)
+
+  await supabaseAdmin
+    .from('prospects')
+    .update({
+      prospect_score: score,
+      score_factors: factors,
+      auto_demo_eligible: score >= 70,
+    })
+    .eq('id', prospectId)
+
+  await supabaseAdmin.from('activities').insert({
+    prospect_id: prospectId,
+    type: 'note',
+    channel: 'system',
+    direction: 'internal',
+    subject: `Auto-scored: ${score}/100${score >= 70 ? ' (demo eligible)' : ''}`,
+    body: JSON.stringify(factors),
+    created_by: 'agent:scorer',
   })
 }

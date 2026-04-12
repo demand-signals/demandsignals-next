@@ -90,12 +90,19 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      // If demo_url present, upsert demo record
+      // If demo_url present, check-then-insert demo record
       if (demo_url && prospect) {
-        const { error: demoError } = await supabaseAdmin
+        const { data: existingDemo } = await supabaseAdmin
           .from('demos')
-          .upsert(
-            {
+          .select('id')
+          .eq('prospect_id', prospect.id)
+          .eq('demo_url', demo_url)
+          .maybeSingle()
+
+        if (!existingDemo) {
+          const { error: demoError } = await supabaseAdmin
+            .from('demos')
+            .insert({
               prospect_id: prospect.id,
               demo_url,
               platform: raw.platform ?? 'unknown',
@@ -105,12 +112,11 @@ export async function POST(request: NextRequest) {
               generation_method: raw.generation_method ?? 'manual',
               view_count: 0,
               unique_visitors: 0,
-            },
-            { onConflict: 'prospect_id' }
-          )
+            })
 
-        if (demoError) {
-          errors.push(`Row ${i + 1} demo (${rest.business_name}): ${demoError.message}`)
+          if (demoError) {
+            errors.push(`Row ${i + 1} demo (${rest.business_name}): ${demoError.message}`)
+          }
         }
       }
 
