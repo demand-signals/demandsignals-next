@@ -2,14 +2,15 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import { ExternalLink, Copy, Check } from 'lucide-react'
+import { ProspectScoreBadge } from '@/components/admin/prospect-score-badge'
 import { cn } from '@/lib/utils'
 
 type DemoRow = {
   id: string
   prospect_id: string
   demo_url: string
-  platform: string
   status: string
   view_count: number
   generation_method: string
@@ -17,6 +18,8 @@ type DemoRow = {
     business_name: string
     city: string | null
     industry: string | null
+    prospect_score: number | null
+    score_factors: Record<string, any> | null
   }
 }
 
@@ -35,6 +38,7 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default function DemosPage() {
+  const router = useRouter()
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const { data: demos = [], isLoading, isError } = useQuery({
@@ -68,7 +72,7 @@ export default function DemosPage() {
               <tr className="bg-slate-50 border-b border-slate-200">
                 <th className="text-left px-4 py-3 text-slate-500 font-medium">Business</th>
                 <th className="text-left px-4 py-3 text-slate-500 font-medium">Demo URL</th>
-                <th className="text-left px-4 py-3 text-slate-500 font-medium">Platform</th>
+                <th className="text-left px-4 py-3 text-slate-500 font-medium">Score</th>
                 <th className="text-left px-4 py-3 text-slate-500 font-medium">Status</th>
                 <th className="text-left px-4 py-3 text-slate-500 font-medium">Views</th>
                 <th className="text-left px-4 py-3 text-slate-500 font-medium">Method</th>
@@ -100,30 +104,33 @@ export default function DemosPage() {
               {demos.map(d => (
                 <tr
                   key={d.id}
-                  className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                  onClick={() => router.push(`/admin/prospects/${d.prospect_id}`)}
+                  className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
                 >
                   <td className="px-4 py-3">
                     <div className="text-slate-800 font-medium">
                       {d.prospects?.business_name ?? '—'}
                     </div>
-                    {d.prospects?.city && (
-                      <div className="text-slate-400 text-xs">{d.prospects.city}</div>
-                    )}
+                    <div className="text-slate-400 text-xs">
+                      {[d.prospects?.industry, d.prospects?.city].filter(Boolean).join(' · ') || '—'}
+                    </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     <a
                       href={d.demo_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={e => e.stopPropagation()}
                       className="flex items-center gap-1.5 text-[var(--teal-dark)] hover:underline max-w-[260px] truncate"
                     >
                       <ExternalLink className="w-3 h-3 flex-shrink-0" />
                       <span className="truncate">{d.demo_url}</span>
                     </a>
                   </td>
-                  <td className="px-4 py-3 text-slate-500 capitalize">
-                    {d.platform ?? '—'}
+                  <td className="px-4 py-3">
+                    <ProspectScoreBadge
+                      score={d.prospects?.prospect_score ?? null}
+                      tier={d.prospects?.score_factors?.tier}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <span
@@ -141,7 +148,7 @@ export default function DemosPage() {
                   <td className="px-4 py-3 text-slate-500 capitalize text-xs">
                     {d.generation_method ?? '—'}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     <button
                       onClick={() => handleCopy(d.id, d.demo_url)}
                       title="Copy link"

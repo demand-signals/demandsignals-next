@@ -7,6 +7,7 @@ import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, Trendin
 import Link from 'next/link'
 import { ProspectScoreBadge, TierBadge } from '@/components/admin/prospect-score-badge'
 import { ActivityTimeline } from '@/components/admin/activity-timeline'
+import { ProspectMap } from '@/components/admin/prospect-map'
 import { STAGES, STAGE_LABELS } from '@/types/database'
 import type { Prospect, Demo, Activity } from '@/types/database'
 import { cn } from '@/lib/utils'
@@ -90,6 +91,33 @@ export default function ProspectDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prospects-all'] })
       queryClient.invalidateQueries({ queryKey: ['activities', id] })
+    },
+  })
+
+  // Activity form state
+  const [newActivityType, setNewActivityType] = useState('note')
+  const [newActivityBody, setNewActivityBody] = useState('')
+
+  const addActivityMutation = useMutation({
+    mutationFn: async () => {
+      const typeLabels: Record<string, string> = { note: 'Note', call: 'Phone Call', email: 'Email', meeting: 'Meeting', stage_change: 'Stage Change' }
+      const res = await fetch('/api/admin/activities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prospect_id: id,
+          type: newActivityType,
+          subject: typeLabels[newActivityType] || 'Note',
+          body: newActivityBody.trim(),
+          created_by: 'admin',
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to add activity')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['activities', id] })
+      setNewActivityBody('')
     },
   })
 
@@ -576,8 +604,49 @@ export default function ProspectDetailPage() {
 
         {/* Right col */}
         <div className="space-y-4">
+          {/* Location Map */}
+          <Card>
+            <CardTitle>Location</CardTitle>
+            <ProspectMap address={addressLine || null} businessName={prospect.business_name} />
+          </Card>
+
+          {/* Activity + Add Form */}
           <Card>
             <CardTitle>Activity</CardTitle>
+
+            {/* Add activity form */}
+            <div className="mb-4 border-b border-slate-100 pb-4">
+              <div className="flex gap-2 mb-2">
+                <select
+                  value={newActivityType}
+                  onChange={e => setNewActivityType(e.target.value)}
+                  className="bg-white border border-slate-200 text-slate-700 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+                >
+                  <option value="note">Note</option>
+                  <option value="call">Call</option>
+                  <option value="email">Email</option>
+                  <option value="meeting">Meeting</option>
+                </select>
+              </div>
+              <textarea
+                value={newActivityBody}
+                onChange={e => setNewActivityBody(e.target.value)}
+                placeholder="Add a note or log an activity…"
+                rows={3}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[var(--teal)] resize-none"
+              />
+              <div className="flex justify-end mt-2">
+                <button
+                  onClick={() => addActivityMutation.mutate()}
+                  disabled={!newActivityBody.trim() || addActivityMutation.isPending}
+                  className="px-3 py-1.5 bg-[var(--teal)] text-white text-xs font-medium rounded-lg hover:bg-[var(--teal-dark)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {addActivityMutation.isPending ? 'Adding…' : 'Add'}
+                </button>
+              </div>
+            </div>
+
+            {/* Timeline */}
             {activitiesQuery.isLoading ? (
               <p className="text-slate-400 text-sm py-4 text-center">Loading…</p>
             ) : (

@@ -10,6 +10,8 @@ import { ArcCardGame } from '@/components/sections/ArcCardGame'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { orgSchema, websiteSchema } from '@/lib/schema'
 import { Analytics } from "@vercel/analytics/next"
+import { Suspense } from 'react'
+import { AnalyticsTracker } from '@/components/layout/AnalyticsTracker'
 import Script from 'next/script'
 import { cn } from "@/lib/utils";
 
@@ -115,6 +117,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CookieConsent />
         <AccessibilityWidget />
         <Analytics />
+        <Suspense fallback={null}>
+          <AnalyticsTracker />
+        </Suspense>
         <Script id="ga4-consent-defaults" strategy="beforeInteractive">{`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
