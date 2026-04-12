@@ -107,6 +107,9 @@ export function Header() {
           </nav>
 
           <div className={styles.ctaGroup}>
+            <Link href="/admin-login" className={styles.btnOutline}>
+              Client Login
+            </Link>
             <a
               href={BOOKING_URL}
               target="_blank"

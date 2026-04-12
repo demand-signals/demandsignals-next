@@ -94,21 +94,21 @@ export function MobileMenu({ onClose }: Props) {
       ))}
 
       <div className={styles.ctaRow}>
+        <Link
+          href="/admin-login"
+          onClick={onClose}
+          className={`${headerStyles.btnOutline} ${styles.ctaFlex}`}
+        >
+          Client Login
+        </Link>
         <a
           href={BOOKING_URL}
           target="_blank"
           rel="noopener"
-          className={`${headerStyles.btnOutline} ${styles.ctaFlex}`}
+          className={`${headerStyles.btnPrimary} ${styles.ctaFlex}`}
         >
           Book a Call
         </a>
-        <Link
-          href="/contact"
-          onClick={onClose}
-          className={`${headerStyles.btnPrimary} ${styles.ctaFlex}`}
-        >
-          Get a Quote
-        </Link>
       </div>
     </div>
   )
