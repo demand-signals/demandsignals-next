@@ -1,19 +1,20 @@
 /**
  * Analytics Database Helpers
  *
- * Uses Neon serverless Postgres to store pageview data collected by our
- * lightweight tracker. No cookies, no third-party JS, full data ownership.
+ * Uses Neon serverless Postgres (via @vercel/postgres createPool) to store
+ * pageview data collected by our lightweight tracker.
+ * No cookies, no third-party JS, full data ownership.
  *
  * Required env var: NEON_DATABASE_URL (auto-set when Neon is added via Vercel)
  */
 
-import { neon } from '@neondatabase/serverless'
+import { createPool } from '@vercel/postgres'
 import { createHash } from 'crypto'
 
-function getSQL() {
+function getPool() {
   const url = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL
   if (!url) throw new Error('No database URL found (NEON_DATABASE_URL / DATABASE_URL / POSTGRES_URL)')
-  return neon(url)
+  return createPool({ connectionString: url })
 }
 
 /* ------------------------------------------------------------------ */
@@ -21,9 +22,9 @@ function getSQL() {
 /* ------------------------------------------------------------------ */
 
 export async function initSchema() {
-  const sql = getSQL()
+  const pool = getPool()
 
-  await sql`
+  await pool.sql`
     CREATE TABLE IF NOT EXISTS pageviews (
       id SERIAL PRIMARY KEY,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -49,10 +50,10 @@ export async function initSchema() {
   `
 
   // Indexes for efficient weekly report queries
-  await sql`CREATE INDEX IF NOT EXISTS idx_pv_created ON pageviews(created_at)`
-  await sql`CREATE INDEX IF NOT EXISTS idx_pv_path ON pageviews(path)`
-  await sql`CREATE INDEX IF NOT EXISTS idx_pv_visitor ON pageviews(visitor_hash)`
-  await sql`CREATE INDEX IF NOT EXISTS idx_pv_referrer ON pageviews(referrer_domain)`
+  await pool.sql`CREATE INDEX IF NOT EXISTS idx_pv_created ON pageviews(created_at)`
+  await pool.sql`CREATE INDEX IF NOT EXISTS idx_pv_path ON pageviews(path)`
+  await pool.sql`CREATE INDEX IF NOT EXISTS idx_pv_visitor ON pageviews(visitor_hash)`
+  await pool.sql`CREATE INDEX IF NOT EXISTS idx_pv_referrer ON pageviews(referrer_domain)`
 }
 
 /* ------------------------------------------------------------------ */
@@ -141,9 +142,9 @@ export async function insertPageview(data: PageviewData) {
   if (data.path.startsWith('/admin')) return
   if (data.path.endsWith('.xml') || data.path.endsWith('.json') || data.path.endsWith('.txt')) return
 
-  const sql = getSQL()
+  const pool = getPool()
 
-  await sql`
+  await pool.sql`
     INSERT INTO pageviews (
       path, referrer, referrer_domain,
       utm_source, utm_medium, utm_campaign, utm_term, utm_content,
@@ -196,7 +197,7 @@ export interface WeeklyReport {
 }
 
 export async function getWeeklyReport(): Promise<WeeklyReport> {
-  const sql = getSQL()
+  const pool = getPool()
 
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -207,35 +208,35 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
   const prevFrom = twoWeeksAgo.toISOString()
 
   // Total pageviews (non-bot) — this week
-  const [pvRow] = await sql`
+  const { rows: [pvRow] } = await pool.sql`
     SELECT COUNT(*) as count FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false
   `
 
   // Unique visitors — this week
-  const [uvRow] = await sql`
+  const { rows: [uvRow] } = await pool.sql`
     SELECT COUNT(DISTINCT visitor_hash) as count FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false AND visitor_hash IS NOT NULL
   `
 
   // Previous week for comparison
-  const [prevPvRow] = await sql`
+  const { rows: [prevPvRow] } = await pool.sql`
     SELECT COUNT(*) as count FROM pageviews
     WHERE created_at >= ${prevFrom} AND created_at < ${from} AND is_bot = false
   `
-  const [prevUvRow] = await sql`
+  const { rows: [prevUvRow] } = await pool.sql`
     SELECT COUNT(DISTINCT visitor_hash) as count FROM pageviews
     WHERE created_at >= ${prevFrom} AND created_at < ${from} AND is_bot = false AND visitor_hash IS NOT NULL
   `
 
   // Bot pageviews
-  const [botRow] = await sql`
+  const { rows: [botRow] } = await pool.sql`
     SELECT COUNT(*) as count FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = true
   `
 
   // Top 20 pages
-  const topPages = await sql`
+  const { rows: topPages } = await pool.sql`
     SELECT path, COUNT(*) as views, COUNT(DISTINCT visitor_hash) as visitors
     FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false
@@ -243,7 +244,7 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
   `
 
   // Top 15 referrer domains
-  const topReferrers = await sql`
+  const { rows: topReferrers } = await pool.sql`
     SELECT referrer_domain as domain, COUNT(*) as views
     FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false
@@ -252,7 +253,7 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
   `
 
   // Top 10 countries
-  const topCountries = await sql`
+  const { rows: topCountries } = await pool.sql`
     SELECT country, COUNT(*) as views
     FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false AND country IS NOT NULL
@@ -260,7 +261,7 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
   `
 
   // Device breakdown
-  const devicesRaw = await sql`
+  const { rows: devicesRaw } = await pool.sql`
     SELECT device_type as type, COUNT(*) as count
     FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false
@@ -273,7 +274,7 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
   }))
 
   // Browser breakdown
-  const browsersRaw = await sql`
+  const { rows: browsersRaw } = await pool.sql`
     SELECT browser as name, COUNT(*) as count
     FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false
@@ -286,7 +287,7 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
   }))
 
   // OS breakdown
-  const osRaw = await sql`
+  const { rows: osRaw } = await pool.sql`
     SELECT os as name, COUNT(*) as count
     FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false
@@ -299,7 +300,7 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
   }))
 
   // Daily trend (7 days)
-  const dailyRaw = await sql`
+  const { rows: dailyRaw } = await pool.sql`
     SELECT
       DATE(created_at) as date,
       COUNT(*) as views,
@@ -315,7 +316,7 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
   }))
 
   // Top UTM sources
-  const utmRaw = await sql`
+  const { rows: utmRaw } = await pool.sql`
     SELECT utm_source as source, utm_medium as medium, COUNT(*) as views
     FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false
