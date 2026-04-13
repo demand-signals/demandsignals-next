@@ -1,20 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { initSchema } from '@/lib/analytics-db'
+import { requireAdmin } from '@/lib/admin-auth'
 
 /**
  * GET /api/analytics/init
  *
  * One-time endpoint to create the pageviews table and indexes.
- * Protected by CRON_SECRET to prevent public access.
+ * Protected by admin auth OR CRON_SECRET.
  * Run once after adding Vercel Postgres to the project.
  */
 export async function GET(req: NextRequest) {
-  // Protect with CRON_SECRET or a simple check
+  // Try cron secret first (for automated calls)
   const authHeader = req.headers.get('authorization')
   const cronSecret = process.env.VERCEL_ANALYTICS_CRON_SECRET || process.env.CRON_SECRET
+  const hasCronAuth = cronSecret && authHeader === `Bearer ${cronSecret}`
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!hasCronAuth) {
+    // Fall back to admin auth (for browser access while logged in)
+    const auth = await requireAdmin(req)
+    if ('error' in auth) {
+      return NextResponse.json(
+        { error: 'Unauthorized — log in at /admin-login or pass CRON_SECRET as Bearer token' },
+        { status: 401 }
+      )
+    }
   }
 
   try {
