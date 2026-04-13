@@ -2,7 +2,6 @@ import nodemailer from 'nodemailer'
 import { NextRequest, NextResponse } from 'next/server'
 import { CONTACT_EMAIL } from '@/lib/constants'
 import { apiGuard, escapeHtml, isValidEmail, sanitizeField, safeErrorResponse } from '@/lib/api-security'
-import { trackGA4Event, getGA4Context } from '@/lib/ga4'
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -40,15 +39,6 @@ export async function POST(req: NextRequest) {
         <p>This subscriber opted in via the blog/newsletter sign-up.</p>
       `,
     })
-
-    // Fire server-side GA4 conversion event (non-blocking)
-    trackGA4Event({
-      name: 'sign_up',
-      params: {
-        event_category: 'newsletter',
-        method: 'blog_subscribe',
-      },
-    }, getGA4Context(req)).catch(() => {})
 
     return NextResponse.json({ success: true })
   } catch (err) {

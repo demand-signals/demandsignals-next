@@ -4,7 +4,6 @@ import './globals.css'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { ContactBot } from '@/components/layout/ContactBot'
-import { CookieConsent } from '@/components/layout/CookieConsent'
 import { AccessibilityWidget } from '@/components/layout/AccessibilityWidget'
 import { ArcCardGame } from '@/components/sections/ArcCardGame'
 import { JsonLd } from '@/components/seo/JsonLd'
@@ -12,7 +11,6 @@ import { orgSchema, websiteSchema } from '@/lib/schema'
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from 'react'
 import { AnalyticsTracker } from '@/components/layout/AnalyticsTracker'
-import Script from 'next/script'
 import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans',display:'swap'});
@@ -91,7 +89,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://www.googletagmanager.com" />
 
         <link rel="preconnect" href="https://flagcdn.com" />
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
@@ -114,30 +111,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ArcCardGame />
         <Footer />
         <ContactBot />
-        <CookieConsent />
         <AccessibilityWidget />
         <Analytics />
         <Suspense fallback={null}>
           <AnalyticsTracker />
         </Suspense>
-        <Script id="ga4-consent-defaults" strategy="beforeInteractive">{`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('consent', 'default', {
-            analytics_storage: 'denied',
-            ad_storage: 'denied',
-            ad_user_data: 'denied',
-            ad_personalization: 'denied',
-            wait_for_update: 500
-          });
-        `}</Script>
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-JYSS0XVLTY" strategy="afterInteractive" />
-        <Script id="ga4-init" strategy="afterInteractive">{`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-JYSS0XVLTY');
-        `}</Script>
       </body>
     </html>
   )

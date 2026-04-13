@@ -71,8 +71,8 @@ export default function PrivacyPage() {
           <h3 style={h3}>1.2 Information Collected Automatically</h3>
           <ul style={ulStyle}>
             <li><strong style={bold}>Server logs:</strong> IP address, browser type, operating system, referring URL, pages visited, and timestamps. These are standard web server logs retained for security and operational purposes.</li>
-            <li><strong style={bold}>Analytics:</strong> We use Google Analytics 4 (GA4) to understand how visitors interact with our website. GA4 collects data such as pages visited, session duration, device type, browser, approximate geographic location, and referral sources. When you consent to analytics cookies, this data is associated with a randomly generated client identifier. See Section 3 for full details on our Google Analytics implementation.</li>
-            <li><strong style={bold}>Cookies:</strong> We use essential cookies for site functionality (e.g., form submission state, cookie preferences). When you consent, we also use analytics cookies set by Google Analytics. We do not use retargeting pixels or cross-site tracking technologies unless you explicitly opt in via our cookie preferences panel. See Section 3 for details on each cookie category.</li>
+            <li><strong style={bold}>Analytics:</strong> We use Vercel Analytics, a privacy-first analytics service that collects aggregate pageview and visitor data without setting cookies or using personally identifiable information. No data is shared with third parties. See Section 3 for details.</li>
+            <li><strong style={bold}>Cookies:</strong> We use only essential cookies for site functionality (e.g., form submission state). We do not set analytics cookies, retargeting pixels, or cross-site tracking technologies.</li>
           </ul>
 
           <h3 style={h3}>1.3 Information We Do Not Collect</h3>
@@ -92,74 +92,22 @@ export default function PrivacyPage() {
             <li><strong style={bold}>Legal compliance:</strong> To comply with applicable laws, regulations, and legal processes.</li>
           </ul>
 
-          <h2 style={h2}>3. Google Analytics 4 and Data Collection</h2>
+          <h2 style={h2}>3. Analytics and Data Collection</h2>
           <p>
-            We use Google Analytics 4 (&ldquo;GA4&rdquo;) with measurement ID <strong style={bold}>G-JYSS0XVLTY</strong> to analyze website traffic and improve our services. This section describes the data collection features we have enabled and your choices regarding them.
-          </p>
-
-          <h3 style={h3}>3.1 Google Signals</h3>
-          <p>
-            We have enabled <strong style={bold}>Google Signals</strong> in our GA4 property. When Google Signals is active and you have turned on Ads Personalization in your Google account, Analytics may associate session data collected from our site with Google&apos;s information from your signed-in Google account. This provides us with aggregated, anonymized demographic and interest data (such as age ranges and interest categories) to better understand our audience.
-          </p>
-          <p>
-            By enabling Google Signals, we acknowledge that we adhere to the <a href="https://support.google.com/analytics/answer/2700409" style={link} target="_blank" rel="noopener noreferrer">Google Advertising Features Policy</a>, including rules around sensitive categories. You can opt out of Google Signals data collection by:
+            We use <strong style={bold}>Vercel Analytics</strong> to understand aggregate traffic patterns on our website. Vercel Analytics is a privacy-first analytics service that:
           </p>
           <ul style={ulStyle}>
-            <li>Turning off Ads Personalization in your <a href="https://myaccount.google.com/data-and-privacy" style={link} target="_blank" rel="noopener noreferrer">Google Account settings</a></li>
-            <li>Declining analytics cookies in our cookie preferences panel</li>
-            <li>Managing or deleting your activity via <a href="https://myactivity.google.com" style={link} target="_blank" rel="noopener noreferrer">My Activity</a></li>
-          </ul>
-
-          <h3 style={h3}>3.2 User-ID and User-Provided Data Collection</h3>
-          <p>
-            We may use GA4&apos;s <strong style={bold}>User-ID</strong> feature to connect your behavior across different sessions and devices when you are identifiable through a login or form submission. Google Analytics interprets each distinct User-ID as a separate user, which helps us understand multi-session engagement more accurately.
-          </p>
-          <p>
-            We may also use <strong style={bold}>user-provided data collection</strong>, which allows us to securely send consented, hashed customer data (such as email addresses) to Google Analytics in a privacy-safe manner. This data is:
-          </p>
-          <ul style={ulStyle}>
-            <li>One-way hashed before transmission — Google cannot reverse it to the original value</li>
-            <li>Used to improve conversion measurement accuracy and audience insights</li>
-            <li>Subject to the <a href="https://support.google.com/analytics/answer/14077171" style={link} target="_blank" rel="noopener noreferrer">user-provided data feature policy</a></li>
-            <li>Never used for customers in sensitive categories as defined by Google&apos;s policies</li>
+            <li>Does <strong style={bold}>not</strong> set any cookies on your device</li>
+            <li>Does <strong style={bold}>not</strong> collect personally identifiable information</li>
+            <li>Does <strong style={bold}>not</strong> track you across websites</li>
+            <li>Does <strong style={bold}>not</strong> share data with third parties or advertising networks</li>
+            <li>Collects only aggregate pageview counts, referral sources, and geographic region data</li>
           </ul>
           <p>
-            We do not send personally identifiable information as a User-ID. You are never required to provide identifying data, and you may decline analytics tracking entirely through our cookie preferences panel.
-          </p>
-
-          <h3 style={h3}>3.3 Granular Location and Device Data</h3>
-          <p>
-            We have activated <strong style={bold}>granular location and device data collection</strong> in GA4. This means Analytics collects metadata about your city-level location and device details (such as device model, operating system, and screen resolution). This data helps us understand where our visitors are located and what devices they use, so we can optimize our site accordingly.
+            Because Vercel Analytics does not use cookies or personal identifiers, no cookie consent banner is required. There is nothing to opt out of — your visit is counted anonymously and cannot be tied back to you as an individual.
           </p>
           <p>
-            Region and country-level metadata is collected by default for all traffic to support regional privacy policies. Granular (city-level) data collection is enabled in all 307 supported regions. You can limit this by declining analytics cookies in our cookie preferences panel.
-          </p>
-
-          <h3 style={h3}>3.4 Ads Personalization</h3>
-          <p>
-            We have enabled <strong style={bold}>ads personalization</strong> in our GA4 property. When linked with advertising accounts (such as Google Ads), this allows us to:
-          </p>
-          <ul style={ulStyle}>
-            <li>Export Google Analytics audiences to linked advertising accounts for delivering relevant, personalized ad experiences</li>
-            <li>Improve conversion measurement across our marketing campaigns</li>
-            <li>Use key events data to optimize ad targeting and bidding</li>
-          </ul>
-          <p>
-            Ads personalization is allowed in all 307 supported regions. You can opt out by declining marketing cookies in our cookie preferences panel, which prevents your data from being used for ads personalization purposes.
-          </p>
-
-          <h3 style={h3}>3.5 Data Collection Acknowledgement</h3>
-          <p>
-            By accepting analytics and/or marketing cookies on our site, you acknowledge that:
-          </p>
-          <ul style={ulStyle}>
-            <li>Google Analytics collects session data, device information, and approximate location as described above</li>
-            <li>When Google Signals is active and you are signed in to a Google account with Ads Personalization enabled, session data may be associated with your Google account information</li>
-            <li>You may access and delete your Google activity data at any time via <a href="https://myactivity.google.com" style={link} target="_blank" rel="noopener noreferrer">My Activity</a></li>
-            <li>You may withdraw consent at any time using the cookie icon in the bottom-left corner of any page</li>
-          </ul>
-          <p>
-            For more information about Google&apos;s data practices, visit <a href="https://support.google.com/analytics/answer/14077171" style={link} target="_blank" rel="noopener noreferrer">Google Analytics Data Collection</a> and <a href="https://policies.google.com/privacy" style={link} target="_blank" rel="noopener noreferrer">Google&apos;s Privacy Policy</a>.
+            For more information, visit <a href="https://vercel.com/docs/analytics/privacy-policy" style={link} target="_blank" rel="noopener noreferrer">Vercel Analytics Privacy Policy</a>.
           </p>
 
           <h2 style={h2}>4. AI Systems and Data Processing</h2>

@@ -13,8 +13,8 @@ const SECTIONS = [
 **1.2 Information Collected Automatically**
 
 - **Server logs:** IP address, browser type, operating system, referring URL, pages visited, and timestamps. These are standard web server logs retained for security and operational purposes.
-- **Analytics:** We use Google Analytics 4 (GA4) to understand how visitors interact with our website. GA4 collects data such as pages visited, session duration, device type, browser, approximate geographic location, and referral sources. When you consent to analytics cookies, this data is associated with a randomly generated client identifier.
-- **Cookies:** We use essential cookies for site functionality (e.g., form submission state, cookie preferences). When you consent, we also use analytics cookies set by Google Analytics. We do not use retargeting pixels or cross-site tracking technologies unless you explicitly opt in via our cookie preferences panel.
+- **Analytics:** We use Vercel Analytics, a privacy-first analytics service that collects aggregate pageview and visitor data without setting cookies or using personally identifiable information. No data is shared with third parties.
+- **Cookies:** We use only essential cookies for site functionality (e.g., form submission state). We do not set analytics cookies, retargeting pixels, or cross-site tracking technologies.
 
 **1.3 Information We Do Not Collect**
 
@@ -33,18 +33,18 @@ const SECTIONS = [
 - **Legal compliance:** To comply with applicable laws, regulations, and legal processes.`,
   },
   {
-    heading: '3. Google Analytics 4 and Data Collection',
-    content: `We use Google Analytics 4 ("GA4") with measurement ID G-JYSS0XVLTY to analyze website traffic and improve our services.
+    heading: '3. Analytics and Data Collection',
+    content: `We use **Vercel Analytics** to understand aggregate traffic patterns on our website. Vercel Analytics is a privacy-first analytics service that:
 
-**3.1 Google Signals** — When Google Signals is active and you have turned on Ads Personalization in your Google account, Analytics may associate session data collected from our site with Google's information from your signed-in Google account. You can opt out by turning off Ads Personalization in your Google Account settings or declining analytics cookies in our cookie preferences panel.
+- Does **not** set any cookies on your device
+- Does **not** collect personally identifiable information
+- Does **not** track you across websites
+- Does **not** share data with third parties or advertising networks
+- Collects only aggregate pageview counts, referral sources, and geographic region data
 
-**3.2 User-ID and User-Provided Data Collection** — We may use GA4's User-ID feature to connect your behavior across different sessions and devices when you are identifiable through a login or form submission. User-provided data is one-way hashed before transmission — Google cannot reverse it to the original value.
+Because Vercel Analytics does not use cookies or personal identifiers, no cookie consent banner is required. There is nothing to opt out of — your visit is counted anonymously and cannot be tied back to you as an individual.
 
-**3.3 Granular Location and Device Data** — We have activated granular location and device data collection in GA4, including city-level location and device details such as device model, operating system, and screen resolution.
-
-**3.4 Ads Personalization** — When linked with advertising accounts, this allows us to export Google Analytics audiences to linked advertising accounts for delivering relevant, personalized ad experiences. You can opt out by declining marketing cookies.
-
-**3.5 Data Collection Acknowledgement** — By accepting analytics and/or marketing cookies on our site, you acknowledge that Google Analytics collects session data, device information, and approximate location as described above. You may withdraw consent at any time using the cookie icon in the bottom-left corner of any page.`,
+For more information, visit [Vercel Analytics Privacy Policy](https://vercel.com/docs/analytics/privacy-policy).`,
   },
   {
     heading: '4. AI Systems and Data Processing',
