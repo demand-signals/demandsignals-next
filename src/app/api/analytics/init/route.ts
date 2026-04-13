@@ -26,16 +26,25 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // Show which DB URL is being used (masked for security)
+  const neonUrl = process.env.NEON_DATABASE_URL
+  const dbUrl = process.env.DATABASE_URL
+  const pgUrl = process.env.POSTGRES_URL
+  const activeUrl = neonUrl || dbUrl || pgUrl
+  const urlSource = neonUrl ? 'NEON_DATABASE_URL' : dbUrl ? 'DATABASE_URL' : pgUrl ? 'POSTGRES_URL' : 'NONE'
+  const urlPreview = activeUrl ? activeUrl.slice(0, 30) + '...' : 'NOT SET'
+
   try {
     await initSchema()
     return NextResponse.json({
       ok: true,
       message: 'Analytics schema initialized — pageviews table and indexes created.',
+      db: { source: urlSource, preview: urlPreview },
     })
   } catch (err) {
     console.error('[Analytics Init]', err)
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : 'Unknown error' },
+      { ok: false, error: err instanceof Error ? err.message : 'Unknown error', db: { source: urlSource, preview: urlPreview } },
       { status: 500 }
     )
   }
