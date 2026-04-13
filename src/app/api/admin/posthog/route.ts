@@ -4,10 +4,15 @@ import { requireAdmin } from '@/lib/admin-auth'
 const PH_HOST = 'https://us.posthog.com'
 
 function getConfig() {
-  const apiKey = process.env.POSTHOG_CLAUDE_KEY || process.env.POSTHOG_PERSONAL_API_KEY
+  const apiKey = process.env.POSTHOG_CLAUDE_KEY || process.env.POSTHOG_CLAUD_KEY || process.env.POSTHOG_PERSONAL_API_KEY
   const projectId = process.env.POSTHOG_DSIG_ID || process.env.POSTHOG_PROJECT_ID
-  if (!apiKey || !projectId) return null
-  return { apiKey, projectId }
+  if (!apiKey || !projectId) {
+    const missing: string[] = []
+    if (!apiKey) missing.push('POSTHOG_CLAUDE_KEY (Personal API Key, starts with phx_)')
+    if (!projectId) missing.push('POSTHOG_DSIG_ID (numeric project ID)')
+    return { error: `Missing env vars: ${missing.join(', ')}` }
+  }
+  return { apiKey, projectId, error: null }
 }
 
 async function phFetch(path: string, apiKey: string, init?: RequestInit) {
@@ -160,11 +165,12 @@ export async function GET(request: NextRequest) {
   if ('error' in auth) return auth.error
 
   const config = getConfig()
-  if (!config) {
-    return NextResponse.json({ configured: false })
+  if (config.error) {
+    return NextResponse.json({ configured: false, detail: config.error })
   }
 
-  const { apiKey, projectId } = config
+  const apiKey = config.apiKey!
+  const projectId = config.projectId!
   const { searchParams } = new URL(request.url)
   const metric = searchParams.get('metric') || 'overview'
 
@@ -198,7 +204,10 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: `Unknown metric: ${metric}` }, { status: 400 })
     }
   } catch (err: any) {
-    console.error('[PostHog API]', err.message)
-    return NextResponse.json({ error: err.message }, { status: 502 })
+    console.error('[PostHog API]', err.message, err.stack)
+    return NextResponse.json({
+      error: err.message,
+      hint: 'Check that POSTHOG_CLAUDE_KEY is a Personal API Key (phx_...) and POSTHOG_DSIG_ID is the numeric project ID',
+    }, { status: 502 })
   }
 }

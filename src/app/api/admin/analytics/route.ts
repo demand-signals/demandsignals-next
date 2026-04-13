@@ -113,8 +113,10 @@ export async function GET(request: NextRequest) {
       utmCampaigns: utmResult.rows.map(r => ({ source: r.source, medium: r.medium || 'direct', campaign: r.campaign, views: Number(r.views) })),
     })
   } catch (err: any) {
-    // Table doesn't exist yet — return empty state
-    if (err.message?.includes('relation') && err.message?.includes('does not exist')) {
+    // Table doesn't exist, DB not connected, or other DB issue — return empty state
+    const isDbMissing = err.message?.includes('relation') && err.message?.includes('does not exist')
+    const isNoConnection = err.message?.includes('POSTGRES_URL') || err.message?.includes('connection') || err.code === 'ECONNREFUSED'
+    if (isDbMissing || isNoConnection || err.message?.includes('does not exist')) {
       return NextResponse.json({
         empty: true,
         period: { from, to },

@@ -48,9 +48,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true }, { status: 202 })
   } catch (err) {
-    console.error('[Analytics] Failed to record pageview:', err instanceof Error ? err.message : err)
-    // Never let analytics failures break the site
-    return NextResponse.json({ ok: false }, { status: 500 })
+    // Silently accept — never let analytics failures affect visitors
+    // This catches missing POSTGRES_URL, connection errors, table not created, etc.
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[Analytics] Failed to record pageview:', err instanceof Error ? err.message : err)
+    }
+    return NextResponse.json({ ok: true }, { status: 202 })
   }
 }
 

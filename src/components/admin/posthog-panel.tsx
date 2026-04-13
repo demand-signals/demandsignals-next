@@ -108,7 +108,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 // ─── Setup Screen ───────────────────────────────────────────
 
-function SetupInstructions() {
+function SetupInstructions({ detail }: { detail?: string }) {
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
       <div className="flex items-start gap-3">
@@ -142,6 +142,9 @@ function SetupInstructions() {
             </li>
             <li>Redeploy</li>
           </ol>
+          {detail && (
+            <p className="text-xs text-red-500 mt-2 bg-red-50 rounded px-3 py-2 font-mono">{detail}</p>
+          )}
         </div>
       </div>
     </div>
@@ -164,7 +167,8 @@ export function PostHogPanel() {
       const res = await fetch(`/api/admin/posthog?${sp}`)
       if (!res.ok) throw new Error('Failed to fetch PostHog data')
       const json = await res.json()
-      if (json.configured === false) throw new Error('NOT_CONFIGURED')
+      if (json.configured === false) throw new Error('NOT_CONFIGURED:' + (json.detail || ''))
+      if (json.error) throw new Error(json.error + (json.hint ? ` — ${json.hint}` : ''))
       return json
     },
     retry: false,
@@ -174,8 +178,8 @@ export function PostHogPanel() {
     return <div className="text-slate-400 text-sm animate-pulse">Loading PostHog data...</div>
   }
 
-  if (error?.message === 'NOT_CONFIGURED') {
-    return <SetupInstructions />
+  if (error?.message?.startsWith('NOT_CONFIGURED')) {
+    return <SetupInstructions detail={error.message.split(':').slice(1).join(':')} />
   }
 
   if (error || !data) {
