@@ -110,6 +110,22 @@ export default function PrivacyPage() {
             For more information, visit <a href="https://vercel.com/docs/analytics/privacy-policy" style={link} target="_blank" rel="noopener noreferrer">Vercel Analytics Privacy Policy</a>.
           </p>
 
+          <h3 style={h3}>3.2 PostHog Product Analytics</h3>
+          <p>
+            We also use <strong style={bold}>PostHog</strong>, hosted on PostHog Cloud (US), to understand how visitors interact with our website. PostHog may collect:
+          </p>
+          <ul style={ulStyle}>
+            <li>Anonymized session recordings (mouse movements, clicks, and scrolls)</li>
+            <li>Aggregated heatmap data showing where visitors click and scroll</li>
+            <li>Pageview events and navigation patterns</li>
+          </ul>
+          <p>
+            PostHog data is used solely to improve our website&apos;s usability and content. We do not use PostHog for advertising, cross-site tracking, or sharing data with third parties. Session recordings are anonymized — form inputs and sensitive text are masked automatically.
+          </p>
+          <p>
+            For more information, visit <a href="https://posthog.com/privacy" style={link} target="_blank" rel="noopener noreferrer">PostHog Privacy Policy</a>.
+          </p>
+
           <h2 style={h2}>4. AI Systems and Data Processing</h2>
           <p>
             Demand Signals uses AI systems (including language models, content generation tools, and automation agents) as part of our service delivery. When we process your business data through AI systems:

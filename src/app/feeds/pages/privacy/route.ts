@@ -44,7 +44,19 @@ const SECTIONS = [
 
 Because Vercel Analytics does not use cookies or personal identifiers, no cookie consent banner is required. There is nothing to opt out of — your visit is counted anonymously and cannot be tied back to you as an individual.
 
-For more information, visit [Vercel Analytics Privacy Policy](https://vercel.com/docs/analytics/privacy-policy).`,
+For more information, visit [Vercel Analytics Privacy Policy](https://vercel.com/docs/analytics/privacy-policy).
+
+**3.2 PostHog Product Analytics**
+
+We also use **PostHog**, hosted on PostHog Cloud (US), to understand how visitors interact with our website. PostHog may collect:
+
+- Anonymized session recordings (mouse movements, clicks, and scrolls)
+- Aggregated heatmap data showing where visitors click and scroll
+- Pageview events and navigation patterns
+
+PostHog data is used solely to improve our website's usability and content. We do not use PostHog for advertising, cross-site tracking, or sharing data with third parties. Session recordings are anonymized — form inputs and sensitive text are masked automatically.
+
+For more information, visit [PostHog Privacy Policy](https://posthog.com/privacy).`,
   },
   {
     heading: '4. AI Systems and Data Processing',
