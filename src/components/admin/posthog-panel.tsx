@@ -165,10 +165,14 @@ export function PostHogPanel() {
     queryFn: async () => {
       const sp = new URLSearchParams({ metric: 'all', from: dateRange.from, to: dateRange.to })
       const res = await fetch(`/api/admin/posthog?${sp}`)
-      if (!res.ok) throw new Error('Failed to fetch PostHog data')
-      const json = await res.json()
+      const json = await res.json().catch(() => null)
+      if (!res.ok) {
+        const detail = json?.error || json?.message || `HTTP ${res.status}`
+        throw new Error(detail)
+      }
+      if (!json) throw new Error('Empty response from PostHog API')
       if (json.configured === false) throw new Error('NOT_CONFIGURED:' + (json.detail || ''))
-      if (json.error) throw new Error(json.error + (json.hint ? ` — ${json.hint}` : ''))
+      if (json.error) throw new Error(json.error)
       return json
     },
     retry: false,

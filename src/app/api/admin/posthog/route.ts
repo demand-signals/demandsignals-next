@@ -16,14 +16,20 @@ function getConfig() {
 }
 
 async function phFetch(path: string, apiKey: string, init?: RequestInit) {
-  const res = await fetch(`${PH_HOST}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      ...(init?.headers || {}),
-    },
-  })
+  const url = `${PH_HOST}${path}`
+  let res: Response
+  try {
+    res = await fetch(url, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        ...(init?.headers || {}),
+      },
+    })
+  } catch (fetchErr: any) {
+    throw new Error(`Network error fetching ${url}: ${fetchErr.message}`)
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText)
     throw new Error(`PostHog API ${res.status}: ${text}`)
@@ -32,7 +38,7 @@ async function phFetch(path: string, apiKey: string, init?: RequestInit) {
 }
 
 async function hogql(apiKey: string, projectId: string, query: string) {
-  return phFetch(`/api/projects/${projectId}/query`, apiKey, {
+  return phFetch(`/api/projects/${projectId}/query/`, apiKey, {
     method: 'POST',
     body: JSON.stringify({ query: { kind: 'HogQLQuery', query } }),
   })
@@ -49,7 +55,6 @@ async function getOverview(apiKey: string, projectId: string, from: string, to: 
         countDistinct(distinct_id) as unique_users
       FROM events
       WHERE timestamp >= '${from}' AND timestamp <= '${to}'
-        AND event NOT LIKE '$$%'
     `),
     hogql(apiKey, projectId, `
       SELECT event, count() as count
@@ -101,7 +106,7 @@ async function getRecordings(apiKey: string, projectId: string, limit = 20) {
 
 async function getRecentEvents(apiKey: string, projectId: string, limit = 30) {
   const data = await phFetch(
-    `/api/projects/${projectId}/events?limit=${limit}&orderBy=-timestamp`,
+    `/api/projects/${projectId}/events/?limit=${limit}&ordering=-timestamp`,
     apiKey,
   )
 
@@ -150,10 +155,10 @@ async function getWebVitals(apiKey: string, projectId: string, from: string, to:
   }
 
   return {
-    lcp: lcpN > 0 ? Math.round(lcpSum / lcpN) : null,         // ms
-    fid: fidN > 0 ? Math.round(fidSum / fidN) : null,         // ms
-    cls: clsN > 0 ? Math.round((clsSum / clsN) * 1000) / 1000 : null, // unitless
-    inp: inpN > 0 ? Math.round(inpSum / inpN) : null,         // ms
+    lcp: lcpN > 0 ? Math.round(lcpSum / lcpN) : null,
+    fid: fidN > 0 ? Math.round(fidSum / fidN) : null,
+    cls: clsN > 0 ? Math.round((clsSum / clsN) * 1000) / 1000 : null,
+    inp: inpN > 0 ? Math.round(inpSum / inpN) : null,
     sampleCount: rows.length,
   }
 }
@@ -192,13 +197,42 @@ export async function GET(request: NextRequest) {
       case 'web-vitals':
         return NextResponse.json(await getWebVitals(apiKey, projectId, fromISO, toISO))
       case 'all': {
-        const [overview, recordings, events, vitals] = await Promise.all([
+        // Run all 4 independently — if one fails, return what we can
+        const [overviewResult, recordingsResult, eventsResult, vitalsResult] = await Promise.allSettled([
           getOverview(apiKey, projectId, fromISO, toISO),
           getRecordings(apiKey, projectId),
           getRecentEvents(apiKey, projectId),
           getWebVitals(apiKey, projectId, fromISO, toISO),
         ])
-        return NextResponse.json({ overview, recordings, events, vitals })
+
+        const overview = overviewResult.status === 'fulfilled'
+          ? overviewResult.value
+          : { totalEvents: 0, totalSessions: 0, uniqueUsers: 0, topEvents: [], error: overviewResult.reason?.message }
+
+        const recordings = recordingsResult.status === 'fulfilled'
+          ? recordingsResult.value
+          : []
+
+        const events = eventsResult.status === 'fulfilled'
+          ? eventsResult.value
+          : []
+
+        const vitals = vitalsResult.status === 'fulfilled'
+          ? vitalsResult.value
+          : { lcp: null, fid: null, cls: null, inp: null, sampleCount: 0 }
+
+        // Collect any partial errors for debugging
+        const errors = [overviewResult, recordingsResult, eventsResult, vitalsResult]
+          .filter(r => r.status === 'rejected')
+          .map((r: any) => r.reason?.message)
+
+        return NextResponse.json({
+          overview,
+          recordings,
+          events,
+          vitals,
+          ...(errors.length > 0 ? { _partialErrors: errors } : {}),
+        })
       }
       default:
         return NextResponse.json({ error: `Unknown metric: ${metric}` }, { status: 400 })
@@ -207,7 +241,6 @@ export async function GET(request: NextRequest) {
     console.error('[PostHog API]', err.message, err.stack)
     return NextResponse.json({
       error: err.message,
-      hint: 'Check that POSTHOG_CLAUDE_KEY is a Personal API Key (phx_...) and POSTHOG_DSIG_ID is the numeric project ID',
     }, { status: 502 })
   }
 }
