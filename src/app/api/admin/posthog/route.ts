@@ -5,7 +5,7 @@ const PH_HOST = 'https://us.posthog.com'
 
 function getConfig() {
   const apiKey = process.env.POSTHOG_CLAUDE_KEY || process.env.POSTHOG_PERSONAL_API_KEY
-  const projectId = process.env.POSTHOG_PROJECT_ID
+  const projectId = process.env.POSTHOG_DSIG_ID || process.env.POSTHOG_PROJECT_ID
   if (!apiKey || !projectId) return null
   return { apiKey, projectId }
 }
