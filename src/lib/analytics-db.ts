@@ -1,20 +1,28 @@
 /**
  * Analytics Database Helpers
  *
- * Uses Vercel Postgres to store pageview data collected by our
+ * Uses Neon serverless Postgres to store pageview data collected by our
  * lightweight tracker. No cookies, no third-party JS, full data ownership.
  *
- * Required env var: POSTGRES_URL (auto-set when Vercel Postgres is added to project)
+ * Required env var: NEON_DATABASE_URL (auto-set when Neon is added via Vercel)
  */
 
-import { sql } from '@vercel/postgres'
+import { neon } from '@neondatabase/serverless'
 import { createHash } from 'crypto'
+
+function getSQL() {
+  const url = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL
+  if (!url) throw new Error('No database URL found (NEON_DATABASE_URL / DATABASE_URL / POSTGRES_URL)')
+  return neon(url)
+}
 
 /* ------------------------------------------------------------------ */
 /*  Schema                                                             */
 /* ------------------------------------------------------------------ */
 
 export async function initSchema() {
+  const sql = getSQL()
+
   await sql`
     CREATE TABLE IF NOT EXISTS pageviews (
       id SERIAL PRIMARY KEY,
@@ -133,6 +141,8 @@ export async function insertPageview(data: PageviewData) {
   if (data.path.startsWith('/admin')) return
   if (data.path.endsWith('.xml') || data.path.endsWith('.json') || data.path.endsWith('.txt')) return
 
+  const sql = getSQL()
+
   await sql`
     INSERT INTO pageviews (
       path, referrer, referrer_domain,
@@ -186,6 +196,8 @@ export interface WeeklyReport {
 }
 
 export async function getWeeklyReport(): Promise<WeeklyReport> {
+  const sql = getSQL()
+
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
@@ -195,35 +207,35 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
   const prevFrom = twoWeeksAgo.toISOString()
 
   // Total pageviews (non-bot) — this week
-  const { rows: [pvRow] } = await sql`
+  const [pvRow] = await sql`
     SELECT COUNT(*) as count FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false
   `
 
   // Unique visitors — this week
-  const { rows: [uvRow] } = await sql`
+  const [uvRow] = await sql`
     SELECT COUNT(DISTINCT visitor_hash) as count FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false AND visitor_hash IS NOT NULL
   `
 
   // Previous week for comparison
-  const { rows: [prevPvRow] } = await sql`
+  const [prevPvRow] = await sql`
     SELECT COUNT(*) as count FROM pageviews
     WHERE created_at >= ${prevFrom} AND created_at < ${from} AND is_bot = false
   `
-  const { rows: [prevUvRow] } = await sql`
+  const [prevUvRow] = await sql`
     SELECT COUNT(DISTINCT visitor_hash) as count FROM pageviews
     WHERE created_at >= ${prevFrom} AND created_at < ${from} AND is_bot = false AND visitor_hash IS NOT NULL
   `
 
   // Bot pageviews
-  const { rows: [botRow] } = await sql`
+  const [botRow] = await sql`
     SELECT COUNT(*) as count FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = true
   `
 
   // Top 20 pages
-  const { rows: topPages } = await sql`
+  const topPages = await sql`
     SELECT path, COUNT(*) as views, COUNT(DISTINCT visitor_hash) as visitors
     FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false
@@ -231,7 +243,7 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
   `
 
   // Top 15 referrer domains
-  const { rows: topReferrers } = await sql`
+  const topReferrers = await sql`
     SELECT referrer_domain as domain, COUNT(*) as views
     FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false
@@ -240,7 +252,7 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
   `
 
   // Top 10 countries
-  const { rows: topCountries } = await sql`
+  const topCountries = await sql`
     SELECT country, COUNT(*) as views
     FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false AND country IS NOT NULL
@@ -248,7 +260,7 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
   `
 
   // Device breakdown
-  const { rows: devicesRaw } = await sql`
+  const devicesRaw = await sql`
     SELECT device_type as type, COUNT(*) as count
     FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false
@@ -256,12 +268,12 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
   `
   const totalDevices = devicesRaw.reduce((s, r) => s + Number(r.count), 0)
   const devices = devicesRaw.map(r => ({
-    type: r.type, count: Number(r.count),
+    type: r.type as string, count: Number(r.count),
     pct: totalDevices > 0 ? Math.round((Number(r.count) / totalDevices) * 100) : 0,
   }))
 
   // Browser breakdown
-  const { rows: browsersRaw } = await sql`
+  const browsersRaw = await sql`
     SELECT browser as name, COUNT(*) as count
     FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false
@@ -269,12 +281,12 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
   `
   const totalBrowsers = browsersRaw.reduce((s, r) => s + Number(r.count), 0)
   const browsers = browsersRaw.map(r => ({
-    name: r.name, count: Number(r.count),
+    name: r.name as string, count: Number(r.count),
     pct: totalBrowsers > 0 ? Math.round((Number(r.count) / totalBrowsers) * 100) : 0,
   }))
 
   // OS breakdown
-  const { rows: osRaw } = await sql`
+  const osRaw = await sql`
     SELECT os as name, COUNT(*) as count
     FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false
@@ -282,12 +294,12 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
   `
   const totalOs = osRaw.reduce((s, r) => s + Number(r.count), 0)
   const osSystems = osRaw.map(r => ({
-    name: r.name, count: Number(r.count),
+    name: r.name as string, count: Number(r.count),
     pct: totalOs > 0 ? Math.round((Number(r.count) / totalOs) * 100) : 0,
   }))
 
   // Daily trend (7 days)
-  const { rows: dailyRaw } = await sql`
+  const dailyRaw = await sql`
     SELECT
       DATE(created_at) as date,
       COUNT(*) as views,
@@ -297,13 +309,13 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
     GROUP BY DATE(created_at) ORDER BY date ASC
   `
   const dailyTrend = dailyRaw.map(r => ({
-    date: new Date(r.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+    date: new Date(r.date as string).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
     views: Number(r.views),
     visitors: Number(r.visitors),
   }))
 
   // Top UTM sources
-  const { rows: utmRaw } = await sql`
+  const utmRaw = await sql`
     SELECT utm_source as source, utm_medium as medium, COUNT(*) as views
     FROM pageviews
     WHERE created_at >= ${from} AND created_at < ${to} AND is_bot = false
@@ -320,14 +332,14 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
     uniqueVisitors: Number(uvRow.count),
     prevPageviews: Number(prevPvRow.count),
     prevUniqueVisitors: Number(prevUvRow.count),
-    topPages: topPages.map(r => ({ path: r.path, views: Number(r.views), visitors: Number(r.visitors) })),
-    topReferrers: topReferrers.map(r => ({ domain: r.domain, views: Number(r.views) })),
-    topCountries: topCountries.map(r => ({ country: r.country, views: Number(r.views) })),
+    topPages: topPages.map(r => ({ path: r.path as string, views: Number(r.views), visitors: Number(r.visitors) })),
+    topReferrers: topReferrers.map(r => ({ domain: r.domain as string, views: Number(r.views) })),
+    topCountries: topCountries.map(r => ({ country: r.country as string, views: Number(r.views) })),
     devices,
     browsers,
     osSystems,
     dailyTrend,
-    topUtmSources: utmRaw.map(r => ({ source: r.source, medium: r.medium || 'direct', views: Number(r.views) })),
+    topUtmSources: utmRaw.map(r => ({ source: r.source as string, medium: (r.medium || 'direct') as string, views: Number(r.views) })),
     botPageviews: Number(botRow.count),
   }
 }
