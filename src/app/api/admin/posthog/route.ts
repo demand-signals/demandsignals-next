@@ -188,6 +188,25 @@ export async function GET(request: NextRequest) {
 
   try {
     switch (metric) {
+      case 'test': {
+        // Simple connectivity test — just hit one lightweight endpoint
+        try {
+          const testRes = await phFetch(`/api/projects/${projectId}/`, apiKey)
+          return NextResponse.json({
+            ok: true,
+            project: { id: testRes.id, name: testRes.name, created_at: testRes.created_at },
+            keyPrefix: apiKey.slice(0, 6) + '...',
+            projectIdUsed: projectId,
+          })
+        } catch (testErr: any) {
+          return NextResponse.json({
+            ok: false,
+            error: testErr.message,
+            keyPrefix: apiKey.slice(0, 6) + '...',
+            projectIdUsed: projectId,
+          })
+        }
+      }
       case 'overview':
         return NextResponse.json(await getOverview(apiKey, projectId, fromISO, toISO))
       case 'recordings':
