@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { STAGES, STAGE_LABELS, INDUSTRIES } from '@/types/database'
 import { ProspectScoreBadge } from './prospect-score-badge'
 import { cn } from '@/lib/utils'
@@ -55,6 +56,124 @@ const STAGE_BADGE_COLORS: Record<string, string> = {
   lost: 'bg-red-100 text-red-700',
 }
 
+function AddProspectModal({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
+  const [form, setForm] = useState({
+    business_name: '', industry: '', website_url: '',
+    city: '', state: '', address: '', zip: '',
+    owner_name: '', owner_email: '', owner_phone: '',
+    business_phone: '', business_email: '',
+    notes: '',
+  })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const set = (k: keyof typeof form, v: string) => setForm(f => ({ ...f, [k]: v }))
+  const ic = 'w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-[var(--teal)] bg-white'
+  const sc = 'w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-[var(--teal)] bg-white appearance-none'
+
+  async function save() {
+    if (!form.business_name.trim()) { setError('Business name is required'); return }
+    setSaving(true); setError('')
+    try {
+      const body: Record<string, any> = {}
+      for (const [k, v] of Object.entries(form)) { if (v.trim()) body[k] = v.trim() }
+      body.stage = 'researched'
+      body.source = 'manual'
+      const res = await fetch('/api/admin/prospects', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      })
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Failed to create') }
+      const { data } = await res.json()
+      onCreated(data.id)
+    } catch (e: any) { setError(e.message) } finally { setSaving(false) }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 pb-8">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[calc(100vh-6rem)] overflow-y-auto border border-slate-200">
+        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10 rounded-t-2xl">
+          <h2 className="text-lg font-bold text-slate-800">Add Prospect</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+        </div>
+        <div className="px-6 py-4 space-y-3">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-500">Business Name *</label>
+            <input className={ic} value={form.business_name} onChange={e => set('business_name', e.target.value)} autoFocus />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-500">Industry</label>
+              <select className={sc} value={form.industry} onChange={e => set('industry', e.target.value)}>
+                <option value="">— Select —</option>
+                {INDUSTRIES.map(i => <option key={i} value={i}>{i.charAt(0).toUpperCase() + i.slice(1)}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-500">Website</label>
+              <input className={ic} value={form.website_url} onChange={e => set('website_url', e.target.value)} placeholder="https://..." />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-500">Address</label>
+            <input className={ic} value={form.address} onChange={e => set('address', e.target.value)} />
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-500">City</label>
+              <input className={ic} value={form.city} onChange={e => set('city', e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-500">State</label>
+              <input className={ic} value={form.state} onChange={e => set('state', e.target.value)} maxLength={2} placeholder="CA" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-500">ZIP</label>
+              <input className={ic} value={form.zip} onChange={e => set('zip', e.target.value)} maxLength={10} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-500">Owner Name</label>
+              <input className={ic} value={form.owner_name} onChange={e => set('owner_name', e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-500">Owner Email</label>
+              <input className={ic} type="email" value={form.owner_email} onChange={e => set('owner_email', e.target.value)} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-500">Owner Phone</label>
+              <input className={ic} value={form.owner_phone} onChange={e => set('owner_phone', e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-500">Business Phone</label>
+              <input className={ic} value={form.business_phone} onChange={e => set('business_phone', e.target.value)} />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-500">Business Email</label>
+            <input className={ic} type="email" value={form.business_email} onChange={e => set('business_email', e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-500">Notes</label>
+            <textarea className={cn(ic, 'resize-y')} rows={3} value={form.notes} onChange={e => set('notes', e.target.value)} />
+          </div>
+          {error && <p className="text-sm text-red-500">{error}</p>}
+        </div>
+        <div className="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-3 flex justify-end gap-2 rounded-b-2xl">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700">Cancel</button>
+          <button onClick={save} disabled={saving}
+            className="px-4 py-2 bg-[var(--teal)] text-white text-sm font-semibold rounded-lg hover:bg-[var(--teal-dark)] transition-colors disabled:opacity-50">
+            {saving ? 'Creating…' : 'Create Prospect'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function ProspectTable() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -64,6 +183,9 @@ export function ProspectTable() {
   const [stage, setStage] = useState(searchParams.get('stage') ?? '')
   const [industry, setIndustry] = useState(searchParams.get('industry') ?? '')
   const [page, setPage] = useState(1)
+
+  const queryClient = useQueryClient()
+  const [showAdd, setShowAdd] = useState(false)
 
   // Debounced search value
   const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('search') ?? '')
@@ -138,9 +260,17 @@ export function ProspectTable() {
           ))}
         </select>
 
-        <span className="text-slate-400 text-sm ml-auto">
-          {total.toLocaleString()} prospects
-        </span>
+        <div className="flex items-center gap-3 ml-auto">
+          <span className="text-slate-400 text-sm">
+            {total.toLocaleString()} prospects
+          </span>
+          <button
+            onClick={() => setShowAdd(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-[var(--teal)] text-white text-xs font-semibold rounded-lg hover:bg-[var(--teal-dark)] transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add Prospect
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -250,6 +380,18 @@ export function ProspectTable() {
           </button>
         </div>
       </div>
+
+      {/* Add Prospect Modal */}
+      {showAdd && (
+        <AddProspectModal
+          onClose={() => setShowAdd(false)}
+          onCreated={(id) => {
+            setShowAdd(false)
+            queryClient.invalidateQueries({ queryKey: ['prospects'] })
+            router.push(`/admin/prospects/${id}`)
+          }}
+        />
+      )}
     </div>
   )
 }

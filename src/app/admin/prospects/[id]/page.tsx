@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Share2, Copy, Check, Download, Pencil } from 'lucide-react'
+import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Share2, Copy, Check, Download, Pencil, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { ProspectScoreBadge, TierBadge } from '@/components/admin/prospect-score-badge'
 import { ProspectEditModal } from '@/components/admin/prospect-edit-modal'
@@ -95,8 +95,24 @@ export default function ProspectDetailPage() {
     },
   })
 
-  // Edit modal state
+  // Edit modal + delete state
   const [showEdit, setShowEdit] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/admin/prospects', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      if (!res.ok) throw new Error('Failed to delete')
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prospects-all'] })
+      router.push('/admin/prospects')
+    },
+  })
 
   // Activity form state
   const [newActivityType, setNewActivityType] = useState('note')
@@ -234,6 +250,25 @@ export default function ProspectDetailPage() {
               <Download className="w-3.5 h-3.5" />
               Profile.md
             </a>
+
+            {/* Delete */}
+            {!confirmDelete ? (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="inline-flex items-center h-9 px-2.5 rounded-lg border border-red-200 bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+                title="Delete prospect"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            ) : (
+              <button
+                onClick={() => deleteMutation.mutate()}
+                disabled={deleteMutation.isPending}
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-red-300 bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-colors disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? 'Deleting…' : 'Confirm Delete'}
+              </button>
+            )}
           </div>
         </div>
       </div>

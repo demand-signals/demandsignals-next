@@ -108,3 +108,20 @@ export async function PATCH(request: NextRequest) {
 
   return NextResponse.json({ data })
 }
+
+export async function DELETE(request: NextRequest) {
+  const auth = await requireAdmin(request)
+  if ('error' in auth) return auth.error
+
+  const { id } = await request.json()
+  if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
+
+  // Delete related records first
+  await supabaseAdmin.from('activities').delete().eq('prospect_id', id)
+  await supabaseAdmin.from('demos').delete().eq('prospect_id', id)
+  await supabaseAdmin.from('deals').delete().eq('prospect_id', id)
+
+  const { error } = await supabaseAdmin.from('prospects').delete().eq('id', id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
