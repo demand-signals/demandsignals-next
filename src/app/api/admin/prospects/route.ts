@@ -78,10 +78,10 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'id is required' }, { status: 400 })
   }
 
-  // Fetch current prospect to check for stage change
+  // Fetch current prospect to diff changes
   const { data: current } = await supabaseAdmin
     .from('prospects')
-    .select('stage')
+    .select('*')
     .eq('id', id)
     .single()
 
@@ -96,14 +96,47 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Log stage change if stage changed
-  if (current && updates.stage && current.stage !== updates.stage) {
-    await supabaseAdmin.from('activities').insert({
-      prospect_id: id,
-      type: 'stage_change',
-      subject: `Stage changed: ${current.stage} → ${updates.stage}`,
-      created_by: auth.admin.id,
-    })
+  // Log ALL field changes as activities
+  if (current) {
+    const changes: string[] = []
+    const skipFields = new Set(['id', 'created_at', 'updated_at', 'prospect_score', 'score_factors', 'research_data'])
+
+    for (const [key, newVal] of Object.entries(updates)) {
+      if (skipFields.has(key)) continue
+      const oldVal = (current as any)[key]
+
+      // Normalize for comparison
+      const oldStr = oldVal == null ? '' : (Array.isArray(oldVal) ? oldVal.join(', ') : String(oldVal))
+      const newStr = newVal == null ? '' : (Array.isArray(newVal) ? newVal.join(', ') : String(newVal))
+
+      if (oldStr !== newStr) {
+        const label = key.replace(/_/g, ' ')
+        if (!oldStr && newStr) {
+          changes.push(`Added ${label}: ${newStr}`)
+        } else if (oldStr && !newStr) {
+          changes.push(`Cleared ${label} (was: ${oldStr})`)
+        } else {
+          changes.push(`${label}: ${oldStr} → ${newStr}`)
+        }
+      }
+    }
+
+    if (changes.length > 0) {
+      // Determine activity type
+      const hasStageChange = current.stage !== updates.stage && updates.stage
+      const activityType = hasStageChange ? 'stage_change' : 'update'
+      const subject = hasStageChange
+        ? `Stage changed: ${current.stage} → ${updates.stage}`
+        : `Updated ${changes.length} field${changes.length > 1 ? 's' : ''}`
+
+      await supabaseAdmin.from('activities').insert({
+        prospect_id: id,
+        type: activityType,
+        subject,
+        body: changes.join('\n'),
+        created_by: auth.admin.id,
+      })
+    }
   }
 
   return NextResponse.json({ data })
