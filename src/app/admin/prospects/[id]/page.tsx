@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Share2, Copy, Check, Download } from 'lucide-react'
+import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Share2, Copy, Check, Download, Pencil } from 'lucide-react'
 import Link from 'next/link'
 import { ProspectScoreBadge, TierBadge } from '@/components/admin/prospect-score-badge'
+import { ProspectEditModal } from '@/components/admin/prospect-edit-modal'
 import { ActivityTimeline } from '@/components/admin/activity-timeline'
 import { ProspectMap } from '@/components/admin/prospect-map'
 import { STAGES, STAGE_LABELS } from '@/types/database'
@@ -93,6 +94,9 @@ export default function ProspectDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['activities', id] })
     },
   })
+
+  // Edit modal state
+  const [showEdit, setShowEdit] = useState(false)
 
   // Activity form state
   const [newActivityType, setNewActivityType] = useState('note')
@@ -209,6 +213,16 @@ export default function ProspectDetailPage() {
                 </option>
               ))}
             </select>
+
+            {/* Edit */}
+            <button
+              onClick={() => setShowEdit(true)}
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-slate-300 bg-slate-500/10 backdrop-blur-sm text-slate-700 text-sm font-semibold hover:bg-slate-500/20 transition-colors"
+              title="Edit all prospect details"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Edit
+            </button>
 
             {/* Profile download */}
             <a
@@ -689,6 +703,11 @@ export default function ProspectDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {showEdit && (
+        <ProspectEditModal prospect={prospect} onClose={() => setShowEdit(false)} />
+      )}
     </div>
   )
 }
