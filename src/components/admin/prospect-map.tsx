@@ -75,13 +75,52 @@ export function ProspectMap({ address, businessName }: ProspectMapProps) {
 
     setLoading(true)
 
-    // Try address-only first (most reliable for Nominatim), then fall back to business name + city
-    const queries = [
-      address,
-      `${businessName}, ${address}`,
-    ]
+    // Deduplicate address parts — prospect.address may already contain city/state/zip
+    // which then gets appended again by the parent component
+    const parts = address.split(',').map(s => s.trim()).filter(Boolean)
+    const seen = new Set<string>()
+    const unique: string[] = []
+    for (const p of parts) {
+      const key = p.toLowerCase().replace(/\s+/g, ' ')
+      if (!seen.has(key)) {
+        seen.add(key)
+        unique.push(p)
+      }
+    }
+    const cleanAddress = unique.join(', ')
 
     async function tryGeocode() {
+      // Strategy 1: structured Nominatim query (most reliable)
+      // Parse out street vs city/state/zip
+      const streetMatch = cleanAddress.match(/^(.+?),\s*(.+?),\s*([A-Z]{2})\s*,?\s*(\d{5})?/)
+      if (streetMatch) {
+        try {
+          const params = new URLSearchParams({
+            format: 'json',
+            street: streetMatch[1],
+            city: streetMatch[2],
+            state: streetMatch[3],
+            country: 'us',
+            limit: '1',
+          })
+          if (streetMatch[4]) params.set('postalcode', streetMatch[4])
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?${params}`,
+            { headers: { 'User-Agent': 'DemandSignals-Admin/1.0' } }
+          )
+          const results = await res.json()
+          if (results.length > 0) {
+            setCoords({ lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) })
+            return
+          }
+        } catch { /* try next */ }
+      }
+
+      // Strategy 2: free-form query with deduplicated address
+      const queries = [
+        cleanAddress,
+        `${businessName}, ${cleanAddress}`,
+      ]
       for (const query of queries) {
         try {
           const res = await fetch(

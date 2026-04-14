@@ -173,14 +173,14 @@ export default function ProspectDetailPage() {
             {(() => {
               const s = prospect.prospect_score ?? 0
               const tempStyle = s >= 80
-                ? 'bg-red-500/10 border-red-300 text-red-700'
+                ? 'bg-emerald-500/10 border-emerald-300 text-emerald-700'
                 : s >= 65
-                ? 'bg-orange-500/10 border-orange-300 text-orange-700'
+                ? 'bg-green-500/10 border-green-300 text-green-700'
                 : s >= 50
                 ? 'bg-amber-500/10 border-amber-300 text-amber-700'
                 : s >= 35
-                ? 'bg-sky-500/10 border-sky-300 text-sky-700'
-                : 'bg-blue-500/10 border-blue-300 text-blue-700'
+                ? 'bg-orange-500/10 border-orange-300 text-orange-700'
+                : 'bg-red-500/10 border-red-300 text-red-700'
               const tierIcon = s >= 75 ? '♦' : s >= 60 ? '★' : s >= 40 ? '●' : '○'
               return (
                 <span className={cn(
