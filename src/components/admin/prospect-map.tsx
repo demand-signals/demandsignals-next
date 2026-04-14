@@ -17,13 +17,27 @@ function getGoogleMapsUrl(businessName: string, address: string | null) {
 function LeafletMap({ lat, lng, label }: { lat: number; lng: number; label: string }) {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<any>(null)
+  const [cssLoaded, setCssLoaded] = useState(false)
+
+  // Load Leaflet CSS before initializing the map
+  useEffect(() => {
+    if (document.querySelector('link[href*="leaflet@1.9.4"]')) {
+      setCssLoaded(true)
+      return
+    }
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+    link.onload = () => setCssLoaded(true)
+    document.head.appendChild(link)
+  }, [])
 
   useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current) return
+    if (!mapRef.current || mapInstanceRef.current || !cssLoaded) return
 
-    // Dynamic import to avoid SSR
     import('leaflet').then((L) => {
-      // Fix default marker icon (Leaflet + webpack issue)
+      if (!mapRef.current) return
+
       delete (L.Icon.Default.prototype as any)._getIconUrl
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -34,7 +48,7 @@ function LeafletMap({ lat, lng, label }: { lat: number; lng: number; label: stri
       const map = L.map(mapRef.current!, {
         scrollWheelZoom: false,
         zoomControl: true,
-      }).setView([lat, lng], 16)
+      }).setView([lat, lng], 15)
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap',
@@ -45,8 +59,10 @@ function LeafletMap({ lat, lng, label }: { lat: number; lng: number; label: stri
 
       mapInstanceRef.current = map
 
-      // Resize fix
+      // Multiple invalidateSize calls to handle various layout timing
       setTimeout(() => map.invalidateSize(), 100)
+      setTimeout(() => map.invalidateSize(), 500)
+      setTimeout(() => map.invalidateSize(), 1500)
     })
 
     return () => {
@@ -55,14 +71,9 @@ function LeafletMap({ lat, lng, label }: { lat: number; lng: number; label: stri
         mapInstanceRef.current = null
       }
     }
-  }, [lat, lng, label])
+  }, [lat, lng, label, cssLoaded])
 
-  return (
-    <>
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-      <div ref={mapRef} className="w-full h-full" />
-    </>
-  )
+  return <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 }
 
 export function ProspectMap({ address, businessName }: ProspectMapProps) {
