@@ -13,14 +13,14 @@ import type { Prospect, Demo, Activity } from '@/types/database'
 import { cn } from '@/lib/utils'
 
 const STAGE_BADGE_COLORS: Record<string, string> = {
-  researched: 'bg-slate-100 text-slate-500',
-  demo_built: 'bg-blue-100 text-blue-700',
-  outreach: 'bg-purple-100 text-purple-700',
-  engaged: 'bg-yellow-100 text-yellow-700',
-  meeting: 'bg-orange-100 text-orange-700',
-  proposal: 'bg-teal-100 text-teal-700',
-  won: 'bg-green-100 text-green-700',
-  lost: 'bg-red-100 text-red-700',
+  researched: 'bg-slate-500/10 border-slate-300 text-slate-600',
+  demo_built: 'bg-blue-500/10 border-blue-300 text-blue-700',
+  outreach: 'bg-purple-500/10 border-purple-300 text-purple-700',
+  engaged: 'bg-yellow-500/10 border-yellow-300 text-yellow-700',
+  meeting: 'bg-orange-500/10 border-orange-300 text-orange-700',
+  proposal: 'bg-teal-500/10 border-teal-300 text-teal-700',
+  won: 'bg-green-500/10 border-green-300 text-green-700',
+  lost: 'bg-red-500/10 border-red-300 text-red-700',
 }
 
 async function fetchAllProspects(): Promise<{ data: (Prospect & { demos?: Demo[] })[] }> {
@@ -168,16 +168,39 @@ export default function ProspectDetailPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <ProspectScoreBadge score={prospect.prospect_score} className="text-base px-3 py-1" />
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Score — temperature-coded */}
+            {(() => {
+              const s = prospect.prospect_score ?? 0
+              const tempStyle = s >= 80
+                ? 'bg-red-500/10 border-red-300 text-red-700'
+                : s >= 65
+                ? 'bg-orange-500/10 border-orange-300 text-orange-700'
+                : s >= 50
+                ? 'bg-amber-500/10 border-amber-300 text-amber-700'
+                : s >= 35
+                ? 'bg-sky-500/10 border-sky-300 text-sky-700'
+                : 'bg-blue-500/10 border-blue-300 text-blue-700'
+              const tierIcon = s >= 75 ? '♦' : s >= 60 ? '★' : s >= 40 ? '●' : '○'
+              return (
+                <span className={cn(
+                  'inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border backdrop-blur-sm text-sm font-bold font-mono',
+                  tempStyle,
+                )}>
+                  <span className="text-xs">{tierIcon}</span>
+                  {prospect.prospect_score ?? '--'}
+                </span>
+              )
+            })()}
 
+            {/* Stage selector */}
             <select
               value={prospect.stage}
               onChange={e => stageMutation.mutate(e.target.value)}
               disabled={stageMutation.isPending}
               className={cn(
-                'bg-white border border-slate-200 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[var(--teal)] appearance-none disabled:opacity-50',
-                STAGE_BADGE_COLORS[prospect.stage] ?? 'text-slate-500'
+                'h-9 px-3.5 rounded-lg border backdrop-blur-sm text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-[var(--teal)] appearance-none disabled:opacity-50 cursor-pointer',
+                STAGE_BADGE_COLORS[prospect.stage] ?? 'bg-slate-50 border-slate-200 text-slate-500'
               )}
             >
               {STAGES.map(s => (
@@ -187,10 +210,11 @@ export default function ProspectDetailPage() {
               ))}
             </select>
 
+            {/* Profile download */}
             <a
               href={`/api/admin/prospects/${id}/profile`}
               download
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 text-white text-xs font-medium rounded-lg hover:bg-slate-700 transition-colors"
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-slate-300 bg-slate-800/90 backdrop-blur-sm text-white text-sm font-semibold hover:bg-slate-700 transition-colors"
               title="Download prospect profile for demo generator"
             >
               <Download className="w-3.5 h-3.5" />
