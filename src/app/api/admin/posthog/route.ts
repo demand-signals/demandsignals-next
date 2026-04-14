@@ -82,7 +82,7 @@ async function getOverview(apiKey: string, projectId: string, from: string, to: 
 
 async function getRecordings(apiKey: string, projectId: string, limit = 20) {
   const data = await phFetch(
-    `/api/projects/${projectId}/session_recordings?limit=${limit}&order=-start_time`,
+    `/api/projects/${projectId}/session_recordings/?limit=${limit}&ordering=-start_time`,
     apiKey,
   )
 

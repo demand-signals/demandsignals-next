@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 // ─── Types ──────────────────────────────────────────────────
 
 type PostHogData = {
+  _partialErrors?: string[]
   overview: {
     totalEvents: number
     totalSessions: number
@@ -173,10 +174,6 @@ export function PostHogPanel() {
       if (!json) throw new Error('Empty response from PostHog API')
       if (json.configured === false) throw new Error('NOT_CONFIGURED:' + (json.detail || ''))
       if (json.error) throw new Error(json.error)
-      // Log partial errors for debugging but don't fail
-      if (json._partialErrors?.length) {
-        console.warn('[PostHog] Partial errors:', json._partialErrors)
-      }
       return json
     },
     retry: false,
@@ -208,6 +205,15 @@ export function PostHogPanel() {
 
   return (
     <div className="space-y-5">
+      {/* Partial errors warning */}
+      {data._partialErrors && data._partialErrors.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm">
+          <p className="font-semibold text-amber-700 mb-1">Some PostHog queries failed:</p>
+          {data._partialErrors.map((err, i) => (
+            <p key={i} className="text-amber-600 font-mono text-xs break-all">{err}</p>
+          ))}
+        </div>
+      )}
       {/* Overview stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
