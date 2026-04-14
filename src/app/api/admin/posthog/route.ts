@@ -59,8 +59,8 @@ async function getOverview(apiKey: string, projectId: string, from: string, to: 
     hogql(apiKey, projectId, `
       SELECT
         count() as total_events,
-        countDistinct(properties.$session_id) as total_sessions,
-        countDistinct(distinct_id) as unique_users
+        count(DISTINCT properties.$session_id) as total_sessions,
+        count(DISTINCT distinct_id) as unique_users
       FROM events
       WHERE timestamp >= toDateTime('${fromDt}') AND timestamp <= toDateTime('${toDt}')
     `),
