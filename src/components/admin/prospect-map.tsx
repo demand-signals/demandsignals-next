@@ -59,10 +59,15 @@ function LeafletMap({ lat, lng, label }: { lat: number; lng: number; label: stri
 
       mapInstanceRef.current = map
 
-      // Multiple invalidateSize calls to handle various layout timing
-      setTimeout(() => map.invalidateSize(), 100)
-      setTimeout(() => map.invalidateSize(), 500)
-      setTimeout(() => map.invalidateSize(), 1500)
+      // Use ResizeObserver to invalidate on any container size change
+      const ro = new ResizeObserver(() => map.invalidateSize())
+      ro.observe(mapRef.current!)
+
+      // Also invalidate after short delays for initial render
+      requestAnimationFrame(() => map.invalidateSize())
+      setTimeout(() => map.invalidateSize(), 300)
+
+      return () => ro.disconnect()
     })
 
     return () => {
@@ -73,7 +78,7 @@ function LeafletMap({ lat, lng, label }: { lat: number; lng: number; label: stri
     }
   }, [lat, lng, label, cssLoaded])
 
-  return <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+  return <div ref={mapRef} style={{ width: '100%', height: '220px' }} />
 }
 
 export function ProspectMap({ address, businessName }: ProspectMapProps) {

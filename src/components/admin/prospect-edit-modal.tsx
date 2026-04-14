@@ -126,6 +126,12 @@ export function ProspectEditModal({ prospect, onClose }: ProspectEditModalProps)
         score_factors: scoreFactors,
       }
 
+      // Auto-advance stage to demo_built if adding a new demo and still on researched
+      const hasNewDemo = demos.some(d => d._new && !d._deleted)
+      if (hasNewDemo && updates.stage === 'researched') {
+        updates.stage = 'demo_built'
+      }
+
       // Save prospect
       const prospectRes = await fetch('/api/admin/prospects', {
         method: 'PATCH',
