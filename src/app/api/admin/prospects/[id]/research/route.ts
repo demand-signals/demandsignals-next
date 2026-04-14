@@ -36,17 +36,38 @@ export async function POST(
     const existingData = prospect.research_data || {}
     const existingNotes = prospect.notes || ''
 
+    // Use web search + web fetch tools for real research
+    const tools: any[] = [
+      {
+        type: 'web_search_20250305',
+        name: 'web_search',
+        max_uses: 10,
+      },
+    ]
+
+    // Add web_fetch if website URL is available
+    if (prospect.website_url) {
+      tools.push({
+        type: 'web_fetch_20250910',
+        name: 'web_fetch',
+        max_uses: 3,
+      })
+    }
+
     const msg = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
+      max_tokens: 16000,
+      tools,
       messages: [{
         role: 'user',
-        content: `You are a business intelligence researcher for a web agency CRM (Demand Signals). Conduct a comprehensive deep-dive on this prospect. Use everything you know about this business.
+        content: `You are a business intelligence researcher for a web agency CRM (Demand Signals). Conduct a comprehensive deep-dive on this prospect using web search.
 
-## PROSPECT
+CRITICAL: You MUST use the web_search tool to look up real information about this business. Search for their website, reviews, social media profiles, and any other relevant data. Do NOT guess or hallucinate — only report what you actually find via search.
+
+## VERIFIED PROSPECT DATA (TRUST THIS — DO NOT OVERRIDE)
 - Business Name: ${prospect.business_name}
 - Industry: ${prospect.industry || 'unknown'}
-- City: ${prospect.city || 'unknown'}, ${prospect.state || 'CA'}
+- **CONFIRMED Location: ${prospect.city || 'unknown'}, ${prospect.state || 'CA'}** (this is their REAL location — do not change it)
 - Address: ${prospect.address || 'unknown'}
 - ZIP: ${prospect.zip || 'unknown'}
 - Website: ${prospect.website_url || 'unknown'}
@@ -55,7 +76,17 @@ export async function POST(
 - Current Yelp Rating: ${prospect.yelp_rating ?? 'unknown'}
 - Current Yelp Reviews: ${prospect.yelp_review_count ?? 'unknown'}
 - Existing Notes: ${existingNotes || 'none'}
-- Existing Research: ${JSON.stringify(existingData).slice(0, 500)}
+
+## RESEARCH INSTRUCTIONS
+1. Search for "${prospect.business_name}" in ${prospect.city || 'their city'}, ${prospect.state || 'CA'}
+2. ${prospect.website_url ? `Fetch and analyze their website at ${prospect.website_url}` : 'Search for their website'}
+3. Search for their Google Business profile and reviews
+4. Search for their Yelp profile and reviews
+5. Search for their social media profiles (Facebook, Instagram, LinkedIn, etc.)
+6. Search for industry-specific review platforms (${prospect.industry === 'dental' || prospect.industry === 'medical' ? 'Healthgrades, Zocdoc, Vitals' : prospect.industry === 'legal' ? 'Avvo, Martindale-Hubbell' : prospect.industry === 'contractor' || prospect.industry === 'hvac' || prospect.industry === 'plumbing' ? 'HomeAdvisor, Angi, BBB, Houzz' : 'BBB, industry directories'})
+7. Search for competitors in their area
+
+After completing your research, provide your findings.
 
 ## RETURN FORMAT
 Return ONLY a JSON object (no markdown, no explanation) with these fields:
@@ -133,21 +164,32 @@ Return ONLY a JSON object (no markdown, no explanation) with these fields:
   "site_quality_score": number // 0-100, lower = worse site = better prospect for us
 }
 
-Be thorough. For a ${prospect.industry || 'unknown'} business in ${prospect.city || 'the area'}, consider industry-specific review platforms (Healthgrades for medical, Avvo for legal, HomeAdvisor/Angi for contractors, etc.).
-
-If you don't know something for certain, make your best educated assessment based on the industry, location, and business type. Mark uncertain values with reasonable estimates rather than null — a rough estimate is more useful than no data.`,
+IMPORTANT REMINDERS:
+- The business is located in **${prospect.city || 'unknown'}, ${prospect.state || 'CA'}** — do NOT confuse with businesses in other locations
+- Only report facts you verified through search. Use null for things you couldn't find.
+- If you find conflicting information, note it in the executive_summary`,
       }],
     })
 
-    const textContent = msg.content.find(c => c.type === 'text')
-    if (!textContent?.text) {
-      return NextResponse.json({ error: 'No response from Claude' }, { status: 500 })
+    // Server-side tools (web_search, web_fetch) are executed by the API itself.
+    // The response contains search results inline + text output.
+    // Extract all text blocks from the response.
+    const allText = msg.content
+      .filter((b: any) => b.type === 'text')
+      .map((b: any) => b.text)
+      .join('\n')
+
+    if (!allText) {
+      return NextResponse.json({ error: 'No text response from research' }, { status: 500 })
     }
 
-    // Parse Claude's research
+    // Parse Claude's research — find JSON in the response
     let research: Record<string, any>
     try {
-      const cleaned = textContent.text
+      // Try to extract JSON from the response (may be wrapped in markdown code blocks or explanation text)
+      const jsonMatch = allText.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) throw new Error('No JSON found in response')
+      const cleaned = jsonMatch[0]
         .replace(/```json?\n?/g, '')
         .replace(/```/g, '')
         .trim()
@@ -155,7 +197,7 @@ If you don't know something for certain, make your best educated assessment base
     } catch (e) {
       return NextResponse.json({
         error: 'Failed to parse research response',
-        raw: textContent.text.slice(0, 500),
+        raw: allText.slice(0, 500),
       }, { status: 500 })
     }
 
