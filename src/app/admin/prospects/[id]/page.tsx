@@ -214,7 +214,7 @@ export default function ProspectDetailPage() {
             <a
               href={`/api/admin/prospects/${id}/profile`}
               download
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-slate-300 bg-slate-800/90 backdrop-blur-sm text-white text-sm font-semibold hover:bg-slate-700 transition-colors"
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-slate-300 bg-slate-500/10 backdrop-blur-sm text-slate-700 text-sm font-semibold hover:bg-slate-500/20 transition-colors"
               title="Download prospect profile for demo generator"
             >
               <Download className="w-3.5 h-3.5" />
