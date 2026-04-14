@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Share2, Copy, Check, Download, Pencil, Trash2 } from 'lucide-react'
+import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Share2, Copy, Check, Download, Pencil, Trash2, Search, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { ProspectScoreBadge, TierBadge } from '@/components/admin/prospect-score-badge'
 import { ProspectEditModal } from '@/components/admin/prospect-edit-modal'
@@ -89,6 +89,25 @@ export default function ProspectDetailPage() {
 
   const stageMutation = useMutation({
     mutationFn: (stage: string) => patchProspectStage(id, stage),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prospects-all'] })
+      queryClient.invalidateQueries({ queryKey: ['activities', id] })
+    },
+  })
+
+  // Research deep-dive
+  const researchMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/admin/prospects/${id}/research`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Research failed')
+      }
+      return res.json()
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prospects-all'] })
       queryClient.invalidateQueries({ queryKey: ['activities', id] })
@@ -230,6 +249,30 @@ export default function ProspectDetailPage() {
               ))}
             </select>
 
+            {/* Deep Dive Research */}
+            <button
+              onClick={() => researchMutation.mutate()}
+              disabled={researchMutation.isPending}
+              className={cn(
+                'inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border backdrop-blur-sm text-sm font-semibold transition-colors',
+                researchMutation.isPending
+                  ? 'border-purple-300 bg-purple-500/10 text-purple-600 cursor-wait'
+                  : researchMutation.isSuccess
+                  ? 'border-green-300 bg-green-500/10 text-green-700'
+                  : 'border-purple-300 bg-purple-500/10 text-purple-700 hover:bg-purple-500/20'
+              )}
+              title="AI deep-dive: research reviews, socials, website, competitors, and score"
+            >
+              {researchMutation.isPending ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : researchMutation.isSuccess ? (
+                <Check className="w-3.5 h-3.5" />
+              ) : (
+                <Search className="w-3.5 h-3.5" />
+              )}
+              {researchMutation.isPending ? 'Researching…' : researchMutation.isSuccess ? `Done (${researchMutation.data?.score})` : 'Research'}
+            </button>
+
             {/* Edit */}
             <button
               onClick={() => setShowEdit(true)}
@@ -272,6 +315,39 @@ export default function ProspectDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Research result banner */}
+      {researchMutation.isSuccess && researchMutation.data && (
+        <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <Search className="w-4 h-4 text-purple-600" />
+            <span className="text-sm font-semibold text-purple-800">Deep Dive Complete</span>
+            <span className="text-xs text-purple-500 ml-auto">Score: {researchMutation.data.score} ({researchMutation.data.tier})</span>
+          </div>
+          {researchMutation.data.executive_summary && (
+            <p className="text-sm text-purple-700 leading-relaxed">{researchMutation.data.executive_summary}</p>
+          )}
+          <div className="flex flex-wrap gap-3 text-xs text-purple-600">
+            {researchMutation.data.deal_estimate && <span>Deal: {researchMutation.data.deal_estimate}</span>}
+            {researchMutation.data.urgency && <span>Urgency: {researchMutation.data.urgency}</span>}
+            {researchMutation.data.opportunities?.length > 0 && (
+              <span>{researchMutation.data.opportunities.length} opportunities</span>
+            )}
+          </div>
+          {researchMutation.data.pitch_angle && (
+            <div className="pt-2 border-t border-purple-200">
+              <span className="text-[0.65rem] font-semibold text-purple-500 uppercase tracking-wider">Pitch</span>
+              <p className="text-sm text-purple-800 mt-0.5">{researchMutation.data.pitch_angle}</p>
+            </div>
+          )}
+        </div>
+      )}
+      {researchMutation.isError && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+          <span className="text-sm text-red-700">{researchMutation.error?.message || 'Research failed'}</span>
+        </div>
+      )}
 
       {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
