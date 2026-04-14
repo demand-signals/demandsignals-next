@@ -15,6 +15,11 @@ function getConfig() {
   return { apiKey, projectId, error: null }
 }
 
+/** Convert ISO date string to HogQL-compatible format: '2026-04-07 00:00:00' */
+function toHogQLDate(iso: string): string {
+  return iso.replace('T', ' ').replace('Z', '')
+}
+
 async function phFetch(path: string, apiKey: string, init?: RequestInit) {
   const url = `${PH_HOST}${path}`
   let res: Response
@@ -47,6 +52,9 @@ async function hogql(apiKey: string, projectId: string, query: string) {
 // ─── Metric handlers ────────────────────────────────────────
 
 async function getOverview(apiKey: string, projectId: string, from: string, to: string) {
+  const fromDt = toHogQLDate(from)
+  const toDt = toHogQLDate(to)
+
   const [eventsRes, personsRes] = await Promise.all([
     hogql(apiKey, projectId, `
       SELECT
@@ -54,12 +62,12 @@ async function getOverview(apiKey: string, projectId: string, from: string, to: 
         countDistinct(properties.$session_id) as total_sessions,
         countDistinct(distinct_id) as unique_users
       FROM events
-      WHERE timestamp >= '${from}' AND timestamp <= '${to}'
+      WHERE timestamp >= toDateTime('${fromDt}') AND timestamp <= toDateTime('${toDt}')
     `),
     hogql(apiKey, projectId, `
       SELECT event, count() as count
       FROM events
-      WHERE timestamp >= '${from}' AND timestamp <= '${to}'
+      WHERE timestamp >= toDateTime('${fromDt}') AND timestamp <= toDateTime('${toDt}')
       GROUP BY event
       ORDER BY count DESC
       LIMIT 15
@@ -82,7 +90,7 @@ async function getOverview(apiKey: string, projectId: string, from: string, to: 
 
 async function getRecordings(apiKey: string, projectId: string, limit = 20) {
   const data = await phFetch(
-    `/api/projects/${projectId}/session_recordings/?limit=${limit}&ordering=-start_time`,
+    `/api/projects/${projectId}/session_recordings/?limit=${limit}`,
     apiKey,
   )
 
@@ -124,6 +132,9 @@ async function getRecentEvents(apiKey: string, projectId: string, limit = 30) {
 }
 
 async function getWebVitals(apiKey: string, projectId: string, from: string, to: string) {
+  const fromDt = toHogQLDate(from)
+  const toDt = toHogQLDate(to)
+
   const res = await hogql(apiKey, projectId, `
     SELECT
       properties.$web_vitals_LCP_value as lcp,
@@ -134,7 +145,7 @@ async function getWebVitals(apiKey: string, projectId: string, from: string, to:
       timestamp
     FROM events
     WHERE event = '$web_vitals'
-      AND timestamp >= '${from}' AND timestamp <= '${to}'
+      AND timestamp >= toDateTime('${fromDt}') AND timestamp <= toDateTime('${toDt}')
     ORDER BY timestamp DESC
     LIMIT 200
   `)
@@ -189,7 +200,6 @@ export async function GET(request: NextRequest) {
   try {
     switch (metric) {
       case 'test': {
-        // Simple connectivity test — just hit one lightweight endpoint
         try {
           const testRes = await phFetch(`/api/projects/${projectId}/`, apiKey)
           return NextResponse.json({
@@ -216,7 +226,6 @@ export async function GET(request: NextRequest) {
       case 'web-vitals':
         return NextResponse.json(await getWebVitals(apiKey, projectId, fromISO, toISO))
       case 'all': {
-        // Run all 4 independently — if one fails, return what we can
         const [overviewResult, recordingsResult, eventsResult, vitalsResult] = await Promise.allSettled([
           getOverview(apiKey, projectId, fromISO, toISO),
           getRecordings(apiKey, projectId),
@@ -240,7 +249,6 @@ export async function GET(request: NextRequest) {
           ? vitalsResult.value
           : { lcp: null, fid: null, cls: null, inp: null, sampleCount: 0 }
 
-        // Collect any partial errors for debugging
         const errors = [overviewResult, recordingsResult, eventsResult, vitalsResult]
           .filter(r => r.status === 'rejected')
           .map((r: any) => r.reason?.message)
