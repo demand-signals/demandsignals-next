@@ -170,6 +170,7 @@ export function ArcCardGame() {
   }, [])
 
   if (pathname === '/spacegame') return null
+  if (pathname?.startsWith('/admin')) return null
 
   return (
     <section style={{

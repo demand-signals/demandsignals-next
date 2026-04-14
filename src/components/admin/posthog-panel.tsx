@@ -173,6 +173,10 @@ export function PostHogPanel() {
       if (!json) throw new Error('Empty response from PostHog API')
       if (json.configured === false) throw new Error('NOT_CONFIGURED:' + (json.detail || ''))
       if (json.error) throw new Error(json.error)
+      // Log partial errors for debugging but don't fail
+      if (json._partialErrors?.length) {
+        console.warn('[PostHog] Partial errors:', json._partialErrors)
+      }
       return json
     },
     retry: false,
@@ -188,8 +192,14 @@ export function PostHogPanel() {
 
   if (error || !data) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-600">
-        Failed to load PostHog data: {error?.message || 'Unknown error'}
+      <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-600 space-y-2">
+        <p className="font-semibold">Failed to load PostHog data</p>
+        <p className="font-mono text-xs break-all">{error?.message || 'Unknown error'}</p>
+        <p className="text-xs text-red-400">
+          Try: <a href="/api/admin/posthog?metric=test" target="_blank" className="underline">test connection</a>
+          {' | '}
+          <a href="/api/admin/posthog?metric=all" target="_blank" className="underline">raw API response</a>
+        </p>
       </div>
     )
   }
