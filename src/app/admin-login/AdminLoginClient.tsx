@@ -13,7 +13,7 @@ export default function AdminLoginClient() {
 
   useEffect(() => {
     if (searchParams.get('error') === 'unauthorized') {
-      setError('You are not authorized to access the admin panel. This attempt has been logged.')
+      setError('Your account is not authorized. This attempt has been logged.')
     }
   }, [searchParams])
 
@@ -42,8 +42,16 @@ export default function AdminLoginClient() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--dark)]">
       <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-center">Demand Signals Admin</CardTitle>
+        <CardHeader className="text-center space-y-3 pb-2">
+          <img
+            src="https://demandsignals.us/assets/logos/dsig_logo_v2b.png"
+            alt="Demand Signals"
+            className="h-10 mx-auto"
+          />
+          <CardTitle className="text-xl">Client Portal</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Sign in to access your dashboard
+          </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button
@@ -76,7 +84,7 @@ export default function AdminLoginClient() {
             <p className="text-sm text-red-500 text-center">{error}</p>
           )}
           <p className="text-xs text-center text-muted-foreground">
-            Restricted to authorized admins only
+            Authorized accounts only
           </p>
         </CardContent>
       </Card>
