@@ -32,6 +32,12 @@ export const CHANGELOG_SOURCES: ChangelogSource[] = [
     type: 'html',
   },
   {
+    id: 'claude-code',
+    name: 'Claude Code',
+    url: 'https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md',
+    type: 'html',
+  },
+  {
     id: 'google-gemini',
     name: 'Google Gemini',
     url: 'https://ai.google.dev/gemini-api/docs/changelog',

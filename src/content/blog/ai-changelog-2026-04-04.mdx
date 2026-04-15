@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Saturday, April 4, 2026"
 date: "2026-04-04"
 author: "AI ChangeLog"
-excerpt: "Quiet day across the board — all the major AI platforms took Saturday off from launching new features. No urgent updates from OpenAI, Anthropic, Google, or DeepSeek yesterday."
+excerpt: "Daily AI platform changelog digest for Saturday, April 4, 2026."
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -12,20 +12,34 @@ infographic:
   headline: "AI Platform Updates"
   type: "stats"
   stats:
-    - { label: "Platforms Tracked", value: "5" }
-    - { label: "Updates Today", value: "0" }
-    - { label: "Sources Checked", value: "5/5" }
+    - { label: "Platforms Tracked", value: "6" }
+    - { label: "Updates Today", value: "2" }
+    - { label: "Sources Checked", value: "6/6" }
 ---
 
-# The AI ChangeLog - Sunday, April 5, 2026
+# The AI ChangeLog
 
-**TL;DR**
+## TL;DR
 
-Quiet day across the board — all the major AI platforms took Saturday off from launching new features. No urgent updates from OpenAI, Anthropic, Google, or DeepSeek yesterday.
+Saturday was a quiet day for AI models themselves, but Claude Code (Anthropic's developer tool) dropped a solid update with better AWS setup, cost tracking improvements, and lots of bug fixes. If you're a developer using Claude Code, this is worth updating for the smoother workflow.
 
-**The Bottom Line**
+## Claude Code (Anthropic)
 
-Nothing to act on today. All platforms appear to be in maintenance mode over the weekend. Check back tomorrow for fresh updates, or use today to catch up on any recent changes you might have missed from earlier in the week.
+**What changed:**
+- Added an interactive setup wizard for AWS Bedrock — now when you pick "3rd-party platform" during login, it walks you through connecting to AWS step by step
+- Pro users can now see detailed cost breakdowns by model and cache usage with the `/cost` command
+- Fixed a bunch of annoying bugs, including issues with subagents failing in tmux sessions and problems with extended thinking mode
+- Added a "force refresh" setting for enterprise users who need stricter security controls
+- Remote Control sessions now use your computer's name as a default prefix (like "myhost-graceful-unicorn" instead of just random words)
+- Removed the `/tag` and `/vim` commands to streamline the interface
+
+**Why you should care:** If you're using Claude Code for development work, the AWS setup wizard makes it way easier to connect to Bedrock if you want to use Claude through AWS instead of directly. The cost breakdown feature helps you track exactly how much you're spending on different models. Most of these changes are quality-of-life improvements that make the tool less frustrating to use day-to-day.
+
+This one's mainly for developers — skip if you're just using Claude through the web interface.
+
+## The Bottom Line
+
+Nothing urgent happened yesterday across the major AI platforms. If you're a developer using Claude Code, the update is worth grabbing for the improved AWS setup and bug fixes, but there's no rush. Everyone else can check back Monday for more interesting updates.
 
 ---
 

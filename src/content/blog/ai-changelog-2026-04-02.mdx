@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Thursday, April 2, 2026"
 date: "2026-04-02"
 author: "AI ChangeLog"
-excerpt: "Quiet day across the board — none of the major AI platforms pushed any significant updates yesterday. Google Gemini teased some upcoming features, but nothing launched that affects your business today"
+excerpt: "Daily AI platform changelog digest for Thursday, April 2, 2026."
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -12,24 +12,33 @@ infographic:
   headline: "AI Platform Updates"
   type: "stats"
   stats:
-    - { label: "Platforms Tracked", value: "5" }
-    - { label: "Updates Today", value: "1" }
-    - { label: "Sources Checked", value: "5/5" }
+    - { label: "Platforms Tracked", value: "6" }
+    - { label: "Updates Today", value: "2" }
+    - { label: "Sources Checked", value: "6/6" }
 ---
 
-**TL;DR**
-Quiet day across the board — none of the major AI platforms pushed any significant updates yesterday. Google Gemini teased some upcoming features, but nothing launched that affects your business today.
+# The AI ChangeLog
 
-## Google Gemini
+## TL;DR
+Claude Code got a bunch of useful improvements for developers yesterday — you can now pass bigger chunks of data between tools, and they fixed several annoying bugs that were breaking conversation history and keyboard shortcuts.
+
+## Claude Code (Anthropic)
 
 **What changed:**
-• Google's changelog mentions some upcoming models in development (Gemini 3, new image generation tools, and music generation features)
-• These appear to be preview announcements rather than actual releases
+- You can now pass much larger data (up to 500K characters) between AI tools without it getting cut off — great for things like database schemas
+- New setting to turn off automatic shell command execution if you want more control over what runs
+- Multi-line prompts now work properly in deep links (those `claude-cli://` URLs)
+- Plugins can now include their own executable files and run them directly
+- Fixed a bug where conversation history could get lost when resuming sessions
+- Fixed keyboard shortcuts (like cmd+delete) that weren't working in various terminal apps
+- Fixed issues with plan mode losing track of files after container restarts
+- Better guidance when using the `/claude-api` command for building AI agents
 
-**Why you should care:** These are future features, not available yet — so no immediate impact on your business.
+**Why you should care:**
+If you're using Claude Code for development work, these fixes make it way more reliable — no more losing your conversation history mid-project or dealing with broken keyboard shortcuts. The bigger data limit means AI tools can work with larger files without choking. If you're not coding with Claude Code, this one's not for you.
 
-**The Bottom Line**
-Nothing urgent today — all the major platforms took a breather. If you're waiting to try new AI tools or features, check back next week when things usually pick up again.
+## The Bottom Line
+If you're a developer using Claude Code, definitely update — the conversation history fix alone will save you from some real headaches. Everyone else can skip this one.
 
 ---
 

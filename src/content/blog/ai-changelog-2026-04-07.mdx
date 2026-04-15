@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Tuesday, April 7, 2026"
 date: "2026-04-07"
 author: "AI ChangeLog"
-excerpt: "Quiet day across the board. All the major AI platforms — OpenAI, Anthropic, Google, and DeepSeek — either had no updates yesterday or their changelog pages weren't working properly."
+excerpt: "Claude Code got a significant update with better defaults, more flexible login options including Amazon Bedrock support, and lots of bug fixes especially around authentication and plugin handling."
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -12,18 +12,31 @@ infographic:
   headline: "AI Platform Updates"
   type: "stats"
   stats:
-    - { label: "Platforms Tracked", value: "5" }
-    - { label: "Updates Today", value: "0" }
-    - { label: "Sources Checked", value: "5/5" }
+    - { label: "Platforms Tracked", value: "6" }
+    - { label: "Updates Today", value: "1" }
+    - { label: "Sources Checked", value: "6/6" }
 ---
 
 **TL;DR**
+Claude Code got a significant update with better defaults, more flexible login options including Amazon Bedrock support, and lots of bug fixes especially around authentication and plugin handling.
 
-Quiet day across the board. All the major AI platforms — OpenAI, Anthropic, Google, and DeepSeek — either had no updates yesterday or their changelog pages weren't working properly.
+## Claude Code (Anthropic)
 
-## The Bottom Line
+**What changed:**
+• Added support for Amazon Bedrock (activate with `CLAUDE_CODE_USE_MANTLE=1`)
+• Changed default effort level from medium to high for paid users — you can still control this with the `/effort` command  
+• Better Slack integration with cleaner channel displays and clickable links
+• New plugin skills now use their actual names instead of folder names, making things less confusing
+• Fixed a bunch of authentication issues, especially on Mac when your keychain is locked
+• Fixed scrolling problems in long coding sessions where you'd see repeated text or blank pages
+• Fixed hyperlinks opening twice when using certain terminals like VS Code
+• Many other small fixes for text display, cursor tracking, and file handling
 
-Nothing urgent today — check back tomorrow. Sometimes the AI world takes a breather, and yesterday was one of those days. If you're using any AI tools for your business, they're all running the same as they were on Monday.
+**Why you should care:** 
+If you use Claude Code for development work, the higher default effort level means better code quality out of the box. The authentication fixes solve annoying login problems that were silently failing. The plugin improvements make third-party tools more reliable. This one's mainly for developers who use Claude Code regularly.
+
+**The Bottom Line**
+If you're using Claude Code, update to v2.1.94 — the authentication fixes alone are worth it. The higher effort setting will give you better results by default, but you can always dial it back if needed. Nothing urgent if you're not experiencing issues, but it's a solid upgrade.
 
 ---
 
