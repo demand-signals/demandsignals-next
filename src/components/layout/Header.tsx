@@ -6,9 +6,9 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { NavDropdownPanel } from './NavDropdownPanel'
 import { MobileMenu } from './MobileMenu'
+import { createClient } from '@/lib/supabase/client'
 import {
   LOGO_URL,
-  BOOKING_URL,
   NAV_WEBSITES_APPS,
   NAV_DEMAND_GEN,
   NAV_CONTENT_SOCIAL,
@@ -34,10 +34,47 @@ export function Header() {
   const [open,       setOpen]       = useState<DropdownKey>(null)
   const [scrolled,   setScrolled]   = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [userName,   setUserName]   = useState<string | null>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const currentPath = usePathname()
   useEffect(() => { setOpen(null); setMobileOpen(false) }, [currentPath])
+
+  // Check auth state
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        // Extract first name from user metadata or email
+        const meta = user.user_metadata
+        const firstName = meta?.full_name?.split(' ')[0]
+          || meta?.name?.split(' ')[0]
+          || meta?.given_name
+          || user.email?.split('@')[0]
+          || 'Admin'
+        setUserName(firstName)
+      } else {
+        setUserName(null)
+      }
+    })
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const meta = session.user.user_metadata
+        const firstName = meta?.full_name?.split(' ')[0]
+          || meta?.name?.split(' ')[0]
+          || meta?.given_name
+          || session.user.email?.split('@')[0]
+          || 'Admin'
+        setUserName(firstName)
+      } else {
+        setUserName(null)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10)
@@ -107,17 +144,18 @@ export function Header() {
           </nav>
 
           <div className={styles.ctaGroup}>
-            <Link href="/admin-login" className={styles.btnOutline}>
-              Client Login
-            </Link>
-            <a
-              href={BOOKING_URL}
-              target="_blank"
-              rel="noopener"
-              className={styles.btnPrimary}
-            >
+            {userName ? (
+              <Link href="/admin" className={styles.btnOutline}>
+                {userName}
+              </Link>
+            ) : (
+              <Link href="/admin-login" className={styles.btnOutline}>
+                Client Login
+              </Link>
+            )}
+            <Link href="/contact" className={styles.btnPrimary}>
               Book a Call
-            </a>
+            </Link>
           </div>
         </div>
 

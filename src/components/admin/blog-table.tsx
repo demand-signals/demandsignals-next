@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, ChevronLeft, ChevronRight, ExternalLink, FileText, Star, Tag, Calendar } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, ExternalLink, FileText, Star, Tag, Calendar, Send } from 'lucide-react'
 import { StatCard } from './stat-card'
+import { SyndicationModal } from './syndication-modal'
 import { cn } from '@/lib/utils'
 
 const PAGE_SIZE = 25
@@ -73,6 +74,7 @@ export function BlogTable() {
   const [category, setCategory] = useState('')
   const [featured, setFeatured] = useState('')
   const [page, setPage] = useState(1)
+  const [syndicatePost, setSyndicatePost] = useState<{ slug: string; title: string } | null>(null)
 
   function handleSearchChange(val: string) {
     setSearch(val)
@@ -200,6 +202,13 @@ export function BlogTable() {
                       >
                         Feed
                       </a>
+                      <button
+                        onClick={() => setSyndicatePost({ slug: post.slug, title: post.title })}
+                        className="flex items-center gap-1 text-xs text-orange-500 hover:text-orange-700 transition-colors"
+                        title="Syndicate to external platforms"
+                      >
+                        <Send className="w-3 h-3" /> Syndicate
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -229,6 +238,15 @@ export function BlogTable() {
           </button>
         </div>
       </div>
+
+      {/* Syndication Modal */}
+      {syndicatePost && (
+        <SyndicationModal
+          slug={syndicatePost.slug}
+          title={syndicatePost.title}
+          onClose={() => setSyndicatePost(null)}
+        />
+      )}
     </div>
   )
 }
