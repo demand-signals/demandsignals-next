@@ -81,9 +81,18 @@ export async function GET(request: NextRequest) {
     console.log(`[changelog] Fetched ${successCount}/${changelogs.length} sources`)
 
     // 2. Build prompt for Claude
+    // The post covers YESTERDAY's changes (cron runs in the morning, post is about prior day)
     const today = new Date()
-    const dateStr = today.toISOString().split('T')[0]
-    const displayDate = today.toLocaleDateString('en-US', {
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    const dateStr = yesterday.toISOString().split('T')[0]
+    const displayDate = yesterday.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+    const todayDisplay = today.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -108,22 +117,32 @@ export async function GET(request: NextRequest) {
       messages: [
         {
           role: 'user',
-          content: `You are a tech journalist writing "The AI ChangeLog" — a daily digest of what changed across major AI platforms. Your audience is business owners and developers who need to know what's new without reading raw documentation.
+          content: `You are writing "The AI ChangeLog" — a daily digest that makes AI platform updates understandable for regular business owners. Think "AI for Dummies" — no jargon, no buzzwords. Explain things the way you'd explain them to a smart friend who doesn't work in tech.
 
-Today's date: ${displayDate}
+This post covers changes from YESTERDAY: ${displayDate}
+Today (when this post goes live): ${todayDisplay}
 
-Below are the raw changelog/docs pages scraped from each platform. Extract ONLY changes from the last 7 days (or the most recent entries if dates aren't clear). If a platform has no recent changes, say "No new changes this week."
+Below are the raw changelog/docs pages scraped from each platform. Focus on changes from ${displayDate} or the most recent entries. If a platform had no changes yesterday, skip it entirely — don't mention it.
 
 Write the blog post body in markdown (NOT MDX — no imports, no JSX). Structure:
 
-1. **TL;DR** — 2-3 sentence summary of the most important changes across all platforms
-2. For each platform that has changes, write a section with:
-   - H2 heading with platform name
-   - Bullet points of what changed, in plain English
-   - Why it matters (one sentence per change)
-3. **What This Means for Business** — 2-3 sentences on practical implications
+1. **TL;DR** — 2-3 sentences. What's the ONE thing a business owner should know today? Use simple language. "OpenAI made their cheapest model smarter" not "GPT-4o-mini received enhanced reasoning capabilities."
 
-Keep it concise, opinionated, and useful. No filler. No hype. If a change is minor, say so. If it's a big deal, explain why.
+2. For each platform that had changes yesterday, write a section with:
+   - H2 heading with platform name (e.g., "## OpenAI", "## Anthropic / Claude")
+   - **What changed:** bullet points in plain English. Imagine explaining to someone who just learned what ChatGPT is.
+   - **Why you should care:** one sentence per change explaining the real-world impact. "This means your customer service chatbot will give better answers" not "Enhanced model performance metrics."
+   - If a change is tiny or only affects developers, say so: "This one's mainly for developers — skip if that's not you."
+
+3. **The Bottom Line** — 2-3 sentences on what a business owner should actually DO (or not do) based on today's changes. Be specific: "If you use ChatGPT for customer emails, the new model is worth switching to" or "Nothing urgent today — check back tomorrow."
+
+Rules:
+- Write like you're texting a friend, not writing a research paper
+- If nothing significant changed, say "Quiet day across the board" and keep it short
+- Avoid: "leveraging", "capabilities", "paradigm", "ecosystem", "scalable", "cutting-edge"
+- Use: "works better", "costs less", "new feature", "fixed a bug", "now you can..."
+- If something is genuinely exciting, it's OK to show enthusiasm
+- If something is boring, say it's boring
 
 Do NOT include frontmatter — I'll add that separately.
 Do NOT wrap in code fences.
@@ -151,7 +170,7 @@ ${sourceContent}`,
       : `Daily AI platform changelog digest for ${displayDate}.`
 
     const platformSections = blogContent.match(/^## .+/gm) || []
-    const platformCount = platformSections.filter(s => !s.includes('What This Means')).length
+    const platformCount = platformSections.filter(s => !s.includes('What This Means') && !s.includes('Bottom Line')).length
 
     const frontmatter = `---
 title: "${title}"

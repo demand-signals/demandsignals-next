@@ -5,6 +5,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   'search-updates': '#2563EB',
   'core-updates': '#DC2626',
   'ai-engineering': '#7C3AED',
+  'ai-changelog': '#F59E0B',
   'search-central': '#059669',
   'industry-trends': '#D97706',
   'how-to': '#0891B2',
@@ -15,6 +16,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   'search-updates': 'Search Updates',
   'core-updates': 'Core Updates',
   'ai-engineering': 'AI Engineering',
+  'ai-changelog': 'The AI ChangeLog',
   'search-central': 'Search Central',
   'industry-trends': 'Industry Trends',
   'how-to': 'How-To',
@@ -108,7 +110,7 @@ function InfographicPreview({ infographic, category }: { infographic: Infographi
 
 export default function BlogGrid({ posts, filter = 'all' }: { posts: Post[]; filter?: string }) {
   const filtered = filter === 'all' || filter === 'recent'
-    ? posts
+    ? posts.filter(p => p.category !== 'ai-changelog') // Exclude changelog from "all" — it has its own filter
     : posts.filter(p => p.category === filter)
 
   const sorted = filter === 'recent'

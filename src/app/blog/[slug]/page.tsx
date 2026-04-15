@@ -180,6 +180,71 @@ export default async function BlogPostPage({ params }: Props) {
         <a href={linkedInShareUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--teal)', textDecoration: 'none', fontWeight: 600 }}>LinkedIn</a>
       </div>
 
+      {/* Changelog day-by-day navigator */}
+      {post.category === 'ai-changelog' && (() => {
+        const changelogPosts = getPostsByContentCategory('ai-changelog')
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        const currentIndex = changelogPosts.findIndex(p => p.slug === post.slug)
+        const prev = currentIndex > 0 ? changelogPosts[currentIndex - 1] : null
+        const next = currentIndex < changelogPosts.length - 1 ? changelogPosts[currentIndex + 1] : null
+
+        return (
+          <section style={{ background: '#fffbeb', borderTop: '1px solid #fde68a', borderBottom: '1px solid #fde68a', padding: '24px' }}>
+            <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 }}>
+                <span style={{
+                  background: '#F59E0B20', color: '#D97706',
+                  padding: '3px 10px', borderRadius: 100,
+                  fontSize: '0.68rem', fontWeight: 700,
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                }}>
+                  The AI ChangeLog
+                </span>
+                <span style={{ color: '#92400e', fontSize: '0.82rem' }}>
+                  — Daily AI Platform Updates
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'stretch', gap: 16, maxWidth: 700, margin: '0 auto' }}>
+                {prev ? (
+                  <Link href={`/blog/${prev.slug}`} style={{
+                    flex: 1, padding: '14px 18px', background: '#fff', border: '1px solid #fde68a',
+                    borderRadius: 10, textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 4,
+                    transition: 'box-shadow 0.15s',
+                  }}>
+                    <span style={{ fontSize: '0.7rem', color: '#D97706', fontWeight: 600 }}>← Previous Day</span>
+                    <span style={{ fontSize: '0.82rem', color: 'var(--dark)', fontWeight: 700, lineHeight: 1.3 }}>
+                      {new Date(prev.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </span>
+                  </Link>
+                ) : <div style={{ flex: 1 }} />}
+
+                <Link href="/blog" style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '14px 20px', background: '#F59E0B', borderRadius: 10,
+                  color: '#fff', fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none',
+                  letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap',
+                }}>
+                  All Changelogs
+                </Link>
+
+                {next ? (
+                  <Link href={`/blog/${next.slug}`} style={{
+                    flex: 1, padding: '14px 18px', background: '#fff', border: '1px solid #fde68a',
+                    borderRadius: 10, textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 4,
+                    alignItems: 'flex-end', transition: 'box-shadow 0.15s',
+                  }}>
+                    <span style={{ fontSize: '0.7rem', color: '#D97706', fontWeight: 600 }}>Next Day →</span>
+                    <span style={{ fontSize: '0.82rem', color: 'var(--dark)', fontWeight: 700, lineHeight: 1.3 }}>
+                      {new Date(next.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </span>
+                  </Link>
+                ) : <div style={{ flex: 1 }} />}
+              </div>
+            </div>
+          </section>
+        )
+      })()}
+
       {/* Related posts in same category */}
       {post.category && (() => {
         const related = getPostsByContentCategory(post.category)
