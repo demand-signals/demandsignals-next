@@ -51,6 +51,15 @@ const TOOLS = [
     available: true,
   },
   {
+    icon: '🟢',
+    title: 'AI Status Dashboard',
+    description: 'Real-time unified status page for all major AI platforms — Claude, ChatGPT, Gemini, and DeepSeek. See who\'s down before you switch.',
+    href: '/tools/ai-status',
+    badge: 'Live',
+    badgeColor: '#22c55e',
+    available: true,
+  },
+  {
     icon: '🔗',
     title: 'Demand Links',
     description: 'Build a high-authority, AI-optimized local citation profile. Our agents identify the exact directories and link opportunities for your category.',
