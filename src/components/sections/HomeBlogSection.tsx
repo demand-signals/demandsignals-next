@@ -12,7 +12,9 @@ const CATEGORIES = [
 ]
 
 export default function HomeBlogSection() {
-  const posts = getAllPosts().slice(0, 12)
+  const allPosts = getAllPosts()
+  const posts = allPosts.filter(p => p.category !== 'ai-changelog').slice(0, 12)
+  const changelogPosts = allPosts.filter(p => p.category === 'ai-changelog').slice(0, 20)
   if (posts.length === 0) return null
 
   return (
@@ -207,6 +209,84 @@ export default function HomeBlogSection() {
           View All {posts.length < 12 ? posts.length : '140+' } Posts →
         </Link>
       </div>
+
+      {/* The AI ChangeLog — separate marquee */}
+      {changelogPosts.length > 0 && (
+        <div style={{ marginTop: 48, borderTop: '1px solid #e2e6ec', paddingTop: 32 }}>
+          <div style={{ padding: '0 24px', marginBottom: 20 }}>
+            <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{
+                  display: 'inline-block', background: '#F59E0B18', color: '#F59E0B',
+                  padding: '5px 14px', borderRadius: 100, fontSize: '0.72rem', fontWeight: 700,
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                }}>
+                  Daily
+                </span>
+                <h3 style={{ color: 'var(--dark)', fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>
+                  The AI ChangeLog
+                </h3>
+                <span style={{ color: 'var(--slate)', fontSize: '0.82rem' }}>
+                  — What changed across OpenAI, Anthropic, Gemini &amp; DeepSeek
+                </span>
+              </div>
+              <Link href="/blog" style={{
+                color: '#F59E0B', fontWeight: 600, fontSize: '0.82rem', textDecoration: 'none',
+              }}>
+                View all changelogs →
+              </Link>
+            </div>
+          </div>
+
+          <style>{`
+            .home-changelog-marquee { display: flex; gap: 14px; width: max-content; animation: changelogScroll 40s linear infinite; }
+            .home-changelog-marquee:hover { animation-play-state: paused; }
+            @keyframes changelogScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+          `}</style>
+
+          <div className="home-changelog-marquee">
+            {[...changelogPosts, ...changelogPosts].map((post, i) => (
+              <Link
+                key={`cl-${post.slug}-${i}`}
+                href={`/blog/${post.slug}`}
+                style={{
+                  background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10,
+                  padding: '14px 16px', minWidth: 280, maxWidth: 280, flexShrink: 0,
+                  display: 'flex', flexDirection: 'column', gap: 6, textDecoration: 'none',
+                  transition: 'box-shadow 0.2s',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{
+                    background: '#F59E0B20', color: '#D97706',
+                    padding: '2px 8px', borderRadius: 100,
+                    fontSize: '0.62rem', fontWeight: 700,
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                  }}>
+                    ChangeLog
+                  </span>
+                  <span style={{ fontSize: '0.68rem', color: '#9ca3af' }}>
+                    {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+                <h4 style={{
+                  color: 'var(--dark)', fontWeight: 700, fontSize: '0.85rem',
+                  lineHeight: 1.35, margin: 0,
+                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                }}>
+                  {post.title}
+                </h4>
+                <p style={{
+                  color: 'var(--slate)', fontSize: '0.76rem', lineHeight: 1.45, margin: 0,
+                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                }}>
+                  {post.excerpt}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   )
 }
