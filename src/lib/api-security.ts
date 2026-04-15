@@ -88,6 +88,16 @@ export function apiGuard(req: NextRequest): NextResponse | null {
   return null
 }
 
+// ── Admin API guard (origin + auth, for state-changing admin routes) ─────────
+// Use on POST/PATCH/DELETE admin endpoints for CSRF defense-in-depth
+export function adminOriginCheck(req: NextRequest): NextResponse | null {
+  if (req.method === 'GET') return null // GETs don't mutate, skip origin check
+  if (!isValidOrigin(req)) {
+    return NextResponse.json({ error: 'Forbidden — invalid origin' }, { status: 403 })
+  }
+  return null
+}
+
 // ── Safe error response ──────────────────────────────────────────────────────
 export function safeErrorResponse(routeName: string, err: unknown): NextResponse {
   const internal = err instanceof Error ? err.message : 'Unknown error'

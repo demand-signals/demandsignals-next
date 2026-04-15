@@ -79,11 +79,9 @@ export async function middleware(request: NextRequest) {
       .single()
 
     if (!admin) {
-      // User is authenticated but NOT an admin — sign them out and redirect
-      await supabase.auth.signOut()
-      const redirectUrl = new URL('/admin-login', request.url)
-      redirectUrl.searchParams.set('error', 'unauthorized')
-      return NextResponse.redirect(redirectUrl)
+      // User is authenticated but NOT an admin — redirect to deterrent page
+      // Don't sign out yet — the /unauthorized page needs the session to read their profile
+      return NextResponse.redirect(new URL('/unauthorized', request.url))
     }
 
     return response
