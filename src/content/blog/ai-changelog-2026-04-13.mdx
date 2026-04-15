@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Monday, April 13, 2026"
 date: "2026-04-13"
 author: "AI ChangeLog"
-excerpt: "Daily AI platform changelog digest for Monday, April 13, 2026."
+excerpt: "Claude can now jump between existing Git worktrees in your repository"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -13,31 +13,37 @@ infographic:
   type: "stats"
   stats:
     - { label: "Platforms Tracked", value: "6" }
-    - { label: "Updates Today", value: "2" }
+    - { label: "Updates Today", value: "1" }
     - { label: "Sources Checked", value: "6/6" }
 ---
 
-## TL;DR
+## Claude Code
+What's new from Anthropic's AI coding assistant
 
-Quiet day across the board — the only significant update came from Claude Code, which got a bunch of developer-friendly fixes and improvements. If you're not using AI for coding, skip today.
+🧠  
+**New · Worktree Tools**
+**Claude can now jump between existing Git worktrees in your repository**
+You can tell Claude to switch into a specific worktree you've already set up using the new path parameter. This makes it much easier to work with multiple branches or feature work at once.
 
-## Claude Code (Anthropic)
+🛠️  
+**New · Plugin Monitors**
+**Background monitoring for plugins that auto-start when you begin a session**
+If you've built plugins that need to watch for certain conditions, they can now run background monitors automatically. These kick in right when your session starts or when you invoke a skill.
 
-**What changed:**
-- Made switching between different code projects much easier with a new `path` parameter
-- Added background monitoring for plugins that can watch for issues automatically  
-- Made `/proactive` work the same as `/loop` (just different names for the same feature)
-- Fixed a bunch of annoying bugs like images disappearing from messages and screens going blank
-- Made error messages clearer when your internet connection acts up
-- Fixed copy-paste issues where spaces got messed up
-- Improved how it handles really long single lines of code (like minified files)
-- Added better cleanup of old project folders to save disk space
+🔄  
+**Improved · Loop Commands**
+**`/proactive` is now just another way to say `/loop`**
+Both commands do the same thing now, so use whichever feels more natural. This command lets Claude work continuously on tasks without waiting for you to prompt it each time.
 
-**Why you should care:** If you're using Claude Code for software development, this update makes it way more reliable and less buggy. The new monitoring features could catch coding issues before they become problems. If you're not a developer or don't use Claude Code, this one's entirely for developers — skip it.
+🔧  
+**Fixed · Bugs**
+**Better handling of network timeouts · Fixed image attachments getting lost · No more blank screens when typing long prompts**
+Several annoying issues are now resolved: Claude won't hang forever on slow API connections, images you attach while Claude is working won't disappear, and your screen won't go blank when your message wraps to multiple lines.
 
-## The Bottom Line
-
-Nothing urgent today unless you're actively coding with Claude Code, in which case the bug fixes will make your life easier. Everyone else can check back tomorrow — this was purely a developer tools update.
+⚠️  
+**Improved · Network Handling**
+**Clearer error messages and automatic retries when connections fail**
+Instead of showing a silent spinner when something goes wrong with the connection, you'll now get helpful retry messages immediately. Claude also gives up on stalled streams after 5 minutes instead of waiting forever.
 
 ---
 

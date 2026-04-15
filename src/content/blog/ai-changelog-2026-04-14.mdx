@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Tuesday, April 14, 2026"
 date: "2026-04-14"
 author: "AI ChangeLog"
-excerpt: "The biggest news is that Claude Code (Anthropic's developer tool) got a major update yesterday with smarter prompt caching and a new recap feature. OpenAI and Google both stayed quiet — no changes wor"
+excerpt: "Prompt caching now lasts an hour instead of 5 minutes (if you opt in)"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -17,27 +17,35 @@ infographic:
     - { label: "Sources Checked", value: "6/6" }
 ---
 
-**TL;DR**
+Quiet day across the board today. While Claude Code saw significant updates with new caching features and quality-of-life improvements, the major AI platforms — OpenAI, Anthropic's main API, Google Gemini, and DeepSeek — didn't release any notable changes on Tuesday, April 14, 2026.
 
-The biggest news is that Claude Code (Anthropic's developer tool) got a major update yesterday with smarter prompt caching and a new recap feature. OpenAI and Google both stayed quiet — no changes worth mentioning.
+## Claude Code
+Two feature-packed releases from Anthropic's coding assistant
 
-## Claude Code (Anthropic)
+⚡
+**New · Caching**
+**Prompt caching now lasts an hour instead of 5 minutes (if you opt in)**
+You can now set `ENABLE_PROMPT_CACHING_1H=true` to make your prompts cache for a full hour instead of the default 5 minutes. This means faster responses when you're working on the same project over longer periods, since Claude won't need to re-read your entire codebase as often.
 
-Two big updates dropped yesterday (v2.1.108 and v2.1.107):
+🧠
+**New · Memory**
+**Claude now remembers what you were doing when you come back**
+Added a recap feature that gives you context when you return to a previous coding session. It's like having Claude catch you up on where you left off in your project. You can manually trigger it with `/recap` or it'll happen automatically when appropriate.
 
-**What changed:**
-- **Smarter prompt caching:** New settings let you control how long your prompts stay cached (1 hour vs 5 minutes), which means faster responses and lower costs when you're working on the same project
-- **Recap feature:** When you come back to a coding session after a break, Claude Code now gives you a quick summary of what you were working on — like having a smart assistant catch you up
-- **Better session management:** The `/resume` command now defaults to showing projects from your current folder, and you get warnings before switching AI models mid-conversation
-- **Bug fixes galore:** Fixed issues with pasting code, terminal display problems, and session titles getting overwritten
+🛠️
+**New · Commands**
+**Claude can now find and use its own slash commands**
+The AI can now discover and run built-in commands like `/init`, `/review`, and `/security-review` on its own when it thinks they'd be helpful. It's like giving Claude access to its own toolkit without you having to remember all the commands.
 
-**Why you should care:** The prompt caching improvements will save you money if you're doing lots of back-and-forth coding with Claude. The recap feature is genuinely helpful if you jump between projects — no more "wait, what was I doing here?" moments.
+🔄
+**Improved · Navigation**
+**Better session picker shows your current project first**
+When you use `/resume` to return to a previous session, it now defaults to showing sessions from your current directory first. Hit `Ctrl+A` if you want to see sessions from all your other projects too.
 
-This one's mainly for developers who use Claude Code's command-line tool, but if you're building software with AI assistance, these are solid improvements.
-
-**The Bottom Line**
-
-If you use Claude Code for development work, update to the latest version — the prompt caching alone will save you time and money. For everyone else, it was a quiet day in AI land. Check back tomorrow for more updates.
+🔧
+**Fixed · Bugs**
+**Copy-paste works again · Better error messages · Memory improvements**
+Fixed pasting code in the login prompt, improved error messages to distinguish between rate limits and usage limits, and reduced memory usage when working with large files. Plus several other quality-of-life fixes for a smoother coding experience.
 
 ---
 

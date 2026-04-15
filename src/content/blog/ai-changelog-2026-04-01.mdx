@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Wednesday, April 1, 2026"
 date: "2026-04-01"
 author: "AI ChangeLog"
-excerpt: "OpenAI had no changes yesterday, Anthropic's web pages weren't updating, Google Gemini stayed quiet, and DeepSeek's news section wasn't working. But Anthropic's Claude Code (their AI coding assistant)"
+excerpt: "Claude Code now teaches itself to you with animated tutorials"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -17,26 +17,38 @@ infographic:
     - { label: "Sources Checked", value: "6/6" }
 ---
 
-**TL;DR**
-OpenAI had no changes yesterday, Anthropic's web pages weren't updating, Google Gemini stayed quiet, and DeepSeek's news section wasn't working. But Anthropic's Claude Code (their AI coding assistant) got two major updates — one added interactive lessons to help you learn the tool, and the other brought tons of performance improvements.
+## Claude Code
+What's new from Anthropic's AI coding assistant
 
-## Claude Code (Anthropic)
+⚡
+**New · Interactive learning**
+**Claude Code now teaches itself to you with animated tutorials**
+Hit `/powerup` to launch interactive lessons that walk you through Claude's features with actual demos. Finally, a way to learn all those keyboard shortcuts without reading documentation.
 
-**What changed:**
-• Added `/powerup` — interactive lessons that teach you how to use Claude Code with animated tutorials
-• Fixed the annoying bug where rate limit pop-ups would keep appearing over and over until your session crashed
-• Fixed several issues with resuming work sessions and file editing
-• Made the tool run much faster, especially for long coding conversations
-• Added better support for working offline when plugin updates fail
-• Fixed crashes when dealing with very large files (over 1GB)
-• Added a `/buddy` feature for April Fool's Day — a small creature that watches you code
-• Improved voice mode and push-to-talk functionality
-• Fixed tons of smaller bugs with file editing, permissions, and tool performance
+🛠️
+**New · Background jobs**
+**Pause mid-task and pick up where you left off across devices**
+New "defer" option lets you pause Claude when it wants to run a command, then resume later with `-p --resume`. Perfect when you need to switch contexts or review something before letting it proceed.
 
-**Why you should care:** If you're using Claude Code for programming work, these updates make it much more reliable and faster. The interactive lessons could help your team get up to speed quicker. The performance improvements mean less waiting around when working on big projects. This one's mainly for developers — skip if that's not you.
+🤖
+**New · Digital pet**
+**Your new coding companion has arrived (April Fools!)**
+Meet `/buddy` — a tiny creature that hatches and watches you code. It's completely useless but oddly satisfying to have around.
 
-**The Bottom Line**
-Quiet day across the board for the main AI models, but if your team uses Claude Code for development work, these updates are worth installing. The interactive tutorials and performance improvements should make your coding workflow smoother. Nothing urgent from the other platforms — check back tomorrow.
+🔧
+**Fixed · Bugs**
+**Squashed the rate limit dialog loop and Windows line ending issues**
+Fixed that annoying infinite loop where rate limit warnings would crash your session · Windows users no longer get doubled line breaks · Voice mode actually works on Windows now · Memory leaks in long JSON sessions are gone.
+
+⚠️
+**Improved · Security**
+**Tightened PowerShell protections and permission handling**
+Closed several PowerShell security bypasses including background job tricks and debugger hangs · DNS cache commands removed from auto-allow list for privacy · File permission checks now follow symlinks properly.
+
+🔄
+**Improved · Performance**
+**Faster loading and smoother scrolling in long conversations**
+Large conversations no longer slow down over time · Multi-project resume loads in parallel · New flicker-free rendering option with `CLAUDE_CODE_NO_FLICKER=1` · Better handling of huge files without crashes.
 
 ---
 

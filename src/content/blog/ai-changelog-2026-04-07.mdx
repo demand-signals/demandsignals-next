@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Tuesday, April 7, 2026"
 date: "2026-04-07"
 author: "AI ChangeLog"
-excerpt: "Claude Code got a significant update with better defaults, more flexible login options including Amazon Bedrock support, and lots of bug fixes especially around authentication and plugin handling."
+excerpt: "Claude Code now works with Amazon Bedrock via Mantle"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -17,26 +17,35 @@ infographic:
     - { label: "Sources Checked", value: "6/6" }
 ---
 
-**TL;DR**
-Claude Code got a significant update with better defaults, more flexible login options including Amazon Bedrock support, and lots of bug fixes especially around authentication and plugin handling.
+Looking at the changelogs provided, I can see changes from Claude Code (Anthropic's AI coding assistant) for Tuesday, April 7, 2026, but no changes from OpenAI, Anthropic models/API, Google Gemini, or DeepSeek on that specific date.
 
-## Claude Code (Anthropic)
+## Claude Code
+What's new from Anthropic's AI coding assistant
 
-**What changed:**
-• Added support for Amazon Bedrock (activate with `CLAUDE_CODE_USE_MANTLE=1`)
-• Changed default effort level from medium to high for paid users — you can still control this with the `/effort` command  
-• Better Slack integration with cleaner channel displays and clickable links
-• New plugin skills now use their actual names instead of folder names, making things less confusing
-• Fixed a bunch of authentication issues, especially on Mac when your keychain is locked
-• Fixed scrolling problems in long coding sessions where you'd see repeated text or blank pages
-• Fixed hyperlinks opening twice when using certain terminals like VS Code
-• Many other small fixes for text display, cursor tracking, and file handling
+🔑
+**New · Cloud provider**
+**Claude Code now works with Amazon Bedrock via Mantle**
+If you use AWS, you can now set `CLAUDE_CODE_USE_MANTLE=1` to route your requests through Amazon Bedrock. This gives you another option beyond the standard Claude API for accessing AI models.
 
-**Why you should care:** 
-If you use Claude Code for development work, the higher default effort level means better code quality out of the box. The authentication fixes solve annoying login problems that were silently failing. The plugin improvements make third-party tools more reliable. This one's mainly for developers who use Claude Code regularly.
+⚡
+**Improved · Performance**
+**Your coding sessions just got smarter by default**
+The default effort level jumped from "medium" to "high" for most users (API-key, Bedrock/Vertex/Foundry, Team, and Enterprise). This means Claude will work harder on your code by default, though you can still adjust it with the `/effort` command.
 
-**The Bottom Line**
-If you're using Claude Code, update to v2.1.94 — the authentication fixes alone are worth it. The higher effort setting will give you better results by default, but you can always dial it back if needed. Nothing urgent if you're not experiencing issues, but it's a solid upgrade.
+🛠️
+**New · Slack integration**
+**Cleaner Slack notifications with clickable channel links**
+When Claude sends messages to Slack channels, you'll now see a compact header with the channel name that you can actually click to jump straight to that channel. No more hunting around for where that message went.
+
+🔄
+**Improved · Plugin experience**
+**Plugin skills get smarter naming and better session titles**
+Plugin skills now use their actual names from frontmatter instead of just the folder name, so you get consistent naming no matter how you install them. Plus, plugins can now set custom session titles through hooks.
+
+🔧
+**Fixed · Bugs**
+**Rate limiting errors show up immediately instead of hanging · macOS login issues now give clear error messages · Plugin hooks work properly when paths aren't set · Search inputs handle Shift+Space correctly · Links don't open duplicate tabs in certain terminals**
+A bunch of annoying issues got squashed, including Claude getting stuck silently when hitting rate limits, login problems on Mac, and various plugin and interface glitches that were making the experience rougher than it should be.
 
 ---
 

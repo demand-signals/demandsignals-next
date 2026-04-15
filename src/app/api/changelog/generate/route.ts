@@ -122,30 +122,51 @@ export async function GET(request: NextRequest) {
 This post covers changes from YESTERDAY: ${displayDate}
 Today (when this post goes live): ${todayDisplay}
 
-Below are the raw changelog/docs pages scraped from each platform. Focus on changes from ${displayDate} or the most recent entries. If a platform had no changes yesterday, skip it entirely — don't mention it.
+Below are the raw changelog/docs pages scraped from each platform. Focus on changes from ${displayDate} or the most recent entries. If a platform had no changes yesterday, skip it entirely.
 
-Write the blog post body in markdown (NOT MDX — no imports, no JSX). Structure:
+Write the blog post body in markdown (NOT MDX — no imports, no JSX).
 
-1. **TL;DR** — 2-3 sentences. What's the ONE thing a business owner should know today? Use simple language. "OpenAI made their cheapest model smarter" not "GPT-4o-mini received enhanced reasoning capabilities."
+Do NOT include a TL;DR section.
 
-2. For each platform that had changes yesterday, write a section with:
-   - H2 heading with platform name (e.g., "## OpenAI", "## Anthropic / Claude")
-   - **What changed:** bullet points in plain English. Imagine explaining to someone who just learned what ChatGPT is.
-   - **Why you should care:** one sentence per change explaining the real-world impact. "This means your customer service chatbot will give better answers" not "Enhanced model performance metrics."
-   - If a change is tiny or only affects developers, say so: "This one's mainly for developers — skip if that's not you."
+## Format
 
-3. **The Bottom Line** — 2-3 sentences on what a business owner should actually DO (or not do) based on today's changes. Be specific: "If you use ChatGPT for customer emails, the new model is worth switching to" or "Nothing urgent today — check back tomorrow."
+Group changes by platform. Each platform gets an H2 heading. Under each platform, list individual changes as emoji cards in this exact format:
 
-Rules:
-- Write like you're texting a friend, not writing a research paper
-- If nothing significant changed, say "Quiet day across the board" and keep it short
+\`\`\`
+## Claude Code
+What's new from Anthropic's AI coding assistant
+
+EMOJI
+**Category · Feature Area**
+**Conversational headline describing the change**
+2-3 sentence explanation in plain English. Talk like you're texting a friend. Explain what it actually means for the person reading, not just what changed technically.
+\`\`\`
+
+### Categories and their emojis:
+- New features: 🧠 ⚡ 🛠️ 🤖 🎨 📊 🔑 (pick one that fits the feature)
+- Improved: 🔄 📋 ⚠️ 💾 (pick one that fits)
+- Fixed / Bug fixes: 🔧
+- Deprecation / Heads up: 🗓️ ⚠️
+
+### Category labels:
+- "New · [Area]" for new features (e.g., "New · Memory saver", "New · Speed", "New · Commands")
+- "Improved · [Area]" for improvements (e.g., "Improved · Navigation", "Improved · Warnings")
+- "Fixed · Bugs" for bug fixes
+- "Heads up · Deprecation" for deprecations
+
+### Rules:
+- Each change gets its own emoji card — don't combine unrelated changes
+- Group small bug fixes into one "Fixed · Bugs" card with highlights separated by " · "
+- Headlines should be conversational: "Claude now remembers what you were doing when you come back" not "Added session recap feature"
+- Explanations should answer "so what?" — why should I care about this?
+- If a change is developer-only, mention it naturally: "This one's for developers building on the API"
+- If nothing significant changed for a platform, skip it entirely
+- If NOTHING changed across ALL platforms, write a short "Quiet day across the board" message
 - Avoid: "leveraging", "capabilities", "paradigm", "ecosystem", "scalable", "cutting-edge"
 - Use: "works better", "costs less", "new feature", "fixed a bug", "now you can..."
-- If something is genuinely exciting, it's OK to show enthusiasm
-- If something is boring, say it's boring
 
 Do NOT include frontmatter — I'll add that separately.
-Do NOT wrap in code fences.
+Do NOT wrap the output in code fences.
 
 ---
 
@@ -164,13 +185,14 @@ ${sourceContent}`,
     const slug = `ai-changelog-${dateStr}`
     const title = `The AI ChangeLog — ${displayDate}`
 
-    const tldrMatch = blogContent.match(/\*\*TL;DR\*\*[:\s—-]*([\s\S]*?)(?:\n\n|\n##)/)
-    const excerpt = tldrMatch
-      ? tldrMatch[1].replace(/\n/g, ' ').trim().slice(0, 200)
+    // Extract first bold headline as excerpt
+    const headlineMatch = blogContent.match(/\*\*[^*]*·[^*]*\*\*\n\*\*([^*]+)\*\*/)
+    const excerpt = headlineMatch
+      ? headlineMatch[1].trim().slice(0, 200)
       : `Daily AI platform changelog digest for ${displayDate}.`
 
     const platformSections = blogContent.match(/^## .+/gm) || []
-    const platformCount = platformSections.filter(s => !s.includes('What This Means') && !s.includes('Bottom Line')).length
+    const platformCount = platformSections.length
 
     const frontmatter = `---
 title: "${title}"

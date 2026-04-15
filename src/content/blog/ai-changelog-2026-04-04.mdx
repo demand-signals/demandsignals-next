@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Saturday, April 4, 2026"
 date: "2026-04-04"
 author: "AI ChangeLog"
-excerpt: "Daily AI platform changelog digest for Saturday, April 4, 2026."
+excerpt: "Your IT team can now force-refresh security settings on startup"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -13,33 +13,51 @@ infographic:
   type: "stats"
   stats:
     - { label: "Platforms Tracked", value: "6" }
-    - { label: "Updates Today", value: "2" }
+    - { label: "Updates Today", value: "1" }
     - { label: "Sources Checked", value: "6/6" }
 ---
 
-# The AI ChangeLog
+# The AI ChangeLog - Sunday, April 5, 2026
 
-## TL;DR
+Saturday was quiet across most platforms, but Claude Code had its busiest day in weeks with a major release packed with new features and fixes.
 
-Saturday was a quiet day for AI models themselves, but Claude Code (Anthropic's developer tool) dropped a solid update with better AWS setup, cost tracking improvements, and lots of bug fixes. If you're a developer using Claude Code, this is worth updating for the smoother workflow.
+## Claude Code
+What's new from Anthropic's AI coding assistant
 
-## Claude Code (Anthropic)
+🔑
+**New · Security**
+**Your IT team can now force-refresh security settings on startup**
+Added a new policy that makes Claude Code wait for the latest security settings before starting up, and shuts down if it can't get them. This one's for companies that need fail-safe security controls.
 
-**What changed:**
-- Added an interactive setup wizard for AWS Bedrock — now when you pick "3rd-party platform" during login, it walks you through connecting to AWS step by step
-- Pro users can now see detailed cost breakdowns by model and cache usage with the `/cost` command
-- Fixed a bunch of annoying bugs, including issues with subagents failing in tmux sessions and problems with extended thinking mode
-- Added a "force refresh" setting for enterprise users who need stricter security controls
-- Remote Control sessions now use your computer's name as a default prefix (like "myhost-graceful-unicorn" instead of just random words)
-- Removed the `/tag` and `/vim` commands to streamline the interface
+🛠️
+**New · Setup**  
+**AWS Bedrock setup now walks you through everything step by step**
+No more wrestling with AWS credentials and regions. When you pick "3rd-party platform" on the login screen, you get a friendly wizard that handles authentication, picks your region, tests everything, and sets up your model preferences.
 
-**Why you should care:** If you're using Claude Code for development work, the AWS setup wizard makes it way easier to connect to Bedrock if you want to use Claude through AWS instead of directly. The cost breakdown feature helps you track exactly how much you're spending on different models. Most of these changes are quality-of-life improvements that make the tool less frustrating to use day-to-day.
+📊
+**New · Cost tracking**
+**Pro users get detailed breakdowns of exactly what's costing them money**
+The `/cost` command now shows per-model spending and how much you're saving from prompt caching. Finally know which models are eating your budget.
 
-This one's mainly for developers — skip if you're just using Claude through the web interface.
+⚡
+**New · Version picker**
+**Release notes are now interactive — pick any version to compare**
+Type `/release-notes` and you can browse through different versions instead of just seeing the latest. Handy when you're trying to figure out when something changed.
 
-## The Bottom Line
+🤖
+**New · Remote sessions**
+**Your computer name shows up in remote session names automatically**
+Instead of random names like "graceful-unicorn", you'll see "myhost-graceful-unicorn" so you can tell which machine is which. You can customize the prefix if you want.
 
-Nothing urgent happened yesterday across the major AI platforms. If you're a developer using Claude Code, the update is worth grabbing for the improved AWS setup and bug fixes, but there's no rush. Everyone else can check back Monday for more interesting updates.
+🔄
+**Improved · Caching**
+**Pro users get a heads up when their cache expires**
+When you come back to a session and the cache has expired, you'll see roughly how many tokens are about to be sent fresh. No more surprise billing spikes.
+
+🔧
+**Fixed · Bugs**
+**Major fixes for tmux crashes, API errors, and survey spam**
+Fixed subagents breaking after tmux windows get killed · Stop hooks failing incorrectly · API 400 errors from extended thinking · Accidental survey submissions from keypresses · Misleading interrupt hints · Homebrew update channel confusion · Editor cursor jumping issues · Message duplication in some terminals · Wrong token counts in hints · MCP server connection problems.
 
 ---
 

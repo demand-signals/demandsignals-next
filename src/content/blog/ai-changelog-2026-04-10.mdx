@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Friday, April 10, 2026"
 date: "2026-04-10"
 author: "AI ChangeLog"
-excerpt: "Claude Code, Anthropic's AI coding assistant, got a major update with useful new features for developers. The most important is a new `/team-onboarding` command that creates ramp-up guides for new tea"
+excerpt: "Daily AI platform changelog digest for Friday, April 10, 2026."
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -17,25 +17,33 @@ infographic:
     - { label: "Sources Checked", value: "6/6" }
 ---
 
-**TL;DR**
+## Claude Code
+What's new from Anthropic's AI coding assistant
 
-Claude Code, Anthropic's AI coding assistant, got a major update with useful new features for developers. The most important is a new `/team-onboarding` command that creates ramp-up guides for new team members based on your actual usage patterns.
+🧠  
+**New · Team Collaboration**  
+**Claude can now create onboarding guides for your team based on how you actually use it**  
+Just run `/team-onboarding` and Claude will generate a teammate ramp-up guide from your local usage patterns. Perfect for getting new team members up to speed on your Claude Code workflow.
 
-## Claude Code (Anthropic)
+⚡  
+**Improved · Enterprise Setup**  
+**No more certificate headaches when your company uses proxy servers**  
+Claude Code now trusts your OS certificate store by default, so it'll work with enterprise TLS proxies without any extra setup. One less IT ticket to file.
 
-**What changed:**
-- Added a `/team-onboarding` command that automatically creates guides for new teammates based on how your team actually uses Claude Code
-- Made it work with enterprise TLS proxies right out of the box — no more setup headaches for corporate networks
-- Cloud features like `/ultraplan` now create environments automatically instead of making you set things up on the web first
-- Fixed a bunch of bugs, including a security issue with command injection and memory leaks during long coding sessions
-- Improved error messages so they actually tell you what went wrong and how to fix it
-- Better handling of rate limits — now shows which limit you hit and when it resets
+🛠️  
+**Improved · Cloud Features**  
+**Ultraplan and remote sessions now just work without web setup**  
+When you try `/ultraplan` or other cloud features, Claude Code automatically creates a default cloud environment instead of making you go set things up on the web first. Way smoother experience.
 
-**Why you should care:** The team onboarding feature is genuinely useful if you have developers joining your team — it learns from your actual workflow instead of giving generic advice. The enterprise proxy fix removes a common IT headache. Most other changes are quality-of-life improvements that make the tool less frustrating to use day-to-day.
+🔧  
+**Fixed · Security**  
+**Patched command injection vulnerability**  
+Fixed a security issue in the POSIX `which` fallback used by LSP binary detection. Also fixed several memory leaks and session recovery problems that could crash or slow things down.
 
-**The Bottom Line**
-
-If you use Claude Code for development work, this update is worth grabbing. The team onboarding feature alone could save hours of explaining your setup to new developers. If you're in a corporate environment, the TLS proxy fix might solve connection issues you've been dealing with.
+🔄  
+**Improved · Error Messages**  
+**Better explanations when things go wrong**  
+Rate limit messages now show which specific limit you hit and when it resets. Tool errors explain why a tool isn't available and what to do about it. Much less guessing what went wrong.
 
 ---
 

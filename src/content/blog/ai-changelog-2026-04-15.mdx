@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Wednesday, April 15, 2026"
 date: "2026-04-15"
 author: "AI ChangeLog"
-excerpt: "Daily AI platform changelog digest for Wednesday, April 15, 2026."
+excerpt: "Run `/tui fullscreen` to get flicker-free rendering in the same conversation"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -13,39 +13,39 @@ infographic:
   type: "stats"
   stats:
     - { label: "Platforms Tracked", value: "6" }
-    - { label: "Updates Today", value: "3" }
+    - { label: "Updates Today", value: "1" }
     - { label: "Sources Checked", value: "6/6" }
 ---
 
-## TL;DR
+Looking at the provided changelog entries, I can only see updates from Claude Code (Anthropic's AI coding assistant) for Wednesday, April 15, 2026. All other platforms either returned error pages or showed no changes for that specific date.
 
-OpenAI rolled out their new "Agents SDK" — think AI assistants that can actually take action instead of just giving advice. This is their biggest developer platform update in months. Meanwhile, Claude Code (Anthropic's coding tool) got a major refresh with a new fullscreen mode that developers are gonna love.
+## Claude Code
+What's new from Anthropic's AI coding assistant
 
-## OpenAI
+🎨
+**New · Display modes**
+**Run `/tui fullscreen` to get flicker-free rendering in the same conversation**
+If you've been dealing with screen flickering while coding, this new command switches Claude Code to a smooth fullscreen interface. Think of it like switching from windowed to fullscreen mode in a video game - same conversation, just smoother visuals.
 
-**What changed:**
-- Released the Agents SDK in public beta — lets you build AI assistants that can actually do things (like book appointments, manage files, or control other software) instead of just chatting
-- Added Agent Builder — a visual tool to create these AI assistants without coding, like a drag-and-drop interface for AI
-- New ChatKit component — ready-made chat interface you can drop into your website or app
-- Added "Computer Use" tool — AI can now control your computer screen, click buttons, fill forms (yes, it's as wild as it sounds)
-- Voice agents now available — AI that can handle phone calls or voice conversations
+⚡
+**New · Focus controls**
+**Focus view now has its own `/focus` command instead of sharing with verbose mode**
+Before, pressing Ctrl+O toggled through multiple view modes which was confusing. Now you get dedicated controls: Ctrl+O just switches between normal and verbose transcript, while `/focus` gives you that distraction-free coding view.
 
-**Why you should care:** If you've been waiting for AI that can actually complete tasks instead of just suggesting them, this is huge. The Agent Builder means non-technical folks can create useful AI assistants. Computer Use is honestly a bit scary but incredibly powerful for automating repetitive tasks.
+🛠️
+**Improved · Plugin management**
+**Plugin menu now shows what needs your attention first**
+When you open `/plugin`, the stuff that actually matters (favorites and items needing updates) appears at the top. Disabled plugins are tucked away so they don't clutter your view. Hit 'f' to favorite something you use a lot.
 
-## Claude Code (Anthropic)
+💾
+**Improved · Session recovery**
+**Resume now brings back your scheduled tasks that haven't expired yet**
+If you were in the middle of something with timers or scheduled work and had to restart, `--resume` will pick up where you left off instead of losing those background tasks.
 
-**What changed:**
-- Added fullscreen mode (`/tui fullscreen`) for distraction-free coding sessions
-- New focus view to hide clutter when you're deep in code
-- Better plugin management — favorites and important items show up first
-- Session recap feature now works even if you have analytics turned off
-- Fixed a bunch of crashes and UI glitches that were annoying developers
-
-**Why you should care:** This one's mainly for developers — if you use Claude Code for programming, the fullscreen mode is a game-changer for staying focused. Skip if coding isn't your thing.
-
-## The Bottom Line
-
-If you run a business and have been curious about AI automation, OpenAI's new Agents SDK is worth exploring — especially the Agent Builder if you're not technical. The "Computer Use" feature could automate tons of repetitive computer tasks, though maybe start small and see how it goes. For developers using Claude Code, definitely try the new fullscreen mode. Everyone else can sit this one out — these are power-user features.
+🔧
+**Fixed · Bugs**
+**Smoother experience across multiple areas**
+Fixed hanging tool calls when servers disconnect · Eliminated multi-minute freezes during API issues · Session recap now works even with telemetry disabled · Resolved high CPU usage in fullscreen when selecting text · Better handling of plugin dependencies during install.
 
 ---
 

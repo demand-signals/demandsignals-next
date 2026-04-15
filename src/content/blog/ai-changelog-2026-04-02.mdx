@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Thursday, April 2, 2026"
 date: "2026-04-02"
 author: "AI ChangeLog"
-excerpt: "Daily AI platform changelog digest for Thursday, April 2, 2026."
+excerpt: "MCP tools can now handle way bigger results without being cut off"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -13,32 +13,37 @@ infographic:
   type: "stats"
   stats:
     - { label: "Platforms Tracked", value: "6" }
-    - { label: "Updates Today", value: "2" }
+    - { label: "Updates Today", value: "1" }
     - { label: "Sources Checked", value: "6/6" }
 ---
 
-# The AI ChangeLog
+## Claude Code
+What's new from Anthropic's AI coding assistant
 
-## TL;DR
-Claude Code got a bunch of useful improvements for developers yesterday — you can now pass bigger chunks of data between tools, and they fixed several annoying bugs that were breaking conversation history and keyboard shortcuts.
+🛠️
+**New · MCP Tools**
+**MCP tools can now handle way bigger results without being cut off**
+Previously, MCP tool results got truncated at a smaller limit. Now developers can tag specific results to pass through up to 500K characters — perfect for things like database schemas or large API responses that Claude needs to see in full.
 
-## Claude Code (Anthropic)
+⚡
+**Improved · Performance**
+**The terminal got faster and smarter across multiple areas**
+The tool now strips formatting codes faster (especially on Bun), uses shorter text anchors to save tokens, and loads conversations more reliably when you resume sessions. Plus several terminal emulators now properly handle the cmd+delete shortcut.
 
-**What changed:**
-- You can now pass much larger data (up to 500K characters) between AI tools without it getting cut off — great for things like database schemas
-- New setting to turn off automatic shell command execution if you want more control over what runs
-- Multi-line prompts now work properly in deep links (those `claude-cli://` URLs)
-- Plugins can now include their own executable files and run them directly
-- Fixed a bug where conversation history could get lost when resuming sessions
-- Fixed keyboard shortcuts (like cmd+delete) that weren't working in various terminal apps
-- Fixed issues with plan mode losing track of files after container restarts
-- Better guidance when using the `/claude-api` command for building AI agents
+🔧
+**Fixed · Bugs**
+**Plan mode works better in remote sessions · Conversation history stops disappearing · JSON validation catches bad settings**
+The biggest fix prevents losing your chat history when transcript files fail to save silently. Plan mode also remembers your plan file after container restarts, and the settings validator now properly catches permission configuration errors.
 
-**Why you should care:**
-If you're using Claude Code for development work, these fixes make it way more reliable — no more losing your conversation history mid-project or dealing with broken keyboard shortcuts. The bigger data limit means AI tools can work with larger files without choking. If you're not coding with Claude Code, this one's not for you.
+🛠️
+**New · Plugin System**
+**Plugins can now include their own executable files**
+Plugin developers can ship executables in a `bin/` folder and call them directly from Claude's Bash tool. This opens up more possibilities for custom tooling and integrations.
 
-## The Bottom Line
-If you're a developer using Claude Code, definitely update — the conversation history fix alone will save you from some real headaches. Everyone else can skip this one.
+🔑
+**New · Security Controls**
+**Added option to disable shell execution in skills and plugins**
+You can now turn off inline shell execution across skills, custom slash commands, and plugin commands with the new `disableSkillShellExecution` setting. Useful if you want Claude's help but prefer tighter security controls.
 
 ---
 

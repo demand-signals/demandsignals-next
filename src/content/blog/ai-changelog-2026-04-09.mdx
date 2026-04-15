@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Thursday, April 9, 2026"
 date: "2026-04-09"
 author: "AI ChangeLog"
-excerpt: "Daily AI platform changelog digest for Thursday, April 9, 2026."
+excerpt: "Google Vertex AI gets its own setup wizard"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -13,38 +13,49 @@ infographic:
   type: "stats"
   stats:
     - { label: "Platforms Tracked", value: "6" }
-    - { label: "Updates Today", value: "3" }
+    - { label: "Updates Today", value: "1" }
     - { label: "Sources Checked", value: "6/6" }
 ---
 
-## TL;DR
+Looking at the changelogs from Thursday, April 9, 2026, I can see that only Claude Code had updates that day. All other platforms either had no changes or returned errors.
 
-OpenAI launched a smarter version of their cheapest AI model (GPT-4o-mini) yesterday, and Claude Code (Anthropic's coding assistant) got a major update with better Google Cloud setup and tighter security features. Nothing earth-shattering, but if you use AI for basic tasks, the OpenAI update could save you money.
+## Claude Code
+What's new from Anthropic's AI coding assistant
 
-## OpenAI
+🆕
+**New · Third-party setup**
+**Google Vertex AI gets its own setup wizard**
+No more hunting through documentation to connect Claude Code to Google Cloud. There's now a step-by-step wizard that walks you through authentication, picking your project and region, and getting everything configured properly.
 
-**What changed:**
-- Released GPT-4o-mini v2 — a smarter version of their cheapest AI model
-- Same pricing as before ($0.15 per million input tokens, $0.60 per million output tokens)
-- Better at following instructions, reasoning through problems, and handling edge cases
-- Still the budget option in their lineup
+🛠️
+**New · Version control**
+**Perforce users get read-only file protection**
+If you work with Perforce, Claude Code now stops you from accidentally overwriting read-only files. Set `CLAUDE_CODE_PERFORCE_MODE` and it'll tell you to run `p4 edit` first instead of silently making changes you can't save.
 
-**Why you should care:** If you're using GPT-4o-mini for customer emails, content writing, or simple automation tasks, this upgrade gives you better results for the same cost. Worth switching to if you haven't already.
+📊
+**New · Monitoring**
+**Watch your background scripts in real-time**
+The new Monitor tool lets you see what's happening with scripts running in the background. Think of it like a task manager for your automated workflows.
 
-## Claude Code (Anthropic)
+🔒
+**New · Security**
+**Better subprocess sandboxing on Linux**
+Added PID namespace isolation and script execution limits to keep background processes from going rogue. This one's mainly for teams running Claude Code in shared environments.
 
-**What changed:**
-- Added a setup wizard that walks you through connecting to Google Cloud's AI services (no more confusing config files)
-- New security features for teams using version control systems like Perforce — prevents accidental file overwrites
-- Better monitoring tools for tracking what background scripts are doing
-- Fixed a bunch of permission bugs that could let malicious prompts run unauthorized commands
-- Improved the interface for managing multiple AI agents working together
+🔄
+**Improved · Resume feature**
+**Picking up where you left off works better**
+Fixed a bunch of annoying issues with `/resume` - absolute paths work now, search doesn't reset randomly, and it won't show you stale conversations from other projects.
 
-**Why you should care:** This one's mainly for developers and technical teams. If your company uses Claude Code for software development, the security improvements are important — update soon. The Google Cloud wizard makes it easier for non-technical managers to set up AI coding assistants for their teams.
+🔧
+**Fixed · Bash permissions**
+**Closed several permission bypass loopholes**
+Patched multiple ways that commands could sneak past safety checks, including backslash-escaped flags and compound commands. The permission system is now much more reliable at catching risky operations.
 
-## The Bottom Line
-
-If you're using GPT-4o-mini through OpenAI's API, the v2 upgrade is automatic and worth using. If your development team uses Claude Code, plan an update in the next week — the security fixes are important, and the new features will save your IT team setup headaches. Nothing urgent for most business owners today.
+🔧
+**Fixed · Voice mode**
+**No more random spaces in your transcript**
+Voice input was adding dozens of extra spaces when you held the push-to-talk button multiple times. Should be much cleaner now.
 
 ---
 
