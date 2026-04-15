@@ -17,6 +17,7 @@ export const CONTENT_CATEGORIES = [
   'search-updates',     // Google algorithm changes
   'core-updates',       // Google core engineering updates
   'ai-engineering',     // Claude, Anthropic, AI model updates
+  'ai-changelog',       // Daily AI platform changelog summaries
   'search-central',     // Google Search Central video summaries
   'industry-trends',    // Market analysis, predictions
   'how-to',            // Implementation guides
@@ -29,6 +30,7 @@ export const CONTENT_CATEGORY_LABELS: Record<ContentCategory, string> = {
   'search-updates': 'Search Updates',
   'core-updates': 'Core Updates',
   'ai-engineering': 'AI Engineering',
+  'ai-changelog': 'The AI ChangeLog',
   'search-central': 'Search Central',
   'industry-trends': 'Industry Trends',
   'how-to': 'How-To',
@@ -39,6 +41,7 @@ export const CONTENT_CATEGORY_COLORS: Record<ContentCategory, string> = {
   'search-updates': '#2563EB',
   'core-updates': '#DC2626',
   'ai-engineering': '#7C3AED',
+  'ai-changelog': '#F59E0B',
   'search-central': '#059669',
   'industry-trends': '#D97706',
   'how-to': '#0891B2',
