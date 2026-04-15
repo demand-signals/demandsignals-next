@@ -12,8 +12,8 @@ const GITHUB_REPO = 'demand-signals/demandsignals-next'
 const GITHUB_BRANCH = 'master'
 
 async function commitToGitHub(filePath: string, content: string, message: string): Promise<boolean> {
-  const token = process.env.GITHUB_PAT
-  if (!token) throw new Error('GITHUB_PAT not configured')
+  const token = process.env.GITHUB_DEMANDSIGNALS_NEXT
+  if (!token) throw new Error('GITHUB_DEMANDSIGNALS_NEXT not configured')
 
   const apiBase = `https://api.github.com/repos/${GITHUB_REPO}/contents/${filePath}`
   const headers = {
