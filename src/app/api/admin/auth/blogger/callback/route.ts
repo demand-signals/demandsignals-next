@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { saveToken } from '@/lib/oauth'
+import { requireAdmin } from '@/lib/admin-auth'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://demandsignals.co'
 
 // GET /api/admin/auth/blogger/callback — Google redirects here with ?code=
 export async function GET(request: NextRequest) {
+  // Verify the user is an authenticated admin
+  const auth = await requireAdmin(request)
+  if ('error' in auth) return auth.error
+
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   const error = searchParams.get('error')

@@ -13,7 +13,10 @@ export function getAnthropicClient(): Anthropic {
 // ─── Cron Auth ───
 export function verifyCronSecret(authHeader: string | null): boolean {
   const secret = process.env.CRON_SECRET
-  if (!secret) return true // no secret configured = allow (dev mode)
+  if (!secret) {
+    console.warn('[SECURITY] CRON_SECRET is not set — denying request')
+    return false
+  }
   return authHeader === `Bearer ${secret}`
 }
 

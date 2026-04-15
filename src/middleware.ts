@@ -58,9 +58,31 @@ export async function middleware(request: NextRequest) {
 
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user && pathname !== '/admin-login') {
+    // Allow the login page itself without auth
+    if (pathname === '/admin-login') {
+      return response
+    }
+
+    // No session at all → redirect to login
+    if (!user) {
       const redirectUrl = new URL('/admin-login', request.url)
       redirectUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // Check admin_users table — blocks random Google accounts from seeing admin UI
+    const { data: admin } = await supabase
+      .from('admin_users')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .single()
+
+    if (!admin) {
+      // User is authenticated but NOT an admin — sign them out and redirect
+      await supabase.auth.signOut()
+      const redirectUrl = new URL('/admin-login', request.url)
+      redirectUrl.searchParams.set('error', 'unauthorized')
       return NextResponse.redirect(redirectUrl)
     }
 

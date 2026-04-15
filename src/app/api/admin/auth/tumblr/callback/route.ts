@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAccessToken } from '@/lib/oauth1a'
 import { saveToken } from '@/lib/oauth'
+import { requireAdmin } from '@/lib/admin-auth'
 
 // GET /api/admin/auth/tumblr/callback — Tumblr redirects here with ?oauth_token=&oauth_verifier=
 export async function GET(request: NextRequest) {
+  // Verify the user is an authenticated admin
+  const auth = await requireAdmin(request)
+  if ('error' in auth) return auth.error
+
   const { searchParams } = new URL(request.url)
   const oauthToken = searchParams.get('oauth_token')
   const oauthVerifier = searchParams.get('oauth_verifier')
