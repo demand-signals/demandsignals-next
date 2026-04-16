@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Wednesday, April 15, 2026"
 date: "2026-04-15"
 author: "AI ChangeLog"
-excerpt: "Run `/tui fullscreen` to get flicker-free rendering in the same conversation"
+excerpt: "Gemini 3.1 Flash TTS Preview now available for speech generation"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -12,40 +12,44 @@ infographic:
   headline: "AI Platform Updates"
   type: "stats"
   stats:
-    - { label: "Platforms Tracked", value: "6" }
-    - { label: "Updates Today", value: "1" }
-    - { label: "Sources Checked", value: "6/6" }
+    - { label: "Platforms Updated", value: "2 of 5" }
+    - { label: "New", value: "3" }
+    - { label: "Improved", value: "1" }
+    - { label: "Fixed", value: "1" }
+    - { label: "Killed", value: "0" }
+    - { label: "Total Changes", value: "5" }
 ---
 
-Looking at the provided changelog entries, I can only see updates from Claude Code (Anthropic's AI coding assistant) for Wednesday, April 15, 2026. All other platforms either returned error pages or showed no changes for that specific date.
+## Google Gemini
+Latest updates from Google's AI models
+
+🧠
+**New · Models**
+**Gemini 3.1 Flash TTS Preview now available for speech generation**
+Google just dropped a new model that can generate speech in multiple languages with more expressive voices. Think of it like giving Gemini a much better voice — perfect if you're building apps that need to talk to users in a natural way.
 
 ## Claude Code
 What's new from Anthropic's AI coding assistant
 
 🎨
-**New · Display modes**
-**Run `/tui fullscreen` to get flicker-free rendering in the same conversation**
-If you've been dealing with screen flickering while coding, this new command switches Claude Code to a smooth fullscreen interface. Think of it like switching from windowed to fullscreen mode in a video game - same conversation, just smoother visuals.
-
-⚡
-**New · Focus controls**
-**Focus view now has its own `/focus` command instead of sharing with verbose mode**
-Before, pressing Ctrl+O toggled through multiple view modes which was confusing. Now you get dedicated controls: Ctrl+O just switches between normal and verbose transcript, while `/focus` gives you that distraction-free coding view.
+**New · Interface**
+**Full-screen mode gets flicker-free rendering with new `/tui` command**
+You can now run `/tui fullscreen` to get a much smoother visual experience without the annoying screen flickering. It's like switching from an old CRT monitor to a modern display — everything just looks cleaner.
 
 🛠️
-**Improved · Plugin management**
-**Plugin menu now shows what needs your attention first**
-When you open `/plugin`, the stuff that actually matters (favorites and items needing updates) appears at the top. Disabled plugins are tucked away so they don't clutter your view. Hit 'f' to favorite something you use a lot.
+**New · Commands**
+**Separate focus mode control with new `/focus` command**
+They split up the controls so you can toggle focus mode independently from other view options. Before, `Ctrl+O` did too many things at once — now it just handles transcript verbosity while `/focus` handles, well, focus.
 
-💾
-**Improved · Session recovery**
-**Resume now brings back your scheduled tasks that haven't expired yet**
-If you were in the middle of something with timers or scheduled work and had to restart, `--resume` will pick up where you left off instead of losing those background tasks.
+🔄
+**Improved · Session Management**
+**Session recap now works even with telemetry disabled**
+If you're using Claude Code through Bedrock, Vertex, or have telemetry turned off, you'll still get session summaries when you return to a conversation. Previously this feature was tied to telemetry, which left some users out in the cold.
 
 🔧
 **Fixed · Bugs**
-**Smoother experience across multiple areas**
-Fixed hanging tool calls when servers disconnect · Eliminated multi-minute freezes during API issues · Session recap now works even with telemetry disabled · Resolved high CPU usage in fullscreen when selecting text · Better handling of plugin dependencies during install.
+**MCP tool calls won't hang when server connections drop · High CPU usage in fullscreen fixed · Session cleanup improvements**
+They squashed several annoying bugs: tools won't get stuck forever if your server connection dies, fullscreen mode won't eat up your CPU when text is selected, and old sessions clean up properly without leaving junk files around.
 
 ---
 

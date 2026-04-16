@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Wednesday, April 8, 2026"
 date: "2026-04-08"
 author: "AI ChangeLog"
-excerpt: "Daily AI platform changelog digest for Wednesday, April 8, 2026."
+excerpt: "Claude Code gets smarter about when to ask for permission"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -12,23 +12,41 @@ infographic:
   headline: "AI Platform Updates"
   type: "stats"
   stats:
-    - { label: "Platforms Tracked", value: "6" }
-    - { label: "Updates Today", value: "1" }
-    - { label: "Sources Checked", value: "6/6" }
+    - { label: "Platforms Updated", value: "1 of 5" }
+    - { label: "New", value: "2" }
+    - { label: "Improved", value: "1" }
+    - { label: "Fixed", value: "2" }
+    - { label: "Killed", value: "0" }
+    - { label: "Total Changes", value: "5" }
 ---
 
 ## Claude Code
-Two quick updates from Anthropic's AI coding assistant
+What's new from Anthropic's AI coding assistant
+
+🔄
+**Improved · Permissions**
+**Claude Code gets smarter about when to ask for permission**
+The tool is now better at auto-approving safe filesystem commands (like `LANG=C rm foo` or `timeout 5 mkdir out`) in Accept Edits mode. It also automatically approves sandbox network access in auto and bypass-permissions modes, so you'll see fewer interruptions for routine operations.
+
+🛠️
+**New · Focus View**  
+**New focus toggle helps you see what matters most**
+Press `Ctrl+O` in no-flicker mode to get a clean view showing just the prompt, a one-line summary of what tools Claude used (with edit stats), and the final response. Perfect when you want to cut through the noise and see the essentials.
+
+⚡
+**New · Status Line**
+**Your status bar can now refresh itself automatically**
+Added a `refreshInterval` setting that lets your status line command re-run every N seconds. Great for showing live git status, build progress, or other info that changes over time.
 
 🔧
-**Fixed · Authentication**  
-**Fixed Bedrock auth breaking when using bearer tokens**
-If you use AWS Bedrock with bearer tokens or skip-auth settings, yesterday's update broke your authentication and gave you 403 errors. This hotfix gets that working again.
+**Fixed · Bugs**
+**Major fixes for permissions, MCP connections, and more**
+Fixed the `--dangerously-skip-permissions` flag getting downgraded after approving protected writes · Fixed MCP HTTP connections leaking ~50MB per hour when servers reconnect · Fixed managed settings not updating until restart · Fixed several `/resume` picker issues including empty lists and missing diffs.
 
-🧠
-**New · Focus view**  
-**Added a new focus mode that shows just what matters when Claude is working**
-Hit Ctrl+O in no-flicker mode and you'll see a clean view with just the prompt, a summary of what tools Claude used, and the final response. Perfect when you want to cut through the noise and see the key stuff without all the intermediate steps.
+🔧
+**Fixed · Bugs**
+**Better handling for non-English text and various UI issues**
+Korean, Japanese, and Unicode text no longer gets garbled when copied in no-flicker mode on Windows · Fixed slow mouse scrolling on Windows Terminal · Fixed keyboard shortcuts not working in Warp terminal · Fixed memory leak during API retries.
 
 ---
 

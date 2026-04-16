@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Tuesday, April 7, 2026"
 date: "2026-04-07"
 author: "AI ChangeLog"
-excerpt: "Claude Code now works with Amazon Bedrock via Mantle"
+excerpt: "Rate limits no longer leave you hanging"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -12,40 +12,36 @@ infographic:
   headline: "AI Platform Updates"
   type: "stats"
   stats:
-    - { label: "Platforms Tracked", value: "6" }
-    - { label: "Updates Today", value: "1" }
-    - { label: "Sources Checked", value: "6/6" }
+    - { label: "Platforms Updated", value: "1 of 5" }
+    - { label: "New", value: "1" }
+    - { label: "Improved", value: "2" }
+    - { label: "Fixed", value: "1" }
+    - { label: "Killed", value: "0" }
+    - { label: "Total Changes", value: "4" }
 ---
-
-Looking at the changelogs provided, I can see changes from Claude Code (Anthropic's AI coding assistant) for Tuesday, April 7, 2026, but no changes from OpenAI, Anthropic models/API, Google Gemini, or DeepSeek on that specific date.
 
 ## Claude Code
 What's new from Anthropic's AI coding assistant
 
-🔑
-**New · Cloud provider**
-**Claude Code now works with Amazon Bedrock via Mantle**
-If you use AWS, you can now set `CLAUDE_CODE_USE_MANTLE=1` to route your requests through Amazon Bedrock. This gives you another option beyond the standard Claude API for accessing AI models.
+🔧
+**Fixed · Bugs**
+**Rate limits no longer leave you hanging**
+Fixed agents getting stuck after hitting rate limits with long retry delays — now you get an immediate error instead of the tool sitting there silently waiting. Also fixed some login issues on macOS when your keychain is locked.
 
 ⚡
 **Improved · Performance**
-**Your coding sessions just got smarter by default**
-The default effort level jumped from "medium" to "high" for most users (API-key, Bedrock/Vertex/Foundry, Team, and Enterprise). This means Claude will work harder on your code by default, though you can still adjust it with the `/effort` command.
+**Now thinks harder by default**
+Default effort level bumped from medium to high for most users. You can still control this with the `/effort` command if you want faster responses for simple tasks.
 
 🛠️
-**New · Slack integration**
-**Cleaner Slack notifications with clickable channel links**
-When Claude sends messages to Slack channels, you'll now see a compact header with the channel name that you can actually click to jump straight to that channel. No more hunting around for where that message went.
+**New · Integrations**
+**Amazon Bedrock gets an upgrade**
+Added support for Amazon Bedrock powered by Mantle — just set `CLAUDE_CODE_USE_MANTLE=1` to try it out. This one's mainly for developers who need specific cloud configurations.
 
-🔄
-**Improved · Plugin experience**
-**Plugin skills get smarter naming and better session titles**
-Plugin skills now use their actual names from frontmatter instead of just the folder name, so you get consistent naming no matter how you install them. Plus, plugins can now set custom session titles through hooks.
-
-🔧
-**Fixed · Bugs**
-**Rate limiting errors show up immediately instead of hanging · macOS login issues now give clear error messages · Plugin hooks work properly when paths aren't set · Search inputs handle Shift+Space correctly · Links don't open duplicate tabs in certain terminals**
-A bunch of annoying issues got squashed, including Claude getting stuck silently when hitting rate limits, login problems on Mac, and various plugin and interface glitches that were making the experience rougher than it should be.
+📋
+**Improved · Interface**
+**Better Slack integration**
+When Claude sends messages to Slack channels, you now get a neat compact header with a clickable channel link so you know exactly where it went. Plus some fixes for text rendering and cursor tracking in terminals.
 
 ---
 

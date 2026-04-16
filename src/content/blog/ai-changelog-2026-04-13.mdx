@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Monday, April 13, 2026"
 date: "2026-04-13"
 author: "AI ChangeLog"
-excerpt: "Claude can now jump between existing Git worktrees in your repository"
+excerpt: "You can now jump between different code branches using the path parameter"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -12,38 +12,36 @@ infographic:
   headline: "AI Platform Updates"
   type: "stats"
   stats:
-    - { label: "Platforms Tracked", value: "6" }
-    - { label: "Updates Today", value: "1" }
-    - { label: "Sources Checked", value: "6/6" }
+    - { label: "Platforms Updated", value: "1 of 5" }
+    - { label: "New", value: "2" }
+    - { label: "Improved", value: "1" }
+    - { label: "Fixed", value: "1" }
+    - { label: "Killed", value: "0" }
+    - { label: "Total Changes", value: "4" }
 ---
 
 ## Claude Code
 What's new from Anthropic's AI coding assistant
 
-🧠  
-**New · Worktree Tools**
-**Claude can now jump between existing Git worktrees in your repository**
-You can tell Claude to switch into a specific worktree you've already set up using the new path parameter. This makes it much easier to work with multiple branches or feature work at once.
+🛠️
+**New · Worktree management**
+**You can now jump between different code branches using the path parameter**
+This makes it way easier to work on multiple features at once or compare different versions of your code. Think of it like having multiple workspaces that Claude can switch between instantly.
 
-🛠️  
-**New · Plugin Monitors**
-**Background monitoring for plugins that auto-start when you begin a session**
-If you've built plugins that need to watch for certain conditions, they can now run background monitors automatically. These kick in right when your session starts or when you invoke a skill.
+⚡
+**New · Proactive mode alias**
+**Typing /proactive now does the same thing as /loop**
+Just a shortcut that makes more sense when you want Claude to keep working autonomously. Both commands still do the exact same thing, just different ways to say it.
 
-🔄  
-**Improved · Loop Commands**
-**`/proactive` is now just another way to say `/loop`**
-Both commands do the same thing now, so use whichever feels more natural. This command lets Claude work continuously on tasks without waiting for you to prompt it each time.
+🔄
+**Improved · Network handling**
+**API streams won't hang forever anymore - they timeout after 5 minutes**
+If your internet connection gets wonky or the API stops responding, Claude Code will now give up after 5 minutes and try a different approach instead of sitting there spinning forever.
 
-🔧  
+🔧
 **Fixed · Bugs**
-**Better handling of network timeouts · Fixed image attachments getting lost · No more blank screens when typing long prompts**
-Several annoying issues are now resolved: Claude won't hang forever on slow API connections, images you attach while Claude is working won't disappear, and your screen won't go blank when your message wraps to multiple lines.
-
-⚠️  
-**Improved · Network Handling**
-**Clearer error messages and automatic retries when connections fail**
-Instead of showing a silent spinner when something goes wrong with the connection, you'll now get helpful retry messages immediately. Claude also gives up on stalled streams after 5 minutes instead of waiting forever.
+**Images in queued messages stay attached · Screen doesn't go blank on long prompts · ASCII art keeps its formatting · Keyboard shortcuts work properly**
+Bunch of annoying little issues that were breaking the flow. The ASCII art fix is especially nice if you're working with diagrams or formatted text output.
 
 ---
 

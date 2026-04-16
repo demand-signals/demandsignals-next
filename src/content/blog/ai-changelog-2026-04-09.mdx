@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Thursday, April 9, 2026"
 date: "2026-04-09"
 author: "AI ChangeLog"
-excerpt: "Google Vertex AI gets its own setup wizard"
+excerpt: "Setting up Google Vertex AI is now as easy as following a wizard"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -12,50 +12,41 @@ infographic:
   headline: "AI Platform Updates"
   type: "stats"
   stats:
-    - { label: "Platforms Tracked", value: "6" }
-    - { label: "Updates Today", value: "1" }
-    - { label: "Sources Checked", value: "6/6" }
+    - { label: "Platforms Updated", value: "1 of 5" }
+    - { label: "New", value: "4" }
+    - { label: "Improved", value: "0" }
+    - { label: "Fixed", value: "1" }
+    - { label: "Killed", value: "0" }
+    - { label: "Total Changes", value: "5" }
 ---
-
-Looking at the changelogs from Thursday, April 9, 2026, I can see that only Claude Code had updates that day. All other platforms either had no changes or returned errors.
 
 ## Claude Code
 What's new from Anthropic's AI coding assistant
 
-🆕
-**New · Third-party setup**
-**Google Vertex AI gets its own setup wizard**
-No more hunting through documentation to connect Claude Code to Google Cloud. There's now a step-by-step wizard that walks you through authentication, picking your project and region, and getting everything configured properly.
+🛠️
+**New · Setup**
+**Setting up Google Vertex AI is now as easy as following a wizard**
+No more digging through documentation to connect to Google Cloud. The new interactive setup wizard walks you through authentication, picking your project and region, and getting everything configured properly.
+
+⚡
+**New · Performance monitoring**
+**Monitor tool lets you watch your background scripts in real-time**
+If you've got scripts running in the background, you can now stream their events live to see what's happening. Perfect for keeping tabs on long-running processes without losing track.
+
+🔑
+**New · Perforce integration**
+**Perforce users get proper read-only file handling**
+When you set `CLAUDE_CODE_PERFORCE_MODE`, Claude Code will stop you from accidentally overwriting read-only files and suggest using `p4 edit` instead. No more "oops, I just broke the build" moments.
 
 🛠️
-**New · Version control**
-**Perforce users get read-only file protection**
-If you work with Perforce, Claude Code now stops you from accidentally overwriting read-only files. Set `CLAUDE_CODE_PERFORCE_MODE` and it'll tell you to run `p4 edit` first instead of silently making changes you can't save.
-
-📊
-**New · Monitoring**
-**Watch your background scripts in real-time**
-The new Monitor tool lets you see what's happening with scripts running in the background. Think of it like a task manager for your automated workflows.
-
-🔒
 **New · Security**
-**Better subprocess sandboxing on Linux**
-Added PID namespace isolation and script execution limits to keep background processes from going rogue. This one's mainly for teams running Claude Code in shared environments.
-
-🔄
-**Improved · Resume feature**
-**Picking up where you left off works better**
-Fixed a bunch of annoying issues with `/resume` - absolute paths work now, search doesn't reset randomly, and it won't show you stale conversations from other projects.
+**Subprocess sandboxing makes your coding environment safer**
+On Linux systems, you can now isolate subprocesses in their own PID namespace, plus limit how many scripts can run per session. Good news if you're working on projects where security matters.
 
 🔧
-**Fixed · Bash permissions**
-**Closed several permission bypass loopholes**
-Patched multiple ways that commands could sneak past safety checks, including backslash-escaped flags and compound commands. The permission system is now much more reliable at catching risky operations.
-
-🔧
-**Fixed · Voice mode**
-**No more random spaces in your transcript**
-Voice input was adding dozens of extra spaces when you held the push-to-talk button multiple times. Should be much cleaner now.
+**Fixed · Bugs**
+**Bash tool security fixes · Permission bypass patches · MCP OAuth improvements**
+Fixed several security issues where crafty command formatting could bypass safety checks. Also patched OAuth token refresh problems and improved permission handling across the board.
 
 ---
 

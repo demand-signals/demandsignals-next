@@ -102,8 +102,8 @@ export async function GET(request: NextRequest) {
     const sourceContent = changelogs
       .filter(c => !c.error)
       .map(c => {
-        const truncated = c.content.length > 4000
-          ? c.content.slice(0, 4000) + '\n\n[... truncated]'
+        const truncated = c.content.length > 10000
+          ? c.content.slice(0, 10000) + '\n\n[... truncated]'
           : c.content
         return `## ${c.source.name} Changelog\nSource: ${c.source.url}\n\n${truncated}`
       })
@@ -117,12 +117,20 @@ export async function GET(request: NextRequest) {
       messages: [
         {
           role: 'user',
-          content: `You are writing "The AI ChangeLog" — a daily digest that makes AI platform updates understandable for regular business owners. Think "AI for Dummies" — no jargon, no buzzwords. Explain things the way you'd explain them to a smart friend who doesn't work in tech.
+          content: (() => {
+    const monthDay = yesterday.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+    return `You are writing "The AI ChangeLog" — a daily digest that makes AI platform updates understandable for regular business owners. Think "AI for Dummies" — no jargon, no buzzwords. Explain things the way you'd explain them to a smart friend who doesn't work in tech.
 
-This post covers changes from YESTERDAY: ${displayDate}
+This post covers changes from YESTERDAY: ${displayDate} (${dateStr})
 Today (when this post goes live): ${todayDisplay}
 
-Below are the raw changelog/docs pages scraped from each platform. Focus on changes from ${displayDate} or the most recent entries. If a platform had no changes yesterday, skip it entirely.
+Below are changelog entries from each platform. CAREFULLY scan ALL sources for changes dated ${displayDate}, "${monthDay}, 2026", "${monthDay}", or "${dateStr}". Different platforms use different date formats.
+
+IMPORTANT INSTRUCTIONS:
+1. Search EVERY source below for entries matching yesterday's date. Dates in the Google Gemini changelog use "Month Day, Year" format (e.g., "${monthDay}, 2026"). OpenAI uses similar formats. Claude Code releases have explicit dates.
+2. If a platform had changes yesterday, ALWAYS include them — do not skip any platform that shipped updates.
+3. Start your response directly with the first ## heading. Do NOT add any preamble, introduction, or commentary before the first platform heading. No "Looking at yesterday's changes..." or "Here's what happened..." — jump straight to the content.
+4. If NOTHING changed across ALL platforms, write ONLY a short "Quiet day across the board" message.
 
 Write the blog post body in markdown (NOT MDX — no imports, no JSX).
 
@@ -130,7 +138,7 @@ Do NOT include a TL;DR section.
 
 ## Format
 
-Group changes by platform. Each platform gets an H2 heading. Under each platform, list individual changes as emoji cards in this exact format:
+Group changes by platform. Each platform gets an H2 heading with a brief subtitle. Under each platform, list individual changes as emoji cards in this exact format:
 
 \`\`\`
 ## Claude Code
@@ -167,10 +175,12 @@ EMOJI
 
 Do NOT include frontmatter — I'll add that separately.
 Do NOT wrap the output in code fences.
+Do NOT add any preamble text before the first ## heading.
 
 ---
 
-${sourceContent}`,
+${sourceContent}`
+  })(),
         },
       ],
     })
@@ -191,8 +201,14 @@ ${sourceContent}`,
       ? headlineMatch[1].trim().slice(0, 200)
       : `Daily AI platform changelog digest for ${displayDate}.`
 
+    // Count platforms and change categories
     const platformSections = blogContent.match(/^## .+/gm) || []
     const platformCount = platformSections.length
+    const newItems = (blogContent.match(/\*\*New\s*·/g) || []).length
+    const improvedItems = (blogContent.match(/\*\*Improved\s*·/g) || []).length
+    const fixedItems = (blogContent.match(/\*\*Fixed\s*·/g) || []).length
+    const killedItems = (blogContent.match(/\*\*(Heads up|Killed|Deprecated)\s*·/g) || []).length
+    const totalChanges = newItems + improvedItems + fixedItems + killedItems
 
     const frontmatter = `---
 title: "${title}"
@@ -208,9 +224,12 @@ infographic:
   headline: "AI Platform Updates"
   type: "stats"
   stats:
-    - { label: "Platforms Tracked", value: "${changelogs.length}" }
-    - { label: "Updates Today", value: "${platformCount}" }
-    - { label: "Sources Checked", value: "${successCount}/${changelogs.length}" }
+    - { label: "Platforms Updated", value: "${platformCount} of ${changelogs.length}" }
+    - { label: "New", value: "${newItems}" }
+    - { label: "Improved", value: "${improvedItems}" }
+    - { label: "Fixed", value: "${fixedItems}" }
+    - { label: "Killed", value: "${killedItems}" }
+    - { label: "Total Changes", value: "${totalChanges}" }
 ---`
 
     const mdxContent = `${frontmatter}\n\n${blogContent}\n\n---\n\n*The AI ChangeLog is generated daily by Demand Signals. We scrape official changelogs, run them through Claude, and publish a plain-English summary so you don't have to read the docs. [Subscribe to our blog](/blog) for daily updates.*\n`

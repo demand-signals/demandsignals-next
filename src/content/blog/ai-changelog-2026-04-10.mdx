@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Friday, April 10, 2026"
 date: "2026-04-10"
 author: "AI ChangeLog"
-excerpt: "Daily AI platform changelog digest for Friday, April 10, 2026."
+excerpt: "Added team onboarding command to help new teammates get up to speed"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -12,38 +12,51 @@ infographic:
   headline: "AI Platform Updates"
   type: "stats"
   stats:
-    - { label: "Platforms Tracked", value: "6" }
-    - { label: "Updates Today", value: "1" }
-    - { label: "Sources Checked", value: "6/6" }
+    - { label: "Platforms Updated", value: "1 of 5" }
+    - { label: "New", value: "1" }
+    - { label: "Improved", value: "4" }
+    - { label: "Fixed", value: "2" }
+    - { label: "Killed", value: "0" }
+    - { label: "Total Changes", value: "7" }
 ---
 
 ## Claude Code
 What's new from Anthropic's AI coding assistant
 
-🧠  
-**New · Team Collaboration**  
-**Claude can now create onboarding guides for your team based on how you actually use it**  
-Just run `/team-onboarding` and Claude will generate a teammate ramp-up guide from your local usage patterns. Perfect for getting new team members up to speed on your Claude Code workflow.
+🛠️
+**New · Team Tools**
+**Added team onboarding command to help new teammates get up to speed**
+Claude Code can now generate a personalized ramp-up guide for new teammates based on your local usage patterns. Just run `/team-onboarding` and it'll create a guide showing them the ropes.
 
-⚡  
-**Improved · Enterprise Setup**  
-**No more certificate headaches when your company uses proxy servers**  
-Claude Code now trusts your OS certificate store by default, so it'll work with enterprise TLS proxies without any extra setup. One less IT ticket to file.
+🔑
+**Improved · Enterprise Setup**
+**Enterprise TLS proxies now work out of the box**
+No more wrestling with certificate issues behind corporate firewalls. Claude Code now trusts your OS certificate store by default, so enterprise users can get coding right away without extra setup.
 
-🛠️  
-**Improved · Cloud Features**  
-**Ultraplan and remote sessions now just work without web setup**  
-When you try `/ultraplan` or other cloud features, Claude Code automatically creates a default cloud environment instead of making you go set things up on the web first. Way smoother experience.
+⚡
+**Improved · Cloud Features**
+**Remote sessions auto-create cloud environments when needed**
+Features like `/ultraplan` used to require setting up a cloud environment through the web first. Now they'll automatically create one for you and get straight to work.
 
-🔧  
-**Fixed · Security**  
-**Patched command injection vulnerability**  
-Fixed a security issue in the POSIX `which` fallback used by LSP binary detection. Also fixed several memory leaks and session recovery problems that could crash or slow things down.
+🤖
+**Improved · Communication**
+**Claude gives better explanations when tools aren't available**
+Instead of cryptic "tool not available" errors, Claude now explains why a tool can't be used and suggests what to do instead. Way more helpful when you're stuck.
 
-🔄  
-**Improved · Error Messages**  
-**Better explanations when things go wrong**  
-Rate limit messages now show which specific limit you hit and when it resets. Tool errors explain why a tool isn't available and what to do about it. Much less guessing what went wrong.
+🔄
+**Improved · Rate Limits**
+**Rate limit messages now show which limit you hit and when it resets**
+No more mystery countdown timers. You'll see exactly which rate limit kicked in and when you can try again, making it easier to plan your next moves.
+
+🔧
+**Fixed · Security**
+**Patched command injection vulnerability in LSP detection**
+This was a behind-the-scenes security fix for developers. The system that detects language server binaries had a vulnerability that's now sealed up.
+
+🔧
+**Fixed · Performance**
+**Fixed memory leak in long coding sessions**
+Long conversations were eating up more and more memory over time. This is now fixed, so you can code for hours without Claude Code getting sluggish.
 
 ---
 

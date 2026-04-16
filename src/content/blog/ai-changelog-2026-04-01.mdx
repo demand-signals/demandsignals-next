@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Wednesday, April 1, 2026"
 date: "2026-04-01"
 author: "AI ChangeLog"
-excerpt: "Claude Code now teaches itself to you with animated tutorials"
+excerpt: "Google introduces Flex and Priority tiers for Gemini API"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -12,43 +12,49 @@ infographic:
   headline: "AI Platform Updates"
   type: "stats"
   stats:
-    - { label: "Platforms Tracked", value: "6" }
-    - { label: "Updates Today", value: "1" }
-    - { label: "Sources Checked", value: "6/6" }
+    - { label: "Platforms Updated", value: "2 of 5" }
+    - { label: "New", value: "4" }
+    - { label: "Improved", value: "1" }
+    - { label: "Fixed", value: "1" }
+    - { label: "Killed", value: "0" }
+    - { label: "Total Changes", value: "6" }
 ---
+
+## Google Gemini
+What's new from Google's AI platform
+
+🧠
+**New · Pricing**
+**Google introduces Flex and Priority tiers for Gemini API**
+Google rolled out two new inference tiers for the Gemini API. "Priority" gets you faster responses with guaranteed availability, while "Flex" is the budget option — slower but cheaper. If you're building apps on Gemini, this lets you pick the right balance between speed and cost.
 
 ## Claude Code
 What's new from Anthropic's AI coding assistant
 
-⚡
-**New · Interactive learning**
-**Claude Code now teaches itself to you with animated tutorials**
-Hit `/powerup` to launch interactive lessons that walk you through Claude's features with actual demos. Finally, a way to learn all those keyboard shortcuts without reading documentation.
-
-🛠️
-**New · Background jobs**
-**Pause mid-task and pick up where you left off across devices**
-New "defer" option lets you pause Claude when it wants to run a command, then resume later with `-p --resume`. Perfect when you need to switch contexts or review something before letting it proceed.
-
-🤖
-**New · Digital pet**
-**Your new coding companion has arrived (April Fools!)**
-Meet `/buddy` — a tiny creature that hatches and watches you code. It's completely useless but oddly satisfying to have around.
-
-🔧
-**Fixed · Bugs**
-**Squashed the rate limit dialog loop and Windows line ending issues**
-Fixed that annoying infinite loop where rate limit warnings would crash your session · Windows users no longer get doubled line breaks · Voice mode actually works on Windows now · Memory leaks in long JSON sessions are gone.
-
-⚠️
-**Improved · Security**
-**Tightened PowerShell protections and permission handling**
-Closed several PowerShell security bypasses including background job tricks and debugger hangs · DNS cache commands removed from auto-allow list for privacy · File permission checks now follow symlinks properly.
+🧠
+**New · Interactive Training**
+**Learn Claude Code with hands-on lessons and animated demos**
+Added a new `/powerup` command that teaches you Claude Code features through interactive lessons with animations. Think of it as a built-in tutorial system that actually shows you what each feature does instead of making you hunt through docs.
 
 🔄
 **Improved · Performance**
-**Faster loading and smoother scrolling in long conversations**
-Large conversations no longer slow down over time · Multi-project resume loads in parallel · New flicker-free rendering option with `CLAUDE_CODE_NO_FLICKER=1` · Better handling of huge files without crashes.
+**Long conversations won't slow you down anymore**
+Fixed several performance issues where SDK sessions and SSE transport would get slower and slower as your conversation got longer. Now your 500th message loads just as fast as your first one.
+
+🔧
+**Fixed · Bugs**
+**Auto mode stops pestering you · Resume works properly · File editing is more reliable**
+Fixed an infinite loop where the rate-limit dialog kept popping up and crashing your session · Fixed `--resume` losing your prompt cache on the first request · Fixed Edit/Write tools failing when auto-formatting kicked in between edits.
+
+⚡
+**New · Offline Support**
+**Claude Code Marketplace works even when git fails**
+Added `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` environment variable so your existing plugins stay cached when `git pull` fails. Perfect for working in environments with spotty internet or restricted git access.
+
+🎨
+**New · April Fools Feature**
+**Meet your new coding buddy**
+Added `/buddy` — hatch a small creature that watches you code. It's here for April 1st, so enjoy your digital pet while it lasts!
 
 ---
 

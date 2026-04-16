@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Saturday, April 4, 2026"
 date: "2026-04-04"
 author: "AI ChangeLog"
-excerpt: "Your IT team can now force-refresh security settings on startup"
+excerpt: "Multiple fixes keep your coding sessions smooth"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -12,52 +12,46 @@ infographic:
   headline: "AI Platform Updates"
   type: "stats"
   stats:
-    - { label: "Platforms Tracked", value: "6" }
-    - { label: "Updates Today", value: "1" }
-    - { label: "Sources Checked", value: "6/6" }
+    - { label: "Platforms Updated", value: "1 of 5" }
+    - { label: "New", value: "2" }
+    - { label: "Improved", value: "3" }
+    - { label: "Fixed", value: "1" }
+    - { label: "Killed", value: "0" }
+    - { label: "Total Changes", value: "6" }
 ---
-
-# The AI ChangeLog - Sunday, April 5, 2026
-
-Saturday was quiet across most platforms, but Claude Code had its busiest day in weeks with a major release packed with new features and fixes.
 
 ## Claude Code
 What's new from Anthropic's AI coding assistant
 
-🔑
-**New · Security**
-**Your IT team can now force-refresh security settings on startup**
-Added a new policy that makes Claude Code wait for the latest security settings before starting up, and shuts down if it can't get them. This one's for companies that need fail-safe security controls.
-
-🛠️
-**New · Setup**  
-**AWS Bedrock setup now walks you through everything step by step**
-No more wrestling with AWS credentials and regions. When you pick "3rd-party platform" on the login screen, you get a friendly wizard that handles authentication, picks your region, tests everything, and sets up your model preferences.
-
-📊
-**New · Cost tracking**
-**Pro users get detailed breakdowns of exactly what's costing them money**
-The `/cost` command now shows per-model spending and how much you're saving from prompt caching. Finally know which models are eating your budget.
-
-⚡
-**New · Version picker**
-**Release notes are now interactive — pick any version to compare**
-Type `/release-notes` and you can browse through different versions instead of just seeing the latest. Handy when you're trying to figure out when something changed.
-
-🤖
-**New · Remote sessions**
-**Your computer name shows up in remote session names automatically**
-Instead of random names like "graceful-unicorn", you'll see "myhost-graceful-unicorn" so you can tell which machine is which. You can customize the prefix if you want.
-
-🔄
-**Improved · Caching**
-**Pro users get a heads up when their cache expires**
-When you come back to a session and the cache has expired, you'll see roughly how many tokens are about to be sent fresh. No more surprise billing spikes.
-
 🔧
 **Fixed · Bugs**
-**Major fixes for tmux crashes, API errors, and survey spam**
-Fixed subagents breaking after tmux windows get killed · Stop hooks failing incorrectly · API 400 errors from extended thinking · Accidental survey submissions from keypresses · Misleading interrupt hints · Homebrew update channel confusion · Editor cursor jumping issues · Message duplication in some terminals · Wrong token counts in hints · MCP server connection problems.
+**Multiple fixes keep your coding sessions smooth**
+Fixed a bunch of annoying issues: tmux sessions won't break when windows get renumbered, tool validation won't crash on weird JSON, and extended thinking won't throw random API errors. Plus no more accidental feedback submissions when you're rapidly typing.
+
+⚡
+**Improved · Speed**
+**File diffs now process 60% faster on large files**
+If you're working with big files that have lots of tabs or special characters, you'll notice the Write tool is way snappier. This is one of those behind-the-scenes improvements that just makes everything feel more responsive.
+
+🔑
+**New · Authentication**
+**Interactive Bedrock setup wizard guides you through AWS connection**
+No more fumbling around with AWS credentials and regions. When you select "3rd-party platform" from the login screen, a new wizard walks you through connecting to AWS Bedrock step by step—authentication, regions, the works.
+
+🛠️
+**New · Enterprise controls**
+**New policy forces fresh remote settings on startup**
+This one's for enterprise admins. The `forceRemoteSettingsRefresh` setting makes Claude Code wait for the latest managed settings before starting up, and it'll fail completely if it can't fetch them. Basically ensures everyone's running with the current company policies.
+
+📊
+**Improved · Cost tracking**
+**Cost breakdown now shows per-model and cache hits for subscription users**
+The `/cost` command got smarter—now you can see exactly which models you're using and how often your prompt cache is saving you money. Great for understanding where your usage is going.
+
+🔄
+**Improved · Session management**
+**Remote Control sessions now use your computer name as default**
+Instead of random names, your remote sessions will default to something like `myhost-graceful-unicorn` (you can still change the prefix). Makes it way easier to tell which session belongs to which machine.
 
 ---
 

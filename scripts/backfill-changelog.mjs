@@ -39,16 +39,15 @@ if (!ANTHROPIC_API_KEY) {
 
 // ── Config ──
 const START_DATE = '2026-04-01'
-const END_DATE = '2026-04-15'
+const END_DATE = '2026-04-14'
 const BLOG_DIR = resolve(ROOT, 'src/content/blog')
 
 // Sources scraped via Jina (no dates in content — shared across all days)
 const JINA_SOURCES = [
   { id: 'openai', name: 'OpenAI', url: 'https://platform.openai.com/docs/changelog' },
   { id: 'anthropic', name: 'Anthropic Models', url: 'https://docs.anthropic.com/en/docs/about-claude/models' },
-  { id: 'anthropic-api', name: 'Anthropic API', url: 'https://docs.anthropic.com/en/api/changelog' },
   { id: 'google-gemini', name: 'Google Gemini', url: 'https://ai.google.dev/gemini-api/docs/changelog' },
-  { id: 'deepseek', name: 'DeepSeek', url: 'https://api-docs.deepseek.com/news/news0801' },
+  { id: 'deepseek', name: 'DeepSeek', url: 'https://api-docs.deepseek.com/updates' },
 ]
 
 // ── Helpers ──
@@ -127,15 +126,23 @@ async function callClaude(prompt) {
   return data.content[0]?.text || ''
 }
 
-function buildPrompt(sourceContent, yesterdayDisplay, todayDisplay) {
+function buildPrompt(sourceContent, yesterdayDisplay, todayDisplay, dateStr) {
+  // Extract just month and day for date matching (e.g., "April 1" from "2026-04-01")
+  const d = new Date(dateStr + 'T12:00:00Z')
+  const monthDay = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+
   return `You are writing "The AI ChangeLog" — a daily digest that makes AI platform updates understandable for regular business owners. Think "AI for Dummies" — no jargon, no buzzwords. Explain things the way you'd explain them to a smart friend who doesn't work in tech.
 
-This post covers changes from YESTERDAY: ${yesterdayDisplay}
+This post covers changes from YESTERDAY: ${yesterdayDisplay} (${dateStr})
 Today (when this post goes live): ${todayDisplay}
 
-Below are changelog entries from each platform. Each section is clearly labeled with the platform name and what changed. Focus ONLY on changes from ${yesterdayDisplay}. If a platform had no changes yesterday, skip it entirely.
+Below are changelog entries from each platform. CAREFULLY scan ALL sources for changes dated ${yesterdayDisplay}, "${monthDay}, 2026", "${monthDay}", or "${dateStr}". Different platforms use different date formats.
 
-IMPORTANT: Claude Code is Anthropic's AI coding assistant (CLI tool). If there are Claude Code releases listed for yesterday, ALWAYS include them.
+IMPORTANT INSTRUCTIONS:
+1. Search EVERY source below for entries matching yesterday's date. Dates in the Google Gemini changelog use "Month Day, Year" format (e.g., "${monthDay}, 2026"). OpenAI uses similar formats. Claude Code releases have explicit dates.
+2. If a platform had changes yesterday, ALWAYS include them — do not skip any platform that shipped updates.
+3. Start your response directly with the first ## heading. Do NOT add any preamble, introduction, or commentary before the first platform heading. No "Looking at yesterday's changes..." or "Here's what happened..." — jump straight to the content.
+4. If NOTHING changed across ALL platforms, write ONLY a short "Quiet day across the board" message.
 
 Write the blog post body in markdown (NOT MDX — no imports, no JSX).
 
@@ -180,6 +187,7 @@ EMOJI
 
 Do NOT include frontmatter — I'll add that separately.
 Do NOT wrap the output in code fences.
+Do NOT add any preamble text before the first ## heading.
 
 ---
 
@@ -193,8 +201,14 @@ function buildMdx(blogContent, dateStr, displayDate, sourceCount, successCount) 
     ? headlineMatch[1].trim().slice(0, 200)
     : `Daily AI platform changelog digest for ${displayDate}.`
 
+  // Count platforms and change categories
   const platformSections = blogContent.match(/^## .+/gm) || []
   const platformCount = platformSections.length
+  const newItems = (blogContent.match(/\*\*New\s*·/g) || []).length
+  const improvedItems = (blogContent.match(/\*\*Improved\s*·/g) || []).length
+  const fixedItems = (blogContent.match(/\*\*Fixed\s*·/g) || []).length
+  const killedItems = (blogContent.match(/\*\*(Heads up|Killed|Deprecated)\s*·/g) || []).length
+  const totalChanges = newItems + improvedItems + fixedItems + killedItems
 
   const frontmatter = `---
 title: "The AI ChangeLog — ${displayDate}"
@@ -210,9 +224,12 @@ infographic:
   headline: "AI Platform Updates"
   type: "stats"
   stats:
-    - { label: "Platforms Tracked", value: "${sourceCount}" }
-    - { label: "Updates Today", value: "${platformCount}" }
-    - { label: "Sources Checked", value: "${successCount}/${sourceCount}" }
+    - { label: "Platforms Updated", value: "${platformCount} of ${sourceCount}" }
+    - { label: "New", value: "${newItems}" }
+    - { label: "Improved", value: "${improvedItems}" }
+    - { label: "Fixed", value: "${fixedItems}" }
+    - { label: "Killed", value: "${killedItems}" }
+    - { label: "Total Changes", value: "${totalChanges}" }
 ---`
 
   return `${frontmatter}\n\n${blogContent}\n\n---\n\n*The AI ChangeLog is generated daily by Demand Signals. We scrape official changelogs, run them through Claude, and publish a plain-English summary so you don't have to read the docs. [Subscribe to our blog](/blog) for daily updates.*\n`
@@ -250,12 +267,12 @@ async function main() {
   const totalSuccess = jinaSuccessCount + (Object.keys(claudeCodeByDate).length > 0 ? 1 : 0)
   console.log(`\nSources ready: ${totalSuccess}/${totalSources}\n`)
 
-  // Build shared Jina source content (truncated)
+  // Build shared Jina source content (larger limit for backfill)
   const sharedJinaContent = jinaResults
     .filter(c => !c.error)
     .map(c => {
-      const truncated = c.content.length > 6000
-        ? c.content.slice(0, 6000) + '\n\n[... truncated]'
+      const truncated = c.content.length > 20000
+        ? c.content.slice(0, 20000) + '\n\n[... truncated]'
         : c.content
       return `## ${c.source.name} Changelog\nSource: ${c.source.url}\n\n${truncated}`
     })
@@ -301,7 +318,7 @@ async function main() {
     console.log(`  Generating ${slug}...${ccReleases ? ` (${ccReleases.length} Claude Code releases)` : ''}`)
 
     try {
-      const prompt = buildPrompt(daySourceContent, yesterdayDisplay, todayDisplay)
+      const prompt = buildPrompt(daySourceContent, yesterdayDisplay, todayDisplay, dateStr)
       const blogContent = await callClaude(prompt)
 
       if (!blogContent || blogContent.length < 100) {
@@ -313,8 +330,8 @@ async function main() {
       writeFileSync(filePath, mdx, 'utf-8')
       console.log(`  ✓ ${slug}.mdx (${blogContent.length} chars)`)
 
-      // Rate limit: 30K input tokens/min, ~15K tokens/request → ~2 req/min
-      await new Promise(r => setTimeout(r, 35000))
+      // Rate limit: 30K input tokens/min, ~30K tokens/request → ~1 req/min
+      await new Promise(r => setTimeout(r, 65000))
     } catch (err) {
       console.log(`  ✗ ${slug}: ${err.message}`)
     }

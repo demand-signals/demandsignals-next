@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Thursday, April 2, 2026"
 date: "2026-04-02"
 author: "AI ChangeLog"
-excerpt: "MCP tools can now handle way bigger results without being cut off"
+excerpt: "Google's AI can now drive your computer for you"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -12,38 +12,54 @@ infographic:
   headline: "AI Platform Updates"
   type: "stats"
   stats:
-    - { label: "Platforms Tracked", value: "6" }
-    - { label: "Updates Today", value: "1" }
-    - { label: "Sources Checked", value: "6/6" }
+    - { label: "Platforms Updated", value: "2 of 5" }
+    - { label: "New", value: "4" }
+    - { label: "Improved", value: "1" }
+    - { label: "Fixed", value: "2" }
+    - { label: "Killed", value: "0" }
+    - { label: "Total Changes", value: "7" }
 ---
+
+## Google Gemini API
+What's new from Google's multimodal AI platform
+
+🤖
+**New · Tool Control**
+**Google's AI can now drive your computer for you**
+They added a "Computer Use" capability that lets Gemini directly control your screen, mouse, and keyboard. Think of it like having an AI assistant that can actually click buttons and navigate websites for you, not just tell you what to do.
+
+📊
+**New · Music Generation**
+**Real-time music creation just landed**
+Lyria RealTime is Google's answer to live music generation. You can now get AI-generated music on the fly, which is pretty wild for content creators who need background tracks in real-time.
+
+🔧
+**Fixed · Bugs**  
+**Various stability improvements and bug fixes**
+They cleaned up some issues with the API that were causing problems for developers. Nothing earth-shattering, but your apps should run more smoothly now.
 
 ## Claude Code
 What's new from Anthropic's AI coding assistant
 
 🛠️
-**New · MCP Tools**
-**MCP tools can now handle way bigger results without being cut off**
-Previously, MCP tool results got truncated at a smaller limit. Now developers can tag specific results to pass through up to 500K characters — perfect for things like database schemas or large API responses that Claude needs to see in full.
+**New · Tool Integration**
+**MCP tools can now handle much bigger results without getting cut off**
+Previously, if a tool returned a huge result (like a massive database schema), it would get truncated. Now you can override this and pass through up to 500K characters of results, which is huge for database work and complex integrations.
 
-⚡
+⚠️
+**New · Security Controls**
+**Added safety switch for shell execution in skills**
+New `disableSkillShellExecution` setting lets you turn off inline shell commands in custom skills and plugins. Basically, you can now prevent Claude from running terminal commands if you're working in a sensitive environment.
+
+🔄
 **Improved · Performance**
-**The terminal got faster and smarter across multiple areas**
-The tool now strips formatting codes faster (especially on Bun), uses shorter text anchors to save tokens, and loads conversations more reliably when you resume sessions. Plus several terminal emulators now properly handle the cmd+delete shortcut.
+**Faster text processing on Bun runtime**
+If you're using Bun (the JavaScript runtime), Claude Code now processes colored terminal output way faster by tapping into Bun's native functions instead of doing it the slow way.
 
 🔧
 **Fixed · Bugs**
-**Plan mode works better in remote sessions · Conversation history stops disappearing · JSON validation catches bad settings**
-The biggest fix prevents losing your chat history when transcript files fail to save silently. Plan mode also remembers your plan file after container restarts, and the settings validator now properly catches permission configuration errors.
-
-🛠️
-**New · Plugin System**
-**Plugins can now include their own executable files**
-Plugin developers can ship executables in a `bin/` folder and call them directly from Claude's Bash tool. This opens up more possibilities for custom tooling and integrations.
-
-🔑
-**New · Security Controls**
-**Added option to disable shell execution in skills and plugins**
-You can now turn off inline shell execution across skills, custom slash commands, and plugin commands with the new `disableSkillShellExecution` setting. Useful if you want Claude's help but prefer tighter security controls.
+**Plan mode no longer loses track after container restarts · Deep links support multi-line prompts · Better keyboard shortcuts on various terminals**
+Fixed several annoying issues: plan files getting "lost" when containers restart, multi-line prompts in deep links working properly, and keyboard shortcuts behaving correctly across different terminal apps like iTerm2 and Windows Terminal.
 
 ---
 

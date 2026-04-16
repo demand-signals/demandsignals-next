@@ -2,7 +2,7 @@
 title: "The AI ChangeLog — Tuesday, April 14, 2026"
 date: "2026-04-14"
 author: "AI ChangeLog"
-excerpt: "Prompt caching now lasts an hour instead of 5 minutes (if you opt in)"
+excerpt: "File Search tool now limits searches to 200 results"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -12,40 +12,44 @@ infographic:
   headline: "AI Platform Updates"
   type: "stats"
   stats:
-    - { label: "Platforms Tracked", value: "6" }
-    - { label: "Updates Today", value: "1" }
-    - { label: "Sources Checked", value: "6/6" }
+    - { label: "Platforms Updated", value: "2 of 5" }
+    - { label: "New", value: "2" }
+    - { label: "Improved", value: "1" }
+    - { label: "Fixed", value: "1" }
+    - { label: "Killed", value: "1" }
+    - { label: "Total Changes", value: "5" }
 ---
 
-Quiet day across the board today. While Claude Code saw significant updates with new caching features and quality-of-life improvements, the major AI platforms — OpenAI, Anthropic's main API, Google Gemini, and DeepSeek — didn't release any notable changes on Tuesday, April 14, 2026.
+## Google Gemini
+What's new in Google AI's conversational AI platform
+
+⚠️
+**Heads up · File Search**
+**File Search tool now limits searches to 200 results**
+Starting April 14, the File Search tool caps results at 200 items to keep responses focused. You can still search through thousands of files, but you'll get the most relevant 200 matches instead of being overwhelmed by every possible result.
 
 ## Claude Code
-Two feature-packed releases from Anthropic's coding assistant
-
-⚡
-**New · Caching**
-**Prompt caching now lasts an hour instead of 5 minutes (if you opt in)**
-You can now set `ENABLE_PROMPT_CACHING_1H=true` to make your prompts cache for a full hour instead of the default 5 minutes. This means faster responses when you're working on the same project over longer periods, since Claude won't need to re-read your entire codebase as often.
+What's new from Anthropic's AI coding assistant
 
 🧠
 **New · Memory**
 **Claude now remembers what you were doing when you come back**
-Added a recap feature that gives you context when you return to a previous coding session. It's like having Claude catch you up on where you left off in your project. You can manually trigger it with `/recap` or it'll happen automatically when appropriate.
+Added a recap feature that gives you context when you return to a session. It's like having Claude catch you up on where you left off in your coding project. You can turn this on in /config or trigger it manually with /recap.
 
-🛠️
-**New · Commands**
-**Claude can now find and use its own slash commands**
-The AI can now discover and run built-in commands like `/init`, `/review`, and `/security-review` on its own when it thinks they'd be helpful. It's like giving Claude access to its own toolkit without you having to remember all the commands.
+🤖
+**New · Skills**
+**Claude can now discover and use its own slash commands**
+The model figured out how to use built-in commands like `/init`, `/review`, and `/security-review` through the Skill tool. It's basically Claude learning to help itself help you better.
 
 🔄
-**Improved · Navigation**
-**Better session picker shows your current project first**
-When you use `/resume` to return to a previous session, it now defaults to showing sessions from your current directory first. Hit `Ctrl+A` if you want to see sessions from all your other projects too.
+**Improved · Performance**
+**Lighter memory usage and smarter language loading**
+File operations now use less RAM by loading syntax highlighting on demand instead of all at once. Your computer will thank you when working with large codebases.
 
 🔧
 **Fixed · Bugs**
-**Copy-paste works again · Better error messages · Memory improvements**
-Fixed pasting code in the login prompt, improved error messages to distinguish between rate limits and usage limits, and reduced memory usage when working with large files. Plus several other quality-of-life fixes for a smoother coding experience.
+**Better error handling and several UI fixes**
+Fixed paste issues in login prompts · Clearer error messages for rate limits · Better session handling for Remote Control · Fixed character encoding problems with accents and special characters.
 
 ---
 

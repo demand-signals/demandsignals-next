@@ -26,12 +26,6 @@ export const CHANGELOG_SOURCES: ChangelogSource[] = [
     type: 'html',
   },
   {
-    id: 'anthropic-api',
-    name: 'Anthropic API',
-    url: 'https://docs.anthropic.com/en/api/changelog',
-    type: 'html',
-  },
-  {
     id: 'claude-code',
     name: 'Claude Code',
     url: 'https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md',
@@ -46,7 +40,7 @@ export const CHANGELOG_SOURCES: ChangelogSource[] = [
   {
     id: 'deepseek',
     name: 'DeepSeek',
-    url: 'https://api-docs.deepseek.com/news/news0801',
+    url: 'https://api-docs.deepseek.com/updates',
     type: 'html',
   },
 ]
