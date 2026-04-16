@@ -218,7 +218,7 @@ export default async function BlogPostPage({ params }: Props) {
                   </Link>
                 ) : <div style={{ flex: 1 }} />}
 
-                <Link href="/blog" style={{
+                <Link href="/blog?category=ai-changelog" style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   padding: '14px 20px', background: '#F59E0B', borderRadius: 10,
                   color: '#fff', fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none',

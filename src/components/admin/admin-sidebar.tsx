@@ -6,6 +6,7 @@ import { useState } from 'react'
 import {
   LayoutDashboard, Users, Kanban, Monitor, Upload, Bot, LogOut,
   ChevronDown, Target, MapPin, FileText, BarChart3, Layers, LineChart,
+  Newspaper,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -24,6 +25,7 @@ const PROSPECTING_ITEMS: NavItem[] = [
 const CONTENT_ITEMS: NavItem[] = [
   { href: '/admin/long-tails', label: 'Long-Tails', icon: MapPin },
   { href: '/admin/blog', label: 'Blog Posts', icon: FileText },
+  { href: '/admin/changelog', label: 'ChangeLog', icon: Newspaper },
 ]
 
 const INSIGHTS_ITEMS: NavItem[] = [

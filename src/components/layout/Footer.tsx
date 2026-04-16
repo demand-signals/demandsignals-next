@@ -114,7 +114,7 @@ export function Footer() {
 
       {/* Bottom bar */}
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', maxWidth: 1200, margin: '0 auto', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)' }}>
-        <span>© {new Date().getFullYear()} Demand Signals. All rights reserved.</span>
+        <span>© 2026 Demand Signals. All rights reserved.</span>
         <span style={{ color: 'rgba(255,255,255,0.3)' }}>Digital by Demand Signals.</span>
         <div style={{ display: 'flex', gap: 20 }}>
           <Link href="/privacy" style={{ color: 'rgba(255,255,255,0.35)' }}>Privacy</Link>

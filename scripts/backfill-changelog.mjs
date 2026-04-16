@@ -210,8 +210,17 @@ function buildMdx(blogContent, dateStr, displayDate, sourceCount, successCount) 
   const killedItems = (blogContent.match(/\*\*(Heads up|Killed|Deprecated)\s*·/g) || []).length
   const totalChanges = newItems + improvedItems + fixedItems + killedItems
 
+  // Generate title from biggest headline or quiet-day joke
+  const title = excerpt !== `Daily AI platform changelog digest for ${displayDate}.`
+    ? excerpt.slice(0, 80)
+    : 'Quiet Day Across the AI Landscape'
+
+  // Format date for infographic headline (e.g. "April 15, 2026")
+  const d = new Date(dateStr + 'T12:00:00Z')
+  const infographicDate = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+
   const frontmatter = `---
-title: "The AI ChangeLog — ${displayDate}"
+title: "${title.replace(/"/g, '\\"')}"
 date: "${dateStr}"
 author: "AI ChangeLog"
 excerpt: "${excerpt.replace(/"/g, '\\"')}"
@@ -221,7 +230,7 @@ category: "ai-changelog"
 serviceCategories: ["ai-services"]
 featured: false
 infographic:
-  headline: "AI Platform Updates"
+  headline: "Changelog Update for ${infographicDate}"
   type: "stats"
   stats:
     - { label: "Platforms Updated", value: "${platformCount} of ${sourceCount}" }

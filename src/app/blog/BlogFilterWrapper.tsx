@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { BlogCategoryBar } from '@/components/blog/BlogCategoryBar'
 import BlogGrid from './BlogGrid'
 
@@ -20,8 +21,15 @@ interface Post {
   }
 }
 
-export default function BlogFilterWrapper({ posts }: { posts: Post[] }) {
-  const [filter, setFilter] = useState('all')
+function BlogFilterInner({ posts }: { posts: Post[] }) {
+  const searchParams = useSearchParams()
+  const categoryParam = searchParams.get('category')
+  const [filter, setFilter] = useState(categoryParam || 'all')
+
+  // Sync filter when URL param changes (e.g. back/forward navigation)
+  useEffect(() => {
+    if (categoryParam) setFilter(categoryParam)
+  }, [categoryParam])
 
   return (
     <>
@@ -44,5 +52,20 @@ export default function BlogFilterWrapper({ posts }: { posts: Post[] }) {
         )}
       </section>
     </>
+  )
+}
+
+export default function BlogFilterWrapper({ posts }: { posts: Post[] }) {
+  return (
+    <Suspense fallback={
+      <>
+        <BlogCategoryBar active="all" onChange={() => {}} />
+        <section id="posts" style={{ background: 'var(--light, #f5f5f3)', padding: '64px 24px 96px' }}>
+          <BlogGrid posts={posts} filter="all" />
+        </section>
+      </>
+    }>
+      <BlogFilterInner posts={posts} />
+    </Suspense>
   )
 }

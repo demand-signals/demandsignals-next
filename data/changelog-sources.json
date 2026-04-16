@@ -1,0 +1,7 @@
+[
+  { "id": "openai", "name": "OpenAI", "url": "https://platform.openai.com/docs/changelog", "type": "html", "active": true },
+  { "id": "anthropic", "name": "Anthropic", "url": "https://docs.anthropic.com/en/docs/about-claude/models", "type": "html", "active": true },
+  { "id": "claude-code", "name": "Claude Code", "url": "https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md", "type": "html", "active": true },
+  { "id": "google-gemini", "name": "Google Gemini", "url": "https://ai.google.dev/gemini-api/docs/changelog", "type": "html", "active": true },
+  { "id": "deepseek", "name": "DeepSeek", "url": "https://api-docs.deepseek.com/updates", "type": "html", "active": true }
+]

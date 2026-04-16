@@ -193,13 +193,18 @@ ${sourceContent}`
 
     // 3. Build the MDX file
     const slug = `ai-changelog-${dateStr}`
-    const title = `The AI ChangeLog — ${displayDate}`
 
-    // Extract first bold headline as excerpt
+    // Extract first bold headline as excerpt + title
     const headlineMatch = blogContent.match(/\*\*[^*]*·[^*]*\*\*\n\*\*([^*]+)\*\*/)
     const excerpt = headlineMatch
       ? headlineMatch[1].trim().slice(0, 200)
       : `Daily AI platform changelog digest for ${displayDate}.`
+    const title = headlineMatch
+      ? headlineMatch[1].trim().slice(0, 80)
+      : 'Quiet Day Across the AI Landscape'
+
+    // Format date for infographic headline
+    const infographicDate = yesterday.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 
     // Count platforms and change categories
     const platformSections = blogContent.match(/^## .+/gm) || []
@@ -211,7 +216,7 @@ ${sourceContent}`
     const totalChanges = newItems + improvedItems + fixedItems + killedItems
 
     const frontmatter = `---
-title: "${title}"
+title: "${title.replace(/"/g, '\\"')}"
 date: "${dateStr}"
 author: "AI ChangeLog"
 excerpt: "${excerpt.replace(/"/g, '\\"')}"
@@ -221,7 +226,7 @@ category: "ai-changelog"
 serviceCategories: ["ai-services"]
 featured: false
 infographic:
-  headline: "AI Platform Updates"
+  headline: "Changelog Update for ${infographicDate}"
   type: "stats"
   stats:
     - { label: "Platforms Updated", value: "${platformCount} of ${changelogs.length}" }
