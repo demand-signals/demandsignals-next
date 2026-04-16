@@ -1,119 +1,103 @@
 ---
-title: "Top 10 LLMs for April 2026: Who's Actually Winning the AI Race"
-date: "2026-04-15"
+title: "Top 10 LLMs of April 2026 — Usage Rankings & Pricing"
+date: "2026-04-01"
 author: "AI ChangeLog"
-excerpt: "Monthly LLM rankings based on real-world usage data from millions of API calls through OpenRouter. Claude Sonnet 4 dominates, Gemini Flash holds strong, and DeepSeek is the dark horse nobody expected."
-tags: ["llm-rankings", "ai-models", "openrouter", "claude", "gemini", "deepseek", "grok", "market-share"]
+excerpt: "Monthly LLM rankings based on real-world API usage data. Claude Sonnet 4.6 holds the throne, GPT-5.4 solidifies OpenAI's comeback, and open-weight models finally crack the top 10 again."
+tags: ["llm-rankings", "ai-models", "openrouter", "claude", "gemini", "gpt", "deepseek", "market-share", "april-2026"]
 category: "ai-engineering"
 serviceCategories: ["ai-services"]
-readTime: "8 min read"
+readTime: "9 min read"
 featured: true
 infographic:
   headline: "LLM Rankings — April 2026"
   type: "stats"
   stats:
-    - { label: "Models Tracked", value: "100+" }
-    - { label: "Top Model", value: "Claude Sonnet 4" }
-    - { label: "Fastest Climber", value: "DeepSeek V3.1" }
-    - { label: "Data Source", value: "OpenRouter" }
+    - { label: "Models Tracked", value: "110+" }
+    - { label: "Top Model", value: "Claude Sonnet 4.6" }
+    - { label: "New This Month", value: "Gemma 4 31B" }
+    - { label: "Biggest Mover", value: "GPT-5.4 ↑1" }
 ---
 
-Every month, we pull real-world usage data from [OpenRouter](https://openrouter.ai/rankings) — a platform that routes millions of API calls across every major LLM provider — and rank the models that developers and businesses are actually using. Not benchmarks. Not press releases. Real tokens, real money, real usage.
+Welcome to the April edition of our monthly LLM rankings. Each month, we pull real-world usage data from [OpenRouter](https://openrouter.ai/rankings) — a platform routing millions of API calls across every major LLM — and rank the models developers are actually paying for.
 
-Here's who's winning in April 2026.
+Not benchmarks. Not press releases. Real tokens, real money, real usage.
 
-## The Top 10
+## The Top 10 — April 2026
 
-### 1. Claude Sonnet 4 (Anthropic)
+| Rank | Model | Provider | Move | Input / 1K tokens | Output / 1K tokens |
+|------|-------|----------|------|-------------------|-------------------|
+| 1 | Claude Sonnet 4.6 | Anthropic | ● | $0.003 | $0.015 |
+| 2 | GPT-5.4 | OpenAI | ↑ | $0.002 | $0.01 |
+| 3 | Gemini 3 Flash | Google | ↑ | $0.0001 | $0.0004 |
+| 4 | DeepSeek V3 | DeepSeek | ↑ | $0.0003 | $0.0009 |
+| 5 | Claude 3.5 Sonnet | Anthropic | ↓ | $0.003 | $0.015 |
+| 6 | GPT-5.4 Mini | OpenAI | ↑ | $0.0003 | $0.0012 |
+| 7 | Claude Opus 4.6 | Anthropic | ↑ | $0.015 | $0.075 |
+| 8 | Gemini 3.1 Pro | Google | ● | $0.00125 | $0.005 |
+| 9 | Qwen3.6 Plus | Alibaba | 🆕 | $0.0002 | $0.0008 |
+| 10 | Gemma 4 31B | Google | 🆕 | $0.0001 | $0.0003 |
 
-**The undisputed usage leader.** Claude Sonnet 4 has held the #1 spot for weeks now, and it's not close. Developers love the balance of intelligence, speed, and price. At $0.003 per 1K input tokens and $0.015 per 1K output tokens, it's the sweet spot — smart enough for complex coding and analysis, fast enough for production, cheap enough to scale.
+### New This Month
 
-**Why it wins:** Best-in-class coding ability, strong instruction following, massive 200K context window. The model most developers reach for when they need something that "just works."
+**Qwen3.6 Plus** (Mar 18) — Alibaba's latest general-purpose model brings serious multilingual capabilities at a price point that makes DeepSeek sweat. Strong adoption in Asia-Pacific markets, and surprisingly good English performance. The thinking mode is optional, which helps keep costs predictable.
 
-### 2. Gemini 2.5 Flash (Google)
+**Gemma 4 31B** (Mar 22) — Google's open-weight contender re-enters the conversation. At 31B parameters, it's efficient enough to self-host on a single A100, and the quality rivals models 3x its size. Open-weight enthusiasts finally have a model worth deploying in production.
 
-**The speed king.** Google's Flash models have carved out a massive niche by being absurdly fast and dirt cheap. Gemini 2.5 Flash processes tokens at rates that make other models look like they're running on dial-up, and the quality is surprisingly good for the price point.
+**Claude Opus 4.6 Fast** (Mar 30) — Anthropic's speed-optimized Opus variant launched at month's end. Same reasoning depth, 40% faster time-to-first-token. Too late to show up in April rankings, but expect it to appear in May as enterprise users migrate from standard Opus.
 
-**Why it's here:** When you need to process thousands of API calls per minute — customer support bots, content classification, real-time analysis — Flash is the model you use. Speed over depth.
+### Dropped Out
 
-### 3. Gemini 2.0 Flash (Google)
+**DeepSeek R1** drops from #10 to #13. The dedicated reasoning model is losing volume to general-purpose models that now include built-in thinking modes (Qwen3 Max, GPT-5.4 with chain-of-thought). Dedicated reasoning models may be a dying category.
 
-**The reliable workhorse.** Even with 2.5 Flash available, the 2.0 version maintains massive usage. Many production systems haven't migrated yet (if it ain't broke...), and some developers prefer its slightly different behavior profile for specific tasks.
+**GPT-5.2** falls to #11 as GPT-5.4 absorbs its traffic. OpenAI's model ladder is working — users step up to the latest, and older models fade within two cycles.
 
-**Why it persists:** Production inertia is real. Switching models mid-deployment is risky. The 2.0 Flash has proven reliability at scale.
+### The Story
 
-### 4. DeepSeek Chat V3.1 (DeepSeek)
+**Stability at the top.** Claude Sonnet 4.6 holds #1 for the second consecutive month, and the gap is widening. Anthropic's model has become the default for coding agents, content generation, and complex instruction following. Developer surveys consistently rank it highest for "reliability" — the model does what you ask, consistently, without creative interpretations of your prompt.
 
-**The dark horse.** DeepSeek came out of nowhere in late 2025 and has been climbing steadily ever since. V3.1 offers performance that rivals Claude and GPT at a fraction of the cost. For price-sensitive applications, it's becoming the default choice.
+**GPT-5.4 climbs to #2**, overtaking both Gemini 3 Flash and the legacy Claude 3.5 Sonnet. This is OpenAI's best position since October 2025. The 500K context window is a genuine differentiator — developers processing entire codebases or long legal documents are choosing GPT-5.4 over Claude for context-heavy tasks.
 
-**Why it's climbing:** Open weights, aggressive pricing, and surprisingly strong reasoning. DeepSeek proved you don't need a $100B war chest to build a competitive LLM.
+**The budget tier is a bloodbath.** GPT-5.4 Mini, DeepSeek V3, Gemini 3 Flash, Qwen3.6 Plus, and Gemma 4 are all fighting for price-sensitive volume. The quality gap between these models is shrinking every month, which means the competition is increasingly about throughput, latency, and ecosystem integration rather than raw capability.
 
-### 5. Gemini 2.5 Pro (Google)
+**Claude 3.5 Sonnet drops to #5** — its lowest position ever. This isn't a failure; it's a natural succession. Sonnet 4.6 is strictly better at the same price. The remaining 3.5 traffic is locked-in contracts, pinned model versions in production systems, and teams that haven't allocated engineering time to migrate. By June, it'll likely fall out of the top 10 entirely.
 
-**Google's premium play.** When you need Google's best thinking — complex reasoning, long document analysis, multimodal tasks — 2.5 Pro is the model. It's more expensive than Flash but significantly more capable for tasks that require depth over speed.
+### Market Share
 
-**Why it matters:** The model Google uses to compete directly with Claude Opus and GPT-4o on quality benchmarks.
+| Provider | Share | Trend |
+|----------|-------|-------|
+| Anthropic | ~31% | Stable |
+| OpenAI | ~25% | Growing |
+| Google | ~23% | Growing |
+| DeepSeek | ~9% | Declining |
+| Alibaba | ~5% | Growing |
+| xAI | ~3% | Stable |
+| Meta | ~2% | Declining |
+| Mistral | ~1% | Declining |
+| Others | ~1% | — |
 
-### 6. Grok Code Fast (xAI)
+### Q1 2026 in Review
 
-**The new kid.** Elon's xAI team has been shipping fast, and Grok Code Fast is specifically optimized for programming tasks. It's gaining traction in the developer tools space, particularly for code completion and generation.
+Since we now have four months of data, here's how the landscape shifted in Q1:
 
-**Why it's here:** Aggressive pricing, strong code performance, and the curiosity factor. Developers are testing it against Sonnet for coding tasks.
+| Metric | January | April | Change |
+|--------|---------|-------|--------|
+| #1 Model | Claude 3.5 Sonnet | Claude Sonnet 4.6 | New champion |
+| Models in Top 10 (Anthropic) | 2 | 3 | +1 |
+| Models in Top 10 (OpenAI) | 2 | 2 | Stable (but newer) |
+| Models in Top 10 (Google) | 2 | 3 | +1 |
+| Cheapest Input (per 1K) | $0.0001 | $0.0001 | Floor held |
+| Most Expensive Input (per 1K) | $0.015 | $0.015 | Ceiling held |
+| Total Models Tracked | 80+ | 110+ | +37% |
 
-### 7. Qwen 3 Coder 480B (Alibaba)
+The big takeaway: **the number of competitive models is exploding, but usage is consolidating around fewer winners.** The top 3 models command over 40% of all API traffic. The long tail of models — open-weight fine-tunes, regional specialists, niche reasoning models — is growing, but each individual model captures less volume.
 
-**The open-source giant.** At 480 billion parameters, Qwen 3 Coder is one of the largest open-weight coding models available. Running it requires serious infrastructure, but for organizations that want to self-host their AI coding assistant, it's a compelling option.
+### What to Watch in May
 
-**Why it's notable:** Proves that open-source models can compete at the frontier. Available through OpenRouter for those who don't want to run 480B parameters on their own GPUs.
-
-### 8. DeepSeek R1 (DeepSeek)
-
-**The reasoner.** While DeepSeek Chat handles general conversation, R1 is their chain-of-thought reasoning model — similar to OpenAI's o1. For math, logic, and complex multi-step problems, R1 punches well above its weight class.
-
-**Why it's growing:** Reasoning models are becoming essential for agent workflows. R1 offers o1-class thinking at DeepSeek prices.
-
-### 9. Claude 3.7 Sonnet (Anthropic)
-
-**The legacy champion.** Despite Sonnet 4 being available, the 3.7 version maintains significant usage. Some production systems are locked to it, and some users genuinely prefer its behavior for certain tasks.
-
-**Why it's still here:** Model version loyalty is real. Some fine-tuned prompts work better with 3.7's specific quirks. Migration takes time.
-
-### 10. Claude Opus 4 (Anthropic)
-
-**The thinking machine.** When you need the absolute best reasoning, longest context, and deepest analysis, Opus is the model. It's expensive ($0.015 input, $0.075 output) but for high-stakes decisions — legal analysis, complex debugging, strategic planning — nothing else comes close.
-
-**Why it rounds out the top 10:** Not used for bulk processing, but essential for the moments when getting it right matters more than getting it fast.
-
-## Market Share by Company
-
-Based on OpenRouter's token volume data, here's how the major providers stack up in April 2026:
-
-| Provider | Approximate Share | Trend |
-|----------|------------------|-------|
-| **Anthropic** | ~35% | Stable leader |
-| **Google** | ~30% | Growing (Flash models) |
-| **DeepSeek** | ~15% | Rapid growth |
-| **xAI** | ~8% | New entrant, climbing |
-| **Alibaba (Qwen)** | ~5% | Steady |
-| **OpenAI** | ~4% | Declining from dominance |
-| **Others** | ~3% | Fragmented |
-
-### The OpenAI Story
-
-The elephant in the room: OpenAI at ~4% on OpenRouter. This doesn't mean OpenAI is dying — they still have massive direct API usage and ChatGPT consumer traffic. But in the developer API market (which is what OpenRouter measures), they've lost significant ground. Claude took the coding crown, Gemini Flash took the speed crown, and DeepSeek took the price crown. OpenAI's models are good at everything but best at nothing — a dangerous position in a market that's fragmenting into specialties.
-
-## What This Means for Your Business
-
-If you're building AI-powered products or using AI in your operations, here are the takeaways:
-
-**Don't bet on one provider.** The rankings shift monthly. Build your systems to be model-agnostic where possible. OpenRouter itself is a great abstraction layer for this.
-
-**Price matters more than benchmarks.** DeepSeek's rise proves that "good enough at 1/10th the price" beats "slightly better at premium cost" for most applications.
-
-**Speed and cost determine scale.** The top 3 is dominated by models that are fast and affordable. Intelligence is table stakes — every top-10 model is "smart enough" for most business tasks. The differentiator is how many queries you can run per dollar.
-
-**Reasoning models are a separate category.** DeepSeek R1 and Claude Opus aren't competing with Flash models — they serve different purposes. The market is bifurcating into "fast and cheap" for throughput and "slow and smart" for complex decisions.
+- **Claude Opus 4.6 Fast** will enter the rankings — early testers report it's a genuine improvement for latency-sensitive enterprise use cases
+- **DeepSeek V4** rumors are getting louder; a Q2 launch seems likely
+- **Meta Llama 4** is overdue and losing open-weight mindshare to Gemma 4 and Qwen3
+- **Google I/O** in May could bring Gemini 4 announcements that reshape the entire ranking
 
 ---
 
-*The LLM Rankings Report is published monthly by Demand Signals, sourced from [OpenRouter's real-world usage data](https://openrouter.ai/rankings). Rankings reflect actual API token volume, not benchmarks or press releases. [Subscribe to our blog](/blog) for monthly updates.*
+*Monthly LLM rankings by Demand Signals, sourced from [OpenRouter usage data](https://openrouter.ai/rankings). [Subscribe to our blog](/blog) for monthly updates.*
