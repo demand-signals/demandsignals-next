@@ -37,6 +37,12 @@ export interface QuoteSessionRow {
   total_tokens_used: number
   total_cost_cents: number
   last_ai_request_at: string | null
+  research_findings: unknown | null
+  research_started_at: string | null
+  research_completed_at: string | null
+  research_surfaced_at: string | null
+  research_confirmed: number | null
+  existing_site_url: string | null
   created_at: string
   updated_at: string
 }

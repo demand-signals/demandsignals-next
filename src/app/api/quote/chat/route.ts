@@ -247,6 +247,25 @@ export async function POST(request: NextRequest) {
     })
   }
 
+  // If research findings were pending and this reply just surfaced them, mark as surfaced
+  // so we don't re-inject them next turn. We detect "surfaced" by: findings exist,
+  // surfaced_at is null, and this turn actually included the findings in the system prompt.
+  if (
+    session.research_findings &&
+    !session.research_surfaced_at &&
+    session.research_completed_at
+  ) {
+    await supabaseAdmin
+      .from('quote_sessions')
+      .update({ research_surfaced_at: new Date().toISOString() })
+      .eq('id', session.id)
+    await supabaseAdmin.from('quote_events').insert({
+      session_id: session.id,
+      event_type: 'research_surfaced',
+      event_data: { ai_message_id: aiMsg?.id ?? null },
+    })
+  }
+
   // Fetch updated session for the response payload (so client can re-render configurator)
   const { data: freshSession } = await supabaseAdmin
     .from('quote_sessions')
@@ -260,6 +279,8 @@ export async function POST(request: NextRequest) {
     session: freshSession
       ? {
           business_name: freshSession.business_name,
+          business_type: freshSession.business_type,
+          business_location: freshSession.business_location,
           phone_verified: freshSession.phone_verified,
           selected_items: freshSession.selected_items,
           estimate_low: freshSession.estimate_low,

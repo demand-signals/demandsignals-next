@@ -11,6 +11,8 @@ interface SessionPublic {
   share_token: string
   status: string
   business_name: string | null
+  business_type?: string | null
+  business_location?: string | null
   phone_verified: boolean
   phone_last_four: string | null
   selected_items: SelectedItem[]
@@ -193,6 +195,26 @@ export default function QuotePageClient() {
     if (!sessionToken) return
     fetchPrices()
   }, [sessionToken, session?.selected_items?.length, session?.phone_verified, fetchPrices])
+
+  // ── Fire research subagent the first time we have business_name + location ─────
+  // The subagent looks up GBP + scans the site in the background.
+  // Idempotent on the server — safe to call even if triggered twice.
+  const researchFiredRef = useRef(false)
+  useEffect(() => {
+    if (!sessionToken) return
+    if (researchFiredRef.current) return
+    if (!session?.business_name || !session?.business_location) return
+    researchFiredRef.current = true
+    fetch('/api/quote/research/kick', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-token': sessionToken },
+      body: JSON.stringify({}),
+    }).catch(() => {
+      // Fire and forget. If the kick fails, the AI simply never gets findings and
+      // the experience degrades gracefully to the pre-research flow.
+      researchFiredRef.current = false
+    })
+  }, [sessionToken, session?.business_name, session?.business_location])
 
   // ── Send a chat message ──────────────────────────────
   async function sendMessage(text: string) {

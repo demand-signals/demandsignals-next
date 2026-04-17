@@ -40,6 +40,37 @@ CONVERSATION FLOW (SPIN Selling + Challenger Sale)
 ═══════════════════════════════════════════════════
 
 ═══════════════════════════════════════════════════
+RESEARCH SUBAGENT — CONFIRMATION-HOOK PATTERN
+═══════════════════════════════════════════════════
+A background research subagent runs after you capture business_name +
+business_location. When it finishes, you'll see a RESEARCH FINDINGS block
+in your dynamic context with a ready-made CONFIRMATION_HOOK sentence, GBP
+data, a site scan, and 1-3 suggested catalog items.
+
+Flow:
+  1. Your NEXT reply after research completes should be the confirmation hook
+     verbatim — one sentence, nothing else. Something like:
+       "Are you the Steve's Gardening at stevesgardening.com — 65 reviews at
+        4.9 stars on Google?"
+  2. Wait for the prospect to confirm in the next user turn.
+  3. After confirmation, deliver 1-2 specific observations naturally:
+       "Nice — dang, the reviews are solid but looking at the site, it's on
+        Wix and slow (6s load), no schema, no booking flow. That matches what
+        you're telling me. I'll add GBP cleanup and an SEO retrofit to the
+        plan — those are quick wins."
+  4. Call add_item for each of the SUGGESTED_ADDS, one per turn still applies.
+
+If research has MATCH_CONFIDENCE under 0.5, soften the hook:
+  "I took a quick look — I see a [name] in [area], is that you or is that
+   a different business?"
+
+If research couldn't find the business (no place, no scan), DO NOT mention
+research at all. Just continue the discovery flow.
+
+NEVER fabricate research findings. Only reference what's in the RESEARCH
+FINDINGS block.
+
+═══════════════════════════════════════════════════
 CRITICAL RULE — BUILD AS YOU GO
 ═══════════════════════════════════════════════════
 Add items to the configurator IMMEDIATELY as you learn each fact. NEVER batch
@@ -230,6 +261,37 @@ export function buildCatalogPrompt(): string {
 // ============================================================
 // Dynamic context — goes AFTER the cache_control breakpoint.
 // ============================================================
+interface ResearchFindingsShape {
+  version: number
+  place: {
+    name?: string
+    formatted_address?: string
+    website?: string | null
+    phone?: string | null
+    rating?: number | null
+    user_rating_count?: number | null
+    photo_count?: number
+    regular_opening_hours_text?: string[]
+  } | null
+  match_confidence: number
+  site_scan: {
+    url?: string
+    status?: number | null
+    ttfb_ms?: number | null
+    platform_hint?: string | null
+    has_schema?: boolean
+    has_h1?: boolean
+    has_contact_form?: boolean
+    has_booking_link?: boolean
+    notable_issues?: string[]
+    error?: string | null
+  } | null
+  confirmation_hook: string | null
+  observations: string[]
+  suggested_adds: string[]
+  raw_errors?: string[]
+}
+
 export function buildDynamicContext(session: QuoteSessionRow): string {
   const parts: string[] = [
     '═══════════════════════════════════════════════════',
@@ -242,6 +304,7 @@ export function buildDynamicContext(session: QuoteSessionRow): string {
   if (session.business_type) parts.push(`- Business type: ${session.business_type}`)
   if (session.business_location) parts.push(`- Location: ${session.business_location}`)
   if (session.build_path) parts.push(`- Build path: ${session.build_path}`)
+  if (session.existing_site_url) parts.push(`- Existing site URL: ${session.existing_site_url}`)
   if (session.missed_leads_monthly) {
     parts.push(`- Missed leads/mo (stated by prospect): ${session.missed_leads_monthly}`)
   }
@@ -257,6 +320,77 @@ export function buildDynamicContext(session: QuoteSessionRow): string {
   if (typeof session.estimate_low === 'number' && typeof session.estimate_high === 'number') {
     parts.push(`- Current estimate (cents): $${session.estimate_low / 100}-$${session.estimate_high / 100}`)
   }
+
+  // Inject research findings if available and not yet surfaced.
+  const findings = session.research_findings as ResearchFindingsShape | null
+  if (findings && findings.version === 1 && !session.research_surfaced_at) {
+    parts.push('')
+    parts.push('═══════════════════════════════════════════════════')
+    parts.push('RESEARCH FINDINGS — USE THIS TURN ONLY (not surfaced yet)')
+    parts.push('═══════════════════════════════════════════════════')
+    parts.push('The research subagent finished looking up this prospect while you were')
+    parts.push('talking. Weave these findings into your NEXT reply using the')
+    parts.push('CONFIRMATION-HOOK PATTERN:')
+    parts.push('  1. Ask the confirmation question in a single sentence')
+    parts.push('  2. When the prospect confirms, deliver 1-2 observations naturally')
+    parts.push('  3. Add any suggested items with add_item (one per turn still applies)')
+    parts.push('')
+    if (findings.confirmation_hook) {
+      parts.push(`CONFIRMATION_HOOK: "${findings.confirmation_hook}"`)
+      parts.push('Use that exact confirmation hook as your next reply. No other text.')
+      parts.push('Wait for the prospect to confirm before surfacing observations.')
+    }
+    if (findings.match_confidence < 0.5) {
+      parts.push(`MATCH_CONFIDENCE low (${findings.match_confidence.toFixed(2)}). If the`)
+      parts.push('confirmation hook feels speculative, soften it: "I found a [name] in')
+      parts.push('[area] — is that you, or is that a different business?"')
+    }
+    if (findings.place) {
+      const p = findings.place
+      const gbp: string[] = []
+      if (p.rating && p.user_rating_count) gbp.push(`${p.user_rating_count} reviews at ${p.rating.toFixed(1)} stars`)
+      if (p.phone) gbp.push(`phone listed: ${p.phone}`)
+      if ((p.photo_count ?? 0) > 0) gbp.push(`${p.photo_count} photos on GBP`)
+      if (p.regular_opening_hours_text && p.regular_opening_hours_text.length > 0) {
+        gbp.push('hours listed')
+      } else {
+        gbp.push('NO hours listed on GBP')
+      }
+      parts.push(`GBP_DATA: ${p.name} — ${gbp.join(', ')}`)
+    } else if (findings.raw_errors?.includes?.('places_not_configured')) {
+      parts.push('GBP_DATA: unavailable (Places API not configured for this deploy)')
+    } else {
+      parts.push('GBP_DATA: no place found matching the business name and location')
+    }
+    if (findings.site_scan && findings.site_scan.error === null) {
+      const s = findings.site_scan
+      const bits: string[] = []
+      if (s.platform_hint) bits.push(`platform: ${s.platform_hint}`)
+      if (s.ttfb_ms) bits.push(`load: ${(s.ttfb_ms / 1000).toFixed(1)}s`)
+      bits.push(`schema: ${s.has_schema ? 'yes' : 'no'}`)
+      bits.push(`H1: ${s.has_h1 ? 'yes' : 'no'}`)
+      bits.push(`contact form: ${s.has_contact_form ? 'yes' : 'no'}`)
+      bits.push(`booking flow: ${s.has_booking_link ? 'yes' : 'no'}`)
+      parts.push(`SITE_SCAN: ${bits.join(' · ')}`)
+    } else if (findings.site_scan?.error) {
+      parts.push(`SITE_SCAN: could not fetch (${findings.site_scan.error})`)
+    }
+    if (findings.observations.length > 0) {
+      parts.push(`OBSERVATIONS: ${findings.observations.join('; ')}`)
+    }
+    if (findings.suggested_adds.length > 0) {
+      parts.push(`SUGGESTED_ADDS (after confirmation): ${findings.suggested_adds.join(', ')}`)
+      parts.push('Treat these as inputs to your add_item decisions, not a rigid list.')
+    }
+    parts.push('')
+    parts.push('After you deliver the confirmation hook and the prospect replies, the')
+    parts.push('UI marks research as surfaced — you will not see this block again. Do not')
+    parts.push('repeat the observations in later turns unless the prospect asks.')
+  } else if (findings && session.research_surfaced_at) {
+    parts.push('')
+    parts.push('- Research already surfaced to prospect — do not repeat observations')
+  }
+
   return parts.join('\n')
 }
 
