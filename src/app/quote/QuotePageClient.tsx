@@ -122,6 +122,9 @@ export default function QuotePageClient() {
   const [bootError, setBootError] = useState<string | null>(null)
   const [showPhoneGate, setShowPhoneGate] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  // Pulse the Unlock button when the AI thinks the prospect has invested enough
+  // to be receptive. Never auto-opens the modal — prospect must click.
+  const [unlockNudge, setUnlockNudge] = useState(false)
   const [paymentMode, setPaymentMode] = useState<'upfront' | 'monthly' | 'milestone'>('upfront')
 
   // ── Bootstrap: create session on mount ──────────────
@@ -227,10 +230,13 @@ export default function QuotePageClient() {
       if (data.tools && data.tools.length > 0) {
         fetchPrices()
       }
-      // Did the AI ask for phone verification?
+      // When the AI signals "ready for phone unlock", pulse the Unlock button.
+      // We do NOT auto-open the modal — prospects click when they want pricing.
+      // That keeps the flow voluntary: as they answer questions, locked items
+      // stack up, curiosity grows, and they choose to unlock. Hard gate = panic.
       const toolNames: string[] = (data.tools ?? []).map((t: { name: string }) => t.name)
       if (toolNames.includes('request_phone_verify') && !session?.phone_verified) {
-        setShowPhoneGate(true)
+        setUnlockNudge(true)
       }
     } catch (e) {
       setMessages((prev) => [
@@ -316,6 +322,7 @@ export default function QuotePageClient() {
               paymentMode={paymentMode}
               onPaymentModeChange={setPaymentMode}
               onPhoneGateOpen={() => setShowPhoneGate(true)}
+              nudge={unlockNudge}
             />
           </div>
         </div>
@@ -363,6 +370,7 @@ export default function QuotePageClient() {
                   setDrawerOpen(false)
                   setShowPhoneGate(true)
                 }}
+                nudge={unlockNudge}
               />
             </div>
           </div>
@@ -397,16 +405,30 @@ function Chat({
 }) {
   const [draft, setDraft] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
+  // Scroll the CHAT CONTAINER only (scrollTop on the ref) — never scrollTo
+  // because that can bubble up to the window scroll on some layouts.
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollTop = el.scrollHeight
   }, [messages, sending])
+
+  // Keep focus in the input across renders, including while the AI is thinking.
+  // We never disable the input — just stop submit while sending. This way the
+  // user can type their next message while the AI finishes replying.
+  useEffect(() => {
+    if (!sending) inputRef.current?.focus()
+  }, [sending])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!draft.trim() || sending) return
     onSend(draft)
     setDraft('')
+    // Refocus on next microtask so the setDraft rerender completes first.
+    requestAnimationFrame(() => inputRef.current?.focus())
   }
 
   return (
@@ -451,12 +473,13 @@ function Chat({
 
       <form onSubmit={handleSubmit} className="border-t border-slate-100 p-3 flex gap-2">
         <input
+          ref={inputRef}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Type your reply…"
+          placeholder={sending ? 'Thinking…' : 'Type your reply…'}
           className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
-          disabled={sending}
           aria-label="Chat message"
+          autoComplete="off"
         />
         <button
           type="submit"
@@ -484,12 +507,14 @@ function Configurator({
   paymentMode,
   onPaymentModeChange,
   onPhoneGateOpen,
+  nudge,
 }: {
   session: SessionPublic | null
   prices: PricesPayload | null
   paymentMode: 'upfront' | 'monthly' | 'milestone'
   onPaymentModeChange: (m: 'upfront' | 'monthly' | 'milestone') => void
   onPhoneGateOpen: () => void
+  nudge: boolean
 }) {
   const items = prices?.items ?? []
   const verified = session?.phone_verified ?? false
@@ -555,12 +580,14 @@ function Configurator({
         )}
       </div>
 
-      {/* Phone gate CTA — shown when items exist but not verified */}
-      {items.length >= 2 && !verified && (
+      {/* Phone gate CTA — shown when ANY item is staged but not verified.
+          Voluntary unlock: prospect clicks when they want to see prices.
+          Pulses when the AI signals they've built enough scope to be receptive. */}
+      {items.length >= 1 && !verified && (
         <div className="px-5 pb-4">
           <button
             onClick={onPhoneGateOpen}
-            className="w-full bg-slate-900 text-white rounded-lg py-2.5 text-sm font-medium flex items-center justify-center gap-2"
+            className={`w-full bg-slate-900 hover:bg-slate-800 text-white rounded-lg py-2.5 text-sm font-medium flex items-center justify-center gap-2 transition ${nudge ? 'ring-4 ring-[var(--teal)]/40 animate-pulse' : ''}`}
           >
             <Phone className="w-4 h-4" />
             Unlock Budgetary Prices

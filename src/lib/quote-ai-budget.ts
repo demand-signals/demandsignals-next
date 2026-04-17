@@ -313,10 +313,11 @@ export interface ModelRoutingInput {
   confusionSignals: number
 }
 
-export function pickModel(input: ModelRoutingInput): ModelId {
-  if (input.messageCount > 15) return 'claude-opus-4-7'
-  if ((input.estimateHighCents ?? 0) >= 1_000_000) return 'claude-opus-4-7'
-  if (input.confusionSignals >= 2) return 'claude-opus-4-7'
+export function pickModel(_input: ModelRoutingInput): ModelId {
+  // Hunter's directive: never route conversational traffic to Opus — too expensive.
+  // Opus remains available for admin-side batch analysis tasks (not prospect-facing).
+  // Future Stage C plan: introduce Haiku 4.5 for discovery phases, Sonnet 4.6 for
+  // recommendation phases. For v1.1 we stay on Sonnet throughout.
   return 'claude-sonnet-4-6'
 }
 
