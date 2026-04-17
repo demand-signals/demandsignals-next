@@ -27,6 +27,8 @@ export interface QuoteSessionRow {
   estimate_high: number | null
   monthly_low: number | null
   monthly_high: number | null
+  timeline_weeks_low: number | null
+  timeline_weeks_high: number | null
   payment_preference: string | null
   accuracy_pct: number
   discovery_answers: Record<string, unknown>

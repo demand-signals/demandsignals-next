@@ -7,6 +7,7 @@ import {
   pickModel,
   recordUsage,
   shouldSummarize,
+  getBookingSlots,
 } from '@/lib/quote-ai-budget'
 import {
   anthropic,
@@ -195,7 +196,7 @@ export async function POST(request: NextRequest) {
     },
     {
       type: 'text',
-      text: buildDynamicContext(session),
+      text: buildDynamicContext(session, await getBookingSlots()),
     },
   ]
 

@@ -148,6 +148,24 @@ export async function isCadenceEnabled(): Promise<boolean> {
   return cfg.cadence_enabled === true
 }
 
+/**
+ * Read the Sandler two-slot booking pair + fallback from quote_config.
+ * Admin rotates these weekly. AI uses them for the two-specific-slots ask
+ * during booking (Phase 7 close).
+ */
+export async function getBookingSlots(): Promise<{
+  primary_a: string
+  primary_b: string
+  fallback: string
+}> {
+  const cfg = await loadConfig()
+  return {
+    primary_a: typeof cfg.primary_slot_a === 'string' ? cfg.primary_slot_a : 'Tomorrow 10am PT',
+    primary_b: typeof cfg.primary_slot_b === 'string' ? cfg.primary_slot_b : 'Day after at 3pm PT',
+    fallback: typeof cfg.fallback_slot === 'string' ? cfg.fallback_slot : 'Friday 2pm PT',
+  }
+}
+
 /** Force a config cache refresh — call after admin UI updates quote_config. */
 export function invalidateConfigCache(): void {
   configCache = null

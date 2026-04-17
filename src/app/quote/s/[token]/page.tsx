@@ -3,6 +3,7 @@ import { getSessionByShareToken } from '@/lib/quote-session'
 import { getItem } from '@/lib/quote-pricing'
 import { calculateTotals, monthlyPlan, type SelectedItem } from '@/lib/quote-engine'
 import { buildMetadata } from '@/lib/metadata'
+import { ShareActions } from './ShareActions'
 
 export const metadata = buildMetadata({
   title: 'Your Shared Estimate — Demand Signals',
@@ -44,8 +45,27 @@ export default async function SharedEstimatePage({ params }: Props) {
       quantity: sel.quantity,
       quantityLabel: item?.quantityLabel ?? null,
       isFree: item?.isFree ?? false,
+      oneTimeLow: 0,
+      oneTimeHigh: 0,
+      monthlyLow: 0,
+      monthlyHigh: 0,
     }
   })
+
+  // Hydrate per-item prices when the original session was phone-verified.
+  // Prices aren't shown on the share page for un-verified sessions — same
+  // gate as the live estimator.
+  if (session.phone_verified) {
+    for (const item of items) {
+      const match = totals.perItem.find((p) => p.id === item.id)
+      if (match) {
+        item.oneTimeLow = match.oneTimeLow
+        item.oneTimeHigh = match.oneTimeHigh
+        item.monthlyLow = match.monthlyLow
+        item.monthlyHigh = match.monthlyHigh
+      }
+    }
+  }
 
   // Sessions older than 60 days show a staleness banner.
   const daysOld = (Date.now() - new Date(session.updated_at).getTime()) / (1000 * 60 * 60 * 24)
@@ -75,7 +95,7 @@ export default async function SharedEstimatePage({ params }: Props) {
             ) : (
               items.map((item) => (
                 <div key={item.id} className="border-b border-slate-100 pb-3 last:border-0">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between gap-4">
                     <div className="flex-1">
                       <div className="font-medium text-slate-900">
                         {item.name}
@@ -88,6 +108,17 @@ export default async function SharedEstimatePage({ params }: Props) {
                       </div>
                       <div className="text-sm text-slate-600 mt-0.5">{item.benefit}</div>
                     </div>
+                    {session.phone_verified && (
+                      <div className="text-sm font-semibold text-slate-800 whitespace-nowrap">
+                        {item.oneTimeLow || item.oneTimeHigh
+                          ? formatRange(item.oneTimeLow, item.oneTimeHigh)
+                          : item.monthlyLow || item.monthlyHigh
+                            ? `${formatRange(item.monthlyLow, item.monthlyHigh)}/mo`
+                            : item.isFree
+                              ? 'Free'
+                              : '—'}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
@@ -96,7 +127,7 @@ export default async function SharedEstimatePage({ params }: Props) {
 
           {session.phone_verified && (
             <div className="bg-slate-50 border-t border-slate-200 p-6">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-start flex-wrap gap-3">
                 <div>
                   <div className="text-xs text-slate-500">Build total</div>
                   <div className="text-3xl font-bold text-slate-900">
@@ -119,27 +150,19 @@ export default async function SharedEstimatePage({ params }: Props) {
                   <div>× 12 months</div>
                 </div>
               </div>
-
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <a
-                  href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true"
-                  target="_blank"
-                  rel="noopener"
-                  className="bg-[var(--teal)] text-white rounded-lg py-3 font-semibold text-center"
-                >
-                  Book a Strategy Call
-                </a>
-                <a
-                  href="/quote"
-                  className="border border-slate-300 text-slate-700 rounded-lg py-3 font-medium text-center"
-                >
-                  Make Changes
-                </a>
-              </div>
             </div>
           )}
 
-          <div className="px-6 pb-4 text-xs text-slate-400 text-center">
+          {/* All the interactive CTAs live in a client component — keeps this
+              page server-rendered for SEO/fast-first-paint while giving
+              prospects real ways to continue the conversation. */}
+          <ShareActions
+            shareToken={token}
+            businessName={session.business_name ?? 'your project'}
+            phoneVerified={session.phone_verified}
+          />
+
+          <div className="px-6 pb-6 text-xs text-slate-400 text-center">
             Budgetary estimate — not a binding quote. Final scope, pricing, and timeline are confirmed in your Statement of Work.
           </div>
         </div>

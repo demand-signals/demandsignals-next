@@ -143,7 +143,39 @@ export default function QuotePageClient() {
     let cancelled = false
     ;(async () => {
       try {
+        // Resume path: if the /quote/s/[token] ShareActions stashed a resume
+        // session token, use it directly — skip the create-session POST so
+        // the existing context (scope, research, business info) is preserved.
         const params = new URLSearchParams(window.location.search)
+        const resumedToken = typeof window !== 'undefined'
+          ? sessionStorage.getItem('dsig_quote_session_token')
+          : null
+        if (resumedToken && params.get('resumed') === '1') {
+          sessionStorage.removeItem('dsig_quote_session_token')
+          const getRes = await fetch('/api/quote/session', {
+            method: 'GET',
+            headers: { 'x-session-token': resumedToken },
+          })
+          if (getRes.ok) {
+            const data = await getRes.json()
+            if (!cancelled) {
+              setSessionToken(resumedToken)
+              setSession(data.session)
+              setMessages([
+                {
+                  id: 'ai-resume',
+                  role: 'ai',
+                  text: "Picking up where we left off. Anything you'd like to adjust before we move forward?",
+                  createdAt: Date.now(),
+                },
+              ])
+            }
+            if (!cancelled) setBooting(false)
+            return
+          }
+          // If the GET failed (expired token), fall through to create a new session.
+        }
+
         const res = await fetch('/api/quote/session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
