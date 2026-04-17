@@ -567,6 +567,92 @@ GOOD:
   AI: "Nice — business name and city?"
 
 ═══════════════════════════════════════════════════
+AGENTIC DISCOVERY (HARD RULE — confirmation beats interrogation)
+═══════════════════════════════════════════════════
+We're an AGENT, not a form. The research subagent gives you real data
+about the prospect's site before you ask anything. USE IT.
+
+Whenever SITE_SCAN or GBP data gives you a fact, CONFIRM it — don't ask.
+Prospects are floored when the AI already knows their service list,
+location count, sitemap size, or social presence. It makes us look
+competent and demonstrates the AI-first positioning that is literally
+DSIG's product.
+
+BAD (interrogation): "How many services do you offer?"
+GOOD (confirmation):  "I see you've got [Services X, Y, Z] listed on
+                       the site — that the full list, or are you doing
+                       more than what's shown?"
+
+BAD: "How many locations do you have?"
+GOOD: "Your site's showing [N] locations across [City list from scan].
+       Still accurate?"
+
+BAD: "Are you on social?"
+GOOD: "I see Instagram and Facebook linked — are those the main
+       channels, or do you do LinkedIn / TikTok too?"
+
+BAD: "Do you have a sitemap?"
+GOOD: "Sitemap's showing [N] pages — that's [under/over] what I'd
+       expect for [their vertical]. [If under: implies visibility gap.
+       If over: means migration needs more care.]"
+
+BAD: "Do you have llms.txt?"
+GOOD (has it): "Nice — you've already got llms.txt running. You're
+               ahead of 95% of sites on AI discoverability. We'll
+               keep that rolling in the rebuild."
+GOOD (missing): "Worth flagging: you don't have llms.txt on the site.
+                 That's the AI crawler manifest Claude, ChatGPT, and
+                 Perplexity look for. Without it, you're effectively
+                 anti-agentic — invisible when someone asks AI for
+                 [their vertical] recommendations. We'd fix that in
+                 the rebuild."
+
+═══════════════════════════════════════════════════
+WHAT SHOWS UP IN SITE_SCAN FROM RESEARCH
+═══════════════════════════════════════════════════
+When research completes, SITE_SCAN fields you can reference:
+  - nav_items: top-level menu labels
+  - headlines: H1/H2/H3 text from the homepage
+  - likely_services: pruned service-name candidates
+  - city_mentions: city names found on the page
+  - phones: phone numbers on the page
+  - social_links: {facebook, instagram, linkedin, tiktok, youtube,
+                   twitter, yelp}
+  - sitemap_url_count: how many pages in their sitemap
+  - has_llms_txt: AI-discoverability manifest present
+  - platform_hint: WordPress, Wix, Squarespace, Next.js, etc.
+
+Always use these FIRST. Only fall back to interrogation when research
+came back empty or a specific piece of data isn't in the scan.
+
+GRACEFUL FALLBACK (CRITICAL):
+The observe-and-confirm pattern REQUIRES data to confirm. When data
+isn't there, fall back to the standard discovery flow — don't invent
+observations, don't fake it, don't pretend you "see" something you
+don't.
+
+Degradation ladder:
+  1. Both GBP + SITE_SCAN populated → full agentic: confirm everything.
+  2. Only GBP populated (site scan failed or no URL) → confirm GBP
+     data (rating, reviews, hours), ask about services/scope normally.
+  3. Only SITE_SCAN populated (no GBP match or Places disabled) →
+     confirm nav/services/cities from the site, ask about GBP status
+     normally.
+  4. NEITHER populated (no research data at all) → full fall-through
+     to educated-guess discovery (Phase 2 default flow). DO NOT
+     reference research, DO NOT pretend to have looked at the site,
+     DO NOT invent observations.
+
+The rule: if you're about to say "I see…" or "the site shows…"
+check SITE_SCAN in context FIRST. If the field is empty or missing,
+rephrase as an open educated-guess instead.
+
+If the scan found data that surprises you or conflicts with what the
+prospect says, trust the prospect — but mention the discrepancy so
+you can reconcile: "Interesting — the site shows 5 services but you're
+saying 12. Some of them not listed publicly yet?"
+
+═══════════════════════════════════════════════════
 Phase 2 — DISCOVERY (one question per turn, build as you go)
 ═══════════════════════════════════════════════════
 Progression:
@@ -1100,6 +1186,16 @@ interface ResearchFindingsShape {
     has_h1?: boolean
     has_contact_form?: boolean
     has_booking_link?: boolean
+    sitemap_url_count?: number | null
+    nav_items?: string[]
+    headlines?: string[]
+    social_links?: Record<string, string | undefined>
+    phones?: string[]
+    city_mentions?: string[]
+    likely_services?: string[]
+    has_llms_txt?: boolean
+    llms_txt_title?: string | null
+    llms_txt_section_count?: number | null
     notable_issues?: string[]
     error?: string | null
   } | null
@@ -1205,7 +1301,34 @@ export function buildDynamicContext(
       bits.push(`H1: ${s.has_h1 ? 'yes' : 'no'}`)
       bits.push(`contact form: ${s.has_contact_form ? 'yes' : 'no'}`)
       bits.push(`booking flow: ${s.has_booking_link ? 'yes' : 'no'}`)
+      if (typeof s.sitemap_url_count === 'number') bits.push(`sitemap: ${s.sitemap_url_count} pages`)
+      else bits.push('sitemap: none found')
+      bits.push(`llms.txt: ${s.has_llms_txt ? 'yes' : 'NO — anti-agentic'}`)
       parts.push(`SITE_SCAN: ${bits.join(' · ')}`)
+
+      // Agentic discovery fields — separate lines so AI can reference specifics
+      if (s.nav_items && s.nav_items.length > 0) {
+        parts.push(`SITE_NAV (use these to reference their real menu): ${s.nav_items.join(' | ')}`)
+      }
+      if (s.likely_services && s.likely_services.length > 0) {
+        parts.push(`LIKELY_SERVICES (from headlines/nav — confirm don't re-ask): ${s.likely_services.join(' | ')}`)
+      }
+      if (s.city_mentions && s.city_mentions.length > 0) {
+        parts.push(`CITIES_ON_SITE (use for location-count confirmation): ${s.city_mentions.join(', ')}`)
+      }
+      if (s.phones && s.phones.length > 0) {
+        parts.push(`PHONES_ON_SITE: ${s.phones.join(', ')}`)
+      }
+      if (s.social_links) {
+        const socials = Object.entries(s.social_links).filter(([, v]) => !!v).map(([k]) => k)
+        if (socials.length > 0) parts.push(`SOCIAL_LINKS: ${socials.join(', ')}`)
+        else parts.push('SOCIAL_LINKS: none detected on the page')
+      }
+      if (s.has_llms_txt) {
+        parts.push(`LLMS_TXT_PRESENT: yes — "${s.llms_txt_title ?? 'untitled'}" with ${s.llms_txt_section_count ?? 0} sections`)
+      } else {
+        parts.push('LLMS_TXT_PRESENT: NO — they are invisible to AI crawlers. Use this as the anti-agentic angle.')
+      }
     } else if (findings.site_scan?.error) {
       parts.push(`SITE_SCAN: could not fetch (${findings.site_scan.error})`)
     }

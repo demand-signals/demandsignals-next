@@ -31,6 +31,39 @@ export interface SiteScan {
   https_valid: boolean | null
   /** SSL-specific error message if cert invalid or connection refused. */
   ssl_error: string | null
+
+  // ── AGENTIC DISCOVERY (v1.13) ──
+  /** URLs found in sitemap.xml / sitemap_index.xml. null if sitemap not found. */
+  sitemap_url_count: number | null
+  /** Top-level navigation link labels (first 10). */
+  nav_items: string[]
+  /** Headlines from h1/h2/h3 tags (first 20). Used to infer services. */
+  headlines: string[]
+  /** Social links detected anywhere in the HTML. */
+  social_links: {
+    facebook?: string
+    instagram?: string
+    linkedin?: string
+    tiktok?: string
+    youtube?: string
+    twitter?: string
+    yelp?: string
+  }
+  /** Phone numbers found on the page (up to 5, deduped). */
+  phones: string[]
+  /** City/location name mentions (up to 10, deduped). Useful for multi-location detection. */
+  city_mentions: string[]
+  /** Inferred service/product terms from headlines + nav (up to 10). */
+  likely_services: string[]
+
+  // ── LLM DISCOVERABILITY (v1.13) ──
+  /** True if /llms.txt returns 200 — the emerging AI-crawler discovery standard. */
+  has_llms_txt: boolean
+  /** First line / H1 from llms.txt if present (title of the AI manifest). */
+  llms_txt_title: string | null
+  /** Number of H2 sections in llms.txt (each section = grouped set of pages). */
+  llms_txt_section_count: number | null
+
   notable_issues: string[]
   error: string | null
 }
@@ -69,6 +102,16 @@ async function scanSite(url: string): Promise<SiteScan> {
     platform_hint: null,
     https_valid: null,
     ssl_error: null,
+    sitemap_url_count: null,
+    nav_items: [],
+    headlines: [],
+    social_links: {},
+    phones: [],
+    city_mentions: [],
+    likely_services: [],
+    has_llms_txt: false,
+    llms_txt_title: null,
+    llms_txt_section_count: null,
     notable_issues: [],
     error: null,
   }
@@ -169,20 +212,182 @@ async function scanSite(url: string): Promise<SiteScan> {
     else if (html.includes('shopify.com') || html.includes('cdn.shopify')) scan.platform_hint = 'Shopify'
     else if (html.includes('__next_f') || html.includes('/_next/')) scan.platform_hint = 'Next.js'
 
-    // Notable issues — used by the AI to build the observation line
-    if ((scan.ttfb_ms ?? 0) > 3000) scan.notable_issues.push(`slow initial load (${(scan.ttfb_ms! / 1000).toFixed(1)}s)`)
-    if (!scan.has_schema) scan.notable_issues.push('no structured data / schema')
-    if (!scan.has_h1) scan.notable_issues.push('missing H1 heading')
-    if (!scan.meta_description) scan.notable_issues.push('no meta description')
-    if (!scan.has_contact_form) scan.notable_issues.push('no visible contact form')
-    if (!scan.has_booking_link) scan.notable_issues.push('no booking flow detected')
-    if (scan.platform_hint === 'Wix') scan.notable_issues.push('Wix platform — limits AI integrations, hurts speed')
-    if (scan.platform_hint === 'WordPress') scan.notable_issues.push('WordPress — slower, needs constant plugin updates')
+    // ── Nav items (first 10 top-level <a> labels) ──
+    try {
+      const navMatch = html.match(/<nav[^>]*>([\s\S]*?)<\/nav>/i)
+      const navHtml = navMatch ? navMatch[1] : html.slice(0, 8000) // fall back to head of page
+      const linkMatches = [...navHtml.matchAll(/<a[^>]*>([\s\S]*?)<\/a>/gi)]
+      const items: string[] = []
+      for (const m of linkMatches) {
+        const label = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+        if (label.length >= 2 && label.length <= 40 && !items.includes(label)) {
+          items.push(label)
+        }
+        if (items.length >= 10) break
+      }
+      scan.nav_items = items
+    } catch {
+      /* navigation parse best-effort */
+    }
+
+    // ── Headlines (h1/h2/h3, first 20 deduped) ──
+    try {
+      const hMatches = [...html.matchAll(/<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/gi)]
+      const seen = new Set<string>()
+      for (const m of hMatches) {
+        const text = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+        if (text.length >= 2 && text.length <= 120 && !seen.has(text.toLowerCase())) {
+          seen.add(text.toLowerCase())
+          scan.headlines.push(text)
+        }
+        if (scan.headlines.length >= 20) break
+      }
+    } catch {
+      /* headlines parse best-effort */
+    }
+
+    // ── Social links ──
+    const socialPatterns: Array<[keyof SiteScan['social_links'], RegExp]> = [
+      ['facebook', /https?:\/\/(?:www\.)?facebook\.com\/[A-Za-z0-9_.\-/]+/i],
+      ['instagram', /https?:\/\/(?:www\.)?instagram\.com\/[A-Za-z0-9_.\-/]+/i],
+      ['linkedin', /https?:\/\/(?:www\.)?linkedin\.com\/(?:company|in)\/[A-Za-z0-9_.\-/]+/i],
+      ['tiktok', /https?:\/\/(?:www\.)?tiktok\.com\/@[A-Za-z0-9_.]+/i],
+      ['youtube', /https?:\/\/(?:www\.)?youtube\.com\/(?:channel\/|@|c\/|user\/)[A-Za-z0-9_\-]+/i],
+      ['twitter', /https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[A-Za-z0-9_]+/i],
+      ['yelp', /https?:\/\/(?:www\.)?yelp\.com\/biz\/[A-Za-z0-9_\-]+/i],
+    ]
+    for (const [key, pattern] of socialPatterns) {
+      const match = html.match(pattern)
+      if (match) {
+        scan.social_links[key] = match[0]
+      }
+    }
+
+    // ── Phone numbers on page (up to 5, deduped) ──
+    try {
+      const phoneMatches = html.match(/\b(?:\+?1[-.\s]?)?\(?([2-9][0-9]{2})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})\b/g) ?? []
+      const seen = new Set<string>()
+      for (const p of phoneMatches) {
+        const digits = p.replace(/\D/g, '').replace(/^1/, '')
+        if (digits.length === 10 && !seen.has(digits)) {
+          seen.add(digits)
+          scan.phones.push(`(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`)
+        }
+        if (scan.phones.length >= 5) break
+      }
+    } catch {
+      /* phones parse best-effort */
+    }
+
+    // ── City mentions — extract from visible text (rough pass, US-oriented) ──
+    // Looks for Capitalized-Word, Capitalized-Word sequences that look like
+    // "City, ST" or "City, State". Not perfect, but a useful hint.
+    try {
+      const cityMatches = html.match(/\b([A-Z][a-z]+(?:[ -][A-Z][a-z]+){0,2}),\s*(?:[A-Z]{2}|California|Oregon|Texas|New York|Nevada|Washington|Florida)\b/g) ?? []
+      const seen = new Set<string>()
+      for (const c of cityMatches) {
+        const city = c.split(',')[0].trim()
+        if (city.length >= 3 && !seen.has(city)) {
+          seen.add(city)
+          scan.city_mentions.push(city)
+        }
+        if (scan.city_mentions.length >= 10) break
+      }
+    } catch {
+      /* cities parse best-effort */
+    }
+
+    // ── Likely services — pull short noun-phrases from headlines + nav that
+    // look service-y. Drops common non-service words (About, Home, Contact, etc.)
+    const STOPWORDS = new Set([
+      'home', 'about', 'about us', 'contact', 'contact us', 'blog', 'news',
+      'careers', 'jobs', 'team', 'our team', 'our story', 'services', 'solutions',
+      'privacy', 'terms', 'sitemap', 'login', 'sign in', 'sign up', 'cart',
+      'shop', 'store', 'faq', 'faqs', 'help', 'support', 'menu', 'book', 'book now',
+      'call', 'email', 'locations', 'find us', 'appointment',
+    ])
+    const candidates = [...scan.nav_items, ...scan.headlines]
+    const serviceSeen = new Set<string>()
+    for (const raw of candidates) {
+      const clean = raw.trim().toLowerCase()
+      if (clean.length < 3 || clean.length > 50) continue
+      if (STOPWORDS.has(clean)) continue
+      if (serviceSeen.has(clean)) continue
+      serviceSeen.add(clean)
+      scan.likely_services.push(raw.trim())
+      if (scan.likely_services.length >= 10) break
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'scan failed'
     scan.error = msg
     scan.notable_issues.push('could not reach site for scan')
+    return scan
   }
+
+  // ── Sitemap URL count (fetch /sitemap.xml, fall back to /sitemap_index.xml) ──
+  try {
+    const origin = new URL(url).origin
+    for (const path of ['/sitemap.xml', '/sitemap_index.xml']) {
+      try {
+        const c = new AbortController()
+        const t = setTimeout(() => c.abort(), 5_000)
+        const r = await fetch(origin + path, {
+          signal: c.signal,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DSIG-Research/1.0)' },
+        })
+        clearTimeout(t)
+        if (!r.ok) continue
+        const body = await r.text()
+        // Count <url> entries (sitemap) or <sitemap> entries (index)
+        const urlCount = (body.match(/<url>/g) ?? []).length
+        const indexCount = (body.match(/<sitemap>/g) ?? []).length
+        scan.sitemap_url_count = urlCount > 0 ? urlCount : indexCount
+        break
+      } catch {
+        /* try next */
+      }
+    }
+  } catch {
+    /* no sitemap — that's a signal itself */
+  }
+
+  // ── llms.txt detection (AI crawler discovery standard) ──
+  try {
+    const origin = new URL(url).origin
+    const c = new AbortController()
+    const t = setTimeout(() => c.abort(), 5_000)
+    const r = await fetch(origin + '/llms.txt', {
+      signal: c.signal,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DSIG-Research/1.0)' },
+    })
+    clearTimeout(t)
+    if (r.ok) {
+      const body = await r.text()
+      // Must look like a real llms.txt (markdown with H1), not a 200-with-HTML fallback
+      if (body.length > 20 && /^#\s+/m.test(body)) {
+        scan.has_llms_txt = true
+        const titleMatch = body.match(/^#\s+(.+?)$/m)
+        scan.llms_txt_title = titleMatch ? titleMatch[1].trim().slice(0, 120) : null
+        scan.llms_txt_section_count = (body.match(/^##\s+/gm) ?? []).length
+      }
+    }
+  } catch {
+    /* llms.txt missing — expected for most sites today */
+  }
+
+  // ── Notable issues — used by the AI to build the observation line ──
+  if ((scan.ttfb_ms ?? 0) > 3000) scan.notable_issues.push(`slow initial load (${(scan.ttfb_ms! / 1000).toFixed(1)}s)`)
+  if (!scan.has_schema) scan.notable_issues.push('no structured data / schema')
+  if (!scan.has_h1) scan.notable_issues.push('missing H1 heading')
+  if (!scan.meta_description) scan.notable_issues.push('no meta description')
+  if (!scan.has_contact_form) scan.notable_issues.push('no visible contact form')
+  if (!scan.has_booking_link) scan.notable_issues.push('no booking flow detected')
+  if (scan.platform_hint === 'Wix') scan.notable_issues.push('Wix platform — limits AI integrations, hurts speed')
+  if (scan.platform_hint === 'WordPress') scan.notable_issues.push('WordPress — slower, needs constant plugin updates')
+  if (scan.sitemap_url_count === null) scan.notable_issues.push('no sitemap found — search engines have to guess at page structure')
+  else if (scan.sitemap_url_count < 10) scan.notable_issues.push(`only ${scan.sitemap_url_count} pages in sitemap — thin for search coverage`)
+  if (!scan.has_llms_txt) scan.notable_issues.push('no llms.txt — AI crawlers (Claude, ChatGPT, Perplexity) have no curated manifest to read')
+  if (Object.keys(scan.social_links).length === 0) scan.notable_issues.push('no social links detected on the page')
 
   return scan
 }
@@ -227,6 +432,30 @@ function buildObservations(place: PlaceDetails | null, scan: SiteScan | null): s
     if (place.regular_opening_hours_text.length === 0) obs.push('hours not listed on GBP')
   }
   if (scan && scan.error === null) {
+    // Agentic observations — confirmation-first, not interrogation.
+    if (scan.sitemap_url_count !== null) {
+      obs.push(`sitemap has ${scan.sitemap_url_count} pages indexed`)
+    }
+    if (scan.nav_items.length > 0) {
+      obs.push(`nav menu: ${scan.nav_items.slice(0, 6).join(', ')}`)
+    }
+    if (scan.city_mentions.length > 0) {
+      obs.push(`cities mentioned on site: ${scan.city_mentions.slice(0, 6).join(', ')}`)
+    }
+    if (scan.likely_services.length > 0) {
+      obs.push(`likely services from page copy: ${scan.likely_services.slice(0, 6).join(', ')}`)
+    }
+    if (scan.phones.length > 0) {
+      obs.push(`phone(s) on site: ${scan.phones.join(', ')}`)
+    }
+    const socials = Object.keys(scan.social_links)
+    if (socials.length > 0) {
+      obs.push(`social links: ${socials.join(', ')}`)
+    }
+    if (scan.has_llms_txt) {
+      obs.push(`✓ has llms.txt (${scan.llms_txt_section_count ?? 0} sections) — they're ahead of the curve on AI discoverability`)
+    }
+    // Existing scan-derived issues
     for (const issue of scan.notable_issues) obs.push(issue)
   }
   return obs
