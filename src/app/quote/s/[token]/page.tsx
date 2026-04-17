@@ -35,22 +35,38 @@ export default async function SharedEstimatePage({ params }: Props) {
   const totals = calculateTotals(selections)
   const plan = monthlyPlan(totals)
 
-  const items = selections.map((sel) => {
-    const item = getItem(sel.id)
-    return {
-      id: sel.id,
-      name: item?.name ?? sel.id,
-      benefit: item?.benefit ?? '',
-      aiBadge: item?.aiBadge ?? '',
-      quantity: sel.quantity,
-      quantityLabel: item?.quantityLabel ?? null,
-      isFree: item?.isFree ?? false,
-      oneTimeLow: 0,
-      oneTimeHigh: 0,
-      monthlyLow: 0,
-      monthlyHigh: 0,
-    }
-  })
+  const CATEGORY_ORDER: Record<string, number> = {
+    'your-website': 10,
+    'existing-site': 10,
+    'features-integrations': 20,
+    'get-found': 30,
+    'content-social': 40,
+    'ai-automation': 50,
+    'monthly-services': 60,
+    'hosting': 70,
+    'research-strategy': 80,
+    'team-rates': 90,
+  }
+
+  const items = selections
+    .map((sel) => {
+      const item = getItem(sel.id)
+      return {
+        id: sel.id,
+        category: item?.category ?? '',
+        name: item?.name ?? sel.id,
+        benefit: item?.benefit ?? '',
+        aiBadge: item?.aiBadge ?? '',
+        quantity: sel.quantity,
+        quantityLabel: item?.quantityLabel ?? null,
+        isFree: item?.isFree ?? false,
+        oneTimeLow: 0,
+        oneTimeHigh: 0,
+        monthlyLow: 0,
+        monthlyHigh: 0,
+      }
+    })
+    .sort((a, b) => (CATEGORY_ORDER[a.category] ?? 99) - (CATEGORY_ORDER[b.category] ?? 99))
 
   // Hydrate per-item prices when the original session was phone-verified.
   // Prices aren't shown on the share page for un-verified sessions — same

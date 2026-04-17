@@ -114,6 +114,33 @@ function detectDevice(): 'desktop' | 'mobile' | 'tablet' {
   return 'desktop'
 }
 
+// Display order for the configurator. Prospects intuitively expect:
+//   1. The foundation — the website/app they're actually getting
+//   2. Extra pages bolted onto it
+//   3. Features / integrations (portals, APIs, custom)
+//   4. SEO / discoverability (local SEO, long-tails, GBP, citations)
+//   5. Content & social
+//   6. AI / automation
+//   7. Ongoing monthly services
+//   8. Hosting
+//   9. Research/strategy deliverables (usually free/bonus)
+// Lower number = higher position on the list.
+function categoryOrder(category: string | undefined): number {
+  const ordering: Record<string, number> = {
+    'your-website': 10,
+    'existing-site': 10,
+    'features-integrations': 20,
+    'get-found': 30,
+    'content-social': 40,
+    'ai-automation': 50,
+    'monthly-services': 60,
+    'hosting': 70,
+    'research-strategy': 80,
+    'team-rates': 90,
+  }
+  return ordering[category ?? ''] ?? 99
+}
+
 // ============================================================
 // Main component
 // ============================================================
@@ -688,7 +715,11 @@ function Configurator({
             Tell us a bit about your business and recommendations will appear here.
           </div>
         ) : (
-          items.map((item) => (
+          // Sort items by logical project order so the foundation (website, pages)
+          // shows FIRST, then features, then ongoing services. Prospects intuitively
+          // expect "the site" to be the first line item — they find it confusing when
+          // content/SEO extras stack above their actual website.
+          [...items].sort((a, b) => categoryOrder(a.category) - categoryOrder(b.category)).map((item) => (
             <div key={item.id} className="border border-slate-100 rounded-lg p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
