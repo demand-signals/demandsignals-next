@@ -8,45 +8,103 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-04-17 (Opus 4.7, commit `abcbd10`)
+**Last updated:** 2026-04-17 late evening (Opus 4.7, commit `3e287b2`)
 
 ---
 
 ## Current task
 
-**Live SMS verification test of `/quote` on staging**
+**PIVOT TO STAGE C.** Conversation tuning frozen at v1.13 ("agentic discovery").
+Hunter will validate v1.12 + v1.13 conversational changes alongside Stage C builds
+— no standalone live test of v1.13 tonight.
 
-- URL: https://dsig.demandsignals.dev/quote
-- What to do: chat with AI until phone gate appears, enter real cell, receive real SMS, enter code, confirm prices unlock
-- Blocker: human has to receive SMS on a real phone (Hunter is doing this)
-- On success → header CTA wiring → Stage C planning
+Agreed Stage C ordering (Hunter to confirm when restarting):
+  1. Invoicing system — tables exist, need admin UI + $0 research invoices
+     (Restaurant Rule) + client-facing `/invoice/{invoice_number}` viewer
+  2. Admin estimate builder at `/admin/quotes/new` + post-call revision
+  3. Bid system UI (accept/counter/decline scope adjuster)
+  4. SOW auto-generation
+  5. Live handoff backend (realtime subs, 60s ping window, admin inbox)
+  6. Google Calendar API — replaces "Hunter books manually" with real writes
+  7. OAuth Checkpoint 2 (Google OAuth for prospect-side client portal)
+  8. A2P 10DLC Marketing campaign registration — unblocks cadence SMS
+
+Full Stage C plan: [docs/runbooks/stage-c-plan.md](docs/runbooks/stage-c-plan.md)
 
 ---
 
-## Next tasks (in priority order)
+## What shipped since last MEMORY update (v1.2 → v1.13)
 
-### 1. Header "Get a Quote" → `/quote` (trivial)
-- Currently points to `/contact` per `src/lib/constants.ts`
-- One-line change, plus any nav data exports
-- Verify all 25+ "Let's Get Started" buttons on service pages also route to `/quote`
+All deployed to https://dsig.demandsignals.dev.
 
-### 2. Admin sidebar UX
-- Verify `/admin/quotes` route renders for an authenticated admin
-- Sidebar link landed in Prospecting group between Pipeline and Demos
+| Version | Commit | What it ships |
+|---|---|---|
+| v1.2 | `4471b2a` | Voluntary phone gate + progressive item add + first-turn fix |
+| v1.3 | `f89bf54` | **Research subagent** — Google Places + site scan + confirmation hook |
+| v1.4 | `d73d47b` | Psychology overhaul + soft-save + walkaway flag |
+| v1.5 | `c8b9b26` | **Auto-prospect** + progressive CRM enrichment (migration 007) |
+| v1.6 | `28c1937` | Kill repetition loop + WordPress reframe + Claude-first + ROI recoverable |
+| v1.7 | `300ef6d` | Human-call path on phone refusal + real-time walkaway email |
+| v1.8 | `7c0822a` | Commitment-based budget + audience-matched name drops (migration 008) |
+| v1.9 | `7cac6a3` | I/O rhythm matching + conversation history trimming + QR code |
+| v1.10 | `3227cff` | Rate limit tune + friendly 429 + manifest 403 fix |
+| v1.11 | `df4b15a` | **Sandler two-slot booking** + share page rebuild + resume flow (migration 009) |
+| v1.12 | `7c65cb6` | Website-first + early unlock cue + team framing + contact-capture gate |
+| v1.13 | `3e287b2` | **Agentic discovery** — observe-and-confirm + llms.txt + nav/services/cities |
 
-### 3. Stage C starts — planning discussion required before building
-- **Inbound SMS guardrails** (biggest non-commitment risk surface per the review)
-- **Live handoff** (hot signal detection + team ping + 60s window state machine)
-- **Multi-touch cadence** Day 1/3/7/14/30/45 — **BLOCKED on A2P 10DLC Marketing campaign registration**
-- **"Name Your Price" bid system** with counter-offer history
-- **OAuth + full Restaurant Rule invoicing**
-- **Admin estimate builder + post-call revision + SOW auto-generation**
+### Required migrations (in order)
+1. `005a_quote_tables.sql` through `005a7_quote_config.sql` — Stage A core tables
+2. `005b1` through `005b4` — Stage A functions
+3. `005c_quote_grants.sql` — Stage A grants
+4. `006_research_findings.sql` — v1.3
+5. `007_quote_prospect_sync.sql` — v1.5
+6. `008_person_name_role.sql` — v1.8
+7. `009_primary_slots.sql` — v1.11
 
-### 4. Post-launch monitoring (first 5 real prospects)
-- Daily cost report cron (already have the fn, not yet scheduled)
-- Review flagged messages in `quote_messages` for scanner tuning
-- Check `quote_events.output_scan_rejected` count — regenerations = signal that
-  the system prompt needs refinement
+All applied in production Supabase. Confirm by running:
+```sql
+SELECT key, value FROM quote_config ORDER BY key;
+-- Expected 9 rows: ai_enabled, cadence_enabled, catalog_version,
+--   daily_cost_cap_cents, fallback_slot, primary_slot_a, primary_slot_b,
+--   session_cost_cap_cents, team_capacity
+```
+
+---
+
+## What's LIVE and working well (don't break)
+
+- Research subagent hits 95%+ confirmation rate on real businesses
+- Sandler two-slot booking in Phase 7 CLOSE
+- Prospect auto-creation in CRM on research confirmation
+- Commitment-based budget escalator (base 40 msgs → up to 200 msgs when
+  phone verified + email + 5+ items + ROI provided)
+- Hot-walkaway email alerts fire to DemandSignals@gmail.com
+- Share page with QR code + 4 CTAs + Resume-conversation flow
+- Dynamic contact-capture gate before close (AI won't schedule without
+  phone OR email OR soft-save card shown)
+- Agentic discovery — site scan pulls nav, services, cities, phones,
+  socials, sitemap count, llms.txt presence; prompt observes-and-confirms
+
+## Known behaviors (not bugs, confirmed by testing)
+
+- AI calls `trigger_handoff` but there's no real-time admin ping UI yet.
+  Email alert fires; admin must check /admin/quotes manually. Stage C item 5.
+- Phone verify works via Twilio Verify. Outbound SMS from our 866# is
+  still A2P-10DLC-blocked (registration pending). Magic link after verify
+  doesn't SMS — prospect sees URL in-UI only.
+- Google Calendar "booking" is prompt-only: AI captures prospect's picked
+  slot via trigger_handoff → email to Hunter → Hunter books manually.
+  Stage C item 6 upgrades this.
+
+## Known bugs / things to monitor
+
+- `maxSessionsPerIpPerDay = 25` is TESTING-HIGH. Reduce to 3-5 post-launch.
+  File: `src/lib/quote-ai-budget.ts` HARD_LIMITS. Flagged in code comment.
+- AI occasionally still echoes "Hunter" name if prospect uses it — weak
+  signal but worth watching transcripts.
+- If research returns GBP but site scan fails, observations may mismatch
+  with prompt's observe-and-confirm pattern. Graceful-fallback rule added
+  in v1.13 prompt; needs real testing.
 
 ---
 
