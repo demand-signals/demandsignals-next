@@ -29,20 +29,49 @@ const bodySchema = z.object({
 })
 
 // Fetch prior messages and shape them for the Claude API.
+//
+// Trimming strategy: beyond the first 24 messages we collapse the oldest half
+// into a bracketed summary placeholder. That keeps input tokens flat as the
+// conversation grows, which is the single biggest driver of session cost.
+// The full transcript always remains in the DB — this only affects what's
+// re-sent to Claude each turn.
 async function loadHistory(session_id: string): Promise<Anthropic.MessageParam[]> {
   const { data } = await supabaseAdmin
     .from('quote_messages')
     .select('role, content, created_at')
     .eq('session_id', session_id)
     .order('created_at', { ascending: true })
-    .limit(40)
   if (!data) return []
-  return data
-    .filter((m) => m.role === 'ai' || m.role === 'user')
-    .map((m) => ({
+
+  const convo = data.filter((m) => m.role === 'ai' || m.role === 'user')
+
+  const KEEP_RECENT = 24 // roughly the last 12 Q/A exchanges
+  if (convo.length <= KEEP_RECENT) {
+    return convo.map((m) => ({
       role: m.role === 'ai' ? 'assistant' : 'user',
       content: m.content,
     })) as Anthropic.MessageParam[]
+  }
+
+  // Too long — collapse the oldest messages into a single "prior conversation"
+  // summary and pair it with the recent tail.
+  const trimCount = convo.length - KEEP_RECENT
+  const oldest = convo.slice(0, trimCount)
+  const recent = convo.slice(trimCount)
+
+  const summary = oldest
+    .map((m) => `${m.role === 'ai' ? 'AI' : 'Prospect'}: ${m.content.slice(0, 200)}`)
+    .join('\n')
+  const summaryMessage: Anthropic.MessageParam = {
+    role: 'user',
+    content: `[Earlier in this conversation — summarized for context, do not re-ask these facts:]\n${summary}\n[End earlier context — continue with most recent turns below.]`,
+  }
+  const recentShaped = recent.map((m) => ({
+    role: m.role === 'ai' ? 'assistant' : 'user',
+    content: m.content,
+  })) as Anthropic.MessageParam[]
+
+  return [summaryMessage, ...recentShaped]
 }
 
 function estimateTokens(text: string): number {

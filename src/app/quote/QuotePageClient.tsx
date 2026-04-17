@@ -674,26 +674,29 @@ function Configurator({
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs">
             <div className="font-semibold text-amber-900 mb-1">Your plan is saved</div>
             <div className="text-amber-800 mb-2">
-              Come back anytime — no commitment, just pick up where you left off.
+              Scan with your phone to bookmark, or use the options below.
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => {
-                  const url = `${window.location.origin}/quote/s/${session.share_token}`
-                  navigator.clipboard.writeText(url).catch(() => {
-                    window.prompt('Copy this URL:', url)
-                  })
-                }}
-                className="bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 rounded px-2 py-1 text-[11px] font-medium"
-              >
-                📋 Copy link
-              </button>
-              <button
-                onClick={onEmailPlanOpen}
-                className="bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 rounded px-2 py-1 text-[11px] font-medium"
-              >
-                ✉️ Email it to me
-              </button>
+            <div className="flex gap-3 items-start">
+              <SoftSaveQr shareUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/quote/s/${session.share_token}`} />
+              <div className="flex-1 flex flex-wrap gap-2 content-start">
+                <button
+                  onClick={() => {
+                    const url = `${window.location.origin}/quote/s/${session.share_token}`
+                    navigator.clipboard.writeText(url).catch(() => {
+                      window.prompt('Copy this URL:', url)
+                    })
+                  }}
+                  className="bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 rounded px-2 py-1 text-[11px] font-medium"
+                >
+                  📋 Copy link
+                </button>
+                <button
+                  onClick={onEmailPlanOpen}
+                  className="bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 rounded px-2 py-1 text-[11px] font-medium"
+                >
+                  ✉️ Email it to me
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1128,5 +1131,40 @@ function EmailPlanCard({
         </div>
       </div>
     </div>
+  )
+}
+
+// ============================================================
+// Small QR code for the soft-save card. Renders on a canvas client-side.
+// Uses the `qrcode` library, which tree-shakes to ~20KB.
+// ============================================================
+function SoftSaveQr({ shareUrl }: { shareUrl: string }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  useEffect(() => {
+    if (!canvasRef.current || !shareUrl) return
+    // Dynamic import keeps this out of the initial bundle
+    import('qrcode').then((QR) => {
+      if (canvasRef.current) {
+        QR.toCanvas(canvasRef.current, shareUrl, {
+          width: 96,
+          margin: 1,
+          color: { dark: '#92400e', light: '#fffbeb' }, // amber-900 on amber-50
+          errorCorrectionLevel: 'M',
+        }).catch(() => {
+          // Silent fallback — prospects still have Copy link + Email buttons.
+        })
+      }
+    }).catch(() => {
+      // Silent fallback
+    })
+  }, [shareUrl])
+  return (
+    <canvas
+      ref={canvasRef}
+      width={96}
+      height={96}
+      className="rounded border border-amber-200"
+      aria-label="QR code to your saved plan — scan to open on your phone"
+    />
   )
 }

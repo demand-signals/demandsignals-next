@@ -23,7 +23,11 @@ import { supabaseAdmin } from './supabase/admin'
 // prospects get generous room to close.
 export const HARD_LIMITS = {
   maxInputTokensPerRequest: 12_000,
-  maxOutputTokensPerRequest: 600,
+  // 350 output tokens ~= 250 words — still room for the occasional verbal
+  // recap (Phase 6). Normal turns should be far shorter. Prompt rule says
+  // "match the prospect's rhythm" — when they reply with 3 words, we reply
+  // with one short sentence. Hard max caps the worst cases.
+  maxOutputTokensPerRequest: 350,
 
   // BASE caps (no commitment signals yet)
   baseMessagesPerSession: 40,
@@ -49,11 +53,17 @@ export const HARD_LIMITS = {
 export const COMMITMENT_BONUSES = {
   phone_verified: { messages: 100, tokens: 200_000, costCents: 300 },
   email_captured: { messages: 30, tokens: 60_000, costCents: 100 },
-  research_confirmed: { messages: 15, tokens: 30_000, costCents: 50 },
+  // Research confirmation = real prospect, not a test. Give meaningful room.
+  research_confirmed: { messages: 30, tokens: 60_000, costCents: 100 },
+  // Three+ items = they're actively shaping a real plan with us.
+  three_plus_items: { messages: 20, tokens: 40_000, costCents: 75 },
+  // 5+ items = deep engagement on top of that.
+  five_plus_items: { messages: 15, tokens: 30_000, costCents: 50 },
   roi_provided: { messages: 15, tokens: 30_000, costCents: 50 },
   payment_discussed: { messages: 10, tokens: 20_000, costCents: 30 },
   ready_to_buy: { messages: 30, tokens: 60_000, costCents: 100 },
-  five_plus_items: { messages: 10, tokens: 20_000, costCents: 30 },
+  // Person name + role captured = real human with real role.
+  person_identified: { messages: 10, tokens: 20_000, costCents: 30 },
 } as const
 
 export type CommitmentSignal = keyof typeof COMMITMENT_BONUSES
@@ -248,7 +258,12 @@ export async function computeSessionBudget(sessionId: string): Promise<SessionBu
     add('ready_to_buy')
   }
   const itemCount = Array.isArray(session?.selected_items) ? session.selected_items.length : 0
+  // 3+ and 5+ stack — both fire when >= 5.
+  if (itemCount >= 3) add('three_plus_items')
   if (itemCount >= 5) add('five_plus_items')
+  // person_name lives on the session row. Refetch if we didn't select it — but
+  // in practice this ambient signal is most useful as a mild bonus.
+  // Leave person_identified disabled here and let tools drive it explicitly.
 
   return {
     maxMessages: Math.min(
