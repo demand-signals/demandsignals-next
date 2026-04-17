@@ -30,8 +30,20 @@ export async function GET(request: NextRequest, { params }: Params) {
   // Strip encrypted phone from admin response — admin sees last-four only.
   const { phone_encrypted, phone_e164_hash, ...session } = sessionRes.data as Record<string, unknown>
 
+  // If the session is linked to a prospect, fetch the prospect snapshot for the UI
+  let prospect: Record<string, unknown> | null = null
+  if (session.prospect_id) {
+    const { data: p } = await supabaseAdmin
+      .from('prospects')
+      .select('id, business_name, industry, city, state, stage, tags, owner_email, owner_phone, business_phone, website_url, google_rating, google_review_count, site_quality_score, scope_summary, quote_estimate_low_cents, quote_estimate_high_cents, last_activity_at, last_contacted_at, created_at')
+      .eq('id', session.prospect_id as string)
+      .maybeSingle()
+    prospect = p ?? null
+  }
+
   return NextResponse.json({
     session,
+    prospect,
     messages: messagesRes.data ?? [],
     events: eventsRes.data ?? [],
   })

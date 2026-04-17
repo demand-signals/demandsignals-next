@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { authorizeSession } from '@/lib/quote-session'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { syncProspectFromSession } from '@/lib/quote-prospect-sync'
 
 export const runtime = 'nodejs'
 
@@ -44,6 +45,9 @@ export async function POST(request: NextRequest) {
     event_data: { email: body.email },
   })
 
-  // TODO: trigger admin notification (Stage C — hot-walkaway notify covers this too)
+  // Create or enrich prospect record with the email. Admin team sees this in
+  // /admin/prospects with scope_summary already populated, ready to follow up.
+  await syncProspectFromSession(session.id, 'email_captured')
+
   return NextResponse.json({ ok: true })
 }

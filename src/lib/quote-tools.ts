@@ -5,6 +5,7 @@
 import { supabaseAdmin } from './supabase/admin'
 import { getItem, type PricingItem } from './quote-pricing'
 import { calculateTotals, computeRoi, type SelectedItem } from './quote-engine'
+import { syncProspectFromSession } from './quote-prospect-sync'
 
 export interface ToolUse {
   id: string
@@ -66,6 +67,9 @@ export async function executeTool(session_id: string, tool: ToolUse): Promise<To
           : {}
         await logEvent(session_id, 'item_added', { item_id, quantity, narrowing_answers })
         const { totals } = await recomputeAndGetTotals(session_id)
+        // Enrich existing prospect (if created) with updated scope_summary.
+        // Non-creating — only updates records that already exist.
+        await syncProspectFromSession(session_id, 'item_changed')
         return {
           tool_use_id: tool.id,
           content: JSON.stringify({
@@ -87,6 +91,7 @@ export async function executeTool(session_id: string, tool: ToolUse): Promise<To
         const item_id = String(tool.input.item_id ?? '')
         await logEvent(session_id, 'item_removed', { item_id })
         const { totals } = await recomputeAndGetTotals(session_id)
+        await syncProspectFromSession(session_id, 'item_changed')
         return {
           tool_use_id: tool.id,
           content: JSON.stringify({
@@ -110,6 +115,7 @@ export async function executeTool(session_id: string, tool: ToolUse): Promise<To
         }
         await logEvent(session_id, 'item_adjusted', payload)
         const { totals } = await recomputeAndGetTotals(session_id)
+        await syncProspectFromSession(session_id, 'item_changed')
         return {
           tool_use_id: tool.id,
           content: JSON.stringify({ ok: true, totals: { upfront_low: totals.upfrontLow, upfront_high: totals.upfrontHigh } }),
@@ -129,6 +135,8 @@ export async function executeTool(session_id: string, tool: ToolUse): Promise<To
         if (Object.keys(updates).length > 0) {
           await supabaseAdmin.from('quote_sessions').update(updates).eq('id', session_id)
           await logEvent(session_id, 'business_profile_updated', updates)
+          // Enrich existing prospect if present (non-creating).
+          await syncProspectFromSession(session_id, 'item_changed')
         }
         return { tool_use_id: tool.id, content: JSON.stringify({ ok: true, updated: Object.keys(updates) }) }
       }
@@ -144,6 +152,7 @@ export async function executeTool(session_id: string, tool: ToolUse): Promise<To
         }
         await supabaseAdmin.from('quote_sessions').update(updates).eq('id', session_id)
         await logEvent(session_id, 'discovery_fork', { path: build_path, existing_site_url: updates.existing_site_url ?? null })
+        await syncProspectFromSession(session_id, 'item_changed')
         return { tool_use_id: tool.id, content: JSON.stringify({ ok: true, build_path }) }
       }
 
@@ -222,12 +231,45 @@ export async function executeTool(session_id: string, tool: ToolUse): Promise<To
         // means "human should look at this session."
         await supabaseAdmin.from('quote_sessions').update({ handoff_offered: true }).eq('id', session_id)
         await logEvent(session_id, 'hot_walkaway_risk', { signal })
+        // Push enrichment to the prospect record too — adds walkaway-risk tag
+        // and an activity entry so the human team can reach out proactively.
+        await syncProspectFromSession(session_id, 'walkaway_flagged')
         return {
           tool_use_id: tool.id,
           content: JSON.stringify({
             ok: true,
             logged: true,
             hint: 'Continue the conversation warmly. Do not mention the admin flag — that is internal.',
+          }),
+        }
+      }
+
+      case 'confirm_research_match': {
+        const confirmed = tool.input.confirmed === true
+        await supabaseAdmin
+          .from('quote_sessions')
+          .update({ research_confirmed: confirmed ? 1 : -1 })
+          .eq('id', session_id)
+        await logEvent(session_id, confirmed ? 'research_confirmed' : 'research_denied', {})
+        // On confirmation → create/enrich the prospect immediately.
+        if (confirmed) {
+          const prospectId = await syncProspectFromSession(session_id, 'research_confirmed')
+          return {
+            tool_use_id: tool.id,
+            content: JSON.stringify({
+              ok: true,
+              confirmed: true,
+              prospect_created_or_updated: Boolean(prospectId),
+              hint: 'The prospect record now exists in the CRM and will be enriched as the conversation continues. Keep going with observations and recommendations.',
+            }),
+          }
+        }
+        return {
+          tool_use_id: tool.id,
+          content: JSON.stringify({
+            ok: true,
+            confirmed: false,
+            hint: 'The prospect denied the research match. Do NOT reference the research findings again. Apologize briefly and continue discovery.',
           }),
         }
       }

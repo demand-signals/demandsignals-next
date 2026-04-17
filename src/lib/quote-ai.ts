@@ -702,6 +702,17 @@ export const TOOLS: Anthropic.Tool[] = [
       required: ['signal'],
     },
   },
+  {
+    name: 'confirm_research_match',
+    description: 'Record whether the prospect confirmed (or denied) the research match after you delivered the confirmation hook. Call this on the NEXT turn after you delivered the hook, based on what the prospect replied. "yes / yeah / that\'s me / correct / yep" = confirmed=true. "no / different business / not me" = confirmed=false. If unclear, do not call this tool — wait for explicit signal.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        confirmed: { type: 'boolean', description: 'True if prospect said yes; false if they denied the match.' },
+      },
+      required: ['confirmed'],
+    },
+  },
 ]
 
 // ============================================================

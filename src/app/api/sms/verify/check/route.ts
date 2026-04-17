@@ -4,6 +4,7 @@ import { authorizeSession } from '@/lib/quote-session'
 import { checkVerificationCode, lookupPhone } from '@/lib/quote-twilio'
 import { preparePhoneForStorage, toE164 } from '@/lib/quote-crypto'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { syncProspectFromSession } from '@/lib/quote-prospect-sync'
 
 export const runtime = 'nodejs'
 
@@ -75,8 +76,10 @@ export async function POST(request: NextRequest) {
     event_data: { e164_last4: prepared.phone_last_four, is_voip: phone_is_voip },
   })
 
-  // Auto-match to prospects by phone hash (if an existing prospect has this phone).
-  // For MVP we skip the merge — Stage C will add it.
+  // Create or enrich the CRM prospect record — phone verification is a hard signal
+  // this is a real business we should track. If a prospect already exists by phone
+  // match or business_name+city, the sync upgrades it; otherwise it creates new.
+  await syncProspectFromSession(session.id, 'phone_verified')
 
   return NextResponse.json({ ok: true, approved: true, phone_last_four: prepared.phone_last_four })
 }

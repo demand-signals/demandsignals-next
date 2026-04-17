@@ -8,6 +8,7 @@ interface QuoteDetail {
   session: {
     id: string
     share_token: string
+    prospect_id: string | null
     business_name: string | null
     business_type: string | null
     business_location: string | null
@@ -41,6 +42,28 @@ interface QuoteDetail {
     created_at: string
     updated_at: string
   }
+  prospect: {
+    id: string
+    business_name: string
+    industry: string | null
+    city: string | null
+    state: string | null
+    stage: string
+    tags: string[]
+    owner_email: string | null
+    owner_phone: string | null
+    business_phone: string | null
+    website_url: string | null
+    google_rating: number | null
+    google_review_count: number | null
+    site_quality_score: number | null
+    scope_summary: string | null
+    quote_estimate_low_cents: number | null
+    quote_estimate_high_cents: number | null
+    last_activity_at: string | null
+    last_contacted_at: string | null
+    created_at: string
+  } | null
   messages: Array<{
     id: string
     role: string
@@ -133,6 +156,111 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
           </a>
         </div>
       </div>
+
+      {/* Linked prospect card — appears when a prospect record has been created/enriched.
+          Makes the CRM→quote relationship visible at a glance. */}
+      {detail.prospect && (
+        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">
+                  Linked Prospect
+                </span>
+                <span className="inline-block px-2 py-0.5 bg-white/60 rounded text-[10px] text-emerald-800 font-medium">
+                  {detail.prospect.stage}
+                </span>
+                {detail.prospect.tags?.map((tag) => (
+                  <span
+                    key={tag}
+                    className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${
+                      tag === 'walkaway-risk'
+                        ? 'bg-red-100 text-red-800 ring-1 ring-red-200'
+                        : 'bg-white/60 text-emerald-800'
+                    }`}
+                  >
+                    {tag === 'walkaway-risk' ? '🚨 walkaway-risk' : tag}
+                  </span>
+                ))}
+              </div>
+              <Link
+                href={`/admin/prospects/${detail.prospect.id}`}
+                className="text-lg font-bold text-emerald-900 hover:underline"
+              >
+                {detail.prospect.business_name}
+              </Link>
+              <div className="text-xs text-emerald-700 mt-0.5">
+                {detail.prospect.industry && <>{detail.prospect.industry} · </>}
+                {detail.prospect.city && detail.prospect.state && (
+                  <>{detail.prospect.city}, {detail.prospect.state}</>
+                )}
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 text-xs mt-3">
+                {detail.prospect.google_rating != null && (
+                  <div>
+                    <span className="text-emerald-600">Google:</span>{' '}
+                    <span className="font-medium">
+                      {detail.prospect.google_rating.toFixed(1)}★ ({detail.prospect.google_review_count ?? 0})
+                    </span>
+                  </div>
+                )}
+                {detail.prospect.site_quality_score != null && (
+                  <div>
+                    <span className="text-emerald-600">Site score:</span>{' '}
+                    <span className="font-medium">{detail.prospect.site_quality_score}/100</span>
+                  </div>
+                )}
+                {detail.prospect.owner_phone && (
+                  <div>
+                    <span className="text-emerald-600">Phone:</span>{' '}
+                    <span className="font-medium">{detail.prospect.owner_phone}</span>
+                  </div>
+                )}
+                {detail.prospect.owner_email && (
+                  <div className="truncate">
+                    <span className="text-emerald-600">Email:</span>{' '}
+                    <span className="font-medium">{detail.prospect.owner_email}</span>
+                  </div>
+                )}
+                {detail.prospect.website_url && (
+                  <div className="truncate col-span-2">
+                    <span className="text-emerald-600">Site:</span>{' '}
+                    <a
+                      href={detail.prospect.website_url}
+                      target="_blank"
+                      rel="noopener"
+                      className="font-medium text-emerald-800 hover:underline"
+                    >
+                      {detail.prospect.website_url.replace(/^https?:\/\//, '')}
+                    </a>
+                  </div>
+                )}
+              </div>
+              {detail.prospect.scope_summary && (
+                <div className="text-xs text-emerald-700 mt-3">
+                  <span className="text-emerald-600">Current scope:</span>{' '}
+                  <span>{detail.prospect.scope_summary}</span>
+                </div>
+              )}
+              {detail.prospect.quote_estimate_low_cents != null &&
+                detail.prospect.quote_estimate_high_cents != null && (
+                  <div className="text-xs text-emerald-700 mt-1">
+                    <span className="text-emerald-600">Estimate:</span>{' '}
+                    <span className="font-medium">
+                      {formatRange(detail.prospect.quote_estimate_low_cents, detail.prospect.quote_estimate_high_cents)}
+                    </span>
+                  </div>
+                )}
+            </div>
+            <Link
+              href={`/admin/prospects/${detail.prospect.id}`}
+              className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-3 py-1.5 text-xs font-medium"
+            >
+              Open Prospect →
+            </Link>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ───── Left: prospect profile + stats ───── */}
