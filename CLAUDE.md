@@ -616,3 +616,156 @@ Every page on the site has a machine-readable markdown version accessible via HT
 | `src/lib/category-content.ts` | Category page content data |
 | `src/middleware.ts` | HTTP Link headers for markdown discovery |
 | `dsig-rank-system.md` | Full ranking system methodology |
+
+---
+
+## 18. Domain Architecture
+
+**Decided 2026-04-17 during Stage C item 1 (invoicing) brainstorm. Locked-in rule.**
+
+All DSIG operations live on `demandsignals.co` subdomains. `demandsignals.dev` is retired
+(registration held for squatting defense only; no DNS records beyond a parking page).
+Lifecycle is encoded in the subdomain, which keeps routing, tracking, OAuth, and cookie
+scope unified under a single apex domain.
+
+| Domain | Purpose | Lifetime |
+|--------|---------|----------|
+| `demandsignals.co` | Production DSIG site — main marketing, admin portal, client portal, all public APIs | permanent |
+| `preview.demandsignals.co` | DSIG's own site staging (currently at `dsig.demandsignals.dev` — migrate later, not urgent) | permanent |
+| `*.demos.demandsignals.co` | Per-client demo sandboxes. `[client-code].demos.demandsignals.co`. AI-generated pitch sites. | 30–90 days (throwaway) |
+| `*.staging.demandsignals.co` | Per-client project staging. `[client-code].staging.demandsignals.co`. Real production builds pre-launch. | weeks to months |
+| `assets.demandsignals.co` | R2 public bucket — CDN-backed static assets (marketing, media, logos, public project galleries) | permanent |
+| `[clientdomain].com` | Client's live site. Same Vercel project as `[client-code].staging.demandsignals.co`, promoted via domain alias + env var change. | permanent (post-launch) |
+| `demandsignals.dev` | **RETIRED.** Domain squat-protection only. Not used for anything. | — |
+
+### Demo vs Staging (different lifecycle, different rigor)
+
+- **Demo** = sales tool. Prospect sees before contract. Placeholder copy, partial features, mock data OK. Publicly viewable. `noindex`. Lifespan: 30–90 days, then converts to staging or gets killed.
+- **Staging** = construction workspace. Signed client, real content, real integrations. Password-gated + `noindex`. Lifespan: weeks to months, then deploys to `[clientdomain].com` via Vercel domain alias + env var swap (no URL rewrite, no rebuild).
+
+### Why one apex domain
+
+- **OAuth redirect URIs** — single `https://demandsignals.co/auth/callback`, no cross-TLD flow complexity.
+- **Analytics unification** — cookie `Domain=.demandsignals.co` works across every subdomain.
+- **CORS simplicity** — same-origin policy covers admin ↔ demos ↔ staging ↔ assets.
+- **Tracking consolidation** — admin portal can query every visit across every client subdomain natively.
+
+### Security discipline (required when using one apex)
+
+- Admin cookies MUST scope `Domain=demandsignals.co` (exact, no leading dot) + `SameSite=Strict` + `HttpOnly` + `Secure`.
+- Demo sites that need session cookies MUST scope to `Domain=demos.demandsignals.co` (not `.demandsignals.co`). Never share auth scope between admin and demo subdomains.
+- Client project codebases (running on `*.staging.*` / `*.demos.*`) must NOT share cookies with admin portal.
+
+### Client project lifecycle (reference)
+
+```
+Prospect → /quote → closes deal
+   ↓
+Demo Factory spins up [code].demos.demandsignals.co          (Stage C-D feature)
+   ↓
+Client approves → contract signed
+   ↓
+New Vercel project → [code].staging.demandsignals.co         (real build)
+   ↓
+Client approves final build
+   ↓
+Vercel domain alias + env var swap → [clientdomain].com      (~20 min, no rebuild)
+   ↓
+Staging URL retired or kept as internal backup
+```
+
+The "no rebuild at go-live" contract depends on every client project using:
+- Relative paths for internal links (never absolute to the staging/demo URL)
+- Single `SITE_URL` env var for canonical/OG/sitemap absolute URLs
+- No URL-prefix routing (no `basePath` tricks) — each client gets their own subdomain (`[code].staging.*`), content served at `/` always
+
+---
+
+## 19. File Storage Architecture
+
+**Decided 2026-04-17 during Stage C item 1 (invoicing) brainstorm. Locked-in rule.**
+
+DSIG uses **Cloudflare R2** for all file storage across every project. S3-compatible API,
+zero egress cost, `$0.015/GB/month` storage. Pattern is reusable across every future DSIG
+project — any new project drops in the same `r2-storage.ts` helper and two env vars.
+
+### Two-bucket split (by privacy, not by project)
+
+| Bucket name | Access | Custom domain | Use |
+|---|---|---|---|
+| `dsig-assets-public` | Public read, CDN-cached | `https://assets.demandsignals.co` | Marketing, logos, OG images, blog media, public project galleries, client site media (post-launch) |
+| `dsig-docs-private` | Private, signed URLs only (15-min TTL) | None (served via admin-auth API routes) | Invoice PDFs, SOW PDFs, contract PDFs, client uploads, research reports, internal drafts |
+
+### Why separate buckets (not folders in one bucket)
+
+- Each bucket has its own public-access rule — a mistake in one can't leak the other.
+- Cloudflare custom-domain routing is per-bucket, not per-path.
+- Backup/lifecycle policies are per-bucket.
+- Blast radius containment is cheap insurance.
+
+### Public bucket path conventions (`assets.demandsignals.co`)
+
+```
+/brand/                                → DSIG logos, wordmarks, favicons
+/marketing/                            → OG images, hero videos, ad creative
+/blog/[post-slug]/                     → per-blog-post media
+/clients/[client-code]/gallery/        → public portfolio (post-launch, with client approval)
+/site/                                 → DSIG site's own media (hero videos, testimonial photos)
+```
+
+### Private bucket path conventions
+
+```
+/invoices/[invoice-number]_v[n].pdf    → invoice PDFs (immutable per version)
+/sow/[sow-id].pdf                      → statements of work
+/contracts/[contract-id].pdf           → signed contracts
+/clients/[client-code]/uploads/[file]  → client-uploaded source files
+/clients/[client-code]/drafts/[file]   → pre-approval drafts
+/prospects/[prospect-id]/research/[f]  → research reports, audits
+```
+
+### Library
+
+`src/lib/r2-storage.ts` exports:
+- `uploadPublic(key, body, contentType): Promise<string>` — returns `https://assets.demandsignals.co/{key}`
+- `getPublicUrl(key): string` — synchronous, no network call
+- `uploadPrivate(key, body, contentType): Promise<void>`
+- `getPrivateSignedUrl(key, ttlSeconds?): Promise<string>` — default 15 min
+- `deletePrivate(key): Promise<void>` — for compensating rollback
+
+Single `@aws-sdk/client-s3` install. Same API pattern for both buckets (R2 is S3-compatible).
+
+### Required env vars
+
+```bash
+R2_ACCOUNT_ID=<cloudflare-account-id>
+R2_ACCESS_KEY_ID=<r2-api-token-id>
+R2_SECRET_ACCESS_KEY=<r2-api-token-secret>
+R2_PUBLIC_BUCKET=dsig-assets-public
+R2_PUBLIC_URL=https://assets.demandsignals.co
+R2_PRIVATE_BUCKET=dsig-docs-private
+R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+```
+
+### Transactional safety for private uploads
+
+R2 upload + Supabase row insert is not atomic. Use a compensating rollback pattern:
+
+```ts
+// 1. Insert DB row first
+const { error: rowErr, data: row } = await supabase.from('invoices').insert(...).select().single()
+if (rowErr) throw rowErr
+
+// 2. Upload PDF
+try {
+  await r2.uploadPrivate(`invoices/${row.invoice_number}_v1.pdf`, pdfBuffer, 'application/pdf')
+  await supabase.from('invoices').update({ pdf_storage_path: `invoices/${row.invoice_number}_v1.pdf` }).eq('id', row.id)
+} catch (uploadErr) {
+  await supabase.from('invoices').delete().eq('id', row.id)  // compensating rollback
+  throw uploadErr
+}
+```
+
+### Why NOT Supabase Storage
+
+Supabase Storage egress is `$0.09/GB` — punishes exactly the video/media use cases DSIG will grow into. R2's free egress wins decisively at scale. And consistency across DSIG projects matters more than the minor transactional-atomicity gain Supabase Storage offers.

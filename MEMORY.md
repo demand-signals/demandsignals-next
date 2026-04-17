@@ -8,28 +8,34 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-04-17 late evening (Opus 4.7, commit `3e287b2`)
+**Last updated:** 2026-04-18 (Opus 4.7, commit `c695f27`+)
 
 ---
 
 ## Current task
 
-**PIVOT TO STAGE C.** Conversation tuning frozen at v1.13 ("agentic discovery").
-Hunter will validate v1.12 + v1.13 conversational changes alongside Stage C builds
-— no standalone live test of v1.13 tonight.
+**STAGE C ITEM 1 — INVOICING.** Brainstorm converged; design being written.
+Stage C ordering (confirmed): 1→4 sequential, then 5-8.
 
-Agreed Stage C ordering (Hunter to confirm when restarting):
-  1. Invoicing system — tables exist, need admin UI + $0 research invoices
-     (Restaurant Rule) + client-facing `/invoice/{invoice_number}` viewer
-  2. Admin estimate builder at `/admin/quotes/new` + post-call revision
-  3. Bid system UI (accept/counter/decline scope adjuster)
-  4. SOW auto-generation
-  5. Live handoff backend (realtime subs, 60s ping window, admin inbox)
-  6. Google Calendar API — replaces "Hunter books manually" with real writes
-  7. OAuth Checkpoint 2 (Google OAuth for prospect-side client portal)
-  8. A2P 10DLC Marketing campaign registration — unblocks cadence SMS
+**Architectural decisions locked in this session:**
+1. **Domain map** — `.co` for everything; `.dev` retired. See CLAUDE.md §18.
+2. **File storage** — Cloudflare R2, two buckets (`dsig-assets-public` via
+   `assets.demandsignals.co` + `dsig-docs-private` for signed-URL access).
+   See CLAUDE.md §19.
+3. **Invoice versioning** — mutable drafts; immutable once sent; edits require
+   void + re-issue (new invoice number). Matches QuickBooks-style audit trail.
+4. **Invoice auth** — uuid-suffixed public URL `/invoice/[number]/[uuid]`,
+   matches existing `quote_sessions.share_token` pattern.
+5. **PDF lib** — `@react-pdf/renderer`, server-rendered on send, uploaded to
+   R2 private bucket at `invoices/[number]_v[n].pdf`.
+6. **Automation tiers** — Restaurant Rule = Tier 2 (auto-draft + Hunter one-click send).
+   Future retainers = Tier 3 (full auto). Schema supports both via
+   `auto_generated`, `auto_trigger`, `auto_sent` flags.
+7. **Catalog migration** — adds `display_price_cents` per item (for $0 invoice
+   line-item "value shown before 100% discount").
 
 Full Stage C plan: [docs/runbooks/stage-c-plan.md](docs/runbooks/stage-c-plan.md)
+Item 1 design spec: `docs/superpowers/specs/2026-04-18-invoicing-design.md` (being written)
 
 ---
 
@@ -109,6 +115,13 @@ SELECT key, value FROM quote_config ORDER BY key;
 ---
 
 ## Recent tasks (reverse chronological)
+
+### 2026-04-18 — Stage C item 1 brainstorm: invoicing architecture
+- 5-question deep-dive converged on design (no performative alternatives step)
+- Decisions: R2 dual-bucket storage, uuid-suffix URL auth, void+re-issue versioning, Tier 2 automation for Restaurant Rule, `display_price_cents` catalog field, @react-pdf/renderer
+- Domain architecture locked (CLAUDE.md §18): one apex (`.co`), `.dev` retired, `demos.*`/`staging.*`/`assets.*`/`preview.*` subdomain roles
+- File storage architecture locked (CLAUDE.md §19): R2 buckets, path conventions, `src/lib/r2-storage.ts` helper
+- Next: write spec → user review → writing-plans skill → implementation
 
 ### 2026-04-17 — Stage B: prospect-facing flow ✅ SHIPPED
 Commit `abcbd10`. Deployed to https://dsig.demandsignals.dev/quote.
