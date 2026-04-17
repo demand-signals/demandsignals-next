@@ -18,6 +18,7 @@ import {
 import { applyOutputPolicy, regenerationNudge, scanOutput } from '@/lib/quote-output-scan'
 import { executeTool, type ToolUse } from '@/lib/quote-tools'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { alertFromSession } from '@/lib/quote-notify'
 import type Anthropic from '@anthropic-ai/sdk'
 
 export const runtime = 'nodejs'
@@ -77,8 +78,47 @@ export async function POST(request: NextRequest) {
         content: `[budget_violation:${e.reason}] ${e.message}`,
         channel: 'web',
       })
+
+      // Check whether we've already fired a handoff for this session's budget
+      // violation. Idempotency guard — don't re-alert every turn.
+      const { data: existingEvent } = await supabaseAdmin
+        .from('quote_events')
+        .select('id')
+        .eq('session_id', session.id)
+        .eq('event_type', 'budget_violation_handoff')
+        .limit(1)
+        .maybeSingle()
+
+      if (!existingEvent) {
+        // First hit — escalate: flag as walkaway risk, fire email alert,
+        // flip handoff_offered so admin queue picks up.
+        await supabaseAdmin
+          .from('quote_sessions')
+          .update({ handoff_offered: true })
+          .eq('id', session.id)
+        await supabaseAdmin.from('quote_events').insert({
+          session_id: session.id,
+          event_type: 'budget_violation_handoff',
+          event_data: { reason: e.reason },
+        })
+        // Fire-and-forget alert email
+        alertFromSession(
+          session.id,
+          'hot_handoff',
+          `Budget cap hit (${e.reason}) — prospect was mid-conversation. Reach out personally.`,
+        ).catch(() => {})
+      }
+
       return NextResponse.json(
-        { budget_violation: true, reason: e.reason, message: e.userFacingMessage },
+        {
+          budget_violation: true,
+          reason: e.reason,
+          message: e.userFacingMessage,
+          // Flag tells the client to disable the input and show a "we'll reach
+          // out" card instead of echoing the message every turn.
+          disable_input: true,
+          escalated: true,
+        },
         { status: 200 },
       )
     }
@@ -129,6 +169,42 @@ export async function POST(request: NextRequest) {
       text: buildDynamicContext(session),
     },
   ]
+
+  // Soft-warn pivot: when we're past the soft threshold AND the prospect
+  // still has no phone or email, inject a directive to pivot the next reply
+  // toward a warm contact-capture ask. Prevents us from running into the
+  // hard message cap while anonymous.
+  //
+  // The threshold is 30 (base cap is 40 messages for anonymous users). If
+  // the prospect has already given us contact info, the soft-warn is
+  // irrelevant — their cap is 140+ and we have plenty of headroom.
+  const SOFT_WARN_AT = 30
+  const hasContact = session.phone_verified || !!session.email
+  if (messageCount >= SOFT_WARN_AT && !hasContact) {
+    systemBlocks.push({
+      type: 'text',
+      text: `SOFT-WARN PIVOT (DO THIS IN YOUR NEXT REPLY):
+
+We're at turn ${messageCount} and still don't have the prospect's cell or
+email. Before we hit a technical cap, pivot the NEXT turn to this exact
+framing (adapt the wording for flow):
+
+"We're spending some real time here figuring out your solution, and we're
+making real progress. I'm happy to keep going but my humans ask that I
+gather a detail or two before I continue — principally a cell phone or
+email so we can stay in touch. Which works for you?"
+
+This is a GRACEFUL PIVOT, not a sales push. Phrasing the ask as "my
+humans require it to continue" takes the AI-asks-for-data awkwardness
+out of it and converts to a mutual-investment frame.
+
+If prospect provides phone → they can verify via the Unlock button.
+If prospect provides email → route to the Email Me The Plan flow.
+If prospect refuses both → offer_soft_save and gracefully close.
+
+Only deliver this pivot ONCE. If they already dodged the ask, don't repeat.`,
+    })
+  }
 
   // Conversation loop: up to 4 tool-use round-trips per user turn.
   const MAX_ROUND_TRIPS = 4

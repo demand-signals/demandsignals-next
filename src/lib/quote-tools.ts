@@ -7,6 +7,38 @@ import { getItem, type PricingItem } from './quote-pricing'
 import { calculateTotals, computeRoi, type SelectedItem } from './quote-engine'
 import { syncProspectFromSession } from './quote-prospect-sync'
 import { alertFromSession } from './quote-notify'
+import { runResearch } from './quote-research'
+
+/**
+ * Re-fire research if it was previously denied AND we now have richer info
+ * (business_type or existing_site_url) that could disambiguate the search.
+ * Fire-and-forget — never block the tool response on research completion.
+ */
+async function maybeRetryResearch(session_id: string): Promise<void> {
+  try {
+    const { data: s } = await supabaseAdmin
+      .from('quote_sessions')
+      .select('research_confirmed, research_completed_at, business_type, existing_site_url')
+      .eq('id', session_id)
+      .single()
+    if (!s) return
+    // Only retry if: previously denied AND we have more info than a bare name
+    if (s.research_confirmed !== -1) return
+    if (!s.business_type && !s.existing_site_url) return
+    // Reset research state so runResearch() will populate fresh findings
+    await supabaseAdmin
+      .from('quote_sessions')
+      .update({
+        research_confirmed: null,
+        research_started_at: new Date().toISOString(),
+      })
+      .eq('id', session_id)
+    // Fire-and-forget
+    runResearch(session_id).catch(() => {})
+  } catch {
+    // Never let a research retry failure break the main flow
+  }
+}
 
 export interface ToolUse {
   id: string
@@ -125,7 +157,7 @@ export async function executeTool(session_id: string, tool: ToolUse): Promise<To
 
       case 'set_business_profile': {
         const updates: Record<string, unknown> = {}
-        for (const key of ['business_name', 'business_type', 'business_location', 'growth_challenge']) {
+        for (const key of ['business_name', 'business_type', 'business_location', 'growth_challenge', 'person_name', 'person_role']) {
           const v = tool.input[key]
           if (typeof v === 'string' && v.length > 0 && v.length < 500) updates[key] = v
         }
@@ -138,6 +170,12 @@ export async function executeTool(session_id: string, tool: ToolUse): Promise<To
           await logEvent(session_id, 'business_profile_updated', updates)
           // Enrich existing prospect if present (non-creating).
           await syncProspectFromSession(session_id, 'item_changed')
+          // Re-fire research if it was previously denied — business_type
+          // addition often disambiguates a common name. "McHale" alone hits
+          // a law firm; "McHale backpack" hits McHale Packs.
+          if ('business_type' in updates) {
+            await maybeRetryResearch(session_id)
+          }
         }
         return { tool_use_id: tool.id, content: JSON.stringify({ ok: true, updated: Object.keys(updates) }) }
       }
@@ -154,6 +192,12 @@ export async function executeTool(session_id: string, tool: ToolUse): Promise<To
         await supabaseAdmin.from('quote_sessions').update(updates).eq('id', session_id)
         await logEvent(session_id, 'discovery_fork', { path: build_path, existing_site_url: updates.existing_site_url ?? null })
         await syncProspectFromSession(session_id, 'item_changed')
+        // If research was denied previously AND we now have a URL, re-fire
+        // research — the URL is a stronger anchor than name alone and will
+        // find the correct business. Fire-and-forget (don't block the tool response).
+        if (updates.existing_site_url) {
+          await maybeRetryResearch(session_id)
+        }
         return { tool_use_id: tool.id, content: JSON.stringify({ ok: true, build_path }) }
       }
 
@@ -270,12 +314,24 @@ export async function executeTool(session_id: string, tool: ToolUse): Promise<To
             }),
           }
         }
+        // On denial → clear research and let the AI know to retry once it
+        // gets more info (URL, business_type). The retry fires when the AI
+        // calls set_business_profile with new data later.
+        await supabaseAdmin
+          .from('quote_sessions')
+          .update({
+            research_findings: null,
+            research_started_at: null,
+            research_completed_at: null,
+            research_surfaced_at: null,
+          })
+          .eq('id', session_id)
         return {
           tool_use_id: tool.id,
           content: JSON.stringify({
             ok: true,
             confirmed: false,
-            hint: 'The prospect denied the research match. Do NOT reference the research findings again. Apologize briefly and continue discovery.',
+            hint: 'Research match denied. Apologize briefly, continue discovery. Once you learn more (URL, business type), the system will re-fire research automatically with better query terms.',
           }),
         }
       }

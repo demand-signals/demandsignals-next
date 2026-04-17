@@ -134,6 +134,8 @@ export default function QuotePageClient() {
   // Soft-save card visible when the AI has sensed hesitation and called offer_soft_save.
   // Non-blocking, stays in the configurator, respectful off-ramp.
   const [softSaveOffered, setSoftSaveOffered] = useState(false)
+  // Budget cap hit — disable input, stop echoing canned reply, show escalation card.
+  const [budgetExceeded, setBudgetExceeded] = useState(false)
   const [paymentMode, setPaymentMode] = useState<'upfront' | 'monthly' | 'milestone'>('upfront')
 
   // ── Bootstrap: create session on mount ──────────────
@@ -242,10 +244,19 @@ export default function QuotePageClient() {
       })
       const data = await res.json()
       if (data.budget_violation) {
-        setMessages((prev) => [
-          ...prev,
-          { id: `ai-bv-${Date.now()}`, role: 'ai', text: data.message, createdAt: Date.now() },
-        ])
+        // Show the message ONCE. Subsequent budget hits return the same
+        // message, but we suppress the duplicate client-side and also disable
+        // the input + surface the escalation card. Never echo the same line.
+        setMessages((prev) => {
+          const last = prev[prev.length - 1]
+          if (last?.role === 'ai' && last.text === data.message) return prev
+          return [
+            ...prev,
+            { id: `ai-bv-${Date.now()}`, role: 'ai', text: data.message, createdAt: Date.now() },
+          ]
+        })
+        if (data.disable_input) setBudgetExceeded(true)
+        if (data.escalated) setSoftSaveOffered(true)
         return
       }
       if (data.session) {
@@ -346,6 +357,7 @@ export default function QuotePageClient() {
             sending={sending}
             onSend={sendMessage}
             phoneVerified={!!session?.phone_verified}
+            disabled={budgetExceeded}
           />
 
           {/* ───── Configurator column (desktop) ───── */}
@@ -458,11 +470,13 @@ function Chat({
   sending,
   onSend,
   phoneVerified,
+  disabled = false,
 }: {
   messages: ChatMessage[]
   sending: boolean
   onSend: (text: string) => void
   phoneVerified: boolean
+  disabled?: boolean
 }) {
   const [draft, setDraft] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -479,9 +493,10 @@ function Chat({
   // Keep focus in the input across renders, including while the AI is thinking.
   // We never disable the input — just stop submit while sending. This way the
   // user can type their next message while the AI finishes replying.
+  // Exception: budget cap hit → disabled, don't force focus on a disabled element.
   useEffect(() => {
-    if (!sending) inputRef.current?.focus()
-  }, [sending])
+    if (!sending && !disabled) inputRef.current?.focus()
+  }, [sending, disabled])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -537,14 +552,21 @@ function Chat({
           ref={inputRef}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder={sending ? 'Thinking…' : 'Type your reply…'}
-          className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+          placeholder={
+            disabled
+              ? "Chat closed — team's been notified"
+              : sending
+                ? 'Thinking…'
+                : 'Type your reply…'
+          }
+          className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal)] disabled:bg-slate-50 disabled:cursor-not-allowed"
           aria-label="Chat message"
           autoComplete="off"
+          disabled={disabled}
         />
         <button
           type="submit"
-          disabled={!draft.trim() || sending}
+          disabled={!draft.trim() || sending || disabled}
           className="bg-[var(--teal)] text-white px-4 rounded-lg disabled:opacity-40 flex items-center gap-1 text-sm font-medium"
         >
           <Send className="w-4 h-4" />

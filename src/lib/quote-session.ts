@@ -17,6 +17,8 @@ export interface QuoteSessionRow {
   business_name: string | null
   business_type: string | null
   business_location: string | null
+  person_name: string | null
+  person_role: string | null
   phone_verified: boolean
   phone_last_four: string | null
   email: string | null

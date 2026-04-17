@@ -17,25 +17,53 @@
 
 import { supabaseAdmin } from './supabase/admin'
 
+// Base limits — apply to anonymous, non-committed prospects. Extended by
+// commitment signals (phone verify, email, deep discovery, buy signals)
+// via computeSessionBudget() below. Tire-kickers hit the base wall; engaged
+// prospects get generous room to close.
 export const HARD_LIMITS = {
   maxInputTokensPerRequest: 12_000,
-  // 600 output tokens ~= 400-500 words max. Forces brief replies as a defense
-  // if the system prompt brevity rule slips. The prompt asks for 1-3 sentences.
   maxOutputTokensPerRequest: 600,
-  // Only COUNTED tokens (output + uncached input) count toward cumulative cap.
-  // Cache reads are cheap and repetitive — excluded from accounting for cap purposes.
-  // Real ceiling is the per-session dollar cap (quote_config.session_cost_cap_cents).
-  maxCumulativeTokensPerSession: 120_000,
+
+  // BASE caps (no commitment signals yet)
+  baseMessagesPerSession: 40,
+  baseCumulativeTokensPerSession: 60_000,
+  baseSessionCostCents: 50, // $0.50
+
+  // MAXIMUM caps (fully-engaged prospect)
+  absoluteMaxMessagesPerSession: 200,
+  absoluteMaxCumulativeTokensPerSession: 400_000,
+  absoluteMaxSessionCostCents: 500, // $5.00
+
   summarizeAtCumulativeTokens: 80_000,
-  maxMessagesPerSession: 60,
-  maxSessionDurationMinutes: 45,
-  // 20/min → min interval 3s. Fast typers on "yes"/"7" replies shouldn't hit this.
-  // Still defends against bot spam (real prospects pause to read the AI).
+  softWarnMessagesPerSession: 30, // soft pivot — still base territory
+  maxSessionDurationMinutes: 90,
   maxMessagesPerSessionPerMinute: 20,
   maxSessionsPerIpPerDay: 10,
   maxPhoneVerifyAttemptsPerHour: 3,
   maxPhoneVerifiesPerIpPerDay: 5,
 } as const
+
+// Commitment bonuses — added to base on top of each other as the prospect
+// demonstrates real intent.
+export const COMMITMENT_BONUSES = {
+  phone_verified: { messages: 100, tokens: 200_000, costCents: 300 },
+  email_captured: { messages: 30, tokens: 60_000, costCents: 100 },
+  research_confirmed: { messages: 15, tokens: 30_000, costCents: 50 },
+  roi_provided: { messages: 15, tokens: 30_000, costCents: 50 },
+  payment_discussed: { messages: 10, tokens: 20_000, costCents: 30 },
+  ready_to_buy: { messages: 30, tokens: 60_000, costCents: 100 },
+  five_plus_items: { messages: 10, tokens: 20_000, costCents: 30 },
+} as const
+
+export type CommitmentSignal = keyof typeof COMMITMENT_BONUSES
+
+export interface SessionBudgetCaps {
+  maxMessages: number
+  maxCumulativeTokens: number
+  maxCostCents: number
+  signals: CommitmentSignal[]
+}
 
 // Pricing in cents per million tokens.
 export const MODEL_PRICING = {
@@ -182,6 +210,63 @@ export async function getSessionBudget(sessionId: string): Promise<SessionBudget
   }
 }
 
+/**
+ * Detect commitment signals on a session and compute its current effective caps.
+ * More commitment → bigger room. Tire-kickers hit the base wall fast.
+ */
+export async function computeSessionBudget(sessionId: string): Promise<SessionBudgetCaps> {
+  const { data: session } = await supabaseAdmin
+    .from('quote_sessions')
+    .select('phone_verified, email, research_confirmed, missed_leads_monthly, avg_customer_value, payment_preference, conversion_action, selected_items')
+    .eq('id', sessionId)
+    .maybeSingle()
+
+  const signals: CommitmentSignal[] = []
+  let msgBonus = 0
+  let tokBonus = 0
+  let costBonus = 0
+
+  const add = (key: CommitmentSignal) => {
+    if (signals.includes(key)) return
+    signals.push(key)
+    const b = COMMITMENT_BONUSES[key]
+    msgBonus += b.messages
+    tokBonus += b.tokens
+    costBonus += b.costCents
+  }
+
+  if (session?.phone_verified) add('phone_verified')
+  if (session?.email) add('email_captured')
+  if (session?.research_confirmed === 1) add('research_confirmed')
+  if (session?.missed_leads_monthly && session?.avg_customer_value) add('roi_provided')
+  if (session?.payment_preference) add('payment_discussed')
+  if (
+    session?.conversion_action === 'booked_call' ||
+    session?.conversion_action === 'lets_go' ||
+    session?.conversion_action === 'bought_single'
+  ) {
+    add('ready_to_buy')
+  }
+  const itemCount = Array.isArray(session?.selected_items) ? session.selected_items.length : 0
+  if (itemCount >= 5) add('five_plus_items')
+
+  return {
+    maxMessages: Math.min(
+      HARD_LIMITS.absoluteMaxMessagesPerSession,
+      HARD_LIMITS.baseMessagesPerSession + msgBonus,
+    ),
+    maxCumulativeTokens: Math.min(
+      HARD_LIMITS.absoluteMaxCumulativeTokensPerSession,
+      HARD_LIMITS.baseCumulativeTokensPerSession + tokBonus,
+    ),
+    maxCostCents: Math.min(
+      HARD_LIMITS.absoluteMaxSessionCostCents,
+      HARD_LIMITS.baseSessionCostCents + costBonus,
+    ),
+    signals,
+  }
+}
+
 export async function preflightOrThrow(sessionId: string, estimatedInputTokens: number): Promise<void> {
   if (!(await isAiEnabled())) {
     throw new BudgetViolation(
@@ -200,28 +285,28 @@ export async function preflightOrThrow(sessionId: string, estimatedInputTokens: 
   }
 
   const budget = await getSessionBudget(sessionId)
-  const sessionCostCap = await getSessionCostCapCents()
+  const caps = await computeSessionBudget(sessionId)
 
-  if (budget.total_cost_cents >= sessionCostCap) {
+  if (budget.total_cost_cents >= caps.maxCostCents) {
     throw new BudgetViolation(
       'session_cost_cap',
-      `session cost ${budget.total_cost_cents} >= cap ${sessionCostCap}`,
+      `session cost ${budget.total_cost_cents} >= cap ${caps.maxCostCents} (signals: ${caps.signals.join(',') || 'none'})`,
       "We've covered a lot here! Let's move this to a quick strategy call so we can finalize the details.",
     )
   }
 
-  if (budget.total_tokens_used >= HARD_LIMITS.maxCumulativeTokensPerSession) {
+  if (budget.total_tokens_used >= caps.maxCumulativeTokens) {
     throw new BudgetViolation(
       'session_token_cap',
-      `session tokens ${budget.total_tokens_used} >= cap`,
+      `session tokens ${budget.total_tokens_used} >= cap ${caps.maxCumulativeTokens} (signals: ${caps.signals.join(',') || 'none'})`,
       "We've covered a lot here! Let's move this to a quick strategy call so we can finalize the details.",
     )
   }
 
-  if (budget.message_count >= HARD_LIMITS.maxMessagesPerSession) {
+  if (budget.message_count >= caps.maxMessages) {
     throw new BudgetViolation(
       'session_message_cap',
-      `message count ${budget.message_count} >= cap`,
+      `message count ${budget.message_count} >= cap ${caps.maxMessages} (signals: ${caps.signals.join(',') || 'none'})`,
       "Let's pick this up on a strategy call — we'll have a real human walk through your plan.",
     )
   }

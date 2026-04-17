@@ -27,6 +27,10 @@ export interface SiteScan {
   has_contact_form: boolean
   has_booking_link: boolean
   platform_hint: string | null
+  /** HTTPS reachable + cert valid. null if not attempted (http-only URL). */
+  https_valid: boolean | null
+  /** SSL-specific error message if cert invalid or connection refused. */
+  ssl_error: string | null
   notable_issues: string[]
   error: string | null
 }
@@ -63,8 +67,43 @@ async function scanSite(url: string): Promise<SiteScan> {
     has_contact_form: false,
     has_booking_link: false,
     platform_hint: null,
+    https_valid: null,
+    ssl_error: null,
     notable_issues: [],
     error: null,
+  }
+
+  // First try HTTPS specifically to detect SSL death. If a prospect's URL is
+  // http://..., we upgrade to https:// for this probe so we can observe
+  // whether the cert works. A dead cert is a flashing red flag for SEO
+  // and trust — every browser shows a scary warning to visitors.
+  const normalizedUrl = url.replace(/^http:\/\//i, 'https://')
+  const probeHttpsOnly = normalizedUrl !== url || url.startsWith('https://')
+
+  if (probeHttpsOnly) {
+    try {
+      const controller = new AbortController()
+      const t = setTimeout(() => controller.abort(), 8_000)
+      const probeRes = await fetch(normalizedUrl, {
+        signal: controller.signal,
+        method: 'HEAD',
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DSIG-Research/1.0)' },
+        redirect: 'follow',
+      })
+      clearTimeout(t)
+      scan.https_valid = probeRes.ok || (probeRes.status >= 300 && probeRes.status < 400)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'ssl probe failed'
+      // Node's fetch surfaces cert errors as specific codes
+      if (/CERT_|SELF_SIGNED|UNABLE_TO_|certificate|TLS|handshake/i.test(msg)) {
+        scan.https_valid = false
+        scan.ssl_error = msg.slice(0, 200)
+        scan.notable_issues.push('SSL certificate is broken — browsers show a security warning to visitors')
+      } else {
+        // Connection refused etc. — site may still be up on HTTP
+        scan.ssl_error = msg.slice(0, 200)
+      }
+    }
   }
 
   try {
@@ -221,7 +260,7 @@ export async function runResearch(sessionId: string): Promise<ResearchFindings> 
 
   const { data: session } = await supabaseAdmin
     .from('quote_sessions')
-    .select('business_name, business_location, existing_site_url')
+    .select('business_name, business_type, business_location, existing_site_url')
     .eq('id', sessionId)
     .single()
 
@@ -249,26 +288,55 @@ export async function runResearch(sessionId: string): Promise<ResearchFindings> 
 
   if (isPlacesConfigured()) {
     try {
-      const query = `${session.business_name}${session.business_location ? ' ' + session.business_location : ''}`
-      placeCandidates = await searchPlaces(query, 5)
-      if (placeCandidates.length > 0) {
-        // Rank by match confidence.
-        const scored = placeCandidates.map((p) => ({
-          place: p,
-          score: matchConfidence(
-            { name: session.business_name ?? '', city: session.business_location ?? '' },
-            p,
-          ),
-        }))
-        scored.sort((a, b) => b.score - a.score)
-        bestMatch = scored[0].place
-        matchConf = scored[0].score
-        if (matchConf >= 0.5) {
-          try {
-            details = await getPlaceDetails(bestMatch.place_id)
-          } catch (e) {
-            errors.push(`place_details: ${e instanceof Error ? e.message : 'unknown'}`)
+      // Build a richer query using business_type when available.
+      // "McHale Seattle" → ambiguous (law firm wins).
+      // "McHale backpack Seattle" → disambiguates directly.
+      // Also try the URL's domain as an anchor if we have it.
+      const queries: string[] = []
+      const coreParts = [session.business_name, session.business_type, session.business_location].filter(Boolean)
+      queries.push(coreParts.join(' '))
+      // Fallback: just name + location (for generic business types like "llc")
+      if (session.business_type && session.business_type.length > 0) {
+        queries.push(`${session.business_name} ${session.business_location ?? ''}`.trim())
+      }
+      // Domain-anchored query — pulls match by site
+      if (session.existing_site_url) {
+        const domain = session.existing_site_url.replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^www\./, '')
+        if (domain) queries.push(`${session.business_name} ${domain}`)
+      }
+
+      // Try each query until we find a high-confidence match.
+      let bestOverall: { place: PlaceSearchResult; score: number } | null = null
+      for (const q of queries) {
+        try {
+          const results = await searchPlaces(q, 5)
+          if (results.length === 0) continue
+          placeCandidates = results // keep last non-empty set for observation
+          const scored = results.map((p) => ({
+            place: p,
+            score: matchConfidence(
+              { name: session.business_name ?? '', city: session.business_location ?? '' },
+              p,
+            ),
+          }))
+          scored.sort((a, b) => b.score - a.score)
+          if (!bestOverall || scored[0].score > bestOverall.score) {
+            bestOverall = scored[0]
           }
+          // If we got a strong match, stop querying.
+          if (bestOverall.score >= 0.7) break
+        } catch (e) {
+          errors.push(`places_search_retry: ${e instanceof Error ? e.message : 'unknown'}`)
+        }
+      }
+
+      if (bestOverall && bestOverall.score >= 0.5) {
+        bestMatch = bestOverall.place
+        matchConf = bestOverall.score
+        try {
+          details = await getPlaceDetails(bestMatch.place_id)
+        } catch (e) {
+          errors.push(`place_details: ${e instanceof Error ? e.message : 'unknown'}`)
         }
       }
     } catch (e) {
