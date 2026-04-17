@@ -410,7 +410,7 @@ function Chat({
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[calc(100vh-180px)] min-h-[500px]">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[min(calc(100vh-220px),800px)] min-h-[500px] mb-8">
       <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
         <Sparkles className="w-5 h-5 text-[var(--teal)]" />
         <span className="font-semibold text-slate-800">DSIG AI Project Advisor</span>
@@ -599,10 +599,30 @@ function Configurator({
 
           {paymentMode === 'upfront' && (
             <div>
-              <div className="text-xs text-slate-500">Build total</div>
-              <div className="text-2xl font-bold text-slate-900">
-                {formatRange(prices.totals.upfront_low, prices.totals.upfront_high)}
-              </div>
+              {/*
+                Under 70% detail we show a midpoint with "starting around" framing
+                so the prospect doesn't see a scary high-end number. As they share
+                more specifics (service count, page count, integrations), narrowing
+                factors tighten the range and the full spread reveals above 70%.
+              */}
+              {prices.totals.accuracy_pct < 70 ? (
+                <>
+                  <div className="text-xs text-slate-500">Starting around</div>
+                  <div className="text-2xl font-bold text-slate-900">
+                    {formatCents(Math.round((prices.totals.upfront_low + prices.totals.upfront_high) / 2))}
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-1">
+                    Tightens as we learn more about your scope
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-xs text-slate-500">Build total</div>
+                  <div className="text-2xl font-bold text-slate-900">
+                    {formatRange(prices.totals.upfront_low, prices.totals.upfront_high)}
+                  </div>
+                </>
+              )}
               {prices.totals.monthly_high > 0 && (
                 <div className="text-xs text-slate-600 mt-1">
                   + {formatRange(prices.totals.monthly_low, prices.totals.monthly_high)}/mo ongoing

@@ -395,13 +395,26 @@ export function computeRoi(
   if (!missedLeadsMonthly || missedLeadsMonthly <= 0) return null
   if (!avgCustomerValueCents || avgCustomerValueCents <= 0) return null
 
+  // TOTAL stated loss — raw ceiling.
   const monthlyLostCents = missedLeadsMonthly * avgCustomerValueCents
-  const ANNUAL_CAP_CENTS = 200_000_000 // $2,000,000
+  const ANNUAL_CAP_CENTS = 200_000_000 // $2,000,000 display cap
   const rawAnnual = monthlyLostCents * 12
   const capped = rawAnnual > ANNUAL_CAP_CENTS
   const annualLostCents = capped ? ANNUAL_CAP_CENTS : rawAnnual
 
-  const paybackMonths = monthlyLostCents > 0 ? estimateMidpointCents / monthlyLostCents : null
+  // CAPTURE RATE — DSIG recovers a fraction of missed revenue, not 100%.
+  // 25% is a conservative, defensible figure for year 1 of a local SEO + rebuild project.
+  // The full lost revenue stays visible as context, but payback math uses the capture.
+  const CAPTURE_RATE = 0.25
+  const recoverableMonthlyCents = Math.round(monthlyLostCents * CAPTURE_RATE)
+
+  // Payback with realistic capture. Floor at 1.0 month — anything faster reads as fake.
+  // Ramp-up: local SEO + site rebuild take 4-8 weeks to start producing results.
+  const MIN_PAYBACK_MONTHS = 1.0
+  const rawPayback = recoverableMonthlyCents > 0
+    ? estimateMidpointCents / recoverableMonthlyCents
+    : null
+  const paybackMonths = rawPayback === null ? null : Math.max(MIN_PAYBACK_MONTHS, rawPayback)
 
   let display: RoiSummary['display'] = 'none'
   let firstYearRoiPct: number | null = null
@@ -409,8 +422,10 @@ export function computeRoi(
   if (paybackMonths !== null) {
     if (paybackMonths <= 6) {
       display = 'full'
+      // First-year ROI uses the capture-adjusted annual recovery vs project cost.
+      const recoverableAnnualCents = Math.min(annualLostCents, recoverableMonthlyCents * 12)
       firstYearRoiPct = Math.round(
-        ((annualLostCents - estimateMidpointCents) / estimateMidpointCents) * 100,
+        ((recoverableAnnualCents - estimateMidpointCents) / estimateMidpointCents) * 100,
       )
     } else if (paybackMonths <= 12) {
       display = 'partial'

@@ -18,11 +18,16 @@
 import { supabaseAdmin } from './supabase/admin'
 
 export const HARD_LIMITS = {
-  maxInputTokensPerRequest: 8_000,
-  maxOutputTokensPerRequest: 1_024,
-  maxCumulativeTokensPerSession: 60_000,
-  summarizeAtCumulativeTokens: 30_000,
-  maxMessagesPerSession: 50,
+  maxInputTokensPerRequest: 12_000,
+  // 600 output tokens ~= 400-500 words max. Forces brief replies as a defense
+  // if the system prompt brevity rule slips. The prompt asks for 1-3 sentences.
+  maxOutputTokensPerRequest: 600,
+  // Only COUNTED tokens (output + uncached input) count toward cumulative cap.
+  // Cache reads are cheap and repetitive — excluded from accounting for cap purposes.
+  // Real ceiling is the per-session dollar cap (quote_config.session_cost_cap_cents).
+  maxCumulativeTokensPerSession: 120_000,
+  summarizeAtCumulativeTokens: 80_000,
+  maxMessagesPerSession: 60,
   maxSessionDurationMinutes: 45,
   maxMessagesPerSessionPerMinute: 10,
   maxSessionsPerIpPerDay: 10,
@@ -254,10 +259,12 @@ export async function recordUsage(
   usage: TokenUsage,
 ): Promise<{ costCents: number; newSessionTotalCents: number }> {
   const costCents = calculateCostCents(model, usage)
+  // Counted tokens: output + uncached input only. Cached reads don't count toward the
+  // cumulative session cap because they're cheap and repetitive (system prompt, catalog).
+  // Cache writes DO count once (the first time a prompt prefix is seen).
   const totalTokens =
     usage.inputTokens +
     usage.outputTokens +
-    (usage.cacheReadTokens ?? 0) +
     (usage.cacheWriteTokens ?? 0)
 
   // Update the message row with per-turn accounting.
