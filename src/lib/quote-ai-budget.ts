@@ -29,7 +29,9 @@ export const HARD_LIMITS = {
   summarizeAtCumulativeTokens: 80_000,
   maxMessagesPerSession: 60,
   maxSessionDurationMinutes: 45,
-  maxMessagesPerSessionPerMinute: 10,
+  // 20/min → min interval 3s. Fast typers on "yes"/"7" replies shouldn't hit this.
+  // Still defends against bot spam (real prospects pause to read the AI).
+  maxMessagesPerSessionPerMinute: 20,
   maxSessionsPerIpPerDay: 10,
   maxPhoneVerifyAttemptsPerHour: 3,
   maxPhoneVerifiesPerIpPerDay: 5,

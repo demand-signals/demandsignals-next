@@ -123,10 +123,14 @@ export default function QuotePageClient() {
   const [booting, setBooting] = useState(true)
   const [bootError, setBootError] = useState<string | null>(null)
   const [showPhoneGate, setShowPhoneGate] = useState(false)
+  const [showEmailPlan, setShowEmailPlan] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   // Pulse the Unlock button when the AI thinks the prospect has invested enough
   // to be receptive. Never auto-opens the modal — prospect must click.
   const [unlockNudge, setUnlockNudge] = useState(false)
+  // Soft-save card visible when the AI has sensed hesitation and called offer_soft_save.
+  // Non-blocking, stays in the configurator, respectful off-ramp.
+  const [softSaveOffered, setSoftSaveOffered] = useState(false)
   const [paymentMode, setPaymentMode] = useState<'upfront' | 'monthly' | 'milestone'>('upfront')
 
   // ── Bootstrap: create session on mount ──────────────
@@ -260,6 +264,11 @@ export default function QuotePageClient() {
       if (toolNames.includes('request_phone_verify') && !session?.phone_verified) {
         setUnlockNudge(true)
       }
+      // AI sensed hesitation and offered the soft save (bookmark this URL or email it).
+      // Non-blocking card in the configurator. Stays visible for the rest of the session.
+      if (toolNames.includes('offer_soft_save')) {
+        setSoftSaveOffered(true)
+      }
     } catch (e) {
       setMessages((prev) => [
         ...prev,
@@ -344,7 +353,9 @@ export default function QuotePageClient() {
               paymentMode={paymentMode}
               onPaymentModeChange={setPaymentMode}
               onPhoneGateOpen={() => setShowPhoneGate(true)}
+              onEmailPlanOpen={() => setShowEmailPlan(true)}
               nudge={unlockNudge}
+              softSaveOffered={softSaveOffered}
             />
           </div>
         </div>
@@ -392,7 +403,12 @@ export default function QuotePageClient() {
                   setDrawerOpen(false)
                   setShowPhoneGate(true)
                 }}
+                onEmailPlanOpen={() => {
+                  setDrawerOpen(false)
+                  setShowEmailPlan(true)
+                }}
                 nudge={unlockNudge}
+                softSaveOffered={softSaveOffered}
               />
             </div>
           </div>
@@ -405,6 +421,26 @@ export default function QuotePageClient() {
           sessionToken={sessionToken}
           onClose={() => setShowPhoneGate(false)}
           onVerified={onPhoneVerified}
+        />
+      )}
+
+      {/* ───── Email-me-plan modal (lower-commitment alternative) ───── */}
+      {showEmailPlan && (
+        <EmailPlanCard
+          sessionToken={sessionToken}
+          onClose={() => setShowEmailPlan(false)}
+          onSent={() => {
+            setShowEmailPlan(false)
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `ai-ep-${Date.now()}`,
+                role: 'ai',
+                text: "Got it — I'll send the plan to your inbox within a day. The team will follow up with any questions.",
+                createdAt: Date.now(),
+              },
+            ])
+          }}
         />
       )}
     </div>
@@ -529,14 +565,18 @@ function Configurator({
   paymentMode,
   onPaymentModeChange,
   onPhoneGateOpen,
+  onEmailPlanOpen,
   nudge,
+  softSaveOffered,
 }: {
   session: SessionPublic | null
   prices: PricesPayload | null
   paymentMode: 'upfront' | 'monthly' | 'milestone'
   onPaymentModeChange: (m: 'upfront' | 'monthly' | 'milestone') => void
   onPhoneGateOpen: () => void
+  onEmailPlanOpen: () => void
   nudge: boolean
+  softSaveOffered: boolean
 }) {
   const items = prices?.items ?? []
   const verified = session?.phone_verified ?? false
@@ -602,11 +642,45 @@ function Configurator({
         )}
       </div>
 
+      {/* Soft-save card — appears when AI sensed hesitation. Non-blocking.
+          Respectful off-ramp: bookmark this link, or email it to yourself. */}
+      {softSaveOffered && session && (
+        <div className="px-5 pb-3">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs">
+            <div className="font-semibold text-amber-900 mb-1">Your plan is saved</div>
+            <div className="text-amber-800 mb-2">
+              Come back anytime — no commitment, just pick up where you left off.
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => {
+                  const url = `${window.location.origin}/quote/s/${session.share_token}`
+                  navigator.clipboard.writeText(url).catch(() => {
+                    window.prompt('Copy this URL:', url)
+                  })
+                }}
+                className="bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 rounded px-2 py-1 text-[11px] font-medium"
+              >
+                📋 Copy link
+              </button>
+              <button
+                onClick={onEmailPlanOpen}
+                className="bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 rounded px-2 py-1 text-[11px] font-medium"
+              >
+                ✉️ Email it to me
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Phone gate CTA — shown when ANY item is staged but not verified.
           Voluntary unlock: prospect clicks when they want to see prices.
-          Pulses when the AI signals they've built enough scope to be receptive. */}
+          Pulses when the AI signals they've built enough scope to be receptive.
+          "Email me the plan" is a secondary, lower-commitment path for prospects
+          who won't verify phone — captures email, team delivers the plan within 24-48h. */}
       {items.length >= 1 && !verified && (
-        <div className="px-5 pb-4">
+        <div className="px-5 pb-4 space-y-2">
           <button
             onClick={onPhoneGateOpen}
             className={`w-full bg-slate-900 hover:bg-slate-800 text-white rounded-lg py-2.5 text-sm font-medium flex items-center justify-center gap-2 transition ${nudge ? 'ring-4 ring-[var(--teal)]/40 animate-pulse' : ''}`}
@@ -614,7 +688,15 @@ function Configurator({
             <Phone className="w-4 h-4" />
             Unlock Budgetary Prices
           </button>
-          <p className="text-[10px] text-slate-400 text-center mt-2">
+          {items.length >= 2 && (
+            <button
+              onClick={onEmailPlanOpen}
+              className="w-full border border-slate-300 hover:border-slate-400 text-slate-700 rounded-lg py-2 text-xs font-medium flex items-center justify-center gap-2"
+            >
+              ✉️ Email me the plan instead
+            </button>
+          )}
+          <p className="text-[10px] text-slate-400 text-center">
             Quick cell verification. No spam, magic link for easy return.
           </p>
         </div>
@@ -749,8 +831,25 @@ function Configurator({
         </div>
       )}
 
-      <div className="px-5 pb-4 text-[10px] text-slate-400 text-center">
-        Budgetary estimate — not a binding quote.
+      {/* Always-visible alt contact — prospects who don't want to verify still have paths */}
+      <div className="px-5 pb-4 border-t border-slate-100 pt-3 space-y-2">
+        <div className="flex flex-wrap gap-3 justify-center text-xs">
+          <a
+            href="sms:+19165422423"
+            className="text-slate-600 hover:text-[var(--teal)] flex items-center gap-1"
+          >
+            💬 Text (916) 542-2423
+          </a>
+          <a
+            href="mailto:DemandSignals@gmail.com"
+            className="text-slate-600 hover:text-[var(--teal)] flex items-center gap-1"
+          >
+            ✉️ Email us
+          </a>
+        </div>
+        <div className="text-[10px] text-slate-400 text-center">
+          Budgetary estimate — not a binding quote.
+        </div>
       </div>
     </aside>
   )
@@ -909,6 +1008,93 @@ function PhoneVerifyCard({
           </>
         )}
 
+        <div className="text-[10px] text-slate-400 mt-4 text-center">
+          Budgetary estimate — not a binding quote.
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
+// Email-me-plan modal — lower-commitment alternative to phone verify.
+// Prospect enters email; team follows up within 24-48h.
+// Does NOT unlock pricing in the UI (phone verify still required for that).
+// ============================================================
+function EmailPlanCard({
+  sessionToken,
+  onClose,
+  onSent,
+}: {
+  sessionToken: string
+  onClose: () => void
+  onSent: () => void
+}) {
+  const [email, setEmail] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email.trim() || busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/quote/email-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-session-token': sessionToken },
+        body: JSON.stringify({ email: email.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error ?? 'Could not save your email. Please try again.')
+        return
+      }
+      onSent()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Network error.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-label="Email the plan"
+      >
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold text-lg text-slate-900">Send Me The Plan</h3>
+          <button onClick={onClose} className="p-1 rounded hover:bg-slate-100" aria-label="Close">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="text-sm text-slate-600 mb-4">
+          Drop your email and we&apos;ll send over your full plan within a day. No phone required.
+        </p>
+        <form onSubmit={handleSubmit}>
+          <label className="block text-sm mb-1 text-slate-700">Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(ev) => setEmail(ev.target.value)}
+            placeholder="you@example.com"
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+            autoFocus
+            required
+          />
+          {error && <div className="text-xs text-red-600 mb-2">{error}</div>}
+          <button
+            type="submit"
+            disabled={busy || !email.trim()}
+            className="w-full bg-[var(--teal)] text-white rounded-lg py-2.5 font-semibold disabled:opacity-50"
+          >
+            {busy ? 'Sending…' : 'Send It'}
+          </button>
+        </form>
         <div className="text-[10px] text-slate-400 mt-4 text-center">
           Budgetary estimate — not a binding quote.
         </div>

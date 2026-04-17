@@ -200,6 +200,38 @@ export async function executeTool(session_id: string, tool: ToolUse): Promise<To
         return { tool_use_id: tool.id, content: JSON.stringify({ ok: true, handoff_offered: true }) }
       }
 
+      case 'offer_soft_save': {
+        const reason = typeof tool.input.reason === 'string' ? tool.input.reason : 'prospect hesitation'
+        await logEvent(session_id, 'soft_save_offered', { reason })
+        // UI reads this event + renders the inline card. The chat response will
+        // naturally mention "saved a link for you" — no modal, no popup.
+        return {
+          tool_use_id: tool.id,
+          content: JSON.stringify({
+            ok: true,
+            ui_action: 'show_soft_save_card',
+            hint: 'Reply warmly, acknowledging they want to take their time. The UI is now showing a card with their shareable URL and an email option. Point to it naturally: "I saved your plan at the link on the right — bookmark it or shoot it to yourself via email whenever you want." Do NOT push phone verify again.',
+          }),
+        }
+      }
+
+      case 'flag_walkaway_risk': {
+        const signal = typeof tool.input.signal === 'string' ? tool.input.signal : 'unspecified exit signal'
+        // Mark session with a hot-walkaway flag via handoff_offered=true so admin
+        // queue picks it up. We reuse the existing column since it semantically
+        // means "human should look at this session."
+        await supabaseAdmin.from('quote_sessions').update({ handoff_offered: true }).eq('id', session_id)
+        await logEvent(session_id, 'hot_walkaway_risk', { signal })
+        return {
+          tool_use_id: tool.id,
+          content: JSON.stringify({
+            ok: true,
+            logged: true,
+            hint: 'Continue the conversation warmly. Do not mention the admin flag — that is internal.',
+          }),
+        }
+      }
+
       default:
         return { tool_use_id: tool.id, content: JSON.stringify({ error: `unknown tool: ${tool.name}` }), is_error: true }
     }
