@@ -379,12 +379,15 @@ export function milestonePlan(totals: EstimateTotals): MilestonePlan {
 // Returns null if the prospect didn't provide both inputs or payback > 24 months.
 // ============================================================
 export interface RoiSummary {
-  monthlyLostCents: number
-  annualLostCents: number
+  monthlyLostCents: number          // raw stated loss (pre-capture) — context only
+  annualLostCents: number            // raw annual (capped at $2M for display)
+  recoverableMonthlyCents: number    // what DSIG could realistically recover/mo (25% of raw)
+  recoverableAnnualCents: number     // annual recoverable
   paybackMonths: number | null
   firstYearRoiPct: number | null
   display: 'full' | 'partial' | 'none'
   capped: boolean
+  captureRatePct: number             // so UI can label "at X% capture"
 }
 
 export function computeRoi(
@@ -416,6 +419,8 @@ export function computeRoi(
     : null
   const paybackMonths = rawPayback === null ? null : Math.max(MIN_PAYBACK_MONTHS, rawPayback)
 
+  const recoverableAnnualCents = Math.min(annualLostCents, recoverableMonthlyCents * 12)
+
   let display: RoiSummary['display'] = 'none'
   let firstYearRoiPct: number | null = null
 
@@ -423,7 +428,6 @@ export function computeRoi(
     if (paybackMonths <= 6) {
       display = 'full'
       // First-year ROI uses the capture-adjusted annual recovery vs project cost.
-      const recoverableAnnualCents = Math.min(annualLostCents, recoverableMonthlyCents * 12)
       firstYearRoiPct = Math.round(
         ((recoverableAnnualCents - estimateMidpointCents) / estimateMidpointCents) * 100,
       )
@@ -437,10 +441,13 @@ export function computeRoi(
   return {
     monthlyLostCents,
     annualLostCents,
+    recoverableMonthlyCents,
+    recoverableAnnualCents,
     paybackMonths,
     firstYearRoiPct,
     display,
     capped,
+    captureRatePct: Math.round(CAPTURE_RATE * 100),
   }
 }
 

@@ -83,9 +83,12 @@ interface PricesPayload {
   roi?: {
     monthlyLostCents: number
     annualLostCents: number
+    recoverableMonthlyCents: number
+    recoverableAnnualCents: number
     paybackMonths: number | null
     firstYearRoiPct: number | null
     display: 'full' | 'partial' | 'none'
+    captureRatePct: number
   } | null
 }
 
@@ -798,10 +801,13 @@ function Configurator({
             <div className="bg-emerald-50 rounded-lg p-3 text-xs">
               <div className="font-semibold text-emerald-900 mb-1">ROI Context</div>
               <div className="text-emerald-800">
-                Estimated missed revenue: ~{formatCents(prices.roi.monthlyLostCents)}/mo
+                Recoverable at ~{prices.roi.captureRatePct}% capture: ~{formatCents(prices.roi.recoverableMonthlyCents)}/mo
                 {prices.roi.display === 'full' && prices.roi.paybackMonths && (
-                  <> · Payback ~{prices.roi.paybackMonths.toFixed(1)} months</>
+                  <> · Payback ~{prices.roi.paybackMonths.toFixed(1)} mo</>
                 )}
+              </div>
+              <div className="text-[10px] text-emerald-700 mt-1">
+                (Stated loss: {formatCents(prices.roi.monthlyLostCents)}/mo — we project DSIG captures roughly a quarter of that in year one.)
               </div>
             </div>
           )}
