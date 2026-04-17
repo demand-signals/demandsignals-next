@@ -157,6 +157,18 @@ export default function QuotePageClient() {
             browser_language: navigator.language,
           }),
         })
+        if (res.status === 429) {
+          // Rate-limited by IP. Surface friendly alt-contact paths instead
+          // of the generic boot error. Read the body which includes fallback URLs.
+          const data = await res.json().catch(() => ({}))
+          if (!cancelled) {
+            setBootError(
+              data.error ??
+                "You've started several sessions recently. Please text us at (916) 542-2423 or email DemandSignals@gmail.com to continue.",
+            )
+          }
+          return
+        }
         if (!res.ok) throw new Error(`session create failed: ${res.status}`)
         const data = await res.json()
         if (cancelled) return
@@ -326,12 +338,28 @@ export default function QuotePageClient() {
   if (bootError || !sessionToken) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center p-8">
-        <div className="max-w-md text-center">
-          <h2 className="text-xl font-bold text-slate-800 mb-2">We hit a snag starting your session.</h2>
-          <p className="text-slate-600 mb-4">{bootError ?? 'Please try again.'}</p>
-          <a href="/contact" className="inline-flex items-center px-4 py-2 bg-[var(--teal)] text-white rounded-lg font-medium">
-            Book a Call Instead
-          </a>
+        <div className="max-w-lg text-center">
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Let's get you to a human.</h2>
+          <p className="text-slate-600 mb-6">{bootError ?? "The estimator couldn't start a new session right now — no problem, three faster ways to reach us below."}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <a href="sms:+19165422423" className="border border-slate-300 rounded-lg py-3 px-4 font-medium text-slate-700 hover:border-[var(--teal)] hover:text-[var(--teal)]">
+              💬 Text us
+              <div className="text-xs font-normal text-slate-500">(916) 542-2423</div>
+            </a>
+            <a href="mailto:DemandSignals@gmail.com" className="border border-slate-300 rounded-lg py-3 px-4 font-medium text-slate-700 hover:border-[var(--teal)] hover:text-[var(--teal)]">
+              ✉️ Email us
+              <div className="text-xs font-normal text-slate-500">DemandSignals@gmail.com</div>
+            </a>
+            <a
+              href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true"
+              target="_blank"
+              rel="noopener"
+              className="bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white rounded-lg py-3 px-4 font-medium"
+            >
+              📅 Book a call
+              <div className="text-xs font-normal opacity-90">30 mins, no pressure</div>
+            </a>
+          </div>
         </div>
       </div>
     )

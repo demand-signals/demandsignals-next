@@ -43,7 +43,12 @@ export const HARD_LIMITS = {
   softWarnMessagesPerSession: 30, // soft pivot — still base territory
   maxSessionDurationMinutes: 90,
   maxMessagesPerSessionPerMinute: 20,
-  maxSessionsPerIpPerDay: 10,
+  // Per-IP session creation cap. Counts only sessions that got a real user message
+  // (excludes empty/bounced sessions). 25/day accommodates a household + normal
+  // bounces while still blocking bot abuse that fires thousands of session creates.
+  // POST-LAUNCH: reduce to 3-5/day once real traffic patterns are understood.
+  // (Hunter's intent — tracked in MEMORY.md "Open items".)
+  maxSessionsPerIpPerDay: 25,
   maxPhoneVerifyAttemptsPerHour: 3,
   maxPhoneVerifiesPerIpPerDay: 5,
 } as const

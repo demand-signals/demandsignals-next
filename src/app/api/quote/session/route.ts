@@ -6,14 +6,23 @@ import { HARD_LIMITS } from '@/lib/quote-ai-budget'
 export const runtime = 'nodejs'
 
 // Per-IP session creation limit — prevents a bot from creating millions of empty sessions.
-async function sessionsCreatedByIpToday(ip: string): Promise<number> {
+// IMPORTANT: We only count sessions that had real user activity (at least one user
+// message). Empty/bounced sessions don't burn our budget and shouldn't burn the prospect's
+// quota — otherwise a family sharing an IP or a prospect closing and re-opening the tab
+// gets falsely blocked.
+async function activeSessionsByIpToday(ip: string): Promise<number> {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-  const { count } = await supabaseAdmin
+  // Subquery: sessions from this IP in last 24h that have at least one user message
+  const { data } = await supabaseAdmin
     .from('quote_sessions')
-    .select('id', { count: 'exact', head: true })
+    .select('id, quote_messages!inner(id, role)', { count: undefined })
     .eq('ip_address', ip)
     .gte('created_at', since)
-  return count ?? 0
+    .eq('quote_messages.role', 'user')
+    .limit(100)
+  // Dedup session ids — the join produces one row per matching message
+  const uniq = new Set((data ?? []).map((r) => r.id))
+  return uniq.size
 }
 
 // POST /api/quote/session — create a new session. Anonymous, no auth required.
@@ -28,11 +37,20 @@ export async function POST(request: NextRequest) {
       undefined
 
     // Rate limit session creation per IP — defense against abuse.
+    // Only counts sessions with real user activity, so bounces don't count.
     if (ip) {
-      const count = await sessionsCreatedByIpToday(ip)
+      const count = await activeSessionsByIpToday(ip)
       if (count >= HARD_LIMITS.maxSessionsPerIpPerDay) {
         return NextResponse.json(
-          { error: "You've started several sessions recently. Please book a call or try again tomorrow." },
+          {
+            error: "You've started several sessions recently. Please book a call or text us at (916) 542-2423 to continue.",
+            rate_limited: true,
+            fallback: {
+              sms: 'sms:+19165422423',
+              email: 'mailto:DemandSignals@gmail.com',
+              booking: 'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true',
+            },
+          },
           { status: 429 },
         )
       }

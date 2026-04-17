@@ -196,6 +196,6 @@ export const config = {
   matcher: [
     '/admin/:path*',
     '/auth/:path*',
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2)).*)',
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|.*\\.(?:png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|webmanifest|xml|txt)).*)',
   ],
 }

@@ -191,6 +191,7 @@ Commit `abcbd10`. Deployed to https://dsig.demandsignals.dev/quote.
 3. **Social proof library content** — 10-15 real or clearly-anonymized client results. None seeded yet. Avoid fabricating.
 4. **OAuth Checkpoint 2** — design says Google OAuth for "save estimate to account" flow. Not built. Stage C.
 5. **Admin quote detail: "Join Chat" button** — not built. Requires Supabase realtime subscriptions or polling. Stage C.
+6. **POST-LAUNCH: tighten `maxSessionsPerIpPerDay`** — currently 25 (for testing/household tolerance). Hunter's directive: reduce to 3-5 once real traffic patterns are observed. File: `src/lib/quote-ai-budget.ts`, HARD_LIMITS.
 
 ---
 
