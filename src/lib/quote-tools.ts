@@ -6,6 +6,7 @@ import { supabaseAdmin } from './supabase/admin'
 import { getItem, type PricingItem } from './quote-pricing'
 import { calculateTotals, computeRoi, type SelectedItem } from './quote-engine'
 import { syncProspectFromSession } from './quote-prospect-sync'
+import { alertFromSession } from './quote-notify'
 
 export interface ToolUse {
   id: string
@@ -206,6 +207,8 @@ export async function executeTool(session_id: string, tool: ToolUse): Promise<To
         const reason = typeof tool.input.reason === 'string' ? tool.input.reason : 'hot signal'
         await supabaseAdmin.from('quote_sessions').update({ handoff_offered: true }).eq('id', session_id)
         await logEvent(session_id, 'handoff_triggered', { reason })
+        // Alert the team in real time — buy signal hot prospects need fast response.
+        alertFromSession(session_id, 'hot_handoff', reason).catch(() => {})
         return { tool_use_id: tool.id, content: JSON.stringify({ ok: true, handoff_offered: true }) }
       }
 
@@ -234,6 +237,9 @@ export async function executeTool(session_id: string, tool: ToolUse): Promise<To
         // Push enrichment to the prospect record too — adds walkaway-risk tag
         // and an activity entry so the human team can reach out proactively.
         await syncProspectFromSession(session_id, 'walkaway_flagged')
+        // Real-time alert email to Hunter — the human team can reach out within
+        // the hour before the prospect fully cools off. Fire-and-forget.
+        alertFromSession(session_id, 'hot_walkaway', signal).catch(() => {})
         return {
           tool_use_id: tool.id,
           content: JSON.stringify({

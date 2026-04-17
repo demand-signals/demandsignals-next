@@ -165,7 +165,7 @@ export default function QuotePageClient() {
           {
             id: 'ai-opener',
             role: 'ai',
-            text: "Hey! I'm here to help you figure out what your project might look like. Tell me about your business — what do you do and where are you located?",
+            text: "Hey — happy to help you rough out what your project could look like. Let's start with the basics — what's your business name and where are you located?",
             createdAt: Date.now(),
           },
         ])
