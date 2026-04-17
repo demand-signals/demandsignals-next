@@ -1,0 +1,20 @@
+try {
+  const mod = await import('../src/lib/quote-pricing.ts')
+  console.log('═══════════════════════════════════════════════════')
+  console.log('Catalog validation')
+  console.log('═══════════════════════════════════════════════════')
+  console.log('Version:          ', mod.CATALOG_VERSION)
+  console.log('Total items:      ', mod.getCatalog().length)
+  console.log('Free items:       ', mod.getFreeItems().length)
+  console.log('Bid eligible:     ', mod.getBidEligibleItems().length)
+  console.log('Conflict check (single-page + react-nextjs-site):', mod.findExclusionConflicts(['single-page','react-nextjs-site']))
+  console.log('Conflict check (just react-nextjs-site):          ', mod.findExclusionConflicts(['react-nextjs-site']))
+  console.log('hasBaseWebsite (react-nextjs-site):', mod.hasBaseWebsite(['react-nextjs-site']))
+  console.log('═══════════════════════════════════════════════════')
+  console.log('All validations passed.')
+} catch (e) {
+  console.error('CATALOG FAILED VALIDATION:')
+  console.error(e.message)
+  if (e.issues) console.error(JSON.stringify(e.issues, null, 2))
+  process.exit(1)
+}

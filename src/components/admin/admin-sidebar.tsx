@@ -6,7 +6,7 @@ import { useState } from 'react'
 import {
   LayoutDashboard, Users, Kanban, Monitor, Upload, Bot, LogOut,
   ChevronDown, Target, MapPin, FileText, BarChart3, Layers, LineChart,
-  Newspaper,
+  Newspaper, Receipt,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -18,6 +18,7 @@ const PROSPECTING_ITEMS: NavItem[] = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/prospects', label: 'Prospects', icon: Users },
   { href: '/admin/pipeline', label: 'Pipeline', icon: Kanban },
+  { href: '/admin/quotes', label: 'Quotes', icon: Receipt },
   { href: '/admin/demos', label: 'Demos', icon: Monitor },
   { href: '/admin/import', label: 'Import', icon: Upload },
 ]
