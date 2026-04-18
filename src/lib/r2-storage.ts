@@ -54,6 +54,9 @@ export async function uploadPublic(
   contentType: string,
 ): Promise<string> {
   const Bucket = required('R2_PUBLIC_BUCKET')
+  // Resolve public URL env var BEFORE upload so a missing env var fails
+  // fast without leaving an orphan object in the bucket.
+  const publicUrl = getPublicUrl(key)
   await client().send(
     new PutObjectCommand({
       Bucket,
@@ -62,7 +65,7 @@ export async function uploadPublic(
       ContentType: contentType,
     }),
   )
-  return getPublicUrl(key)
+  return publicUrl
 }
 
 /**
