@@ -20,7 +20,7 @@
 
 import { z } from 'zod'
 
-export const CATALOG_VERSION = '2026.04.16-1'
+export const CATALOG_VERSION = '2026.04.18-1'
 
 export type QuoteCategory =
   | 'your-website'
@@ -92,6 +92,13 @@ export interface PricingItem {
   available: boolean
   isFree?: boolean
   freeWithPaidProject?: boolean
+
+  /** Perceived $-value shown on invoices (used by $0 Restaurant Rule
+   *  invoices for the "value" line before the 100% discount takes total
+   *  to zero). If not set, falls back to midpoint of baseRange via
+   *  getDisplayPriceCents(). Only free-research items need explicit values.
+   */
+  displayPriceCents?: number
 }
 
 // ============================================================
@@ -932,6 +939,7 @@ const CATALOG: readonly PricingItem[] = [
     availableForBid: false,
     available: true,
     isFree: true,
+    displayPriceCents: 50000, // $500 — shown on Restaurant Rule invoices before 100% discount
   },
   {
     id: 'competitor-analysis',
@@ -950,6 +958,7 @@ const CATALOG: readonly PricingItem[] = [
     availableForBid: false,
     available: true,
     isFree: true,
+    displayPriceCents: 50000, // $500
   },
   {
     id: 'site-social-audit',
@@ -968,6 +977,7 @@ const CATALOG: readonly PricingItem[] = [
     availableForBid: false,
     available: true,
     isFree: true,
+    displayPriceCents: 75000, // $750 — combined site + social audit
   },
   {
     id: 'project-plan',
@@ -1284,6 +1294,22 @@ export function getCatalog(): readonly PricingItem[] {
 
 export function getItem(id: string): PricingItem | undefined {
   return CATALOG.find((item) => item.id === id)
+}
+
+/** Alias for getItem — exists for naming consistency with Plan 3. */
+export function getItemById(id: string): PricingItem | undefined {
+  return getItem(id)
+}
+
+/**
+ * Returns the perceived $ value (in cents) to display on invoice line items.
+ * Explicit `displayPriceCents` wins; otherwise midpoint of baseRange.
+ * Used for Restaurant Rule invoices to show value before 100% discount.
+ */
+export function getDisplayPriceCents(item: PricingItem): number {
+  if (typeof item.displayPriceCents === 'number') return item.displayPriceCents
+  const [lo, hi] = item.baseRange
+  return Math.round((lo + hi) / 2)
 }
 
 export function getItemsByCategory(category: QuoteCategory): readonly PricingItem[] {
