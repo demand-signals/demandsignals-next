@@ -1,0 +1,195 @@
+---
+title: "Claude Opus 4.7 and the Desktop That Finally Gets It Right — A Day-One Review"
+date: "2026-04-17"
+author: "Hunter"
+excerpt: "We've been running Opus 4.7 and the redesigned Claude Desktop since an hour after launch. The planning is transformative, the ghost tokens are gone, and the desktop finally lets you orchestrate like a pro."
+tags: ["claude", "opus-4-7", "anthropic", "claude-desktop", "ai-tools", "llm-review", "claude-code", "ai-engineering", "day-one-review"]
+category: "ai-engineering"
+serviceCategories: ["ai-services"]
+readTime: "11 min read"
+featured: true
+infographic:
+  headline: "Claude Opus 4.7 — By the Numbers"
+  type: "stats"
+  stats:
+    - { label: "SWE-bench Verified", value: "87.6%" }
+    - { label: "Vision Upgrade", value: "3.75 MP" }
+    - { label: "Benchmarks Won", value: "12 of 14" }
+    - { label: "Price Change", value: "$0" }
+---
+
+We had Claude Opus 4.7 running within an hour of Anthropic's announcement on April 16th. Same with the redesigned Claude Desktop. After a full day of production work — building pages, writing agents, orchestrating multi-session workflows — here's what actually matters.
+
+## Opus 4.7: The Planning Model We've Been Waiting For
+
+The headline improvement isn't the benchmarks. It's not the vision upgrade. It's the **planning**.
+
+Claude Opus 4.6 was already our primary model for complex agentic work. But it had a tendency to dive into execution before fully understanding the problem. You'd ask for a multi-file refactor and it would start writing code before mapping out dependencies. Smart code, wrong order.
+
+Opus 4.7 plans first. Concretely. When you hand it a complex task — say, restructuring a navigation system across five files with shared constants, CSS modules, and mobile variants — it maps the dependency graph, identifies the execution order, and then works through it methodically. The output quality improvement is a direct consequence of this planning discipline.
+
+This isn't a subtle change. It's the difference between a senior engineer who thinks before typing and a junior who codes first and debugs later.
+
+### Speed That Surprised Us
+
+Opus 4.6 was not fast. You accepted the latency because the output quality justified it. Opus 4.7 is noticeably quicker — not Sonnet-fast, but the gap has closed meaningfully. Time-to-first-token is improved, and the streaming feels more responsive.
+
+Part of this comes from the new **`xhigh` effort level**, which sits between `high` and `max`. It's the sweet spot for most coding work — you get deep reasoning without the latency penalty of `max`. We've been running `xhigh` all day and haven't needed to bump up once.
+
+### The Ghost Tokens Are Gone
+
+This one matters. Claude Opus 4.6 had a maddening issue where phantom inputs — roughly 20,000 tokens of invisible context — would appear in sessions. Your actual prompt might be 2,000 tokens, but the API would bill and process as if you'd sent 22,000. It burned through rate limits, inflated costs, and made long sessions unpredictable.
+
+The community [documented this extensively](https://github.com/anthropics/claude-code/issues/42272) — excessive token consumption, orphaned tool calls, phantom "Generating..." states with zero visible output. It wasn't a rare edge case. It was affecting production workflows daily.
+
+Opus 4.7 appears to have resolved this entirely. After a full day of heavy usage across multiple sessions, token consumption tracks exactly what we'd expect. No phantom spikes. No ghost inputs. The bill matches the work.
+
+### Context That Actually Works at Scale
+
+Opus 4.7 provides a **1M token context window at standard pricing** — no long-context premium. That's not new in theory (4.6 had 1M too), but in practice the model's ability to reason across that full context has improved substantially. It maintains coherence across massive codebases where 4.6 would start losing track of earlier context.
+
+The updated tokenizer does increase token counts by roughly 1-1.35x depending on content type. In practice, we haven't noticed this being a problem — the efficiency gains from better planning and fewer wasted turns more than offset the tokenizer overhead.
+
+### The Numbers
+
+For those who care about benchmarks (and you should, as long as you validate them against real work):
+
+| Benchmark | Opus 4.6 | Opus 4.7 | Change |
+|-----------|----------|----------|--------|
+| SWE-bench Verified | 80.8% | 87.6% | +6.8 pts |
+| SWE-bench Pro | 53.4% | 64.3% | +10.9 pts |
+| GPQA Diamond | 91.3% | 94.2% | +2.9 pts |
+| CharXiv (Vision) | 69.1% | 82.1% | +13.0 pts |
+| OSWorld (Computer Use) | 72.7% | 78.0% | +5.3 pts |
+| Terminal-Bench 2.0 | 65.4% | 69.4% | +4.0 pts |
+| MMMLU (Multilingual) | 91.1% | 91.5% | +0.4 pts |
+
+The SWE-bench Pro jump — 53.4% to 64.3% — is the one that maps closest to our experience. These are the hard, real-world software engineering tasks that require understanding complex codebases, not toy problems. A 10.9-point improvement on the hardest coding benchmark is not incremental.
+
+### Vision: Finally Useful
+
+Opus 4.7 is the first Claude model with **high-resolution image support** — 2,576 pixels on the long edge, approximately 3.75 megapixels. That's over 3x the previous 1,568px / 1.15MP limit.
+
+More importantly, coordinates are now 1:1 with actual pixels. No more scale-factor math when building computer-use agents or processing screenshots. You point at a pixel, Claude sees that pixel.
+
+The CharXiv benchmark — visual reasoning without tools — jumped from 69.1% to 82.1%. That's not a marginal improvement. That's a model that can actually read charts, diagrams, and UI screenshots with production-grade accuracy.
+
+### What Changed Under the Hood
+
+A few breaking changes worth noting if you're building on the API:
+
+- **Extended thinking budgets are gone.** `budget_tokens` returns a 400 error. It's adaptive thinking only now, controlled via the `effort` parameter. In our testing, adaptive thinking outperforms the old budget approach anyway.
+- **Sampling parameters removed.** `temperature`, `top_p`, and `top_k` at non-default values will error. Use prompting to guide behavior instead.
+- **Thinking content omitted by default.** If you stream reasoning to users, set `"display": "summarized"` or they'll see a long pause before output begins.
+- **More literal instruction following.** The model won't silently generalize. If you ask it to fix file A, it won't also "helpfully" refactor file B. This is a major improvement for agentic workflows where predictability matters.
+- **More direct tone.** Less "Great question!" preamble. Fewer emoji. More opinionated. It reads like a senior engineer's code review, not a customer service interaction.
+
+### Task Budgets: The Agentic Leash
+
+The new **task budgets** feature (beta) lets you set an advisory token limit across an entire agentic loop — thinking, tool calls, results, and final output. The model sees a running countdown and prioritizes work accordingly.
+
+This is different from `max_tokens`, which is a hard per-request ceiling the model doesn't see. Task budgets are a suggestion the model is aware of. Set it when you need the model to scope its own work. Skip it for open-ended tasks where quality matters more than predictability.
+
+```python
+response = client.beta.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=128000,
+    output_config={
+        "effort": "xhigh",
+        "task_budget": {"type": "tokens", "total": 128000},
+    },
+    messages=[{"role": "user", "content": "Review and refactor the auth module."}],
+    betas=["task-budgets-2026-03-13"],
+)
+```
+
+---
+
+## Claude Desktop: The Multi-Session Breakthrough
+
+The desktop redesign dropped alongside Opus 4.7, and it's equally significant — arguably more so for daily workflow.
+
+### Four Sessions at Once
+
+The headline feature: **you can now run multiple Claude Code sessions side by side in a single window.** Each session gets its own pane, its own context, its own Git worktree. A new sidebar manages them all.
+
+This is transformative for how we work. A typical morning might look like:
+
+- **Session 1**: Building a new service page (ServicePageTemplate, content, FAQs)
+- **Session 2**: Debugging an API route that's returning 500s in production
+- **Session 3**: Writing a blog post with research and fact-checking
+- **Session 4**: Running a prospect enrichment agent
+
+Previously, this meant four terminal windows, four mental contexts, constant alt-tabbing. Now it's one window, one sidebar, drag-and-drop layout.
+
+### Git Worktree Isolation
+
+Each session in a repository gets its own isolated copy via Git worktrees stored in `<project-root>/.claude/worktrees/`. This means Session 1 can be mid-refactor on the nav system while Session 2 debugs production on the current `master` branch. No conflicts. No stashing. No "wait, which session changed that file?"
+
+Sessions automatically archive when their associated pull requests merge. Clean.
+
+### The Feature Stack
+
+Beyond multi-session, the redesign packs in:
+
+- **Drag-and-drop workspace** — arrange terminal, preview, diff viewer, file editor, and chat in any grid layout
+- **Integrated terminal** — run tests and builds alongside Claude sessions without switching windows
+- **In-app file editor** — open and edit files directly, changes save back to the project
+- **Enhanced diff viewer** — rebuilt for performance with large changesets (the old one choked on big PRs)
+- **Side chats** (Ctrl+;) — branch conversations that use session context without polluting the main thread
+- **View modes** — Verbose (all tool calls), Normal (balanced), or Summary (results only)
+- **SSH support** — now on macOS and Windows, not just Linux
+
+### Who This Is For
+
+If you've been using Claude Code exclusively through the terminal, the desktop is now worth switching to. If you've been using Claude Studio (claude.ai) and finding it cumbersome for multi-file work, the desktop is where you want to be.
+
+The sweet spot is developers who work across 2-4 parallel workstreams. The kind of person who has eight terminal tabs open and can't remember which one is running the dev server. Claude Desktop replaces all of that with a managed, visual workspace where the AI sessions and the development environment share the same surface.
+
+For single-session, quick-question work, Studio is still fine. But for orchestrating real development work — building features, debugging, writing content, running agents — the desktop redesign is a genuine workflow upgrade.
+
+### Memory Improvements
+
+Opus 4.7 pairs with improved file-system-based memory that the desktop app leverages. When an agent maintains a scratchpad or notes file across turns, it's now significantly better at both writing useful notes to itself and leveraging those notes in future tasks.
+
+In practice, this means your Claude sessions "remember" project context across restarts more reliably. The CLAUDE.md and memory files that Claude Code already supported now actually get read and applied consistently, rather than the occasional drift we'd see with 4.6.
+
+---
+
+## The Bottom Line
+
+Opus 4.7 isn't a revolutionary leap. It's something better: a model that fixes what was broken (ghost tokens, planning discipline, vision quality) while meaningfully improving what already worked (coding, reasoning, agentic execution). Same price. Better output. Faster. More predictable.
+
+The desktop redesign is the kind of tool improvement that changes daily habits. Multi-session support alone would justify the update. Combined with the integrated workspace features, it turns Claude from "a very smart terminal" into "the IDE layer above your IDE."
+
+We've been running both for a day. We're not going back.
+
+---
+
+## Quick Reference
+
+| Feature | Opus 4.6 | Opus 4.7 |
+|---------|----------|----------|
+| SWE-bench Verified | 80.8% | 87.6% |
+| Max Image Resolution | 1,568px / 1.15MP | 2,576px / 3.75MP |
+| Context Window | 1M tokens | 1M tokens (no premium) |
+| Pricing | $5 / $25 per M tokens | $5 / $25 per M tokens |
+| Effort Levels | low, medium, high, max | low, medium, high, **xhigh**, max |
+| Task Budgets | No | Yes (beta) |
+| Thinking Mode | Extended (budget) | Adaptive only |
+| Ghost Token Bug | Yes | Fixed |
+| Desktop Multi-Session | No | Yes (4+ panes) |
+| Desktop Terminal | External | Integrated |
+| Desktop File Editor | No | Built-in |
+
+---
+
+*Demand Signals has been building with Claude since the original API launch. We use Opus and Sonnet daily for client projects, content generation, and our own AI agent infrastructure. This review reflects hands-on production usage, not benchmark speculation.*
+
+Sources:
+- [Introducing Claude Opus 4.7 — Anthropic](https://www.anthropic.com/news/claude-opus-4-7)
+- [What's New in Claude Opus 4.7 — Claude API Docs](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-7)
+- [Claude Opus 4.7 Benchmarks Explained — Vellum AI](https://www.vellum.ai/blog/claude-opus-4-7-benchmarks-explained)
+- [Claude Code Desktop Redesign — BuildFastWithAI](https://www.buildfastwithai.com/blogs/claude-code-desktop-redesign-2026)
+- [Claude Opus 4.7 Generally Available — GitHub Changelog](https://github.blog/changelog/2026-04-16-claude-opus-4-7-is-generally-available/)
+- [Opus 4.6 Token Consumption Issues — GitHub](https://github.com/anthropics/claude-code/issues/42272)
