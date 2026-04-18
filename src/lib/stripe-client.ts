@@ -2,11 +2,18 @@
 // Singleton Stripe client + idempotency helpers.
 //
 // Required env vars:
-//   STRIPE_API_KEY — secret key (sk_test_... or sk_live_...). REQUIRED.
-//   STRIPE_WEBHOOK_SECRET — for verifying webhook signatures.
-//     Until set, webhook endpoint returns 503.
+//   STRIPE_SECRET_KEY — secret key (sk_test_... or sk_live_...). REQUIRED.
+//     Falls back to STRIPE_CLAUDE_API_KEY or legacy STRIPE_API_KEY.
+//   STRIPE_SNAPSHOT_SIGNING_SECRET — for verifying webhook signatures.
+//     Falls back to STRIPE_WEBHOOK_SECRET. Until set, webhook returns 503.
 //   STRIPE_PUBLISHABLE_KEY — for any future client-side flows.
 //     Not currently used (we host invoices, Stripe hosts checkout/portal).
+//
+// Webhook payload style: our handler expects SNAPSHOT payloads (the
+// full data.object with all fields). Thin payloads are a newer Stripe
+// format requiring an API fetch per event — not used yet. The Thin
+// destination's signing secret is stored as STRIPE_THIN_SIGNING_SECRET
+// for future use.
 //
 // Kill switch: quote_config.stripe_enabled must be 'true' for any Stripe
 // call to succeed. Enforce in callers via isStripeEnabled().
@@ -16,11 +23,32 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 
 let client: Stripe | null = null
 
-/** Get the singleton Stripe client. Throws if STRIPE_API_KEY is missing. */
+function getSecretKey(): string {
+  return (
+    process.env.STRIPE_SECRET_KEY ??
+    process.env.STRIPE_CLAUDE_API_KEY ??
+    process.env.STRIPE_API_KEY ??
+    ''
+  )
+}
+
+function getSnapshotSigningSecret(): string {
+  return (
+    process.env.STRIPE_SNAPSHOT_SIGNING_SECRET ??
+    process.env.STRIPE_WEBHOOK_SECRET ??
+    ''
+  )
+}
+
+/** Get the singleton Stripe client. Throws if no secret key is configured. */
 export function stripe(): Stripe {
   if (client) return client
-  const key = process.env.STRIPE_API_KEY
-  if (!key) throw new Error('STRIPE_API_KEY not configured')
+  const key = getSecretKey()
+  if (!key) {
+    throw new Error(
+      'Stripe secret key not configured (set STRIPE_SECRET_KEY or STRIPE_CLAUDE_API_KEY)',
+    )
+  }
   client = new Stripe(key, {
     // Let the SDK use its own pinned default; avoids API-version drift bugs.
     // We pin the SDK version in package.json instead.
@@ -43,9 +71,14 @@ export async function isStripeEnabled(): Promise<boolean> {
   return data?.value === 'true'
 }
 
-/** Checks if the Stripe webhook secret is configured (needed to verify signatures). */
+/** Checks if the Stripe webhook signing secret is configured. */
 export function isWebhookConfigured(): boolean {
-  return Boolean(process.env.STRIPE_WEBHOOK_SECRET)
+  return Boolean(getSnapshotSigningSecret())
+}
+
+/** Returns the snapshot-payload signing secret for webhook signature verification. */
+export function getWebhookSigningSecret(): string {
+  return getSnapshotSigningSecret()
 }
 
 /**

@@ -17,6 +17,7 @@ import type Stripe from 'stripe'
 import {
   stripe,
   isWebhookConfigured,
+  getWebhookSigningSecret,
   recordStripeEvent,
 } from '@/lib/stripe-client'
 import {
@@ -28,7 +29,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 export async function POST(request: NextRequest) {
   if (!isWebhookConfigured()) {
     return NextResponse.json(
-      { error: 'STRIPE_WEBHOOK_SECRET not configured' },
+      { error: 'Stripe webhook signing secret not configured' },
       { status: 503 },
     )
   }
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
     event = stripe().webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!,
+      getWebhookSigningSecret(),
     )
   } catch (e) {
     return NextResponse.json(
