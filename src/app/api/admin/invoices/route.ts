@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { getItemById, CATALOG_VERSION, getDisplayPriceCents } from '@/lib/quote-pricing'
+import { CATALOG_VERSION } from '@/lib/quote-pricing'
 import type { InvoiceKind, CategoryHint } from '@/lib/invoice-types'
 
 interface CreateLineItem {
@@ -94,35 +94,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'At least one line item required' }, { status: 400 })
   }
 
-  // Resolve each line item: catalog-backed or custom.
+  // Each line must carry description + unit_price_cents. catalog_item_id
+  // is advisory (stored for analytics/traceability) — the form has the
+  // authoritative display price from the catalog picker's selection.
   let resolved
   try {
     resolved = line_items.map((li) => {
-      let description: string
-      let unitPrice: number
-
-      if (li.catalog_item_id) {
-        const item = getItemById(li.catalog_item_id)
-        if (!item) throw new Error(`Unknown catalog item: ${li.catalog_item_id}`)
-        description = item.name
-        unitPrice = li.use_display_price ? getDisplayPriceCents(item) : getDisplayPriceCents(item)
-      } else {
-        if (!li.description) throw new Error('Custom line item needs description')
-        if (typeof li.unit_price_cents !== 'number') {
-          throw new Error('Custom line item needs unit_price_cents')
-        }
-        description = li.description
-        unitPrice = li.unit_price_cents
+      if (!li.description) throw new Error('Line item needs description')
+      if (typeof li.unit_price_cents !== 'number') {
+        throw new Error('Line item needs unit_price_cents')
       }
 
       const qty = li.quantity || 1
+      const unitPrice = li.unit_price_cents
       const subtotal = unitPrice * qty
       const discountPct = li.discount_pct ?? 0
       const discountCents = Math.round((subtotal * discountPct) / 100)
       const lineTotal = subtotal - discountCents
 
       return {
-        description,
+        description: li.description,
         quantity: qty,
         unit_price_cents: unitPrice,
         subtotal_cents: subtotal,

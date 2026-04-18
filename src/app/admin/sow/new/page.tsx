@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Loader2, Sparkles } from 'lucide-react'
+import { CatalogPicker, type CatalogPickerItem } from '@/components/admin/catalog-picker'
 
 interface Prospect {
   id: string
@@ -13,6 +14,7 @@ interface Deliverable {
   name: string
   description: string
   acceptance_criteria: string
+  catalog_item_id?: string | null
 }
 interface Phase {
   name: string
@@ -50,6 +52,17 @@ export default function NewSowPage() {
 
   function addDeliverable() {
     setDeliverables((d) => [...d, { name: '', description: '', acceptance_criteria: '' }])
+  }
+  function addDeliverableFromCatalog(item: CatalogPickerItem) {
+    setDeliverables((d) => [
+      ...d,
+      {
+        name: item.name,
+        description: item.description ?? item.benefit ?? '',
+        acceptance_criteria: 'Delivered + client review',
+        catalog_item_id: item.id,
+      },
+    ])
   }
   function updateDeliverable(idx: number, patch: Partial<Deliverable>) {
     setDeliverables((d) => d.map((x, i) => (i === idx ? { ...x, ...patch } : x)))
@@ -149,13 +162,36 @@ export default function NewSowPage() {
       <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 text-sm">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">Deliverables</h2>
-          <button onClick={addDeliverable} className="text-xs bg-slate-100 hover:bg-slate-200 rounded px-3 py-1">
-            <Plus className="w-3 h-3 inline" /> Add
+          <button onClick={addDeliverable} className="text-xs text-slate-500 hover:text-slate-700">
+            + ad-hoc
           </button>
         </div>
+
+        <div className="space-y-1">
+          <div className="text-xs text-slate-500 font-semibold uppercase">Add from catalog</div>
+          <CatalogPicker
+            onPick={addDeliverableFromCatalog}
+            placeholder="Search catalog to add as a deliverable…"
+          />
+        </div>
+
+        {deliverables.filter((d) => d.name || d.description).length === 0 && (
+          <div className="text-xs text-slate-400 italic">No deliverables yet. Pick from catalog above, or add ad-hoc.</div>
+        )}
+
         {deliverables.map((d, idx) => (
-          <div key={idx} className="border border-slate-100 rounded p-3 space-y-2">
-            <div className="flex gap-2">
+          <div
+            key={idx}
+            className={`border border-slate-100 rounded p-3 space-y-2 ${
+              d.catalog_item_id ? 'bg-teal-50/30' : ''
+            }`}
+          >
+            <div className="flex gap-2 items-start">
+              {d.catalog_item_id && (
+                <span title="From catalog" className="pt-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-teal-500" />
+                </span>
+              )}
               <input
                 value={d.name}
                 onChange={(e) => updateDeliverable(idx, { name: e.target.value })}

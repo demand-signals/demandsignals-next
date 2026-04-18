@@ -2,7 +2,8 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Plus, Trash2, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Loader2, Sparkles } from 'lucide-react'
+import { CatalogPicker, type CatalogPickerItem } from '@/components/admin/catalog-picker'
 
 interface Prospect {
   id: string
@@ -11,6 +12,7 @@ interface Prospect {
 }
 
 interface LineItemDraft {
+  catalog_item_id: string | null // non-null = catalog-backed; null = custom ad-hoc
   description: string
   quantity: number
   unit_price_cents: number
@@ -19,11 +21,23 @@ interface LineItemDraft {
 }
 
 const EMPTY_LINE: LineItemDraft = {
+  catalog_item_id: null,
   description: '',
   quantity: 1,
   unit_price_cents: 0,
   discount_pct: 0,
   discount_label: '',
+}
+
+function fromCatalogItem(item: CatalogPickerItem): LineItemDraft {
+  return {
+    catalog_item_id: item.id,
+    description: item.name,
+    quantity: 1,
+    unit_price_cents: item.display_price_cents,
+    discount_pct: 0,
+    discount_label: '',
+  }
 }
 
 export default function NewInvoicePage() {
@@ -59,7 +73,10 @@ function NewInvoiceForm() {
   function updateLine(idx: number, patch: Partial<LineItemDraft>) {
     setLines((prev) => prev.map((l, i) => (i === idx ? { ...l, ...patch } : l)))
   }
-  function addLine() {
+  function addCatalogLine(item: CatalogPickerItem) {
+    setLines((prev) => [...prev, fromCatalogItem(item)])
+  }
+  function addCustomLine() {
     setLines((prev) => [...prev, { ...EMPTY_LINE }])
   }
   function removeLine(idx: number) {
@@ -70,7 +87,8 @@ function NewInvoiceForm() {
     setLines((prev) => [
       ...prev,
       {
-        description: 'Complimentary (100% off)',
+        catalog_item_id: null,
+        description: 'New Client Appreciation — included with your engagement',
         quantity: 1,
         unit_price_cents: -subtotal,
         discount_pct: 0,
@@ -164,96 +182,126 @@ function NewInvoiceForm() {
       <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">Line items</h2>
-          <div className="flex gap-2">
-            <button
-              onClick={addLine}
-              className="text-xs bg-slate-100 hover:bg-slate-200 rounded px-3 py-1"
-            >
-              <Plus className="w-3 h-3 inline" /> Add line
-            </button>
-            <button
-              onClick={add100Discount}
-              className="text-xs bg-orange-100 hover:bg-orange-200 rounded px-3 py-1 text-orange-900"
-            >
-              + 100% discount
-            </button>
-          </div>
+          <button
+            onClick={add100Discount}
+            className="text-xs bg-orange-100 hover:bg-orange-200 rounded px-3 py-1 text-orange-900"
+          >
+            + 100% discount line
+          </button>
         </div>
-        <table className="w-full text-sm">
-          <thead className="text-xs text-slate-500 uppercase">
-            <tr>
-              <th className="text-left py-1">Description</th>
-              <th className="text-right py-1 w-16">Qty</th>
-              <th className="text-right py-1 w-28">Unit ($)</th>
-              <th className="text-right py-1 w-16">Disc %</th>
-              <th className="text-right py-1 w-24">Total</th>
-              <th className="w-8"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {lines.map((l, idx) => {
-              const sub = l.unit_price_cents * l.quantity
-              const lineTotal = sub - Math.round((sub * l.discount_pct) / 100)
-              return (
-                <tr key={idx} className="border-t border-slate-100">
-                  <td className="py-1 pr-2">
-                    <input
-                      type="text"
-                      value={l.description}
-                      onChange={(e) => updateLine(idx, { description: e.target.value })}
-                      className="w-full border border-slate-200 rounded px-2 py-1"
-                      placeholder="Description"
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      value={l.quantity}
-                      onChange={(e) =>
-                        updateLine(idx, { quantity: parseInt(e.target.value) || 1 })
-                      }
-                      className="w-full border border-slate-200 rounded px-2 py-1 text-right"
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      value={l.unit_price_cents / 100}
-                      onChange={(e) =>
-                        updateLine(idx, {
-                          unit_price_cents: Math.round(parseFloat(e.target.value || '0') * 100),
-                        })
-                      }
-                      className="w-full border border-slate-200 rounded px-2 py-1 text-right"
-                      step="0.01"
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      value={l.discount_pct}
-                      onChange={(e) =>
-                        updateLine(idx, { discount_pct: parseInt(e.target.value) || 0 })
-                      }
-                      className="w-full border border-slate-200 rounded px-2 py-1 text-right"
-                      min="0"
-                      max="100"
-                    />
-                  </td>
-                  <td className="text-right pr-2">${(lineTotal / 100).toFixed(2)}</td>
-                  <td>
-                    <button
-                      onClick={() => removeLine(idx)}
-                      className="text-slate-400 hover:text-red-500"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+
+        {/* Catalog picker — primary add path */}
+        <div className="space-y-2">
+          <div className="text-xs text-slate-500 font-semibold uppercase">Add from catalog</div>
+          <CatalogPicker
+            onPick={addCatalogLine}
+            placeholder="Search catalog… (e.g. 'React', 'SEO', 'logo')"
+          />
+          <button
+            onClick={addCustomLine}
+            className="text-xs text-slate-500 hover:text-slate-700"
+          >
+            Or add an ad-hoc custom line (use only if no catalog match)
+          </button>
+        </div>
+
+        {lines.length > 0 && (
+          <table className="w-full text-sm">
+            <thead className="text-xs text-slate-500 uppercase">
+              <tr>
+                <th className="text-left py-1">Description</th>
+                <th className="text-right py-1 w-16">Qty</th>
+                <th className="text-right py-1 w-28">Unit ($)</th>
+                <th className="text-right py-1 w-16">Disc %</th>
+                <th className="text-right py-1 w-24">Total</th>
+                <th className="w-8"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {lines.map((l, idx) => {
+                const sub = l.unit_price_cents * l.quantity
+                const lineTotal = sub - Math.round((sub * l.discount_pct) / 100)
+                const isCustom = l.catalog_item_id === null
+                return (
+                  <tr
+                    key={idx}
+                    className={`border-t border-slate-100 ${
+                      isCustom && l.unit_price_cents >= 0 ? 'bg-amber-50/60' : ''
+                    }`}
+                  >
+                    <td className="py-1 pr-2">
+                      <div className="flex items-center gap-2">
+                        {!isCustom && (
+                          <span title="From catalog">
+                            <Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+                          </span>
+                        )}
+                        <input
+                          type="text"
+                          value={l.description}
+                          onChange={(e) => updateLine(idx, { description: e.target.value })}
+                          className="w-full border border-slate-200 rounded px-2 py-1"
+                          placeholder={isCustom ? 'Ad-hoc description' : 'Description'}
+                        />
+                      </div>
+                      {isCustom && l.unit_price_cents >= 0 && (
+                        <div className="text-[10px] text-amber-800 mt-0.5 ml-5">
+                          Ad-hoc line — breaks catalog alignment. Consider adding to catalog
+                          via the picker above.
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        value={l.quantity}
+                        onChange={(e) =>
+                          updateLine(idx, { quantity: parseInt(e.target.value) || 1 })
+                        }
+                        className="w-full border border-slate-200 rounded px-2 py-1 text-right"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        value={l.unit_price_cents / 100}
+                        onChange={(e) =>
+                          updateLine(idx, {
+                            unit_price_cents: Math.round(parseFloat(e.target.value || '0') * 100),
+                          })
+                        }
+                        className="w-full border border-slate-200 rounded px-2 py-1 text-right"
+                        step="0.01"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        value={l.discount_pct}
+                        onChange={(e) =>
+                          updateLine(idx, { discount_pct: parseInt(e.target.value) || 0 })
+                        }
+                        className="w-full border border-slate-200 rounded px-2 py-1 text-right"
+                        min="0"
+                        max="100"
+                      />
+                    </td>
+                    <td className="text-right pr-2">${(lineTotal / 100).toFixed(2)}</td>
+                    <td>
+                      <button
+                        onClick={() => removeLine(idx)}
+                        className="text-slate-400 hover:text-red-500"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
+
         <div className="flex justify-end text-sm space-y-1">
           <div className="text-right">
             <div>Subtotal: ${subtotal.toFixed(2)}</div>
