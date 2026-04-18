@@ -8,34 +8,205 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-04-18 (Opus 4.7, commit `c695f27`+)
+**Last updated:** 2026-04-18 2:15am (checkpoint — Hunter → sleep → client at 5:45am → resume)
 
 ---
 
-## Current task
+## 🚨 HARD DEADLINE: April 20
 
-**STAGE C ITEM 1 — INVOICING.** Brainstorm converged; design being written.
-Stage C ordering (confirmed): 1→4 sequential, then 5-8.
+**Bonsai subscription CANCELED.** DSIG needs its own invoicing system live
+by April 20 covering:
+1. **Quote-driven invoicing** (the original Stage C item 1 scope)
+2. **Business invoicing** (general purpose — client retainers, one-off services)
+3. **Subscriptions** (recurring billing for monthly retainers)
+4. **Stripe integration** (was Stage D in original plan — PULLED FORWARD)
 
-**Architectural decisions locked in this session:**
+Original plan 3 (`docs/superpowers/plans/2026-04-18-invoicing-feature.md`) was
+scoped for quote-driven invoicing only. **Tomorrow: expand scope + execute.**
+
+---
+
+## Where we are (end of 2026-04-18 late-night session)
+
+### ✅ Plan 1 complete — R2 storage library
+Working directory: `D:/CLAUDE/demandsignals-next`
+4 commits on master (after history rewrite):
+- `703897f` feat(r2): add @aws-sdk/client-s3 for R2 storage integration
+- `f18b74a` feat(r2): add src/lib/r2-storage.ts wrapper
+- `62ecadf` fix(r2): resolve public URL before upload (orphan prevention)
+- `31d0efa` test(r2): add scripts/test-r2-storage.mjs smoke test
+
+**Verified live:** 9/9 R2 integration tests passing against real buckets.
+Public bucket at `https://assets.demandsignals.co`. Private bucket with
+signed URLs working. Hunter added a blog post (`abe5719`) on top — unrelated.
+
+### ✅ Plan 2 complete — dsig-pdf-service deployed to production
+Working directory: `D:/CLAUDE/dsig-pdf-service` (separate repo)
+12 commits on main, all pushed to GitHub:
+- `579f3ac` chore: initialize repo
+- `f0e5999` feat(standards): port DSIG_PDF_STANDARDS_v2
+- `3bee37e` feat(layout): page templates + painters
+- `003ad65` feat(typography): ParagraphStyles
+- `2d46089` feat(tables): MT/P/PH/bts helpers
+- `a39fa72` feat(components): ODiv/GradientBar/Callout/PaidStamp/VoidStamp
+- `2336a02` feat(quotes): famous-quote library + seeded picker
+- `6a828ae` feat(covers): FrontCover + BackCover
+- `89bbe71` feat(invoice): first doc type (3-page branded invoice)
+- `3cc6b12` feat(api): POST /api/render
+- `8134eb4` fix(vercel): versioned @vercel/python runtime (deploy fix)
+- `45d0075` chore(ci): GitHub Actions pytest workflow
+
+**Verified live:**
+- `POST https://pdf.demandsignals.co/api/render` with valid bearer → HTTP 200, 8KB PDF
+- Wrong token → HTTP 401
+- Rendered PDF: 3 pages, contains `DSIG-2026-0007`, valid `%PDF-1.4` header
+- 24/24 local pytest tests passing
+- GitHub Actions CI workflow added (status uncheckd but yaml is standard)
+
+### 🔨 Plan 3 — NOT STARTED (tomorrow's work, with expanded scope)
+File: `docs/superpowers/plans/2026-04-18-invoicing-feature.md` (26 tasks)
+Original scope: quote-driven invoicing only.
+**New scope for tomorrow:** add Stripe + subscriptions + general business
+invoices. See "Tomorrow's kickoff" below.
+
+---
+
+## Tomorrow's kickoff (read this first thing)
+
+**Opening ask to Opus:** "Resume Stage C invoicing. Read MEMORY.md. We
+canceled Bonsai. Scope expanded: Stripe + subscriptions + general business
+invoicing in addition to quote-driven invoices. Deadline April 20. Plan 3
+needs rework before execution."
+
+**Pre-read order:**
+1. CLAUDE.md (unchanged — project conventions, §18 domain map, §19 R2 storage)
+2. MEMORY.md (this file)
+3. `docs/superpowers/specs/2026-04-18-invoicing-design.md` (original spec)
+4. `docs/superpowers/plans/2026-04-18-invoicing-feature.md` (Plan 3 — needs expansion)
+5. `git log master | head` (recent state) + `cd ../dsig-pdf-service && git log main | head`
+
+**Green-state verification (should all pass on resume):**
+```bash
+cd D:/CLAUDE/demandsignals-next
+node scripts/test-quote-rls.mjs       # expect 25/25
+npx tsx scripts/check-catalog.mjs     # all pass
+npx tsx tests/quote-ai-evals.mjs      # 38/38
+node scripts/test-r2-storage.mjs      # 9/9 (R2 integration live)
+npx tsc --noEmit                      # clean
+
+cd D:/CLAUDE/dsig-pdf-service
+pytest tests/ -q                      # 24/24
+curl -s -o /dev/null -w "%{http_code}\n" -X POST https://pdf.demandsignals.co/api/render
+                                      # expect 401 (auth required = healthy)
+```
+
+### Scope expansion decisions needed tomorrow
+
+Before writing code, we need to answer:
+
+1. **Stripe integration model:**
+   - Stripe Invoicing (Stripe-hosted pages, sends emails) vs
+   - Stripe Payment Links (just a pay button, we host invoice) vs
+   - Stripe Payment Elements (full custom checkout)?
+   - My default proposal: **Payment Links + Stripe Customer Portal**
+     for subscriptions. Keeps our PDF invoice as the canonical "receipt"
+     document, Stripe handles the payment rail.
+
+2. **Subscription schema:**
+   - Add `subscriptions` table (customer, plan, status, Stripe sub ID,
+     next billing date, cancellation reason, etc.)
+   - Each subscription auto-generates an `invoice` row per billing cycle
+     via webhook
+   - Subscription PDF = same invoice doc_type (already live via dsig-pdf-service)
+
+3. **General business invoice flow:**
+   - Existing schema mostly supports it — `invoices` table doesn't require
+     a linked `quote_session_id` (already nullable)
+   - Admin UI needs a "Create invoice for client X" path that doesn't start
+     from a quote session (Task 21's `/admin/invoices/new` already scaffolded for this)
+
+4. **Migration order (revised from original Plan 3):**
+   a. Stripe customer/subscription tables FIRST (need these referenced by invoices)
+   b. Then original Plan 3 migrations 011a-011g + 012a + 013a
+   c. Then additions: `stripe_customer_id` on prospects/clients, `stripe_invoice_id`
+      on invoices, `subscription_id` on invoices
+
+5. **Stripe env vars needed:**
+   - `STRIPE_SECRET_KEY` (live + test)
+   - `STRIPE_WEBHOOK_SECRET`
+   - `STRIPE_PUBLISHABLE_KEY` (for any client-side flows)
+   - Hunter needs to create these in Stripe dashboard tomorrow before we code
+
+6. **Webhook endpoint:** `/api/webhooks/stripe` — processes
+   `invoice.paid`, `invoice.payment_failed`, `customer.subscription.updated`,
+   etc. Maps Stripe events → our `invoices` + `subscriptions` tables.
+
+7. **A2P / SMTP still NOT BLOCKING** — invoices can deliver via Stripe's
+   hosted pages (client gets email from Stripe with payment link) even
+   without our SMTP working. That removes the Phase 2/3 delivery
+   dependency from MVP.
+
+### Realistic timeline for April 20 deadline
+
+~36-48 hours of focused work. Doable if we:
+- Merge Stripe + original Plan 3 into ONE plan with combined migrations
+- Parallelize: I write code while Hunter sets up Stripe account + test mode
+- Skip subscription portal UI v1 (Stripe's hosted Customer Portal is free
+  and professional enough)
+- Keep Phase 1 manual-routed delivery as fallback; rely on Stripe emails
+  for payment notifications
+- Defer: non-MVP items (SMS delivery, custom payment portal, complex
+  cadence) to post-April-20
+
+### What to do first tomorrow (suggested order)
+
+1. Verify everything still green (commands above)
+2. Have Hunter set up Stripe test mode account + 3 env vars
+3. Brainstorm session: lock the Stripe integration model (option 1 vs 2 vs 3 above)
+4. Rewrite `docs/superpowers/plans/2026-04-18-invoicing-feature.md` → expanded Plan 3
+5. Execute expanded plan via subagent-driven-development
+6. Smoke test against Stripe test mode: create customer → subscription → invoice
+   → fake payment → webhook → PDF generated → all persisted correctly
+7. Flip to Stripe live mode for April 20
+
+---
+
+## Architectural decisions locked (do not re-debate)
+
 1. **Domain map** — `.co` for everything; `.dev` retired. See CLAUDE.md §18.
 2. **File storage** — Cloudflare R2, two buckets (`dsig-assets-public` via
    `assets.demandsignals.co` + `dsig-docs-private` for signed-URL access).
-   See CLAUDE.md §19.
+   See CLAUDE.md §19. **R2 integration verified live (9/9 tests pass).**
 3. **Invoice versioning** — mutable drafts; immutable once sent; edits require
-   void + re-issue (new invoice number). Matches QuickBooks-style audit trail.
-4. **Invoice auth** — uuid-suffixed public URL `/invoice/[number]/[uuid]`,
-   matches existing `quote_sessions.share_token` pattern.
-5. **PDF lib** — `@react-pdf/renderer`, server-rendered on send, uploaded to
-   R2 private bucket at `invoices/[number]_v[n].pdf`.
-6. **Automation tiers** — Restaurant Rule = Tier 2 (auto-draft + Hunter one-click send).
-   Future retainers = Tier 3 (full auto). Schema supports both via
-   `auto_generated`, `auto_trigger`, `auto_sent` flags.
-7. **Catalog migration** — adds `display_price_cents` per item (for $0 invoice
-   line-item "value shown before 100% discount").
+   void + re-issue (new invoice number). QuickBooks-style audit trail.
+4. **Invoice auth** — uuid-suffixed public URL `/invoice/[number]/[uuid]`.
+5. **PDF generation** — `dsig-pdf-service` Python microservice at
+   `pdf.demandsignals.co`. **LIVE AND VERIFIED.** Original spec said
+   `@react-pdf/renderer` but we went with Python/reportlab for DSIG
+   brand consistency across all doc types (proposals, SOWs, reports, etc.).
+6. **Automation tiers** — 3-tier flag system (`auto_generated`, `auto_trigger`,
+   `auto_sent`). Restaurant Rule = Tier 2 (auto-draft). Subscriptions = Tier 3
+   (full auto-send after Stripe webhook).
+7. **Catalog update (not migration)** — `src/lib/quote-pricing.ts` gets new
+   `displayPriceCents` field per PricingItem. Bump `CATALOG_VERSION`.
+8. **Python Flowable gotcha** — `Flowable.__init__` shadows class-level
+   `width`/`height`. Always set in `__init__` after super-init. (Spec bug
+   we fixed in Task 6.)
+9. **Vercel Python runtime** — must use `@vercel/python@4.3.1` format,
+   not `python3.11`. (Spec bug we fixed in Task 11.)
+
+---
+
+## Session's hand-off files
+
+- Commits to Plan 1: `703897f`, `f18b74a`, `62ecadf`, `31d0efa` (main repo)
+- Commits to Plan 2: `579f3ac` through `45d0075` (12 total, dsig-pdf-service repo)
+- `docs/superpowers/specs/2026-04-18-invoicing-design.md` — original spec
+- `docs/superpowers/plans/2026-04-18-r2-storage.md` — Plan 1 (complete)
+- `docs/superpowers/plans/2026-04-18-dsig-pdf-service.md` — Plan 2 (complete)
+- `docs/superpowers/plans/2026-04-18-invoicing-feature.md` — Plan 3 (pending, needs Stripe expansion)
 
 Full Stage C plan: [docs/runbooks/stage-c-plan.md](docs/runbooks/stage-c-plan.md)
-Item 1 design spec: `docs/superpowers/specs/2026-04-18-invoicing-design.md` (being written)
 
 ---
 
