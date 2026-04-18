@@ -8,11 +8,89 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-04-18 ~5am (Opus built the whole thing while Hunter slept)
+**Last updated:** 2026-04-18 afternoon (services catalog + value stack + courtesy dropdown shipped)
 
 ---
 
-## 🎉 INVOICING v2 BUILT OVERNIGHT — READ THIS FIRST
+## 🎉 Invoicing v2 LIVE + Phase 4 (Catalog Alignment) READY TO DEPLOY
+
+**Phase 4 activation runbook:** [`docs/runbooks/invoicing-phase4-activation.md`](docs/runbooks/invoicing-phase4-activation.md)
+
+### What's live in production (deployed earlier today)
+
+All of Phases 1-3 is live: migrations applied, Stripe webhook endpoint working,
+admin invoice creation, SOW with accept+deposit flow, subscriptions scaffolding,
+public viewer pages, branded PDFs via pdf.demandsignals.co.
+
+### What's ready to deploy (Phase 4 — 14 new commits since prod)
+
+DB-backed services catalog that becomes the SINGLE SOURCE OF TRUTH for:
+  - Quote estimator line items (via /quote)
+  - Admin invoice line items (via /admin/invoices/new)
+  - SOW deliverables (via /admin/sow/new)
+  - "New Client Appreciation" value stack on paid-project deposits
+  - Courtesy/Restaurant Rule flow on /admin/quotes/[id]
+
+### Activation (5 minutes — Hunter's step)
+
+1. Paste APPLY-014-2026-04-18.sql in Supabase SQL Editor
+2. `git push origin master`
+3. Verify at /admin/services (48 services, 3 in value stack)
+4. Smoke test SOW accept → deposit invoice shows value stack
+
+### Pricing philosophy (LOCKED IN)
+
+**Nothing is "free".** Everything has a real $ price. Gifted items appear as
+100% "New Client Appreciation" discount lines on the invoice — real dollar
+values on a real PDF create proof, not promise.
+
+**Value stack (auto-added on SOW accept):**
+- Market Research Report: $750
+- Competitor Analysis: $750
+- Comprehensive Project Plan: $1,750
+- **Total: $3,250** shown as "New Client Appreciation — included with your engagement"
+
+On a $6k project ($1,500 deposit), the deposit invoice reads:
+  Deposit $1,500 + MR $750 + CA $750 + PP $1,750 − Appreciation $3,250 = **$1,500 due**
+  → 3.17× perceived value ratio at the moment of signing.
+
+**Courtesy (gift-before-ask, for unsigned prospects):** ONE of:
+- Site & Social Audit: $950 (default — diagnostic, closes hardest)
+- Market Research: $750
+- Competitor Analysis: $750
+
+### Architectural shifts in Phase 4
+
+- `services_catalog` table is canonical; TS `CATALOG` in quote-pricing.ts still
+  exists but is advisory (kept around for back-compat with /quote flow that
+  hasn't been migrated yet — next session's work)
+- `isFree: true` is deprecated everywhere; `included_with_paid_project: true`
+  replaces it semantically
+- Catalog picker in invoice/SOW forms can `+ Add new to catalog` inline → new
+  service persists to DB, immediately available across all flows
+
+---
+
+## 🔖 Note for future session — social media proposal timing
+
+Hunter observed that post-project social media / GBP / review-response
+proposals aren't closing well. Project exhaustion at the delivery moment =
+worst psychological time to upsell. Two patterns to explore next session:
+
+1. **Pre-paid bundle at SOW signing:** "Your project includes 90 days
+   post-launch of GBP + social + review management at no additional charge.
+   Month 4 onward, these continue at $X/mo. You can cancel any time but most
+   clients keep going." Normalizes the monthly during highest-commitment moment.
+
+2. **Middle-of-project upsell (weeks 4-6):** When momentum is visible and
+   they're feeling progress, propose social/GBP/reviews then — not at delivery.
+
+Not in scope for current build. Flagging for when prospecting feedback shows
+this is hurting close rates.
+
+---
+
+## 🎉 Original INVOICING v2 OVERNIGHT BUILD
 
 **Morning activation runbook:** [`docs/runbooks/invoicing-morning-2026-04-18.md`](docs/runbooks/invoicing-morning-2026-04-18.md)
 
