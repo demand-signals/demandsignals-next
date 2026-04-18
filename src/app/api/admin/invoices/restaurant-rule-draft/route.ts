@@ -1,14 +1,34 @@
 // ── POST /api/admin/invoices/restaurant-rule-draft ──────────────────
-// Automation endpoint: creates a $0 Restaurant Rule draft from a qualifying
-// quote_session. Respects automated_invoicing_enabled config flag.
+// Courtesy / "Restaurant Rule" automation endpoint.
+//
+// Creates a $0 draft invoice with ONE chosen diagnostic/research item
+// shown at its full display price, 100%-discounted as "New Client
+// Appreciation". Prospect sees the real $ value being offered, not a
+// "FREE" label — Scenario-1 psychology: nothing is free, everything is
+// a courtesy discount.
+//
+// Default courtesy item = site-social-audit (the diagnostic: "here's
+// what's wrong with your digital footprint" — pain-diagnostic closes
+// harder than generic intelligence).
+//
+// Body: { quote_session_id: string, courtesy_item_id?: string }
+// courtesy_item_id defaults to 'site-social-audit' if not provided.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { getItemById, getDisplayPriceCents } from '@/lib/quote-pricing'
+import { getServiceById } from '@/lib/services-catalog'
 
-// Catalog IDs that constitute the Restaurant Rule free-research bundle.
-const RESTAURANT_RULE_ITEMS = ['market-research', 'competitor-analysis', 'site-social-audit']
+// Allow-list of catalog IDs eligible for the courtesy flow. Prevents
+// admin from accidentally gifting a $1,750 Project Plan via this endpoint
+// (that one is reserved for the paid-project value stack on SOW accept).
+const COURTESY_ELIGIBLE_IDS = new Set([
+  'site-social-audit',   // default — diagnostic
+  'market-research',      // market intelligence
+  'competitor-analysis',  // competitive intelligence
+])
+
+const DEFAULT_COURTESY_ID = 'site-social-audit'
 
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request)
@@ -16,8 +36,18 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => null)
   const sessionId: string | undefined = body?.quote_session_id
+  const courtesyItemId: string = body?.courtesy_item_id ?? DEFAULT_COURTESY_ID
+
   if (!sessionId) {
     return NextResponse.json({ error: 'quote_session_id required' }, { status: 400 })
+  }
+  if (!COURTESY_ELIGIBLE_IDS.has(courtesyItemId)) {
+    return NextResponse.json(
+      {
+        error: `Invalid courtesy_item_id: ${courtesyItemId}. Must be one of: ${Array.from(COURTESY_ELIGIBLE_IDS).join(', ')}`,
+      },
+      { status: 400 },
+    )
   }
 
   // Kill switch.
@@ -40,7 +70,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Session has no linked prospect' }, { status: 400 })
   }
 
-  // Duplicate guard.
+  // Duplicate guard — prevent multiple courtesy invoices per session.
   const { data: existing } = await supabaseAdmin
     .from('invoices')
     .select('id')
@@ -50,52 +80,57 @@ export async function POST(request: NextRequest) {
   if (existing) {
     return NextResponse.json(
       {
-        error: 'Restaurant Rule invoice already exists for this session',
+        error: 'Courtesy invoice already exists for this session',
         existing_invoice_id: existing.id,
       },
       { status: 409 },
     )
   }
 
-  // Build line items: 3 research items at displayPriceCents + 100% discount line.
-  let researchLines
-  try {
-    researchLines = RESTAURANT_RULE_ITEMS.map((itemId, idx) => {
-      const item = getItemById(itemId)
-      if (!item) throw new Error(`Catalog item missing: ${itemId}`)
-      const price = getDisplayPriceCents(item)
-      return {
-        sort_order: idx,
-        description: item.name,
-        quantity: 1,
-        unit_price_cents: price,
-        subtotal_cents: price,
-        discount_pct: 0,
-        discount_cents: 0,
-        discount_label: null as string | null,
-        line_total_cents: price,
-      }
-    })
-  } catch (e) {
+  // Fetch the chosen courtesy item from the DB catalog.
+  const courtesyItem = await getServiceById(courtesyItemId)
+  if (!courtesyItem) {
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : 'Catalog error' },
+      { error: `Catalog item ${courtesyItemId} not found` },
       { status: 500 },
     )
   }
 
-  const subtotalCents = researchLines.reduce((s, r) => s + r.subtotal_cents, 0)
-  const discountLine = {
-    sort_order: researchLines.length,
-    description: 'Introductory Research Credit (100% off)',
-    quantity: 1,
-    unit_price_cents: -subtotalCents,
-    subtotal_cents: -subtotalCents,
-    discount_pct: 0,
-    discount_cents: 0,
-    discount_label: 'Complimentary research package',
-    line_total_cents: -subtotalCents,
+  const priceCents = courtesyItem.display_price_cents
+  if (priceCents <= 0) {
+    return NextResponse.json(
+      { error: `Courtesy item ${courtesyItemId} has no display price set` },
+      { status: 500 },
+    )
   }
-  const allLines = [...researchLines, discountLine]
+
+  // Line items: the courtesy item at full price + 100% appreciation discount = $0.
+  const allLines = [
+    {
+      sort_order: 0,
+      description:
+        courtesyItem.name +
+        (courtesyItem.description ? ` — ${courtesyItem.description}` : ''),
+      quantity: 1,
+      unit_price_cents: priceCents,
+      subtotal_cents: priceCents,
+      discount_pct: 0,
+      discount_cents: 0,
+      discount_label: null as string | null,
+      line_total_cents: priceCents,
+    },
+    {
+      sort_order: 1,
+      description: 'New Client Appreciation — complimentary courtesy analysis',
+      quantity: 1,
+      unit_price_cents: -priceCents,
+      subtotal_cents: -priceCents,
+      discount_pct: 0,
+      discount_cents: 0,
+      discount_label: 'Complimentary',
+      line_total_cents: -priceCents,
+    },
+  ]
 
   const { data: numResult, error: numErr } = await supabaseAdmin.rpc('generate_invoice_number')
   if (numErr || !numResult) {
@@ -113,16 +148,15 @@ export async function POST(request: NextRequest) {
       prospect_id: session.prospect_id,
       quote_session_id: sessionId,
       status: 'draft',
-      subtotal_cents: subtotalCents,
-      discount_cents: subtotalCents,
+      subtotal_cents: priceCents,
+      discount_cents: priceCents,
       total_due_cents: 0,
       currency: 'USD',
       auto_generated: true,
       auto_trigger: 'restaurant_rule',
       auto_sent: false,
       category_hint: 'marketing_expense',
-      notes:
-        'This research is complimentary. Your investment comes later, only if you choose to move forward with implementation.',
+      notes: `Complimentary ${courtesyItem.name} courtesy analysis. This is our way of showing we're serious about your success — a $${(priceCents / 100).toFixed(0)} value, no obligation.`,
       created_by: auth.user.id,
     })
     .select('*')
@@ -140,6 +174,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     invoice: inv,
     business_name: session.business_name,
+    courtesy_item: courtesyItem.name,
     admin_url: `/admin/invoices/${inv.id}`,
   })
 }

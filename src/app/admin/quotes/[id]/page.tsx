@@ -173,21 +173,7 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
             </Link>
           )}
           {detail.prospect && session.phone_verified && session.email && (
-            <button
-              onClick={async () => {
-                const res = await fetch('/api/admin/invoices/restaurant-rule-draft', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ quote_session_id: session.id }),
-                })
-                const data = await res.json()
-                if (res.ok) window.location.href = `/admin/invoices/${data.invoice.id}`
-                else alert(data.error ?? 'Failed')
-              }}
-              className="inline-flex items-center gap-1 px-3 py-2 bg-orange-100 hover:bg-orange-200 rounded-md text-sm text-orange-900"
-            >
-              🍽️ Restaurant Rule
-            </button>
+            <CourtesyDropdown sessionId={session.id} />
           )}
         </div>
       </div>
@@ -435,6 +421,73 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
           ))}
         </div>
       </div>
+    </div>
+  )
+}
+
+// Courtesy dropdown — creates a $0 "New Client Appreciation" invoice with
+// ONE chosen diagnostic/research item shown at full price + 100% discount.
+// Default = Site & Social Audit (the pain-diagnostic that closes hardest).
+function CourtesyDropdown({ sessionId }: { sessionId: string }) {
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  async function trigger(courtesyItemId: string) {
+    setBusy(true)
+    try {
+      const res = await fetch('/api/admin/invoices/restaurant-rule-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quote_session_id: sessionId, courtesy_item_id: courtesyItemId }),
+      })
+      const data = await res.json()
+      if (res.ok) window.location.href = `/admin/invoices/${data.invoice.id}`
+      else alert(data.error ?? 'Failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="relative inline-block">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        disabled={busy}
+        className="inline-flex items-center gap-1 px-3 py-2 bg-orange-100 hover:bg-orange-200 rounded-md text-sm text-orange-900"
+      >
+        🎁 Send Courtesy {open ? '▾' : '▸'}
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-1 w-64 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
+          <div className="px-3 py-2 border-b border-slate-100 text-[10px] font-semibold text-slate-500 uppercase">
+            Pick the courtesy item
+          </div>
+          <button
+            onClick={() => trigger('site-social-audit')}
+            disabled={busy}
+            className="w-full text-left px-3 py-2 hover:bg-orange-50 text-sm border-b border-slate-100"
+          >
+            <div className="font-medium">Site & Social Audit</div>
+            <div className="text-xs text-slate-500">Diagnostic — recommended default</div>
+          </button>
+          <button
+            onClick={() => trigger('market-research')}
+            disabled={busy}
+            className="w-full text-left px-3 py-2 hover:bg-orange-50 text-sm border-b border-slate-100"
+          >
+            <div className="font-medium">Market Research</div>
+            <div className="text-xs text-slate-500">Industry + opportunity analysis</div>
+          </button>
+          <button
+            onClick={() => trigger('competitor-analysis')}
+            disabled={busy}
+            className="w-full text-left px-3 py-2 hover:bg-orange-50 text-sm"
+          >
+            <div className="font-medium">Competitor Analysis</div>
+            <div className="text-xs text-slate-500">Competitive landscape</div>
+          </button>
+        </div>
+      )}
     </div>
   )
 }

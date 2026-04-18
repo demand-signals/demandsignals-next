@@ -57,6 +57,8 @@ function NewInvoiceForm() {
   const [prospectId, setProspectId] = useState(presetProspectId)
   const [kind, setKind] = useState<'quote_driven' | 'business' | 'restaurant_rule'>('business')
   const [lines, setLines] = useState<LineItemDraft[]>([{ ...EMPTY_LINE }])
+  const [includeValueStack, setIncludeValueStack] = useState(false)
+  const [valueStackItems, setValueStackItems] = useState<CatalogPickerItem[]>([])
   const [notes, setNotes] = useState('')
   const [dueDate, setDueDate] = useState('')
   const [categoryHint, setCategoryHint] = useState('service_revenue')
@@ -69,6 +71,23 @@ function NewInvoiceForm() {
       .then((d) => setProspects(d.data ?? []))
       .catch(() => {})
   }, [])
+
+  // Preload value stack items (active, included_with_paid_project=true) so
+  // the toggle can be rendered with meaningful labels + totals.
+  useEffect(() => {
+    fetch('/api/admin/services-catalog?active=true')
+      .then((r) => r.json())
+      .then((d) => {
+        const all = (d.services ?? []) as CatalogPickerItem[]
+        setValueStackItems(all.filter((s) => (s as CatalogPickerItem & { included_with_paid_project?: boolean }).included_with_paid_project))
+      })
+      .catch(() => {})
+  }, [])
+
+  const valueStackTotalCents = valueStackItems.reduce(
+    (sum, s) => sum + s.display_price_cents,
+    0,
+  )
 
   function updateLine(idx: number, patch: Partial<LineItemDraft>) {
     setLines((prev) => prev.map((l, i) => (i === idx ? { ...l, ...patch } : l)))
@@ -108,19 +127,44 @@ function NewInvoiceForm() {
     setBusy(true)
     setError(null)
     try {
+      // Build final line items list. If value-stack toggle is on, append
+      // the stack items at full price plus a single 100% appreciation
+      // discount line. Frontend sends the lines already computed so the
+      // invoice PDF reflects the full stack + the discount.
+      const finalLines = lines.map((l) => ({
+        description: l.description,
+        quantity: l.quantity,
+        unit_price_cents: l.unit_price_cents,
+        discount_pct: l.discount_pct,
+        discount_label: l.discount_label || undefined,
+      }))
+
+      if (includeValueStack && valueStackItems.length > 0) {
+        for (const s of valueStackItems) {
+          finalLines.push({
+            description: s.name + (s.description ? ` — ${s.description}` : ''),
+            quantity: 1,
+            unit_price_cents: s.display_price_cents,
+            discount_pct: 0,
+            discount_label: undefined,
+          })
+        }
+        finalLines.push({
+          description: 'New Client Appreciation — included with your engagement',
+          quantity: 1,
+          unit_price_cents: -valueStackTotalCents,
+          discount_pct: 0,
+          discount_label: 'New Client Appreciation',
+        })
+      }
+
       const res = await fetch('/api/admin/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           kind,
           prospect_id: prospectId || undefined,
-          line_items: lines.map((l) => ({
-            description: l.description,
-            quantity: l.quantity,
-            unit_price_cents: l.unit_price_cents,
-            discount_pct: l.discount_pct,
-            discount_label: l.discount_label || undefined,
-          })),
+          line_items: finalLines,
           notes: notes || undefined,
           due_date: dueDate || undefined,
           category_hint: categoryHint,
@@ -178,6 +222,36 @@ function NewInvoiceForm() {
           </select>
         </label>
       </section>
+
+      {valueStackItems.length > 0 && (
+        <section className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={includeValueStack}
+              onChange={(e) => setIncludeValueStack(e.target.checked)}
+              className="mt-0.5"
+            />
+            <div className="flex-1 text-sm">
+              <div className="font-semibold text-emerald-900">
+                Include paid-project value stack ($
+                {(valueStackTotalCents / 100).toFixed(0)} New Client Appreciation)
+              </div>
+              <div className="text-xs text-emerald-800 mt-1">
+                Auto-adds these items at full price with a single 100% discount line so the
+                prospect sees real day-one value:
+              </div>
+              <ul className="text-xs text-emerald-800 mt-1 ml-4 list-disc">
+                {valueStackItems.map((s) => (
+                  <li key={s.id}>
+                    {s.name} — ${(s.display_price_cents / 100).toFixed(0)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </label>
+        </section>
+      )}
 
       <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">

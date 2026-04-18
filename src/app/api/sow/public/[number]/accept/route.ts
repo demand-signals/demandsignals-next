@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getValueStackItems } from '@/lib/services-catalog'
 import type { SowPricing } from '@/lib/invoice-types'
 
 export async function POST(
@@ -63,6 +64,21 @@ export async function POST(
     )
   }
 
+  // Pull the "New Client Appreciation" value stack from services_catalog.
+  // These auto-populate as 100%-discounted lines on the deposit invoice,
+  // giving the client visible proof of $X,XXX in included value on day one.
+  const valueStackItems = await getValueStackItems()
+  const valueStackSubtotalCents = valueStackItems.reduce(
+    (sum, item) => sum + item.display_price_cents,
+    0,
+  )
+
+  // Invoice totals:
+  //   displayed subtotal = deposit + value_stack (what the prospect sees as
+  //     total value of what they're receiving)
+  //   displayed discount = -value_stack (the courtesy discount)
+  //   total due          = deposit (actual money owed)
+  const displayedSubtotalCents = depositCents + valueStackSubtotalCents
   const { data: depositInvoice, error: invErr } = await supabaseAdmin
     .from('invoices')
     .insert({
@@ -73,8 +89,8 @@ export async function POST(
       status: 'sent',
       sent_at: acceptedAt,
       sent_via_channel: 'manual',
-      subtotal_cents: depositCents,
-      discount_cents: 0,
+      subtotal_cents: displayedSubtotalCents,
+      discount_cents: valueStackSubtotalCents,
       total_due_cents: depositCents,
       currency: 'USD',
       auto_generated: true,
@@ -93,17 +109,58 @@ export async function POST(
     )
   }
 
-  await supabaseAdmin.from('invoice_line_items').insert({
-    invoice_id: depositInvoice.id,
-    description: `Deposit for ${sow.title} (SOW ${sow.sow_number})`,
-    quantity: 1,
-    unit_price_cents: depositCents,
-    subtotal_cents: depositCents,
-    discount_pct: 0,
-    discount_cents: 0,
-    line_total_cents: depositCents,
-    sort_order: 0,
+  // Build line items:
+  //   0: Deposit line (real charge)
+  //   1..N: Value stack items at full price (for visible perceived value)
+  //   N+1: "New Client Appreciation" 100% discount line offsetting value stack
+  const lineItems: Array<Record<string, unknown>> = [
+    {
+      invoice_id: depositInvoice.id,
+      description: `Deposit for ${sow.title} (SOW ${sow.sow_number})`,
+      quantity: 1,
+      unit_price_cents: depositCents,
+      subtotal_cents: depositCents,
+      discount_pct: 0,
+      discount_cents: 0,
+      line_total_cents: depositCents,
+      sort_order: 0,
+    },
+  ]
+
+  valueStackItems.forEach((item, idx) => {
+    lineItems.push({
+      invoice_id: depositInvoice.id,
+      description: item.name + (item.description ? ` — ${item.description}` : ''),
+      quantity: 1,
+      unit_price_cents: item.display_price_cents,
+      subtotal_cents: item.display_price_cents,
+      discount_pct: 0,
+      discount_cents: 0,
+      line_total_cents: item.display_price_cents,
+      sort_order: idx + 1,
+    })
   })
+
+  if (valueStackSubtotalCents > 0) {
+    lineItems.push({
+      invoice_id: depositInvoice.id,
+      description: 'New Client Appreciation — included with your engagement',
+      quantity: 1,
+      unit_price_cents: -valueStackSubtotalCents,
+      subtotal_cents: -valueStackSubtotalCents,
+      discount_pct: 0,
+      discount_cents: 0,
+      discount_label: 'New Client Appreciation',
+      line_total_cents: -valueStackSubtotalCents,
+      sort_order: valueStackItems.length + 1,
+    })
+  }
+
+  const { error: liErr } = await supabaseAdmin.from('invoice_line_items').insert(lineItems)
+  if (liErr) {
+    await supabaseAdmin.from('invoices').delete().eq('id', depositInvoice.id)
+    return NextResponse.json({ error: `Line item insert: ${liErr.message}` }, { status: 500 })
+  }
 
   // Flip SOW status.
   await supabaseAdmin
