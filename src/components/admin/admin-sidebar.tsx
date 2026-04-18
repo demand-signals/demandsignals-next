@@ -34,6 +34,7 @@ const INSIGHTS_ITEMS: NavItem[] = [
 ]
 
 const FINANCE_ITEMS: NavItem[] = [
+  { href: '/admin/services', label: 'Services Catalog', icon: Layers },
   { href: '/admin/invoices', label: 'Invoices', icon: CreditCard },
   { href: '/admin/subscriptions', label: 'Subscriptions', icon: Repeat },
   { href: '/admin/subscription-plans', label: 'Plans', icon: DollarSign },
