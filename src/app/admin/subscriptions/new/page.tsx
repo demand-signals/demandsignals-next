@@ -33,7 +33,7 @@ export default function NewSubscriptionPage() {
   useEffect(() => {
     fetch('/api/admin/prospects?limit=200')
       .then((r) => r.json())
-      .then((d) => setProspects(d.prospects ?? []))
+      .then((d) => setProspects(d.data ?? []))
     fetch('/api/admin/subscription-plans')
       .then((r) => r.json())
       .then((d) => setPlans(d.plans ?? []))

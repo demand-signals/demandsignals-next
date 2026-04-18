@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Plus, Trash2, Loader2 } from 'lucide-react'
 
@@ -27,6 +27,14 @@ const EMPTY_LINE: LineItemDraft = {
 }
 
 export default function NewInvoicePage() {
+  return (
+    <Suspense fallback={<div className="p-6"><Loader2 className="w-6 h-6 animate-spin text-teal-500" /></div>}>
+      <NewInvoiceForm />
+    </Suspense>
+  )
+}
+
+function NewInvoiceForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const presetProspectId = searchParams.get('prospect_id') ?? ''
@@ -44,7 +52,7 @@ export default function NewInvoicePage() {
   useEffect(() => {
     fetch('/api/admin/prospects?limit=100')
       .then((r) => r.json())
-      .then((d) => setProspects(d.prospects ?? []))
+      .then((d) => setProspects(d.data ?? []))
       .catch(() => {})
   }, [])
 

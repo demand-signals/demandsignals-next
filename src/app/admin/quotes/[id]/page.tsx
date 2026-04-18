@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from 'react'
 import Link from 'next/link'
-import { Loader2, ExternalLink, Flag } from 'lucide-react'
+import { Loader2, ExternalLink, Flag, CreditCard, ScrollText } from 'lucide-react'
 
 interface QuoteDetail {
   session: {
@@ -144,7 +144,7 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
             <div className="text-sm text-slate-500">{session.business_location}</div>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap justify-end">
           <a
             href={`/quote/s/${session.share_token}`}
             target="_blank"
@@ -154,6 +154,41 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
             <ExternalLink className="w-4 h-4" />
             Shareable URL
           </a>
+          {detail.prospect && (
+            <Link
+              href={`/admin/invoices/new?prospect_id=${detail.prospect.id}`}
+              className="inline-flex items-center gap-1 px-3 py-2 bg-teal-100 hover:bg-teal-200 rounded-md text-sm text-teal-900"
+            >
+              <CreditCard className="w-4 h-4" />
+              Create Invoice
+            </Link>
+          )}
+          {detail.prospect && (
+            <Link
+              href={`/admin/sow/new?prospect_id=${detail.prospect.id}`}
+              className="inline-flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-md text-sm"
+            >
+              <ScrollText className="w-4 h-4" />
+              Create SOW
+            </Link>
+          )}
+          {detail.prospect && session.phone_verified && session.email && (
+            <button
+              onClick={async () => {
+                const res = await fetch('/api/admin/invoices/restaurant-rule-draft', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ quote_session_id: session.id }),
+                })
+                const data = await res.json()
+                if (res.ok) window.location.href = `/admin/invoices/${data.invoice.id}`
+                else alert(data.error ?? 'Failed')
+              }}
+              className="inline-flex items-center gap-1 px-3 py-2 bg-orange-100 hover:bg-orange-200 rounded-md text-sm text-orange-900"
+            >
+              🍽️ Restaurant Rule
+            </button>
+          )}
         </div>
       </div>
 

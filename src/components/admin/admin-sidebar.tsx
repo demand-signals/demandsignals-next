@@ -6,7 +6,7 @@ import { useState } from 'react'
 import {
   LayoutDashboard, Users, Kanban, Monitor, Upload, Bot, LogOut,
   ChevronDown, Target, MapPin, FileText, BarChart3, Layers, LineChart,
-  Newspaper, Receipt,
+  Newspaper, Receipt, CreditCard, Repeat, ScrollText, DollarSign,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -31,6 +31,13 @@ const CONTENT_ITEMS: NavItem[] = [
 
 const INSIGHTS_ITEMS: NavItem[] = [
   { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+]
+
+const FINANCE_ITEMS: NavItem[] = [
+  { href: '/admin/invoices', label: 'Invoices', icon: CreditCard },
+  { href: '/admin/subscriptions', label: 'Subscriptions', icon: Repeat },
+  { href: '/admin/subscription-plans', label: 'Plans', icon: DollarSign },
+  { href: '/admin/sow', label: 'SOWs', icon: ScrollText },
 ]
 
 const OTHER_ITEMS: NavItem[] = [
@@ -102,6 +109,7 @@ export function AdminSidebar() {
   const [prospectingOpen, setProspectingOpen] = useState(true)
   const [contentOpen, setContentOpen] = useState(true)
   const [insightsOpen, setInsightsOpen] = useState(true)
+  const [financeOpen, setFinanceOpen] = useState(true)
 
   async function handleLogout() {
     const supabase = createClient()
@@ -148,6 +156,18 @@ export function AdminSidebar() {
             items={INSIGHTS_ITEMS}
             open={insightsOpen}
             onToggle={() => setInsightsOpen(!insightsOpen)}
+            pathname={pathname}
+          />
+        </div>
+
+        {/* Finance */}
+        <div className="pt-2 border-t border-slate-100 mt-2">
+          <NavGroup
+            label="Finance"
+            icon={DollarSign}
+            items={FINANCE_ITEMS}
+            open={financeOpen}
+            onToggle={() => setFinanceOpen(!financeOpen)}
             pathname={pathname}
           />
         </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Share2, Copy, Check, Download, Pencil, Trash2, Search, Loader2 } from 'lucide-react'
@@ -815,9 +815,148 @@ export default function ProspectDetailPage() {
         </div>
       </div>
 
+      {/* Documents (invoices + SOWs for this prospect) */}
+      <ProspectDocuments prospectId={prospect.id} />
+
       {/* Edit Modal */}
       {showEdit && (
         <ProspectEditModal prospect={prospect} onClose={() => setShowEdit(false)} />
+      )}
+    </div>
+  )
+}
+
+function ProspectDocuments({ prospectId }: { prospectId: string }) {
+  const [invoices, setInvoices] = useState<
+    Array<{
+      id: string
+      invoice_number: string
+      kind: string
+      status: string
+      total_due_cents: number
+      created_at: string
+    }>
+  >([])
+  const [sows, setSows] = useState<
+    Array<{
+      id: string
+      sow_number: string
+      title: string
+      status: string
+      pricing: { total_cents: number }
+      created_at: string
+    }>
+  >([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`/api/admin/invoices?prospect_id=${prospectId}&limit=50`).then((r) => r.json()),
+      fetch(`/api/admin/sow?prospect_id=${prospectId}`).then((r) => r.json()),
+    ])
+      .then(([invData, sowData]) => {
+        setInvoices(invData.invoices ?? [])
+        setSows(sowData.sows ?? [])
+      })
+      .finally(() => setLoading(false))
+  }, [prospectId])
+
+  if (loading) return null
+  if (invoices.length === 0 && sows.length === 0) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 p-5 mt-6">
+        <h2 className="font-semibold text-slate-900 mb-2">Documents</h2>
+        <p className="text-sm text-slate-400">No invoices or SOWs yet.</p>
+        <div className="flex gap-2 mt-3">
+          <Link
+            href={`/admin/invoices/new?prospect_id=${prospectId}`}
+            className="bg-teal-500 text-white rounded px-3 py-1 text-xs font-semibold"
+          >
+            + New Invoice
+          </Link>
+          <Link
+            href={`/admin/sow/new?prospect_id=${prospectId}`}
+            className="bg-slate-100 hover:bg-slate-200 rounded px-3 py-1 text-xs font-semibold"
+          >
+            + New SOW
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const statusColor = (s: string) => {
+    if (s === 'paid' || s === 'accepted') return 'bg-emerald-100 text-emerald-700'
+    if (s === 'void' || s === 'declined') return 'bg-red-100 text-red-700'
+    if (s === 'sent' || s === 'viewed') return 'bg-blue-100 text-blue-700'
+    return 'bg-slate-100 text-slate-700'
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-5 mt-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold text-slate-900">Documents</h2>
+        <div className="flex gap-2">
+          <Link
+            href={`/admin/invoices/new?prospect_id=${prospectId}`}
+            className="bg-teal-500 text-white rounded px-3 py-1 text-xs font-semibold"
+          >
+            + Invoice
+          </Link>
+          <Link
+            href={`/admin/sow/new?prospect_id=${prospectId}`}
+            className="bg-slate-100 hover:bg-slate-200 rounded px-3 py-1 text-xs font-semibold"
+          >
+            + SOW
+          </Link>
+        </div>
+      </div>
+
+      {sows.length > 0 && (
+        <div>
+          <div className="text-xs font-semibold text-slate-500 uppercase mb-1">SOWs</div>
+          <div className="space-y-1">
+            {sows.map((s) => (
+              <Link
+                key={s.id}
+                href={`/admin/sow/${s.id}`}
+                className="flex items-center justify-between text-sm hover:bg-slate-50 -mx-2 px-2 py-1 rounded"
+              >
+                <span className="font-mono text-xs text-slate-600">{s.sow_number}</span>
+                <span className="flex-1 truncate mx-3">{s.title}</span>
+                <span>${(s.pricing.total_cents / 100).toLocaleString()}</span>
+                <span className={`ml-3 text-[10px] rounded px-1.5 py-0.5 ${statusColor(s.status)}`}>
+                  {s.status}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {invoices.length > 0 && (
+        <div>
+          <div className="text-xs font-semibold text-slate-500 uppercase mb-1">Invoices</div>
+          <div className="space-y-1">
+            {invoices.map((inv) => (
+              <Link
+                key={inv.id}
+                href={`/admin/invoices/${inv.id}`}
+                className="flex items-center justify-between text-sm hover:bg-slate-50 -mx-2 px-2 py-1 rounded"
+              >
+                <span className="font-mono text-xs text-slate-600">{inv.invoice_number}</span>
+                <span className="flex-1 mx-3 text-xs text-slate-500">{inv.kind}</span>
+                <span>${(inv.total_due_cents / 100).toFixed(2)}</span>
+                <span className={`ml-3 text-[10px] rounded px-1.5 py-0.5 ${statusColor(inv.status)}`}>
+                  {inv.status}
+                </span>
+                <span className="ml-2 text-[10px] text-slate-400">
+                  {new Date(inv.created_at).toLocaleDateString()}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )
