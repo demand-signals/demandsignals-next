@@ -8,21 +8,46 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-04-18 2:15am (checkpoint — Hunter → sleep → client at 5:45am → resume)
+**Last updated:** 2026-04-18 ~5am (Opus built the whole thing while Hunter slept)
 
 ---
 
-## 🚨 HARD DEADLINE: April 20
+## 🎉 INVOICING v2 BUILT OVERNIGHT — READ THIS FIRST
 
-**Bonsai subscription CANCELED.** DSIG needs its own invoicing system live
-by April 20 covering:
-1. **Quote-driven invoicing** (the original Stage C item 1 scope)
-2. **Business invoicing** (general purpose — client retainers, one-off services)
-3. **Subscriptions** (recurring billing for monthly retainers)
-4. **Stripe integration** (was Stage D in original plan — PULLED FORWARD)
+**Morning activation runbook:** [`docs/runbooks/invoicing-morning-2026-04-18.md`](docs/runbooks/invoicing-morning-2026-04-18.md)
 
-Original plan 3 (`docs/superpowers/plans/2026-04-18-invoicing-feature.md`) was
-scoped for quote-driven invoicing only. **Tomorrow: expand scope + execute.**
+**What's done:**
+- 15 Supabase migrations written (single combined paste-ready file)
+- 30+ new API routes (admin + public + Stripe webhook + cron)
+- 10 admin UI pages (invoices list/new/detail, subscriptions, plans, SOW list/new/detail)
+- 2 public viewer pages (invoice with Pay button, SOW with Accept button + deposit flow)
+- Stripe integration (Payment Links, webhooks with idempotency via stripe_events UNIQUE)
+- Subscriptions (plans catalog owned by DSIG, cycle invoice cron, auto-billing via Stripe)
+- SOW PDF doc_type live in dsig-pdf-service (already deployed, commit e354836)
+- Twilio SMS with test-allowlist gate (awaits A2P Transactional approval for production)
+- Nodemailer email with BCC audit (awaits SMTP_PASS env var)
+- Sidebar Finance group + quote/prospect page integrations
+- Next.js build passes, TypeScript clean
+
+**What's NOT done (intentional, needs Hunter in morning ~15 min):**
+- Apply the 15 migrations (paste APPLY-ALL-2026-04-18.sql into Supabase SQL Editor)
+- Add STRIPE_WEBHOOK_SECRET + STRIPE_PUBLISHABLE_KEY to Vercel
+- Flip `stripe_enabled` config flag to true
+- `git push origin master` to deploy
+
+**What's deferred (works today via kill switches; flip when ready):**
+- SMS delivery (set SMS_TEST_MODE + SMS_TEST_ALLOWLIST; flip sms_delivery_enabled)
+- Email delivery (add SMTP_PASS; flip email_delivery_enabled)
+- Subscription cycle cron (create plans + subscriptions first; flip subscription_cycle_cron_enabled + add vercel.json cron entry)
+
+**Commits to push** (from local master, not yet on origin):
+```
+0765885 feat(admin): sidebar Finance group + quote/prospect integrations
+<several more since your checkpoint>
+9d2a9d7 docs(memory): checkpoint — Plans 1+2 complete, Plan 3 scope expansion needed
+```
+
+Run `git log --oneline 9d2a9d7..HEAD` to see the overnight commits.
 
 ---
 
