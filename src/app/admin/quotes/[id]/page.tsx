@@ -109,6 +109,17 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  async function refetchQuote() {
+    try {
+      const res = await fetch(`/api/admin/quotes/${id}`)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to load')
+      setDetail(data)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed')
+    }
+  }
+
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -363,6 +374,7 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
           cancelledAt={session.retainer_cancelled_at ?? null}
           subscriptionId={session.retainer_subscription_id ?? null}
           launchedAt={session.launched_at ?? null}
+          onActivated={refetchQuote}
         />
         </div>
 

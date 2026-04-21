@@ -14,6 +14,7 @@ interface Props {
   cancelledAt: string | null
   subscriptionId: string | null
   launchedAt: string | null
+  onActivated?: () => void | Promise<void>
 }
 
 export default function RetainerPanel(props: Props) {
@@ -39,6 +40,7 @@ export default function RetainerPanel(props: Props) {
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error ?? 'Activation failed')
       router.refresh()
+      await props.onActivated?.()
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : 'Activation failed')
     } finally {
