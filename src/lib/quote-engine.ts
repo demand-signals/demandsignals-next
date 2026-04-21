@@ -6,6 +6,7 @@
 
 import { getServiceSync as getItem } from './services-catalog-sync'
 import { type PricingItem } from './quote-pricing'
+import type { InvoiceLineItem } from './invoice-types'
 
 export interface SelectedItem {
   id: string
@@ -464,4 +465,49 @@ export function formatCents(cents: number): string {
 export function formatRange(lowCents: number, highCents: number): string {
   if (lowCents === highCents) return formatCents(lowCents)
   return `${formatCents(lowCents)}–${formatCents(highCents)}`
+}
+
+// ============================================================
+// Line-item adapter — converts a simple service-identity shape into the
+// canonical InvoiceLineItem shape used by every DSIG document (quote, SOW,
+// invoice, receipt). `id` and `invoice_id` are omitted — assigned at DB
+// insertion time.
+// ============================================================
+export interface LineItemInput {
+  service_id: string
+  description: string
+  quantity: number
+  unit_price_cents: number
+  discount_pct?: number
+  discount_label?: string | null
+  sort_order?: number
+}
+
+/**
+ * Adapter: converts a simple service-identity shape into the canonical
+ * InvoiceLineItem shape. Every DSIG document (quote, SOW, invoice, receipt)
+ * renders line items through this type so fields never drift.
+ *
+ * `id` and `invoice_id` are omitted — they're assigned at DB insertion time.
+ */
+export function toInvoiceLineItem(
+  input: LineItemInput,
+  sortOrder = 0,
+): Omit<InvoiceLineItem, 'id' | 'invoice_id'> {
+  const qty = input.quantity
+  const unit = input.unit_price_cents
+  const subtotal = qty * unit
+  const pct = input.discount_pct ?? 0
+  const discountCents = Math.round(subtotal * (pct / 100))
+  return {
+    description: input.description,
+    quantity: qty,
+    unit_price_cents: unit,
+    subtotal_cents: subtotal,
+    discount_pct: pct,
+    discount_cents: discountCents,
+    discount_label: input.discount_label ?? null,
+    line_total_cents: subtotal - discountCents,
+    sort_order: input.sort_order ?? sortOrder,
+  }
 }

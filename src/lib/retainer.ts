@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import type { SowOngoingServices, SowOngoingServiceItem } from './invoice-types'
+import type { SowOngoingServices, SowOngoingServiceItem, InvoiceLineItem } from './invoice-types'
+import { toInvoiceLineItem } from './quote-engine'
 
 export interface PlanItem {
   service_id: string
@@ -296,4 +297,91 @@ export async function buildSowOngoingServices(
     start_note: 'Activates on launch day. Cancel with 30 days notice.',
     items,
   }
+}
+
+/**
+ * Materializes a quote's retainer selection as InvoiceLineItem[] rows.
+ *
+ * Every retainer item goes through `toInvoiceLineItem()` — the same adapter
+ * used for build line items — so SOW / invoice / receipt renderers see a
+ * single uniform shape across the whole document. Field drift impossible.
+ *
+ * Returns empty array if no plan selected or plan is site_only.
+ */
+export async function retainerToInvoiceLineItems(
+  quoteId: string,
+): Promise<Array<Omit<InvoiceLineItem, 'id' | 'invoice_id'>>> {
+  const { data: q } = await supabaseAdmin
+    .from('quote_sessions')
+    .select('selected_plan_id, retainer_custom_items')
+    .eq('id', quoteId)
+    .single()
+  if (!q?.selected_plan_id) return []
+
+  const { data: plan } = await supabaseAdmin
+    .from('subscription_plans')
+    .select('tier')
+    .eq('id', q.selected_plan_id)
+    .single()
+  if (!plan || plan.tier === 'site_only') return []
+
+  const { data: planItems } = await supabaseAdmin
+    .from('subscription_plan_items')
+    .select('service_id, quantity, services_catalog(name, monthly_range_low_cents)')
+    .eq('plan_id', q.selected_plan_id)
+
+  const custom = (q.retainer_custom_items ?? []) as Array<{
+    service_id: string
+    quantity: number
+    included: boolean
+  }>
+
+  const merged = new Map<string, { name: string; qty: number; unit: number; included: boolean }>()
+  for (const pi of planItems ?? []) {
+    const svc = pi.services_catalog as { name?: string; monthly_range_low_cents?: number } | null
+    merged.set(pi.service_id, {
+      name: svc?.name ?? pi.service_id,
+      qty: pi.quantity,
+      unit: svc?.monthly_range_low_cents ?? 0,
+      included: true,
+    })
+  }
+  for (const ci of custom) {
+    const existing = merged.get(ci.service_id)
+    if (existing) {
+      merged.set(ci.service_id, { ...existing, qty: ci.quantity, included: ci.included })
+    } else if (ci.included) {
+      const { data: svc } = await supabaseAdmin
+        .from('services_catalog')
+        .select('name, monthly_range_low_cents')
+        .eq('id', ci.service_id)
+        .single()
+      merged.set(ci.service_id, {
+        name: (svc as { name?: string })?.name ?? ci.service_id,
+        qty: ci.quantity,
+        unit: (svc as { monthly_range_low_cents?: number })?.monthly_range_low_cents ?? 0,
+        included: true,
+      })
+    }
+  }
+
+  // Retainer rows sort AFTER build rows. Build rows use sort_order 0–99;
+  // retainer rows start at 100.
+  let sort = 100
+  const out: Array<Omit<InvoiceLineItem, 'id' | 'invoice_id'>> = []
+  for (const [service_id, v] of merged) {
+    if (!v.included) continue
+    out.push(
+      toInvoiceLineItem(
+        {
+          service_id,
+          description: `${v.name} (monthly)`,
+          quantity: v.qty,
+          unit_price_cents: v.unit,
+        },
+        sort++,
+      ),
+    )
+  }
+  return out
 }
