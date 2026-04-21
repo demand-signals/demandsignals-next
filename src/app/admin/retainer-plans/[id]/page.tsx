@@ -27,5 +27,12 @@ export default async function RetainerPlanEditor({
 
   const menu = await getRetainerMenu()
 
-  return <EditorClient plan={plan} items={itemsRaw ?? []} menu={menu} />
+  return (
+    <EditorClient
+      key={(itemsRaw ?? []).map(i => i.service_id).sort().join(',')}
+      plan={plan}
+      items={itemsRaw ?? []}
+      menu={menu}
+    />
+  )
 }
