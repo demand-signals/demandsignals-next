@@ -1692,174 +1692,259 @@ git commit -m "test(retainer): smoke script for all endpoints"
 
 ---
 
-## Task 16: Unified line-item formatter (cross-document field alignment)
+## Task 16: Align retainer rendering with existing canonical formatters
 
-**Goal:** Every platform document (quote summary, SOW, invoice, receipt, retainer panel, admin tables) renders line items through one module. Fields align by construction — if `services_catalog` is the source, `renderLineItem()` is the lens, and nothing else has the right to format a line.
+**Research summary (done before writing this task):**
+
+Prior decisions already locked these in:
+
+- **MEMORY.md** declares `services_catalog` as the SINGLE SOURCE OF TRUTH for quote line items and invoice line items. Retainer line items must use the same source — already wired in Tasks 1–15 via `subscription_plan_items.service_id REFERENCES services_catalog(id)`.
+- **`src/lib/quote-engine.ts`** already exports `formatCents(cents)` and `formatRange(lowCents, highCents)`. These are the canonical money formatters for every DSIG surface. Whole-dollar format, `$X,XXX` style.
+- **`src/lib/invoice-types.ts`** already defines `InvoiceLineItem` as the canonical line-item shape: `{ description, quantity, unit_price_cents, subtotal_cents, discount_pct, discount_cents, discount_label, line_total_cents, sort_order }`. This is what invoices, SOW PDFs, and retainer rows must all render from.
+- **`src/lib/invoice-pdf/payload.ts`** already consumes `InvoiceLineItem[]` sorted by `sort_order` for PDF rendering.
+
+**Goal of this task:** Task 16 is a sweep, not a new module. Fix the drift the retainer UI just introduced, then lock alignment.
 
 **Files:**
-- Create: `src/lib/line-item.ts`
-- Test: `tests/line-item.test.ts`
-- Modify (follow-up sweep): any SOW / invoice / quote summary / receipt renderer that currently hand-formats line items. Replace local formatting with `renderLineItem()`.
+- Modify: `src/lib/quote-engine.ts` — add `toInvoiceLineItem()` converter helper alongside existing `formatCents`/`formatRange`
+- Modify: `src/components/quote/RetainerCard.tsx` — use `formatCents()` from `quote-engine.ts`, not hand-rolled
+- Modify: `src/components/quote/RetainerCustomizeDrawer.tsx` — use `formatCents()`
+- Modify: `src/components/admin/RetainerPanel.tsx` — use `formatCents()`
+- Modify: `src/app/admin/retainer-plans/[id]/EditorClient.tsx` — use `formatCents()`
+- Modify: `src/lib/retainer.ts` — add `retainerToInvoiceLineItems(quoteId)` that materializes the retainer selection as `InvoiceLineItem[]` for SOW/invoice reuse
+- Modify: SOW generator (located in Task 13) — render retainer section via existing `InvoiceLineItem` path, not a parallel renderer
+- Test: `tests/retainer-line-items.test.ts` — verify retainer → `InvoiceLineItem[]` conversion
 
-- [ ] **Step 1: Write failing test**
+- [ ] **Step 1: Add `toInvoiceLineItem()` converter to `quote-engine.ts`**
 
-```ts
-// tests/line-item.test.ts
-import { describe, it, expect } from 'vitest'
-import { renderLineItem, formatMoney, LineItem } from '@/lib/line-item'
-
-describe('formatMoney', () => {
-  it('formats cents as USD', () => {
-    expect(formatMoney(29900)).toBe('$299.00')
-    expect(formatMoney(0)).toBe('$0.00')
-    expect(formatMoney(150)).toBe('$1.50')
-  })
-})
-
-describe('renderLineItem', () => {
-  it('renders one-time build item', () => {
-    const item: LineItem = {
-      service_id: 'wp-starter',
-      name: 'WordPress Starter Site',
-      kind: 'one_time',
-      price_cents: 500000,
-      quantity: 1,
-    }
-    expect(renderLineItem(item)).toEqual({
-      id: 'wp-starter',
-      label: 'WordPress Starter Site',
-      qty: 1,
-      unit: '$5,000.00',
-      subtotal: '$5,000.00',
-      cadence: null,
-    })
-  })
-
-  it('renders monthly retainer item', () => {
-    const item: LineItem = {
-      service_id: 'gbp-mgmt',
-      name: 'Google Business Profile Management',
-      kind: 'monthly',
-      price_cents: 29900,
-      quantity: 1,
-    }
-    expect(renderLineItem(item)).toEqual({
-      id: 'gbp-mgmt',
-      label: 'Google Business Profile Management',
-      qty: 1,
-      unit: '$299.00',
-      subtotal: '$299.00',
-      cadence: '/mo',
-    })
-  })
-
-  it('multiplies quantity into subtotal', () => {
-    const item: LineItem = {
-      service_id: 'content-pub',
-      name: 'AI Blog Post',
-      kind: 'monthly',
-      price_cents: 15000,
-      quantity: 4,
-    }
-    expect(renderLineItem(item).subtotal).toBe('$600.00')
-  })
-})
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `npx vitest run tests/line-item.test.ts`
-Expected: FAIL — module not found.
-
-- [ ] **Step 3: Write implementation**
+This is a thin adapter, not a new abstraction. Any caller with `{ service_id, name, quantity, unit_price_cents, discount_pct?, discount_label? }` can produce an `InvoiceLineItem`-shaped row. `invoice_id` is left empty (filled at invoice creation); `id` is generated deterministically from service_id for in-memory rendering before DB persistence.
 
 ```ts
-// src/lib/line-item.ts
-// Single source of truth for line-item presentation across every DSIG document:
-// quote summary, SOW, invoice, receipt, retainer panel, admin tables.
-//
-// Field shape matches services_catalog row IDs directly. If a value isn't
-// in services_catalog, the caller is already off the happy path — renderers
-// don't invent fields.
+// Append to src/lib/quote-engine.ts (keep existing formatCents/formatRange intact)
+import type { InvoiceLineItem } from './invoice-types'
 
-export type LineItemKind = 'one_time' | 'monthly'
-
-export interface LineItem {
+export interface LineItemInput {
   service_id: string
-  name: string
-  kind: LineItemKind
-  price_cents: number
+  description: string
   quantity: number
+  unit_price_cents: number
+  discount_pct?: number
+  discount_label?: string | null
+  sort_order?: number
 }
 
-export interface RenderedLineItem {
-  id: string
-  label: string
-  qty: number
-  unit: string
-  subtotal: string
-  cadence: '/mo' | null
-}
-
-export function formatMoney(cents: number): string {
-  const dollars = cents / 100
-  return dollars.toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
-}
-
-export function renderLineItem(item: LineItem): RenderedLineItem {
+export function toInvoiceLineItem(input: LineItemInput, sortOrder = 0): Omit<InvoiceLineItem, 'id' | 'invoice_id'> {
+  const qty = input.quantity
+  const unit = input.unit_price_cents
+  const subtotal = qty * unit
+  const pct = input.discount_pct ?? 0
+  const discountCents = Math.round(subtotal * (pct / 100))
   return {
-    id: item.service_id,
-    label: item.name,
-    qty: item.quantity,
-    unit: formatMoney(item.price_cents),
-    subtotal: formatMoney(item.price_cents * item.quantity),
-    cadence: item.kind === 'monthly' ? '/mo' : null,
+    description: input.description,
+    quantity: qty,
+    unit_price_cents: unit,
+    subtotal_cents: subtotal,
+    discount_pct: pct,
+    discount_cents: discountCents,
+    discount_label: input.discount_label ?? null,
+    line_total_cents: subtotal - discountCents,
+    sort_order: input.sort_order ?? sortOrder,
   }
 }
+```
 
-export function sumLineItems(items: LineItem[], kind?: LineItemKind): number {
-  return items
-    .filter((i) => !kind || i.kind === kind)
-    .reduce((s, i) => s + i.price_cents * i.quantity, 0)
+- [ ] **Step 2: Write retainer → `InvoiceLineItem[]` converter in `src/lib/retainer.ts`**
+
+```ts
+// Append to src/lib/retainer.ts
+import { toInvoiceLineItem } from './quote-engine'
+import type { InvoiceLineItem } from './invoice-types'
+
+export async function retainerToInvoiceLineItems(
+  quoteId: string
+): Promise<Array<Omit<InvoiceLineItem, 'id' | 'invoice_id'>>> {
+  const sb = createServiceRoleClient()
+  const { data: q } = await sb
+    .from('quote_sessions')
+    .select('selected_plan_id, retainer_custom_items')
+    .eq('id', quoteId)
+    .single()
+  if (!q?.selected_plan_id) return []
+
+  const { data: planItems } = await sb
+    .from('subscription_plan_items')
+    .select('service_id, quantity, services_catalog(id, name, monthly_range_low_cents)')
+    .eq('plan_id', q.selected_plan_id)
+
+  const custom = (q.retainer_custom_items ?? []) as Array<{
+    service_id: string
+    quantity: number
+    included: boolean
+  }>
+
+  const merged = new Map<string, { name: string; qty: number; unit: number; included: boolean }>()
+  for (const pi of planItems ?? []) {
+    const svc = pi.services_catalog as any
+    merged.set(pi.service_id, {
+      name: svc?.name ?? pi.service_id,
+      qty: pi.quantity,
+      unit: svc?.monthly_range_low_cents ?? 0,
+      included: true,
+    })
+  }
+  for (const ci of custom) {
+    const existing = merged.get(ci.service_id)
+    if (existing) {
+      merged.set(ci.service_id, { ...existing, qty: ci.quantity, included: ci.included })
+    } else if (ci.included) {
+      const { data: svc } = await sb
+        .from('services_catalog')
+        .select('name, monthly_range_low_cents')
+        .eq('id', ci.service_id)
+        .single()
+      merged.set(ci.service_id, {
+        name: svc?.name ?? ci.service_id,
+        qty: ci.quantity,
+        unit: svc?.monthly_range_low_cents ?? 0,
+        included: true,
+      })
+    }
+  }
+
+  let sort = 100 // retainer items sort after build items (which typically use 0-99)
+  const out: Array<Omit<InvoiceLineItem, 'id' | 'invoice_id'>> = []
+  for (const [service_id, v] of merged) {
+    if (!v.included) continue
+    out.push(
+      toInvoiceLineItem(
+        {
+          service_id,
+          description: v.name + ' (monthly)',
+          quantity: v.qty,
+          unit_price_cents: v.unit,
+        },
+        sort++
+      )
+    )
+  }
+  return out
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [ ] **Step 3: Write test**
 
-Run: `npx vitest run tests/line-item.test.ts`
-Expected: 5 passing tests.
+```ts
+// tests/retainer-line-items.test.ts
+import { describe, it, expect } from 'vitest'
+import { toInvoiceLineItem } from '@/lib/quote-engine'
 
-- [ ] **Step 5: Use it in `RetainerCard`, `RetainerPanel`, and SOW generator**
+describe('toInvoiceLineItem', () => {
+  it('produces canonical InvoiceLineItem shape with no discount', () => {
+    const result = toInvoiceLineItem({
+      service_id: 'gbp-mgmt',
+      description: 'Google Business Profile Management (monthly)',
+      quantity: 1,
+      unit_price_cents: 29900,
+    })
+    expect(result).toMatchObject({
+      description: 'Google Business Profile Management (monthly)',
+      quantity: 1,
+      unit_price_cents: 29900,
+      subtotal_cents: 29900,
+      discount_pct: 0,
+      discount_cents: 0,
+      discount_label: null,
+      line_total_cents: 29900,
+    })
+  })
 
-Replace every hand-formatted `$${(n / 100).toFixed(2)}` in the new retainer files with `formatMoney(n)`. Replace every hand-built row-render with `renderLineItem(...)`.
+  it('applies percent discount correctly', () => {
+    const result = toInvoiceLineItem({
+      service_id: 'content-pub',
+      description: 'AI Blog Posts (monthly, x4)',
+      quantity: 4,
+      unit_price_cents: 15000,
+      discount_pct: 25,
+      discount_label: 'Launch promo',
+    })
+    expect(result.subtotal_cents).toBe(60000)
+    expect(result.discount_cents).toBe(15000)
+    expect(result.line_total_cents).toBe(45000)
+    expect(result.discount_label).toBe('Launch promo')
+  })
 
-Concretely touch:
-- `src/components/quote/RetainerCard.tsx` → `formatMoney(monthlyCents)`
-- `src/components/quote/RetainerCustomizeDrawer.tsx` → `formatMoney(m.monthly_cents)`
-- `src/components/admin/RetainerPanel.tsx` → `formatMoney(props.monthlyCents)`
-- `src/app/admin/retainer-plans/[id]/EditorClient.tsx` → `formatMoney(m.monthly_cents)`
-- SOW generator (Task 13) → build `LineItem[]` from retainer items + `services_catalog` names, render through `renderLineItem()` for both Build and Ongoing Services sections
-
-- [ ] **Step 6: Follow-up sweep (existing documents)**
-
-Grep for hand-rolled money formatting in existing invoice/quote/SOW code:
-
-```bash
-grep -rn "\.toFixed(2)\|cents / 100\|price_cents / 100" src/ | grep -v node_modules
+  it('honors provided sort_order', () => {
+    const result = toInvoiceLineItem(
+      { service_id: 'x', description: 'X', quantity: 1, unit_price_cents: 100 },
+      42
+    )
+    expect(result.sort_order).toBe(42)
+  })
+})
 ```
 
-For each hit that's rendering a line item or money value for a document, replace with `formatMoney()` / `renderLineItem()`. This is the alignment enforcement — once every document reads through this module, fields can't drift.
+Run: `npx vitest run tests/retainer-line-items.test.ts`
+Expected: 3 passing tests.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 4: Sweep retainer components to use `formatCents()`**
+
+In each of these files, replace hand-rolled `$${(n / 100).toFixed(...)}` or `${(n/100)}` with `formatCents(n)` imported from `@/lib/quote-engine`:
+
+- `src/components/quote/RetainerCard.tsx`
+- `src/components/quote/RetainerCustomizeDrawer.tsx`
+- `src/components/admin/RetainerPanel.tsx`
+- `src/app/admin/retainer-plans/page.tsx`
+- `src/app/admin/retainer-plans/[id]/EditorClient.tsx`
+
+For each:
+```tsx
+import { formatCents } from '@/lib/quote-engine'
+// then:
+<span>{formatCents(monthlyCents)}<span className="text-sm text-slate-500">/mo</span></span>
+```
+
+- [ ] **Step 5: Wire SOW Ongoing Services through `retainerToInvoiceLineItems()`**
+
+In Task 13's SOW generator change, replace any ad-hoc retainer formatting with:
+
+```ts
+import { retainerToInvoiceLineItems } from '@/lib/retainer'
+import { formatCents } from '@/lib/quote-engine'
+
+const retainerLines = await retainerToInvoiceLineItems(quote.id)
+if (retainerLines.length > 0) {
+  // render retainerLines the SAME WAY existing build line items are rendered
+  // (same table component / markdown template / PDF row function)
+}
+```
+
+This is the alignment enforcement: retainer rows now go through the same rendering path as build rows and invoice rows. If the invoice PDF template changes, SOW + retainer inherit the change for free.
+
+- [ ] **Step 6: Drift audit — grep for any remaining hand-rolled money formatting**
 
 ```bash
-git add src/lib/line-item.ts tests/line-item.test.ts src/components/ src/app/
-git commit -m "feat: unified line-item renderer — field alignment across all documents"
+grep -rn "toFixed(2)\|cents / 100\|cents/100" src/ 2>&1 | grep -v node_modules | grep -v ".test.ts"
+```
+
+Each hit that renders money for a user-facing document should use `formatCents()`. Each hit that renders a line item row should go through the `InvoiceLineItem` shape + existing renderer. Fix the retainer hits from Tasks 8–12 inline; flag (don't fix) any other hits — those are follow-up for whoever owns the originating surface.
+
+- [ ] **Step 7: Run full test suite + build**
+
+```bash
+npx vitest run
+npm run build
+```
+Expected: all tests pass, zero TS errors.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add src/lib/quote-engine.ts src/lib/retainer.ts tests/retainer-line-items.test.ts src/components/quote/ src/components/admin/RetainerPanel.tsx src/app/admin/retainer-plans/
+git commit -m "feat(retainer): align with canonical formatters + InvoiceLineItem shape
+
+Retainer rows now materialize as InvoiceLineItem[] via quote-engine.toInvoiceLineItem,
+rendered through the same path as build line items and invoice line items. Eliminates
+format drift across quote/SOW/invoice/receipt surfaces."
 ```
 
 ---
