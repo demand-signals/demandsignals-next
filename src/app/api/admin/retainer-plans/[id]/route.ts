@@ -42,6 +42,7 @@ export async function PATCH(
     .from('subscription_plans')
     .update(updates)
     .eq('id', id)
+    .eq('is_retainer', true)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -61,6 +62,7 @@ export async function DELETE(
     .from('subscription_plans')
     .update({ active: false })
     .eq('id', id)
+    .eq('is_retainer', true)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
