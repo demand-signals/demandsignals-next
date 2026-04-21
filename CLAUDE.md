@@ -649,7 +649,31 @@ scope unified under a single apex domain.
 | `*.staging.demandsignals.co` | Per-client project staging. `[client-code].staging.demandsignals.co`. Real production builds pre-launch. | weeks to months |
 | `assets.demandsignals.co` | R2 public bucket — CDN-backed static assets (marketing, media, logos, public project galleries) | permanent |
 | `[clientdomain].com` | Client's live site. Same Vercel project as `[client-code].staging.demandsignals.co`, promoted via domain alias + env var change. | permanent (post-launch) |
-| `demandsignals.dev` | **RETIRED.** Domain squat-protection only. Not used for anything. | — |
+| `demandsignals.dev` | **Intended to be retired (squat-protection only), but currently active as demo-sites fallback — see reconciliation note below.** | — |
+
+### Reconciliation note (added 2026-04-21)
+
+The 2026-04-17 decision above declared `demandsignals.dev` retired. That has
+not happened in practice yet. As of 2026-04-21:
+
+- **`*.demandsignals.dev` is the active, working URL for demo sites.** The
+  `demo-sites` Vercel project serves every prospect's demo at
+  `[code].demandsignals.dev`. The Vercel wildcard entry is Valid.
+- **`*.demos.demandsignals.co` shows "Invalid Configuration" in Vercel.**
+  Middleware in `demo-sites/src/middleware.ts` was updated 2026-04-21 to
+  recognize both roots, but the `.co` DNS is not wired. Fixing it requires
+  either changing NS on `demandsignals.co` to Vercel (losing Cloudflare for
+  the whole `.co` zone), or adding a `CNAME *.demos → vercel-target` at
+  Cloudflare + switching Vercel's domain mode to external DNS. Pending
+  decision. See `D:\CLAUDE\demo-sites\docs\DNS_STATUS.md` for the live tracker.
+- **`smma.demandsignals.dev` is an exception.** Hunter assigned it directly to
+  the SMMA production Vercel project (`client-southside-mma` repo), not the
+  `demo-sites` project. The mockup for that client lives at
+  `https://smma.demandsignals.dev/mockup` on that production project. This
+  per-project domain assignment overrides the demo-sites wildcard.
+
+Until the `.co` DNS is fixed and demos are migrated, `demandsignals.dev`
+stays active. Update this section when that cut over.
 
 ### Demo vs Staging (different lifecycle, different rigor)
 
