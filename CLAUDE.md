@@ -415,6 +415,19 @@ Both templates auto-generate JSON-LD schema (Service, BreadcrumbList, FAQPage).
 - [x] Admin portal: Sidebar restructured — DSIG ADMIN PORTAL, Prospecting/Content/Insights nav groups
 - [x] AnalyticsTracker: privacy-preserving pageview tracking (SHA256 visitor hash, no cookies, no PII)
 - [x] 843 static pages building clean
+- [x] Retainer bundling at /quote: required selection step, 4 tiers (Essential/Growth/Full/Site-only), one-signature SOW flow with SowOngoingServices payload, launch activation creates subscription row via `activateRetainer()`
+
+---
+
+### Retainer flow (added 2026-04-21)
+
+`/quote` captures retainer selection at the retainer step (between build-scope-done and terminal CTA). One of 4 tiers: Essential / Growth / Full / Site-only. Stored on `quote_sessions.selected_plan_id` + `retainer_custom_items` + `retainer_monthly_cents`.
+
+Admin marks quote launched via `/admin/quotes/[id]` → `RetainerPanel` Mark Launched button → `POST /api/admin/quotes/[id]/launch` → `activateRetainer(quoteId)` in `src/lib/retainer.ts` → creates `subscriptions` row (skipped for site_only).
+
+Retainer plans editable at `/admin/retainer-plans` + `/admin/retainer-plans/[id]`. The retainer menu is filtered rows of `services_catalog` where `pricing_type IN ('monthly','both')` — single source of truth, no parallel table.
+
+SOW includes `ongoing_services` (see `SowOngoingServices` in `invoice-types.ts`) populated via `buildSowOngoingServices(quoteId)`. Python PDF renderer wires this separately.
 
 ---
 

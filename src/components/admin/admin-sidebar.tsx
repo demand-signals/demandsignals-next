@@ -6,7 +6,7 @@ import { useState } from 'react'
 import {
   LayoutDashboard, Users, Kanban, Monitor, Upload, Bot, LogOut,
   ChevronDown, Target, MapPin, FileText, BarChart3, Layers, LineChart,
-  Newspaper, Receipt, CreditCard, Repeat, ScrollText, DollarSign, Settings,
+  Newspaper, Receipt, CreditCard, Repeat, ScrollText, DollarSign, Settings, CalendarClock,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -38,6 +38,7 @@ const FINANCE_ITEMS: NavItem[] = [
   { href: '/admin/invoices', label: 'Invoices', icon: CreditCard },
   { href: '/admin/subscriptions', label: 'Subscriptions', icon: Repeat },
   { href: '/admin/subscription-plans', label: 'Plans', icon: DollarSign },
+  { href: '/admin/retainer-plans', label: 'Retainer Plans', icon: CalendarClock },
   { href: '/admin/sow', label: 'SOWs', icon: ScrollText },
 ]
 
