@@ -47,3 +47,6 @@ next-env.d.ts
 .vercel
 
 .env*.local
+
+# Git worktrees (isolated workspaces for subagent-driven dev)
+.worktrees/
