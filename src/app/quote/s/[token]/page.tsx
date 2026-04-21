@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getSessionByShareToken } from '@/lib/quote-session'
-import { getItem } from '@/lib/quote-pricing'
+import { getServiceSync as getItem, hydrateCatalogSnapshot } from '@/lib/services-catalog-sync'
 import { calculateTotals, monthlyPlan, type SelectedItem } from '@/lib/quote-engine'
 import { buildMetadata } from '@/lib/metadata'
 import { ShareActions } from './ShareActions'
@@ -32,6 +32,10 @@ export default async function SharedEstimatePage({ params }: Props) {
   if (!session) notFound()
 
   const selections = (Array.isArray(session.selected_items) ? session.selected_items : []) as SelectedItem[]
+
+  // Hydrate DB-backed catalog snapshot so sync getItem lookups hit fresh data.
+  await hydrateCatalogSnapshot()
+
   const totals = calculateTotals(selections)
   const plan = monthlyPlan(totals)
 

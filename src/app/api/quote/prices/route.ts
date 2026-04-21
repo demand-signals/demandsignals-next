@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeSession } from '@/lib/quote-session'
 import { calculateTotals, monthlyPlan, milestonePlan, computeRoi, type SelectedItem } from '@/lib/quote-engine'
-import { getItem } from '@/lib/quote-pricing'
+import { getServiceSync, hydrateCatalogSnapshot } from '@/lib/services-catalog-sync'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export const runtime = 'nodejs'
@@ -18,10 +18,14 @@ export async function POST(request: NextRequest) {
 
   const selections = (Array.isArray(session.selected_items) ? session.selected_items : []) as SelectedItem[]
 
+  // Warm the DB-backed catalog snapshot so quote-engine sync lookups hit DB values
+  // (falls back to legacy TS CATALOG if DB fetch fails). Fire-and-forget-safe.
+  await hydrateCatalogSnapshot()
+
   // Hydrate catalog metadata for each selection — safe to return pre-verification (names only).
   const items = selections
     .map((sel) => {
-      const item = getItem(sel.id)
+      const item = getServiceSync(sel.id)
       if (!item) return null
       const base = {
         id: item.id,

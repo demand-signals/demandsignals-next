@@ -4,7 +4,8 @@
 //
 // Money math lives here so it can be unit-tested in isolation.
 
-import { getItem, type PricingItem } from './quote-pricing'
+import { getServiceSync as getItem } from './services-catalog-sync'
+import { type PricingItem } from './quote-pricing'
 
 export interface SelectedItem {
   id: string

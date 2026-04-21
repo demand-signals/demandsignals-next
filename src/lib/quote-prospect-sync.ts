@@ -15,7 +15,7 @@
 
 import { supabaseAdmin } from './supabase/admin'
 import { decryptPhone } from './quote-crypto'
-import { getItem } from './quote-pricing'
+import { getServiceSync as getItem, hydrateCatalogSnapshot } from './services-catalog-sync'
 import type { QuoteSessionRow } from './quote-session'
 
 interface ResearchFindings {
@@ -123,6 +123,8 @@ export async function syncProspectFromSession(
   sessionId: string,
   trigger: SyncTrigger,
 ): Promise<string | null> {
+  // Warm DB catalog snapshot before buildScopeSummary uses sync getItem.
+  await hydrateCatalogSnapshot()
   const { data: s, error } = await supabaseAdmin
     .from('quote_sessions')
     .select('*')

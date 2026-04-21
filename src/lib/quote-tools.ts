@@ -3,7 +3,8 @@
 // Returns the tool_result payload that goes back to Claude on the next turn.
 
 import { supabaseAdmin } from './supabase/admin'
-import { getItem, type PricingItem } from './quote-pricing'
+import { getServiceSync as getItem, hydrateCatalogSnapshot } from './services-catalog-sync'
+import { type PricingItem } from './quote-pricing'
 import { calculateTotals, computeRoi, type SelectedItem } from './quote-engine'
 import { syncProspectFromSession } from './quote-prospect-sync'
 import { alertFromSession } from './quote-notify'
@@ -86,6 +87,10 @@ async function recomputeAndGetTotals(session_id: string): Promise<{
 }
 
 export async function executeTool(session_id: string, tool: ToolUse): Promise<ToolResult> {
+  // Warm the DB-backed catalog snapshot so downstream sync getItem lookups
+  // hit fresh pricing from services_catalog (falls back to legacy TS CATALOG
+  // if DB fetch fails). Harmless on repeat calls — snapshot cached per invocation.
+  await hydrateCatalogSnapshot()
   try {
     switch (tool.name) {
       case 'add_item': {
