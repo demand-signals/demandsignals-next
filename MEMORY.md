@@ -8,11 +8,49 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-04-18 afternoon (services catalog + value stack + courtesy dropdown shipped)
+**Last updated:** 2026-04-21 (catalog alignment + bulk import + settings page shipped)
 
 ---
 
-## 🎉 Invoicing v2 LIVE + Phase 4 (Catalog Alignment) READY TO DEPLOY
+## 🎉 SHIPPED TODAY (2026-04-21)
+
+Three commits deployed non-stop after Hunter's "stop talking me out of things" reset:
+
+1. **`19b3f28`** — `/quote` migrated to DB-backed catalog via sync bridge
+   + 5 missing site services seeded (wordpress-development, vibe-coded,
+   demand-gen-systems, ai-content-generation, gbp-management).
+   Catalog now aligned with site offerings. `/quote` still 200 in prod.
+   Admin edits at `/admin/services` flow through to `/quote` within seconds.
+
+2. **`cb3c726`** — Bulk CSV/JSON importer at `/admin/services`.
+   POST `/api/admin/services-catalog/bulk-import`, max 500 rows, UPSERT
+   on id, per-row validation + status reporting. UI with CSV and JSON
+   tabs, "Load example" button, result screen with stat cards.
+
+3. **`da239ff`** — `/admin/settings` page — kill-switch flags +
+   env-var readiness grid. Flip flags without SQL Editor. Readiness
+   booleans surface whether Stripe/Twilio/SMTP/PDF/R2 are wired.
+   New `/api/admin/config` endpoint (GET returns flags + env booleans,
+   PATCH upserts a flag value).
+
+### Migrations applied today
+
+- **`015a_services_catalog_site_alignment.sql`** (Hunter pasted 2026-04-21) —
+  5 new services seeded. `SELECT COUNT(*) FROM services_catalog` = 53.
+
+### Architectural shift worth noting
+
+`/quote` engine stays sync. Sync → DB bridging solved by module-scoped
+snapshot in `src/lib/services-catalog-sync.ts`. Callers that are already
+async (prices route, executeTool, syncProspectFromSession, /quote/s/
+shared page) call `hydrateCatalogSnapshot()` once on entry to warm the
+snapshot, then the sync `getServiceSync(id)` works for all downstream
+calls. Cold-start safety: falls back to legacy TS CATALOG if DB fetch
+fails — zero regression risk.
+
+---
+
+## 🎉 Previous — 2026-04-18 catalog alignment + value stack
 
 **Phase 4 activation runbook:** [`docs/runbooks/invoicing-phase4-activation.md`](docs/runbooks/invoicing-phase4-activation.md)
 
