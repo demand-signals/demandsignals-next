@@ -73,9 +73,29 @@ export default function CtaBand() {
         .ds-cta {
           position: relative; overflow: hidden;
           padding: 112px 24px;
-          background: linear-gradient(160deg, #0f1a2d 0%, #1e2740 60%, #252c3d 100%);
+          /* Luminous dark — pushes to near-black at top/bottom edges so it
+             contrasts crisply with the flat navy mega-footer below. */
+          background:
+            radial-gradient(ellipse 80% 60% at 50% 50%, #1c2a4a 0%, #0a0f1c 70%, #060912 100%);
           color: #fff;
           font-family: var(--font-sans, 'Geist', system-ui, sans-serif);
+          border-bottom: 1px solid rgba(104, 197, 173, 0.12);
+          box-shadow: inset 0 -1px 0 rgba(82, 201, 160, 0.08),
+                      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+        /* Top-edge hairline glow — creates visible separation from the
+           light section above (What They're Saying) */
+        .ds-cta::before {
+          content: '';
+          position: absolute; top: 0; left: 0; right: 0; height: 1px;
+          background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(82, 201, 160, 0.4) 20%,
+            rgba(255, 107, 43, 0.4) 50%,
+            rgba(74, 127, 229, 0.4) 80%,
+            transparent 100%);
+          z-index: 3;
+          pointer-events: none;
         }
         .ds-cta__rings {
           position: absolute; top: 50%; right: -8%;
@@ -98,8 +118,9 @@ export default function CtaBand() {
         .ds-cta__ambient {
           position: absolute; inset: 0; pointer-events: none;
           background:
-            radial-gradient(ellipse at 10% 90%, rgba(255,107,43,0.15), transparent 50%),
-            radial-gradient(ellipse at 70% 10%, rgba(74,127,229,0.1), transparent 50%);
+            radial-gradient(ellipse at 8% 85%, rgba(255,107,43,0.22), transparent 45%),
+            radial-gradient(ellipse at 75% 15%, rgba(74,127,229,0.18), transparent 50%),
+            radial-gradient(ellipse at 45% 110%, rgba(104,197,173,0.12), transparent 40%);
         }
         .ds-cta__inner {
           position: relative; z-index: 2;

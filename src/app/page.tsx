@@ -8,7 +8,6 @@ import HowItWorks from '@/components/sections/HowItWorks'
 import PortfolioGrid from '@/components/sections/PortfolioGrid'
 import ReviewsMarquee from '@/components/sections/ReviewsMarquee'
 import HomeBlogSection from '@/components/sections/HomeBlogSection'
-import BookingSection from '@/components/sections/BookingSection'
 import CtaBand from '@/components/sections/CtaBand'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { faqSchema } from '@/lib/schema'
@@ -87,7 +86,6 @@ export default function HomePage() {
       <ReviewsMarquee />
       <HomeBlogSection />
       <CtaBand />
-      <BookingSection />
     </>
   )
 }
