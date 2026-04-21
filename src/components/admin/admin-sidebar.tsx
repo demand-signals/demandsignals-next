@@ -6,7 +6,7 @@ import { useState } from 'react'
 import {
   LayoutDashboard, Users, Kanban, Monitor, Upload, Bot, LogOut,
   ChevronDown, Target, MapPin, FileText, BarChart3, Layers, LineChart,
-  Newspaper, Receipt, CreditCard, Repeat, ScrollText, DollarSign,
+  Newspaper, Receipt, CreditCard, Repeat, ScrollText, DollarSign, Settings,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -43,6 +43,7 @@ const FINANCE_ITEMS: NavItem[] = [
 
 const OTHER_ITEMS: NavItem[] = [
   { href: '/admin/agents', label: 'Agents', icon: Bot },
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
 function NavGroup({
