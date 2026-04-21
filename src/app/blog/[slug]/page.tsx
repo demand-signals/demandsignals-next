@@ -106,10 +106,19 @@ export default async function BlogPostPage({ params }: Props) {
         { name: post.title, url: canonicalUrl },
       ])} />
 
-      {/* Hero with particles */}
-      <section style={{ position: 'relative', overflow: 'hidden', background: '#080e1f', color: '#fff', padding: '100px 24px 64px' }}>
+      {/* Hero with particles — matches blog index PageHero dimensions */}
+      <section style={{
+        position: 'relative', overflow: 'hidden', background: '#080e1f', color: '#fff',
+        minHeight: '52vh', display: 'flex', alignItems: 'center',
+        padding: '96px 24px 80px',
+      }}>
         <ParticleCanvas />
-        <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 2 }}>
+        {/* Overlay matches PageHero */}
+        <div aria-hidden="true" style={{
+          position: 'absolute', inset: 0, zIndex: 1,
+          background: 'linear-gradient(to bottom, rgba(8,14,31,0.5) 0%, rgba(8,14,31,0.7) 100%)',
+        }} />
+        <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 2, width: '100%' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
             {post.category && (
               <span style={{
