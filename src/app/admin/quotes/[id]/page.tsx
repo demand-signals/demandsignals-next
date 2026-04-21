@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from 'react'
 import Link from 'next/link'
 import { Loader2, ExternalLink, Flag, CreditCard, ScrollText } from 'lucide-react'
+import RetainerPanel from '@/components/admin/RetainerPanel'
 
 interface QuoteDetail {
   session: {
@@ -41,7 +42,16 @@ interface QuoteDetail {
     catalog_version: string | null
     created_at: string
     updated_at: string
+    // retainer fields (present when a plan has been selected)
+    selected_plan_id: string | null
+    retainer_monthly_cents: number | null
+    retainer_start_date: string | null
+    retainer_activated_at: string | null
+    retainer_cancelled_at: string | null
+    retainer_subscription_id: string | null
+    launched_at: string | null
   }
+  retainerPlan: { name: string; tier: string } | null
   prospect: {
     id: string
     business_name: string
@@ -284,7 +294,8 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ───── Left: prospect profile + stats ───── */}
+        {/* ───── Left: prospect profile + stats + retainer ───── */}
+        <div className="space-y-4">
         <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
           <h2 className="font-semibold text-slate-900">Prospect</h2>
           <dl className="text-sm space-y-2">
@@ -340,6 +351,19 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
               <dd className="text-xs font-mono">{session.catalog_version ?? '—'}</dd>
             </div>
           </dl>
+        </div>
+
+        <RetainerPanel
+          quoteId={session.id}
+          planName={detail.retainerPlan?.name ?? null}
+          planTier={detail.retainerPlan?.tier ?? null}
+          monthlyCents={session.retainer_monthly_cents ?? 0}
+          startDate={session.retainer_start_date ?? null}
+          activatedAt={session.retainer_activated_at ?? null}
+          cancelledAt={session.retainer_cancelled_at ?? null}
+          subscriptionId={session.retainer_subscription_id ?? null}
+          launchedAt={session.launched_at ?? null}
+        />
         </div>
 
         {/* ───── Middle: transcript ───── */}

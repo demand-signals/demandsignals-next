@@ -11,7 +11,11 @@ export async function GET(request: NextRequest, { params }: Params) {
   const { id } = await params
 
   const [sessionRes, messagesRes, eventsRes] = await Promise.all([
-    supabaseAdmin.from('quote_sessions').select('*').eq('id', id).single(),
+    supabaseAdmin
+      .from('quote_sessions')
+      .select('*, subscription_plans:selected_plan_id ( name, tier )')
+      .eq('id', id)
+      .single(),
     supabaseAdmin
       .from('quote_messages')
       .select('id, role, content, channel, flagged, flag_reason, ai_model_used, cost_cents, created_at')
@@ -28,7 +32,9 @@ export async function GET(request: NextRequest, { params }: Params) {
   if (sessionRes.error) return NextResponse.json({ error: sessionRes.error.message }, { status: 404 })
 
   // Strip encrypted phone from admin response — admin sees last-four only.
-  const { phone_encrypted, phone_e164_hash, ...session } = sessionRes.data as Record<string, unknown>
+  // Also extract the joined retainer plan before spreading session.
+  const { phone_encrypted, phone_e164_hash, subscription_plans, ...session } = sessionRes.data as Record<string, unknown>
+  const retainerPlan = (subscription_plans as { name?: string; tier?: string } | null) ?? null
 
   // If the session is linked to a prospect, fetch the prospect snapshot for the UI
   let prospect: Record<string, unknown> | null = null
@@ -44,6 +50,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   return NextResponse.json({
     session,
     prospect,
+    retainerPlan,
     messages: messagesRes.data ?? [],
     events: eventsRes.data ?? [],
   })
