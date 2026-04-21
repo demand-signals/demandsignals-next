@@ -178,6 +178,21 @@ export interface SowPricing {
   }>
 }
 
+export interface SowOngoingServiceItem {
+  service_id: string
+  name: string
+  quantity: number
+  monthly_cents: number
+}
+
+export interface SowOngoingServices {
+  plan_tier: 'essential' | 'growth' | 'full' | 'site_only'
+  plan_name: string
+  monthly_total_cents: number
+  start_note: string  // e.g. "Activates on launch day"
+  items: SowOngoingServiceItem[]
+}
+
 export interface SowDocument {
   id: string
   sow_number: string
@@ -190,6 +205,7 @@ export interface SowDocument {
   deliverables: SowDeliverable[]
   timeline: SowTimelinePhase[]
   pricing: SowPricing
+  ongoing_services?: SowOngoingServices | null
   payment_terms: string | null
   guarantees: string | null
   notes: string | null

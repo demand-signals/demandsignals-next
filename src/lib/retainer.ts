@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import type { SowOngoingServices, SowOngoingServiceItem } from './invoice-types'
 
 export interface PlanItem {
   service_id: string
@@ -203,4 +204,96 @@ export async function activateRetainer(quoteId: string): Promise<{ subscription_
   }
 
   return { subscription_id: sub.id }
+}
+
+/**
+ * Materializes a quote session's retainer selection as a SowOngoingServices
+ * sub-structure suitable for embedding in a SOW document.
+ *
+ * Returns null if the quote has no selected plan or is site_only
+ * (site_only means the client explicitly declined ongoing services —
+ * the SOW should omit the section entirely).
+ */
+export async function buildSowOngoingServices(
+  quoteId: string
+): Promise<SowOngoingServices | null> {
+  const { data: q } = await supabaseAdmin
+    .from('quote_sessions')
+    .select('selected_plan_id, retainer_custom_items, retainer_monthly_cents')
+    .eq('id', quoteId)
+    .single()
+  if (!q?.selected_plan_id) return null
+
+  const { data: plan } = await supabaseAdmin
+    .from('subscription_plans')
+    .select('name, tier')
+    .eq('id', q.selected_plan_id)
+    .single()
+  if (!plan) return null
+  if (plan.tier === 'site_only') return null
+
+  const { data: planItems } = await supabaseAdmin
+    .from('subscription_plan_items')
+    .select('service_id, quantity, services_catalog(name, monthly_range_low_cents)')
+    .eq('plan_id', q.selected_plan_id)
+
+  const custom = (q.retainer_custom_items ?? []) as Array<{
+    service_id: string
+    quantity: number
+    included: boolean
+  }>
+
+  // Merge plan defaults + custom diffs, same logic as computeMonthlyTotal
+  const merged = new Map<
+    string,
+    { name: string; quantity: number; monthly_cents: number; included: boolean }
+  >()
+
+  for (const pi of planItems ?? []) {
+    const svc = pi.services_catalog as { name?: string; monthly_range_low_cents?: number } | null
+    merged.set(pi.service_id, {
+      name: svc?.name ?? pi.service_id,
+      quantity: pi.quantity,
+      monthly_cents: svc?.monthly_range_low_cents ?? 0,
+      included: true,
+    })
+  }
+
+  for (const ci of custom) {
+    const existing = merged.get(ci.service_id)
+    if (existing) {
+      merged.set(ci.service_id, { ...existing, quantity: ci.quantity, included: ci.included })
+    } else if (ci.included) {
+      const { data: svc } = await supabaseAdmin
+        .from('services_catalog')
+        .select('name, monthly_range_low_cents')
+        .eq('id', ci.service_id)
+        .single()
+      merged.set(ci.service_id, {
+        name: (svc as { name?: string })?.name ?? ci.service_id,
+        quantity: ci.quantity,
+        monthly_cents: (svc as { monthly_range_low_cents?: number })?.monthly_range_low_cents ?? 0,
+        included: true,
+      })
+    }
+  }
+
+  const items: SowOngoingServiceItem[] = []
+  for (const [service_id, v] of merged) {
+    if (!v.included) continue
+    items.push({
+      service_id,
+      name: v.name,
+      quantity: v.quantity,
+      monthly_cents: v.monthly_cents,
+    })
+  }
+
+  return {
+    plan_tier: plan.tier as 'essential' | 'growth' | 'full',
+    plan_name: plan.name,
+    monthly_total_cents: q.retainer_monthly_cents ?? 0,
+    start_note: 'Activates on launch day. Cancel with 30 days notice.',
+    items,
+  }
 }

@@ -1,7 +1,7 @@
 // ── Map SOW document → PDF service payload ─────────────────────────
 // doc_type=sow. See dsig_pdf/docs/sow.py for Python counterpart.
 
-import type { SowDocument } from '../invoice-types'
+import type { SowDocument, SowOngoingServices } from '../invoice-types'
 
 export interface SowPdfPayload {
   doc_type: 'sow'
@@ -45,6 +45,7 @@ export interface SowPdfPayload {
     notes: string | null
     accepted_at: string | null
     accepted_signature: string | null
+    ongoing_services?: SowOngoingServices | null
   }
 }
 
@@ -72,6 +73,7 @@ export function sowToRenderPayload(
       notes: sow.notes,
       accepted_at: sow.accepted_at,
       accepted_signature: sow.accepted_signature,
+      ongoing_services: sow.ongoing_services ?? null,
     },
   }
 }
