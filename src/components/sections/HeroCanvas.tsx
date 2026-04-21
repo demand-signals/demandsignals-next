@@ -317,18 +317,6 @@ export function HeroCanvas() {
           background-clip: text;
           animation: ds-hero-title-shimmer 5s ease infinite;
         }
-        .ds-hero-grid {
-          display: grid;
-          grid-template-columns: 1.1fr 1fr;
-          gap: 48px;
-          align-items: center;
-        }
-        @media (max-width: 960px) {
-          .ds-hero-grid {
-            grid-template-columns: 1fr;
-            gap: 24px;
-          }
-        }
       `}</style>
 
       {/* Particle canvas — behind everything */}
@@ -343,77 +331,71 @@ export function HeroCanvas() {
         }}
       />
 
-      {/* Two-column grid: left = title, right = particle animation shows through */}
-      <div style={{ position: 'relative', zIndex: 30, maxWidth: 1300, margin: '0 auto', padding: '96px 32px 80px', width: '100%' }}>
-        <div className="ds-hero-grid">
-          {/* Left column — Hero Title */}
-          <div style={{ maxWidth: 640 }}>
-            {/* Eyebrow pill with pulsing dot */}
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 10,
-              background: 'rgba(82,201,160,0.12)', border: '1px solid rgba(82,201,160,0.3)',
-              borderRadius: 100, padding: '7px 16px', marginBottom: 28,
+      {/* Centered content over particle canvas */}
+      <div style={{ position: 'relative', zIndex: 30, maxWidth: 1300, margin: '0 auto', padding: '96px 32px 80px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+        <div style={{ maxWidth: 760, textAlign: 'center' }}>
+          {/* Eyebrow pill with pulsing dot */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 10,
+            background: 'rgba(82,201,160,0.12)', border: '1px solid rgba(82,201,160,0.3)',
+            borderRadius: 100, padding: '7px 16px', marginBottom: 28,
+          }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: '50%',
+              background: '#52c9a0', boxShadow: '0 0 10px #52c9a0',
+              animation: 'ds-hero-title-pulse 2s infinite',
+              display: 'inline-block',
+            }} />
+            <span style={{
+              color: '#52C9A0', fontSize: '0.8rem', fontWeight: 700,
+              fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+              letterSpacing: '0.05em',
             }}>
-              <span style={{
-                width: 8, height: 8, borderRadius: '50%',
-                background: '#52c9a0', boxShadow: '0 0 10px #52c9a0',
-                animation: 'ds-hero-title-pulse 2s infinite',
-                display: 'inline-block',
-              }} />
-              <span style={{
-                color: '#52C9A0', fontSize: '0.8rem', fontWeight: 700,
-                fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
-                letterSpacing: '0.05em',
-              }}>
-                AI-POWERED DEMAND GENERATION
-              </span>
-            </div>
-
-            {/* Headline */}
-            <h1 style={{
-              fontSize: 'clamp(2.4rem, 5.5vw, 4.6rem)',
-              fontWeight: 900, lineHeight: 1.02,
-              letterSpacing: '-0.025em',
-              margin: '0 0 24px', color: '#fff',
-            }}>
-              We make you the{' '}
-              <span className="ds-hero-emph">signal</span>
-              <span style={{ color: 'rgba(255,255,255,0.38)' }}>, not the noise.</span>
-            </h1>
-
-            {/* Body */}
-            <p style={{
-              fontSize: '1.2rem', color: 'rgba(255,255,255,0.72)',
-              maxWidth: 520, margin: '0 0 36px', lineHeight: 1.55,
-            }}>
-              AI agents, AI websites, and automated marketing systems that put your business in front of the right customer at the right moment — 24/7, no humans required.
-            </p>
-
-            {/* CTAs */}
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <Link href="/contact" style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                padding: '16px 30px', background: '#FF6B2B',
-                color: '#fff', fontWeight: 700, fontSize: '1rem',
-                borderRadius: 100, boxShadow: '0 12px 32px rgba(255,107,43,0.35)',
-                textDecoration: 'none', transition: 'transform 0.15s, box-shadow 0.15s',
-              }}>
-                Book a Free Call →
-              </Link>
-              <a href={BOOKING_URL} target="_blank" rel="noopener" style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                padding: '15px 28px', border: '2px solid rgba(255,255,255,0.25)',
-                background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(10px)',
-                color: '#fff', fontWeight: 600, fontSize: '1rem',
-                borderRadius: 100, textDecoration: 'none',
-              }}>
-                See How It Works
-              </a>
-            </div>
+              AI-POWERED DEMAND GENERATION
+            </span>
           </div>
 
-          {/* Right column — particle canvas shows through (transparent placeholder) */}
-          <div aria-hidden="true" style={{ minHeight: 420 }} />
+          {/* Headline */}
+          <h1 style={{
+            fontSize: 'clamp(2.4rem, 5.5vw, 4.6rem)',
+            fontWeight: 900, lineHeight: 1.02,
+            letterSpacing: '-0.025em',
+            margin: '0 0 24px', color: '#fff',
+          }}>
+            We make you the{' '}
+            <span className="ds-hero-emph">signal</span>
+            <span style={{ color: 'rgba(255,255,255,0.38)' }}>, not the noise.</span>
+          </h1>
+
+          {/* Body */}
+          <p style={{
+            fontSize: '1.2rem', color: 'rgba(255,255,255,0.72)',
+            maxWidth: 620, margin: '0 auto 36px', lineHeight: 1.55,
+          }}>
+            AI agents, AI websites, and automated marketing systems that put your business in front of the right customer at the right moment — 24/7, no humans required.
+          </p>
+
+          {/* CTAs */}
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <Link href="/contact" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '16px 30px', background: '#FF6B2B',
+              color: '#fff', fontWeight: 700, fontSize: '1rem',
+              borderRadius: 100, boxShadow: '0 12px 32px rgba(255,107,43,0.35)',
+              textDecoration: 'none', transition: 'transform 0.15s, box-shadow 0.15s',
+            }}>
+              Book a Free Call →
+            </Link>
+            <a href={BOOKING_URL} target="_blank" rel="noopener" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '15px 28px', border: '2px solid rgba(255,255,255,0.25)',
+              background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(10px)',
+              color: '#fff', fontWeight: 600, fontSize: '1rem',
+              borderRadius: 100, textDecoration: 'none',
+            }}>
+              See How It Works
+            </a>
+          </div>
         </div>
       </div>
 
