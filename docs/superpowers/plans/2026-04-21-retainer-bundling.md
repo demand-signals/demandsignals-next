@@ -272,25 +272,38 @@ BEGIN
   SELECT id INTO p_growth FROM subscription_plans WHERE slug = 'retainer-growth';
   SELECT id INTO p_full FROM subscription_plans WHERE slug = 'retainer-full';
 
-  -- Essential: hosting-maintenance, ongoing-maintenance, analytics-report
+  -- CATALOG-VERIFIED SLUGS (monthly/both pricing_type only):
+  --   hosting-php / hosting-node / hosting-enterprise  (monthly)
+  --   fractional-webmaster, analytics, site-admin      (monthly)
+  --   google-admin                                      (monthly — GBP management)
+  --   review-responders, review-admin                   (monthly)
+  --   social-automation                                  (monthly)
+  --   auto-blogging, automated-posts, content-repurposing (monthly)
+  --   geo-aeo-llm, local-seo                            (both — has monthly tier)
+  -- Default hosting slug for Essential is hosting-php; Hunter swaps to
+  -- hosting-node / hosting-enterprise per client via admin UI.
+
+  -- Essential: hosting (php default), fractional webmaster, analytics, site admin
   INSERT INTO subscription_plan_items (plan_id, service_id, quantity)
   SELECT p_essential, id, 1 FROM services_catalog
-  WHERE id IN ('hosting-maintenance', 'ongoing-maintenance', 'analytics-report')
+  WHERE id IN ('hosting-php', 'fractional-webmaster', 'analytics', 'site-admin')
   ON CONFLICT (plan_id, service_id) DO NOTHING;
 
-  -- Growth: Essential items + gbp-mgmt, review-response, seo-llm-monitor
+  -- Growth: Essential items + GBP admin, review responders & admin, SEO/LLM + local SEO monitoring
   INSERT INTO subscription_plan_items (plan_id, service_id, quantity)
   SELECT p_growth, id, 1 FROM services_catalog
-  WHERE id IN ('hosting-maintenance', 'ongoing-maintenance', 'analytics-report',
-               'gbp-mgmt', 'review-response', 'seo-llm-monitor')
+  WHERE id IN ('hosting-php', 'fractional-webmaster', 'analytics', 'site-admin',
+               'google-admin', 'review-responders', 'review-admin',
+               'geo-aeo-llm', 'local-seo')
   ON CONFLICT (plan_id, service_id) DO NOTHING;
 
-  -- Full: all 8 menu items
+  -- Full: Growth items + social automation, auto-blogging, automated posts, content repurposing
   INSERT INTO subscription_plan_items (plan_id, service_id, quantity)
   SELECT p_full, id, 1 FROM services_catalog
-  WHERE id IN ('hosting-maintenance', 'ongoing-maintenance', 'analytics-report',
-               'gbp-mgmt', 'review-response', 'seo-llm-monitor',
-               'social-mgmt', 'content-pub')
+  WHERE id IN ('hosting-php', 'fractional-webmaster', 'analytics', 'site-admin',
+               'google-admin', 'review-responders', 'review-admin',
+               'geo-aeo-llm', 'local-seo',
+               'social-automation', 'auto-blogging', 'automated-posts', 'content-repurposing')
   ON CONFLICT (plan_id, service_id) DO NOTHING;
 END $$;
 ```
@@ -332,8 +345,8 @@ import { computeMonthlyTotal } from '@/lib/retainer'
 describe('computeMonthlyTotal', () => {
   it('returns sum of plan default items when no custom overrides', () => {
     const planItems = [
-      { service_id: 'a', monthly_cents: 10000, quantity: 1 },
-      { service_id: 'b', monthly_cents: 5000, quantity: 1 },
+      { service_id: 'a', name: 'Service A', monthly_cents: 10000, quantity: 1 },
+      { service_id: 'b', name: 'Service B', monthly_cents: 5000, quantity: 1 },
     ]
     const customItems: Array<{ service_id: string; quantity: number; included: boolean }> = []
     expect(computeMonthlyTotal(planItems, customItems)).toBe(15000)
@@ -341,21 +354,21 @@ describe('computeMonthlyTotal', () => {
 
   it('excludes items when custom override sets included=false', () => {
     const planItems = [
-      { service_id: 'a', monthly_cents: 10000, quantity: 1 },
-      { service_id: 'b', monthly_cents: 5000, quantity: 1 },
+      { service_id: 'a', name: 'Service A', monthly_cents: 10000, quantity: 1 },
+      { service_id: 'b', name: 'Service B', monthly_cents: 5000, quantity: 1 },
     ]
     const customItems = [{ service_id: 'b', quantity: 1, included: false }]
     expect(computeMonthlyTotal(planItems, customItems)).toBe(10000)
   })
 
   it('adds items not in plan when custom override sets included=true', () => {
-    const planItems = [{ service_id: 'a', monthly_cents: 10000, quantity: 1 }]
+    const planItems = [{ service_id: 'a', name: 'Service A', monthly_cents: 10000, quantity: 1 }]
     const customItems = [{ service_id: 'c', quantity: 1, included: true, monthly_cents: 7500 }]
     expect(computeMonthlyTotal(planItems, customItems)).toBe(17500)
   })
 
   it('respects quantity in custom overrides', () => {
-    const planItems = [{ service_id: 'a', monthly_cents: 10000, quantity: 1 }]
+    const planItems = [{ service_id: 'a', name: 'Service A', monthly_cents: 10000, quantity: 1 }]
     const customItems = [{ service_id: 'a', quantity: 3, included: true }]
     expect(computeMonthlyTotal(planItems, customItems)).toBe(30000)
   })
@@ -375,6 +388,7 @@ import { createServiceRoleClient } from '@/lib/supabase-server'
 
 export interface PlanItem {
   service_id: string
+  name: string
   monthly_cents: number
   quantity: number
 }
@@ -446,7 +460,7 @@ export async function getRetainerPlans(): Promise<RetainerPlan[]> {
   const planIds = (plans ?? []).map((p) => p.id)
   const { data: items, error: iErr } = await sb
     .from('subscription_plan_items')
-    .select('plan_id, service_id, quantity, services_catalog(monthly_range_low_cents)')
+    .select('plan_id, service_id, quantity, services_catalog(name, monthly_range_low_cents)')
     .in('plan_id', planIds)
   if (iErr) throw iErr
 
@@ -460,6 +474,7 @@ export async function getRetainerPlans(): Promise<RetainerPlan[]> {
       .filter((i) => i.plan_id === p.id)
       .map((i) => ({
         service_id: i.service_id,
+        name: (i.services_catalog as any)?.name ?? i.service_id,
         monthly_cents: (i.services_catalog as any)?.monthly_range_low_cents ?? 0,
         quantity: i.quantity,
       })),
@@ -1090,7 +1105,7 @@ export default function RetainerCard({
           <li className="text-slate-500 italic">No ongoing services</li>
         ) : (
           plan.items.slice(0, 6).map((i) => (
-            <li key={i.service_id} className="text-slate-700">✓ {i.service_id}</li>
+            <li key={i.service_id} className="text-slate-700">✓ {i.name}</li>
           ))
         )}
       </ul>
