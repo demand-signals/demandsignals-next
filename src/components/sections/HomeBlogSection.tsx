@@ -146,27 +146,50 @@ export default function HomeBlogSection() {
         </div>
       </div>
 
-      {/* Scrolling posts */}
+      {/* Static 3×2 post grid (skips featured post index 0) */}
       <style>{`
-        .home-blog-marquee { display: flex; gap: 16px; width: max-content; animation: homeBlogScroll 60s linear infinite; }
-        .home-blog-marquee:hover { animation-play-state: paused; }
-        @keyframes homeBlogScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .home-blog-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 20px;
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 24px;
+        }
+        .home-blog-card {
+          background: #fff;
+          border: 1px solid #edf0f4;
+          border-radius: 12;
+          padding: 22px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          text-decoration: none;
+          transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+        }
+        .home-blog-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 28px rgba(16, 24, 40, 0.08);
+          border-color: rgba(104, 197, 173, 0.3);
+        }
+        @media (max-width: 900px) {
+          .home-blog-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 560px) {
+          .home-blog-grid { grid-template-columns: 1fr; }
+        }
       `}</style>
 
-      <div className="home-blog-marquee">
-        {[...posts, ...posts].map((post, i) => {
+      <div className="home-blog-grid">
+        {posts.slice(1, 7).map(post => {
           const catColor = CATEGORIES.find(c => c.key === post.category)?.color || '#6b7280'
           const catLabel = CATEGORIES.find(c => c.key === post.category)?.label || ''
           return (
             <Link
-              key={`${post.slug}-${i}`}
+              key={post.slug}
               href={`/blog/${post.slug}`}
-              style={{
-                background: '#fff', border: '1px solid #edf0f4', borderRadius: 12,
-                padding: '20px 18px', minWidth: 320, maxWidth: 320, flexShrink: 0,
-                display: 'flex', flexDirection: 'column', gap: 10, textDecoration: 'none',
-                transition: 'box-shadow 0.2s',
-              }}
+              className="home-blog-card"
+              style={{ borderRadius: 12 }}
             >
               <span style={{
                 display: 'inline-block', width: 'fit-content',
@@ -178,21 +201,23 @@ export default function HomeBlogSection() {
                 {catLabel}
               </span>
               <h4 style={{
-                color: 'var(--dark)', fontWeight: 700, fontSize: '0.92rem',
+                color: 'var(--dark)', fontWeight: 700, fontSize: '0.98rem',
                 lineHeight: 1.4, margin: 0,
                 display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
               }}>
                 {post.title}
               </h4>
               <p style={{
-                color: 'var(--slate)', fontSize: '0.82rem', lineHeight: 1.5, margin: 0,
-                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                color: 'var(--slate)', fontSize: '0.85rem', lineHeight: 1.55, margin: 0, flex: 1,
+                display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
               }}>
                 {post.excerpt}
               </p>
-              <div style={{ display: 'flex', gap: 12, fontSize: '0.7rem', color: '#9ca3af', marginTop: 'auto' }}>
+              <div style={{ display: 'flex', gap: 10, fontSize: '0.72rem', color: '#9ca3af', marginTop: 6, alignItems: 'center' }}>
                 <span>{post.author}</span>
-                <span>{new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                <span aria-hidden="true">·</span>
+                <span>{new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                <span aria-hidden="true">·</span>
                 <span>{post.readTime}</span>
               </div>
             </Link>
@@ -239,49 +264,96 @@ export default function HomeBlogSection() {
           </div>
 
           <style>{`
-            .home-changelog-marquee { display: flex; gap: 14px; width: max-content; animation: changelogScroll 40s linear infinite; }
-            .home-changelog-marquee:hover { animation-play-state: paused; }
-            @keyframes changelogScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+            .home-changelog-feed {
+              max-width: 880px;
+              margin: 0 auto;
+              padding: 0 24px;
+              display: flex;
+              flex-direction: column;
+              gap: 2px;
+              position: relative;
+            }
+            .home-changelog-entry {
+              display: grid;
+              grid-template-columns: 120px 1fr auto;
+              align-items: flex-start;
+              gap: 20px;
+              padding: 18px 20px;
+              background: transparent;
+              border-radius: 10px;
+              text-decoration: none;
+              position: relative;
+              border-bottom: 1px solid #f1ecd9;
+              transition: background 0.15s;
+            }
+            .home-changelog-entry:hover {
+              background: #fffbeb;
+            }
+            .home-changelog-entry:last-child { border-bottom: none; }
+            .home-changelog-date {
+              font-family: var(--font-mono, 'JetBrains Mono', ui-monospace, monospace);
+              font-size: 0.75rem;
+              color: #D97706;
+              font-weight: 700;
+              letter-spacing: 0.04em;
+              padding-top: 3px;
+              text-transform: uppercase;
+              white-space: nowrap;
+            }
+            .home-changelog-title {
+              color: var(--dark);
+              font-weight: 600;
+              font-size: 0.95rem;
+              line-height: 1.45;
+              margin: 0 0 4px;
+            }
+            .home-changelog-excerpt {
+              color: var(--slate);
+              font-size: 0.82rem;
+              line-height: 1.5;
+              margin: 0;
+              display: -webkit-box;
+              -webkit-line-clamp: 1;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
+            }
+            .home-changelog-read {
+              color: #D97706;
+              font-size: 0.78rem;
+              font-weight: 600;
+              padding-top: 3px;
+              white-space: nowrap;
+              opacity: 0.6;
+              transition: opacity 0.15s, transform 0.15s;
+            }
+            .home-changelog-entry:hover .home-changelog-read {
+              opacity: 1;
+              transform: translateX(3px);
+            }
+            @media (max-width: 640px) {
+              .home-changelog-entry {
+                grid-template-columns: 1fr;
+                gap: 6px;
+              }
+              .home-changelog-read { display: none; }
+            }
           `}</style>
 
-          <div className="home-changelog-marquee">
-            {[...changelogPosts, ...changelogPosts].map((post, i) => (
+          <div className="home-changelog-feed">
+            {changelogPosts.slice(0, 6).map(post => (
               <Link
-                key={`cl-${post.slug}-${i}`}
+                key={`cl-${post.slug}`}
                 href={`/blog/${post.slug}`}
-                style={{
-                  background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10,
-                  padding: '14px 16px', minWidth: 280, maxWidth: 280, flexShrink: 0,
-                  display: 'flex', flexDirection: 'column', gap: 6, textDecoration: 'none',
-                  transition: 'box-shadow 0.2s',
-                }}
+                className="home-changelog-entry"
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{
-                    background: '#F59E0B20', color: '#D97706',
-                    padding: '2px 8px', borderRadius: 100,
-                    fontSize: '0.62rem', fontWeight: 700,
-                    letterSpacing: '0.06em', textTransform: 'uppercase',
-                  }}>
-                    ChangeLog
-                  </span>
-                  <span style={{ fontSize: '0.68rem', color: '#9ca3af' }}>
-                    {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </span>
+                <span className="home-changelog-date">
+                  {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+                <div>
+                  <h4 className="home-changelog-title">{post.title}</h4>
+                  <p className="home-changelog-excerpt">{post.excerpt}</p>
                 </div>
-                <h4 style={{
-                  color: 'var(--dark)', fontWeight: 700, fontSize: '0.85rem',
-                  lineHeight: 1.35, margin: 0,
-                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                }}>
-                  {post.title}
-                </h4>
-                <p style={{
-                  color: 'var(--slate)', fontSize: '0.76rem', lineHeight: 1.45, margin: 0,
-                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                }}>
-                  {post.excerpt}
-                </p>
+                <span className="home-changelog-read">Read →</span>
               </Link>
             ))}
           </div>
