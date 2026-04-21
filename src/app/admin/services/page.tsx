@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Loader2, Plus, Edit2, Trash2, CheckCircle2 } from 'lucide-react'
+import { Loader2, Plus, Edit2, Trash2, CheckCircle2, Upload } from 'lucide-react'
+import { BulkImportModal } from '@/components/admin/services-bulk-import-modal'
 
 interface Service {
   id: string
@@ -39,6 +40,7 @@ export default function ServicesCatalogPage() {
   const [showInactive, setShowInactive] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const [bulkImporting, setBulkImporting] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -82,6 +84,13 @@ export default function ServicesCatalogPage() {
             />
             Show inactive
           </label>
+          <button
+            onClick={() => setBulkImporting(true)}
+            className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 rounded-lg px-4 py-2 text-sm font-semibold"
+          >
+            <Upload className="w-4 h-4" />
+            Bulk Import
+          </button>
           <button
             onClick={() => setCreating(true)}
             className="inline-flex items-center gap-2 bg-teal-500 text-white rounded-lg px-4 py-2 font-semibold hover:bg-teal-600"
@@ -197,6 +206,14 @@ export default function ServicesCatalogPage() {
           onClose={(refresh) => {
             setCreating(false)
             if (refresh) load()
+          }}
+        />
+      )}
+      {bulkImporting && (
+        <BulkImportModal
+          onClose={(imported) => {
+            setBulkImporting(false)
+            if (imported) load()
           }}
         />
       )}
