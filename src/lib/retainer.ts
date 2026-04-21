@@ -154,7 +154,12 @@ export async function activateRetainer(quoteId: string): Promise<{ subscription_
 
   const now = new Date()
   const periodEnd = new Date(now)
+  const originalDay = periodEnd.getDate()
   periodEnd.setMonth(periodEnd.getMonth() + 1)
+  // If day overflowed (e.g., Jan 31 → Mar 3), clamp to last day of target month.
+  if (periodEnd.getDate() !== originalDay) {
+    periodEnd.setDate(0)
+  }
 
   // Site-only tier: one-time build, no recurring subscription needed
   if (plan.tier === 'site_only') {
@@ -181,15 +186,21 @@ export async function activateRetainer(quoteId: string): Promise<{ subscription_
     .single()
   if (sErr) throw sErr
 
-  const { error: uErr } = await supabaseAdmin
-    .from('quote_sessions')
-    .update({
-      retainer_activated_at: now.toISOString(),
-      launched_at: now.toISOString(),
-      retainer_subscription_id: sub.id,
-    })
-    .eq('id', quoteId)
-  if (uErr) throw uErr
+  try {
+    const { error: uErr } = await supabaseAdmin
+      .from('quote_sessions')
+      .update({
+        retainer_activated_at: now.toISOString(),
+        launched_at: now.toISOString(),
+        retainer_subscription_id: sub.id,
+      })
+      .eq('id', quoteId)
+    if (uErr) throw uErr
+  } catch (updateErr) {
+    // Compensating rollback: subscription row would be orphaned.
+    await supabaseAdmin.from('subscriptions').delete().eq('id', sub.id)
+    throw updateErr
+  }
 
   return { subscription_id: sub.id }
 }
