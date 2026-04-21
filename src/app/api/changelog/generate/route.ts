@@ -1,285 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyCronSecret, getAnthropicClient, startAgentRun, completeAgentRun, failAgentRun } from '@/lib/agent-utils'
-import { fetchAllChangelogs } from '@/lib/changelog-sources'
+import { verifyCronSecret, startAgentRun, completeAgentRun, failAgentRun } from '@/lib/agent-utils'
+import { requireAdmin } from '@/lib/admin-auth'
+import { generateChangelogPost } from '@/lib/changelog-generator'
 
-// ── Generate daily changelog blog post ─────────────────────────────────────
-// Called by Vercel cron daily at 7am PT.
-// 1. Scrapes all AI platform changelogs via Jina Reader
-// 2. Sends to Claude to extract recent changes + write plain-English summary
-// 3. Commits MDX file to GitHub via API (triggers Vercel auto-deploy)
+// Called by Vercel cron daily at 7am PT (14:00 UTC).
+// Also callable by admins with ?date=YYYY-MM-DD to backfill missing days.
 
-const GITHUB_REPO = 'demand-signals/demandsignals-next'
-const GITHUB_BRANCH = 'master'
-
-async function commitToGitHub(filePath: string, content: string, message: string): Promise<boolean> {
-  const token = process.env.GITHUB_DEMANDSIGNALS_NEXT
-  if (!token) throw new Error('GITHUB_DEMANDSIGNALS_NEXT not configured')
-
-  const apiBase = `https://api.github.com/repos/${GITHUB_REPO}/contents/${filePath}`
-  const headers = {
-    Authorization: `Bearer ${token}`,
-    Accept: 'application/vnd.github.v3+json',
-    'Content-Type': 'application/json',
-  }
-
-  // Check if file already exists (need SHA for update)
-  let sha: string | undefined
-  try {
-    const existing = await fetch(`${apiBase}?ref=${GITHUB_BRANCH}`, { headers })
-    if (existing.ok) {
-      const data = await existing.json()
-      sha = data.sha
-    }
-  } catch {
-    // File doesn't exist yet — that's fine
-  }
-
-  // Create or update the file
-  const body: Record<string, string> = {
-    message,
-    content: Buffer.from(content).toString('base64'),
-    branch: GITHUB_BRANCH,
-  }
-  if (sha) body.sha = sha
-
-  const res = await fetch(apiBase, {
-    method: 'PUT',
-    headers,
-    body: JSON.stringify(body),
-  })
-
-  if (!res.ok) {
-    const error = await res.text()
-    throw new Error(`GitHub API error (${res.status}): ${error}`)
-  }
-
-  return true
-}
-
-export const maxDuration = 120 // 2 minutes for Jina + Claude + GitHub
+export const maxDuration = 300 // 5 minutes — web_search backfill can be slow
 
 export async function GET(request: NextRequest) {
+  // Auth: cron secret OR admin session
   const authHeader = request.headers.get('authorization')
-  if (!verifyCronSecret(authHeader)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  let isAuthed = verifyCronSecret(authHeader)
+  if (!isAuthed) {
+    const adminCheck = await requireAdmin(request)
+    if (!('error' in adminCheck)) isAuthed = true
   }
+  if (!isAuthed) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const runId = await startAgentRun('changelog', {})
+  // Parse optional ?date=YYYY-MM-DD (admin backfill) and ?force=1 (force backfill mode)
+  const url = new URL(request.url)
+  const dateParam = url.searchParams.get('date') || undefined
+  const forceBackfill = url.searchParams.get('force') === '1'
+
+  const runId = await startAgentRun('changelog', { date: dateParam || 'yesterday', forceBackfill })
 
   try {
-    // 1. Fetch all changelogs via Jina Reader
-    console.log('[changelog] Fetching changelogs via Jina Reader...')
-    const changelogs = await fetchAllChangelogs()
+    const result = await generateChangelogPost({ date: dateParam, forceBackfill })
 
-    const successCount = changelogs.filter(c => !c.error).length
-    const failedSources = changelogs.filter(c => c.error).map(c => `${c.source.name}: ${c.error}`)
-
-    if (successCount === 0) {
-      throw new Error(`All changelog fetches failed: ${failedSources.join('; ')}`)
-    }
-
-    console.log(`[changelog] Fetched ${successCount}/${changelogs.length} sources`)
-
-    // 2. Build prompt for Claude
-    // The post covers YESTERDAY's changes (cron runs in the morning, post is about prior day)
-    const today = new Date()
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
-    const dateStr = yesterday.toISOString().split('T')[0]
-    const displayDate = yesterday.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
-    const todayDisplay = today.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
-
-    const sourceContent = changelogs
-      .filter(c => !c.error)
-      .map(c => {
-        const truncated = c.content.length > 10000
-          ? c.content.slice(0, 10000) + '\n\n[... truncated]'
-          : c.content
-        return `## ${c.source.name} Changelog\nSource: ${c.source.url}\n\n${truncated}`
-      })
-      .join('\n\n---\n\n')
-
-    const claude = getAnthropicClient()
-
-    const response = await claude.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
-      messages: [
-        {
-          role: 'user',
-          content: (() => {
-    const monthDay = yesterday.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
-    return `You are writing "The AI ChangeLog" — a daily digest that makes AI platform updates understandable for regular business owners. Think "AI for Dummies" — no jargon, no buzzwords. Explain things the way you'd explain them to a smart friend who doesn't work in tech.
-
-This post covers changes from YESTERDAY: ${displayDate} (${dateStr})
-Today (when this post goes live): ${todayDisplay}
-
-Below are changelog entries from each platform. CAREFULLY scan ALL sources for changes dated ${displayDate}, "${monthDay}, 2026", "${monthDay}", or "${dateStr}". Different platforms use different date formats.
-
-IMPORTANT INSTRUCTIONS:
-1. Search EVERY source below for entries matching yesterday's date. Dates in the Google Gemini changelog use "Month Day, Year" format (e.g., "${monthDay}, 2026"). OpenAI uses similar formats. Claude Code releases have explicit dates.
-2. If a platform had changes yesterday, ALWAYS include them — do not skip any platform that shipped updates.
-3. Start your response directly with the first ## heading. Do NOT add any preamble, introduction, or commentary before the first platform heading. No "Looking at yesterday's changes..." or "Here's what happened..." — jump straight to the content.
-4. If NOTHING changed across ALL platforms, write ONLY a short "Quiet day across the board" message.
-
-Write the blog post body in markdown (NOT MDX — no imports, no JSX).
-
-Do NOT include a TL;DR section.
-
-## Format
-
-Group changes by platform. Each platform gets an H2 heading with a brief subtitle. Under each platform, list individual changes as emoji cards in this exact format:
-
-\`\`\`
-## Claude Code
-What's new from Anthropic's AI coding assistant
-
-EMOJI
-**Category · Feature Area**
-**Conversational headline describing the change**
-2-3 sentence explanation in plain English. Talk like you're texting a friend. Explain what it actually means for the person reading, not just what changed technically.
-\`\`\`
-
-### Categories and their emojis:
-- New features: 🧠 ⚡ 🛠️ 🤖 🎨 📊 🔑 (pick one that fits the feature)
-- Improved: 🔄 📋 ⚠️ 💾 (pick one that fits)
-- Fixed / Bug fixes: 🔧
-- Deprecation / Heads up: 🗓️ ⚠️
-
-### Category labels:
-- "New · [Area]" for new features (e.g., "New · Memory saver", "New · Speed", "New · Commands")
-- "Improved · [Area]" for improvements (e.g., "Improved · Navigation", "Improved · Warnings")
-- "Fixed · Bugs" for bug fixes
-- "Heads up · Deprecation" for deprecations
-
-### Rules:
-- Each change gets its own emoji card — don't combine unrelated changes
-- Group small bug fixes into one "Fixed · Bugs" card with highlights separated by " · "
-- Headlines should be conversational: "Claude now remembers what you were doing when you come back" not "Added session recap feature"
-- Explanations should answer "so what?" — why should I care about this?
-- If a change is developer-only, mention it naturally: "This one's for developers building on the API"
-- If nothing significant changed for a platform, skip it entirely
-- If NOTHING changed across ALL platforms, write a short "Quiet day across the board" message
-- Avoid: "leveraging", "capabilities", "paradigm", "ecosystem", "scalable", "cutting-edge"
-- Use: "works better", "costs less", "new feature", "fixed a bug", "now you can..."
-
-Do NOT include frontmatter — I'll add that separately.
-Do NOT wrap the output in code fences.
-Do NOT add any preamble text before the first ## heading.
-
----
-
-${sourceContent}`
-  })(),
-        },
-      ],
-    })
-
-    const blogContent = response.content[0].type === 'text' ? response.content[0].text : ''
-
-    if (!blogContent || blogContent.length < 100) {
-      throw new Error('Claude returned insufficient content')
-    }
-
-    // 3. Build the MDX file
-    const slug = `ai-changelog-${dateStr}`
-
-    // Extract first bold headline as excerpt + title
-    const headlineMatch = blogContent.match(/\*\*[^*]*·[^*]*\*\*\n\*\*([^*]+)\*\*/)
-    const excerpt = headlineMatch
-      ? headlineMatch[1].trim().slice(0, 200)
-      : `Daily AI platform changelog digest for ${displayDate}.`
-    const title = headlineMatch
-      ? headlineMatch[1].trim().slice(0, 80)
-      : 'Quiet Day Across the AI Landscape'
-
-    // Format date for infographic headline
-    const infographicDate = yesterday.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-
-    // Count platforms and change categories
-    const platformSections = blogContent.match(/^## .+/gm) || []
-    const platformCount = platformSections.length
-    const newItems = (blogContent.match(/\*\*New\s*·/g) || []).length
-    const improvedItems = (blogContent.match(/\*\*Improved\s*·/g) || []).length
-    const fixedItems = (blogContent.match(/\*\*Fixed\s*·/g) || []).length
-    const killedItems = (blogContent.match(/\*\*(Heads up|Killed|Deprecated)\s*·/g) || []).length
-    const totalChanges = newItems + improvedItems + fixedItems + killedItems
-
-    const frontmatter = `---
-title: "${title.replace(/"/g, '\\"')}"
-date: "${dateStr}"
-author: "AI ChangeLog"
-excerpt: "${excerpt.replace(/"/g, '\\"')}"
-tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
-readTime: "3 min read"
-category: "ai-changelog"
-serviceCategories: ["ai-services"]
-featured: false
-infographic:
-  headline: "Changelog Update for ${infographicDate}"
-  type: "stats"
-  stats:
-    - { label: "Platforms Updated", value: "${platformCount} of ${changelogs.length}" }
-    - { label: "New", value: "${newItems}" }
-    - { label: "Improved", value: "${improvedItems}" }
-    - { label: "Fixed", value: "${fixedItems}" }
-    - { label: "Killed", value: "${killedItems}" }
-    - { label: "Total Changes", value: "${totalChanges}" }
----`
-
-    const mdxContent = `${frontmatter}\n\n${blogContent}\n\n---\n\n*The AI ChangeLog is generated daily by Demand Signals. We scrape official changelogs, run them through Claude, and publish a plain-English summary so you don't have to read the docs. [Subscribe to our blog](/blog) for daily updates.*\n`
-
-    // 4. Commit to GitHub (triggers Vercel auto-deploy)
-    const filePath = `src/content/blog/${slug}.mdx`
-    console.log(`[changelog] Committing ${filePath} to GitHub...`)
-
-    await commitToGitHub(
-      filePath,
-      mdxContent,
-      `blog: The AI ChangeLog — ${dateStr}\n\nAuto-generated daily AI platform changelog digest.\nPlatforms: ${successCount}/${changelogs.length} sources checked.`
-    )
-
-    console.log(`[changelog] Committed ${slug}.mdx — Vercel deploy triggered`)
-
-    // 5. Log success
     if (runId) {
       await completeAgentRun(runId, {
-        slug,
-        sourcesChecked: changelogs.length,
-        sourcesSucceeded: successCount,
-        failedSources,
-        contentLength: blogContent.length,
-        platformsWithUpdates: platformCount,
+        slug: result.slug,
+        sourcesChecked: result.sourcesChecked,
+        sourcesSucceeded: result.sourcesSucceeded,
+        failedSources: result.failedSources,
+        contentLength: result.contentLength,
+        platformsWithUpdates: result.platformsWithUpdates,
+        mode: result.mode,
       }, 0, 0)
     }
 
     return NextResponse.json({
       success: true,
-      slug,
-      sourcesChecked: changelogs.length,
-      sourcesSucceeded: successCount,
-      failedSources,
-      platformsWithUpdates: platformCount,
-      message: `Committed ${slug}.mdx to GitHub — Vercel auto-deploy triggered`,
+      ...result,
+      message: `Committed ${result.slug}.mdx (${result.mode} mode) — Vercel auto-deploy triggered`,
     })
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err)
     console.error('[changelog] Failed:', errorMsg)
-
-    if (runId) {
-      await failAgentRun(runId, errorMsg)
-    }
-
+    if (runId) await failAgentRun(runId, errorMsg)
     return NextResponse.json({ error: errorMsg }, { status: 500 })
   }
 }
