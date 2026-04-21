@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Phone, Send, Loader2, Lock, Unlock, Sparkles, X } from 'lucide-react'
+import RetainerStep from '@/components/quote/RetainerStep'
 
 // ============================================================
 // Types
@@ -164,6 +165,7 @@ export default function QuotePageClient() {
   // Budget cap hit — disable input, stop echoing canned reply, show escalation card.
   const [budgetExceeded, setBudgetExceeded] = useState(false)
   const [paymentMode, setPaymentMode] = useState<'upfront' | 'monthly' | 'milestone'>('upfront')
+  const [retainerComplete, setRetainerComplete] = useState(false)
 
   // ── Bootstrap: create session on mount ──────────────
   useEffect(() => {
@@ -458,6 +460,9 @@ export default function QuotePageClient() {
               onEmailPlanOpen={() => setShowEmailPlan(true)}
               nudge={unlockNudge}
               softSaveOffered={softSaveOffered}
+              sessionToken={sessionToken}
+              retainerComplete={retainerComplete}
+              onRetainerComplete={() => setRetainerComplete(true)}
             />
           </div>
         </div>
@@ -511,6 +516,9 @@ export default function QuotePageClient() {
                 }}
                 nudge={unlockNudge}
                 softSaveOffered={softSaveOffered}
+                sessionToken={sessionToken}
+                retainerComplete={retainerComplete}
+                onRetainerComplete={() => setRetainerComplete(true)}
               />
             </div>
           </div>
@@ -680,6 +688,9 @@ function Configurator({
   onEmailPlanOpen,
   nudge,
   softSaveOffered,
+  sessionToken,
+  retainerComplete,
+  onRetainerComplete,
 }: {
   session: SessionPublic | null
   prices: PricesPayload | null
@@ -689,6 +700,9 @@ function Configurator({
   onEmailPlanOpen: () => void
   nudge: boolean
   softSaveOffered: boolean
+  sessionToken: string
+  retainerComplete: boolean
+  onRetainerComplete: () => void
 }) {
   const items = prices?.items ?? []
   const verified = session?.phone_verified ?? false
@@ -933,23 +947,33 @@ function Configurator({
             Every project starts with a free research report. First milestone satisfaction-guaranteed.
           </div>
 
-          {/* CTAs */}
-          <div className="grid grid-cols-2 gap-2 pt-2">
-            <a
-              href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true"
-              target="_blank"
-              rel="noopener"
-              className="col-span-2 bg-[var(--teal)] text-white rounded-lg py-2.5 text-sm font-semibold text-center"
-            >
-              Book a Strategy Call
-            </a>
-            <button
-              onClick={() => alert('Research CTA coming soon')}
-              className="col-span-2 border border-slate-200 text-slate-700 rounded-lg py-2 text-sm font-medium"
-            >
-              Start With a Free Research Report
-            </button>
-          </div>
+          {/* Retainer selection — shown after scope is priced, before terminal CTAs */}
+          {!retainerComplete && (
+            <RetainerStep
+              sessionToken={sessionToken}
+              onContinue={onRetainerComplete}
+            />
+          )}
+
+          {/* CTAs — shown after retainer step is complete */}
+          {retainerComplete && (
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <a
+                href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true"
+                target="_blank"
+                rel="noopener"
+                className="col-span-2 bg-[var(--teal)] text-white rounded-lg py-2.5 text-sm font-semibold text-center"
+              >
+                Book a Strategy Call
+              </a>
+              <button
+                onClick={() => alert('Research CTA coming soon')}
+                className="col-span-2 border border-slate-200 text-slate-700 rounded-lg py-2 text-sm font-medium"
+              >
+                Start With a Free Research Report
+              </button>
+            </div>
+          )}
         </div>
       )}
 
