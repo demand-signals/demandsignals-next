@@ -109,8 +109,13 @@ export default function SowDetailPage({
   const publicUrl = `https://demandsignals.co/sow/${sow.sow_number}/${sow.public_uuid}`
   const p = sow.prospect
 
+  // Null-safe arrays and pricing
+  const deliverablesList = sow.deliverables ?? []
+  const timelineList = sow.timeline ?? []
+  const pricing = sow.pricing ?? { total_cents: 0, deposit_cents: 0, deposit_pct: 0 }
+
   // Sum priced deliverables
-  const deliverablesTotalCents = sow.deliverables.reduce((s, d) => s + (d.line_total_cents ?? 0), 0)
+  const deliverablesTotalCents = deliverablesList.reduce((s, d) => s + (d.line_total_cents ?? 0), 0)
 
   return (
     <div className="p-6 space-y-6 max-w-4xl">
@@ -255,10 +260,10 @@ export default function SowDetailPage({
             {/* Deliverables */}
             <div>
               <div className="text-xs uppercase text-slate-500 mb-1">
-                Deliverables ({sow.deliverables.length})
+                Deliverables ({deliverablesList.length})
               </div>
               <ul className="space-y-2">
-                {sow.deliverables.map((d, i) => {
+                {deliverablesList.map((d, i) => {
                   const hasPricing = (d.unit_price_cents ?? 0) > 0
                   const qty = d.hours ?? d.quantity ?? 1
                   const label = d.hours != null ? `${d.hours} hrs` : `${d.quantity ?? 1}×`
@@ -293,7 +298,7 @@ export default function SowDetailPage({
             <div>
               <div className="text-xs uppercase text-slate-500 mb-1">Timeline</div>
               <ul className="space-y-1">
-                {sow.timeline.map((ph, i) => (
+                {timelineList.map((ph, i) => (
                   <li key={i}>
                     <b>{ph.name}</b> ({ph.duration_weeks}w) — {ph.description}
                   </li>
@@ -305,8 +310,8 @@ export default function SowDetailPage({
             <div>
               <div className="text-xs uppercase text-slate-500 mb-1">Pricing</div>
               <div>
-                Total: {formatCents(sow.pricing.total_cents)} · Deposit ({sow.pricing.deposit_pct}%):{' '}
-                {formatCents(sow.pricing.deposit_cents)}
+                Total: {formatCents(pricing.total_cents)} · Deposit ({pricing.deposit_pct}%):{' '}
+                {formatCents(pricing.deposit_cents)}
               </div>
             </div>
 

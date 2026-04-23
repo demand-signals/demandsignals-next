@@ -230,7 +230,8 @@ export default function InvoiceDetailPage({
     )
   if (error || !detail) return <div className="p-6 text-red-600">Error: {error ?? 'Not found'}</div>
 
-  const { invoice, line_items } = detail
+  const { invoice } = detail
+  const line_items = detail.line_items ?? []
   const s = invoice.status
 
   return (
