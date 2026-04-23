@@ -27,6 +27,7 @@ interface LineItemDraft {
   description: string
   quantity: number
   unit_price_cents: number
+  unit_price_input: string  // raw string for the price input; committed to cents on blur
   discount_pct: number
   discount_label: string
 }
@@ -36,6 +37,7 @@ const EMPTY_LINE: LineItemDraft = {
   description: '',
   quantity: 1,
   unit_price_cents: 0,
+  unit_price_input: '0.00',
   discount_pct: 0,
   discount_label: '',
 }
@@ -46,6 +48,7 @@ function fromCatalogItem(item: CatalogPickerItem): LineItemDraft {
     description: item.name,
     quantity: 1,
     unit_price_cents: item.display_price_cents,
+    unit_price_input: (item.display_price_cents / 100).toFixed(2),
     discount_pct: 0,
     discount_label: '',
   }
@@ -137,6 +140,7 @@ function NewInvoiceForm() {
         description: 'New Client Appreciation — included with your engagement',
         quantity: 1,
         unit_price_cents: -subtotal,
+        unit_price_input: (-subtotal / 100).toFixed(2),
         discount_pct: 0,
         discount_label: 'Complimentary',
       },
@@ -423,12 +427,17 @@ function NewInvoiceForm() {
                     <td>
                       <input
                         type="number"
-                        value={l.unit_price_cents / 100}
+                        value={l.unit_price_input}
                         onChange={(e) =>
-                          updateLine(idx, {
-                            unit_price_cents: Math.round(parseFloat(e.target.value || '0') * 100),
-                          })
+                          updateLine(idx, { unit_price_input: e.target.value })
                         }
+                        onBlur={(e) => {
+                          const cents = Math.round(parseFloat(e.target.value || '0') * 100)
+                          updateLine(idx, {
+                            unit_price_cents: cents,
+                            unit_price_input: (cents / 100).toFixed(2),
+                          })
+                        }}
                         className="w-full border border-slate-200 rounded px-2 py-1 text-right"
                         step="0.01"
                       />

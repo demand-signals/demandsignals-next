@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, Loader2, Sparkles } from 'lucide-react'
+import { Plus, Trash2, Loader2, Sparkles, ChevronUp, ChevronDown } from 'lucide-react'
 import { CatalogPicker, type CatalogPickerItem } from '@/components/admin/catalog-picker'
 import { formatCents } from '@/lib/format'
 import type { Cadence } from '@/lib/invoice-types'
@@ -27,6 +27,7 @@ interface PhaseDeliverable {
   quantity: number
   hours: number | null
   unit_price_cents: number
+  unit_price_input: string  // raw string for the price input; committed to cents on blur
   start_trigger?: StartTrigger
 }
 
@@ -160,6 +161,16 @@ export default function NewSowPage() {
     setPhases((prev) => prev.filter((p) => p.id !== phaseId))
   }
 
+  function movePhase(idx: number, dir: -1 | 1) {
+    setPhases((prev) => {
+      const next = [...prev]
+      const target = idx + dir
+      if (target < 0 || target >= next.length) return prev
+      ;[next[idx], next[target]] = [next[target], next[idx]]
+      return next
+    })
+  }
+
   // ── Deliverable helpers ───────────────────────────────────────────
 
   function addDeliverable(phaseId: string) {
@@ -179,6 +190,7 @@ export default function NewSowPage() {
                   quantity: 1,
                   hours: null,
                   unit_price_cents: 0,
+                  unit_price_input: '0.00',
                 },
               ],
             }
@@ -204,6 +216,7 @@ export default function NewSowPage() {
                   quantity: 1,
                   hours: null,
                   unit_price_cents: unitPrice,
+                  unit_price_input: (unitPrice / 100).toFixed(2),
                 },
               ],
             }
@@ -234,6 +247,19 @@ export default function NewSowPage() {
           ? { ...p, deliverables: p.deliverables.filter((d) => d.id !== delivId) }
           : p,
       ),
+    )
+  }
+
+  function moveDeliverable(phaseId: string, idx: number, dir: -1 | 1) {
+    setPhases((prev) =>
+      prev.map((p) => {
+        if (p.id !== phaseId) return p
+        const dels = [...p.deliverables]
+        const target = idx + dir
+        if (target < 0 || target >= dels.length) return p
+        ;[dels[idx], dels[target]] = [dels[target], dels[idx]]
+        return { ...p, deliverables: dels }
+      }),
     )
   }
 
@@ -390,14 +416,32 @@ export default function NewSowPage() {
                 placeholder="Phase name"
                 className="flex-1 border-0 bg-transparent font-semibold focus:outline-none"
               />
-              {phases.length > 1 && (
+              <div className="flex items-center gap-1 shrink-0">
                 <button
-                  onClick={() => removePhase(phase.id)}
-                  className="text-slate-300 hover:text-red-500 shrink-0"
+                  onClick={() => movePhase(phaseIdx, -1)}
+                  disabled={phaseIdx === 0}
+                  className="text-slate-400 hover:text-slate-600 disabled:opacity-25"
+                  title="Move phase up"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <ChevronUp className="w-4 h-4" />
                 </button>
-              )}
+                <button
+                  onClick={() => movePhase(phaseIdx, 1)}
+                  disabled={phaseIdx === phases.length - 1}
+                  className="text-slate-400 hover:text-slate-600 disabled:opacity-25"
+                  title="Move phase down"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                {phases.length > 1 && (
+                  <button
+                    onClick={() => removePhase(phase.id)}
+                    className="text-slate-300 hover:text-red-500 ml-1"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="p-4 space-y-3">
@@ -409,7 +453,7 @@ export default function NewSowPage() {
               />
 
               {/* Deliverables */}
-              {phase.deliverables.map((d) => {
+              {phase.deliverables.map((d, delivIdx) => {
                 const lineCents = computeLineCents(d)
                 const suffix = CADENCE_SUFFIX[d.cadence]
                 return (
@@ -431,12 +475,30 @@ export default function NewSowPage() {
                         placeholder="Item name"
                         className="flex-1 border border-slate-200 rounded px-2 py-1 font-medium"
                       />
-                      <button
-                        onClick={() => removeDeliverable(phase.id, d.id)}
-                        className="text-slate-400 hover:text-red-500 shrink-0"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <button
+                          onClick={() => moveDeliverable(phase.id, delivIdx, -1)}
+                          disabled={delivIdx === 0}
+                          className="text-slate-400 hover:text-slate-600 disabled:opacity-25"
+                          title="Move up"
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => moveDeliverable(phase.id, delivIdx, 1)}
+                          disabled={delivIdx === phase.deliverables.length - 1}
+                          className="text-slate-400 hover:text-slate-600 disabled:opacity-25"
+                          title="Move down"
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => removeDeliverable(phase.id, d.id)}
+                          className="text-slate-400 hover:text-red-500"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                     <textarea
                       value={d.description}
@@ -499,14 +561,19 @@ export default function NewSowPage() {
                           type="number"
                           step="0.01"
                           min="0"
-                          value={(d.unit_price_cents / 100).toFixed(2)}
+                          value={d.unit_price_input}
                           onChange={(e) =>
                             updateDeliverable(phase.id, d.id, {
-                              unit_price_cents: Math.round(
-                                parseFloat(e.target.value || '0') * 100,
-                              ),
+                              unit_price_input: e.target.value,
                             })
                           }
+                          onBlur={(e) => {
+                            const cents = Math.round(parseFloat(e.target.value || '0') * 100)
+                            updateDeliverable(phase.id, d.id, {
+                              unit_price_cents: cents,
+                              unit_price_input: (cents / 100).toFixed(2),
+                            })
+                          }}
                           className="w-full border border-slate-200 rounded px-2 py-1 mt-0.5"
                         />
                       </label>

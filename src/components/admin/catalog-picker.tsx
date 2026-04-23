@@ -11,6 +11,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { Search, Plus, CheckCircle2, Loader2 } from 'lucide-react'
 
+function matchesQuery(item: CatalogPickerItem, q: string): boolean {
+  if (!q) return true
+  const lower = q.toLowerCase()
+  return (
+    item.name.toLowerCase().includes(lower) ||
+    (item.description ?? '').toLowerCase().includes(lower) ||
+    (item.benefit ?? '').toLowerCase().includes(lower) ||
+    item.category.toLowerCase().includes(lower)
+  )
+}
+
 export interface CatalogPickerItem {
   id: string
   name: string
@@ -49,33 +60,26 @@ export function CatalogPicker({
   compact?: boolean
 }) {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<CatalogPickerItem[]>([])
+  const [allItems, setAllItems] = useState<CatalogPickerItem[]>([])
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const didLoad = useRef(false)
 
+  // Filtered list derived from allItems — no per-keystroke fetches needed
+  const results = allItems.filter((item) => matchesQuery(item, query)).slice(0, 20)
+
+  // Load the full catalog once on first open
   useEffect(() => {
-    if (searchTimer.current) clearTimeout(searchTimer.current)
-    searchTimer.current = setTimeout(() => {
-      if (query.length === 0 && !open) {
-        setResults([])
-        return
-      }
-      setLoading(true)
-      const sp = new URLSearchParams()
-      sp.set('active', 'true')
-      if (query) sp.set('search', query)
-      fetch(`/api/admin/services-catalog?${sp}`)
-        .then((r) => r.json())
-        .then((d) => setResults(d.services ?? []))
-        .finally(() => setLoading(false))
-    }, 150)
-    return () => {
-      if (searchTimer.current) clearTimeout(searchTimer.current)
-    }
-  }, [query, open])
+    if (!open || didLoad.current) return
+    didLoad.current = true
+    setLoading(true)
+    fetch('/api/admin/services-catalog?active=true&limit=200')
+      .then((r) => r.json())
+      .then((d) => setAllItems(d.services ?? []))
+      .finally(() => setLoading(false))
+  }, [open])
 
   // Close on click-outside.
   useEffect(() => {
@@ -116,7 +120,7 @@ export function CatalogPicker({
             </div>
           ) : results.length === 0 ? (
             <div className="p-4 text-sm text-slate-500 text-center">
-              {query ? 'No matching services' : 'Start typing to search…'}
+              {query ? 'No matching services' : 'Loading catalog…'}
             </div>
           ) : (
             <>
@@ -180,9 +184,10 @@ export function CatalogPicker({
           onClose={(newService) => {
             setShowQuickAdd(false)
             if (newService) {
+              // Add to allItems so it appears in future searches
+              setAllItems((prev) => [...prev, newService])
               onPick(newService)
               setQuery('')
-              setResults([])
             }
           }}
         />

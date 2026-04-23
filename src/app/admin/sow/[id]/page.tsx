@@ -15,6 +15,7 @@ import {
   Send,
   Sparkles,
   ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import { formatCents } from '@/lib/format'
 import { CatalogPicker, type CatalogPickerItem } from '@/components/admin/catalog-picker'
@@ -38,6 +39,7 @@ interface PhaseDeliverable {
   quantity: number
   hours: number | null
   unit_price_cents: number
+  unit_price_input: string  // raw string for the price input; committed to cents on blur
   start_trigger?: StartTrigger
 }
 
@@ -279,7 +281,14 @@ export default function SowDetailPage({
     // If phases array is populated, use it; otherwise migrate legacy deliverables
     // into a single "Phase 1" so the UI is always phase-centric.
     if (s.phases && s.phases.length > 0) {
-      setPhases(s.phases)
+      // Seed unit_price_input from unit_price_cents for each deliverable
+      setPhases(s.phases.map((p) => ({
+        ...p,
+        deliverables: p.deliverables.map((d) => ({
+          ...d,
+          unit_price_input: d.unit_price_input ?? ((d.unit_price_cents ?? 0) / 100).toFixed(2),
+        })),
+      })))
     } else {
       // Migrate legacy flat deliverables into a single default phase.
       const migrated: SowPhase = {
@@ -295,6 +304,7 @@ export default function SowDetailPage({
           quantity: d.quantity ?? 1,
           hours: d.hours ?? null,
           unit_price_cents: d.unit_price_cents ?? 0,
+          unit_price_input: ((d.unit_price_cents ?? 0) / 100).toFixed(2),
         })),
       }
       setPhases([migrated])
@@ -458,6 +468,17 @@ export default function SowDetailPage({
     markDirty()
   }
 
+  function movePhase(idx: number, dir: -1 | 1) {
+    setPhases((prev) => {
+      const next = [...prev]
+      const target = idx + dir
+      if (target < 0 || target >= next.length) return prev
+      ;[next[idx], next[target]] = [next[target], next[idx]]
+      return next
+    })
+    markDirty()
+  }
+
   // ── Deliverable helpers ───────────────────────────────────────────
 
   function addDeliverable(phaseId: string) {
@@ -477,6 +498,7 @@ export default function SowDetailPage({
                   quantity: 1,
                   hours: null,
                   unit_price_cents: 0,
+                  unit_price_input: '0.00',
                 },
               ],
             }
@@ -503,6 +525,7 @@ export default function SowDetailPage({
                   quantity: 1,
                   hours: null,
                   unit_price_cents: unitPrice,
+                  unit_price_input: (unitPrice / 100).toFixed(2),
                 },
               ],
             }
@@ -535,6 +558,20 @@ export default function SowDetailPage({
           ? { ...p, deliverables: p.deliverables.filter((d) => d.id !== delivId) }
           : p,
       ),
+    )
+    markDirty()
+  }
+
+  function moveDeliverable(phaseId: string, idx: number, dir: -1 | 1) {
+    setPhases((prev) =>
+      prev.map((p) => {
+        if (p.id !== phaseId) return p
+        const dels = [...p.deliverables]
+        const target = idx + dir
+        if (target < 0 || target >= dels.length) return p
+        ;[dels[idx], dels[target]] = [dels[target], dels[idx]]
+        return { ...p, deliverables: dels }
+      }),
     )
     markDirty()
   }
@@ -767,13 +804,31 @@ export default function SowDetailPage({
                       placeholder="Phase name"
                       className="font-semibold flex-1"
                     />
-                    <button
-                      onClick={() => removePhase(phase.id)}
-                      className="text-slate-300 hover:text-red-500 shrink-0"
-                      title="Remove phase"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => movePhase(phaseIdx, -1)}
+                        disabled={phaseIdx === 0}
+                        className="text-slate-400 hover:text-slate-600 disabled:opacity-25"
+                        title="Move phase up"
+                      >
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => movePhase(phaseIdx, 1)}
+                        disabled={phaseIdx === phases.length - 1}
+                        className="text-slate-400 hover:text-slate-600 disabled:opacity-25"
+                        title="Move phase down"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => removePhase(phase.id)}
+                        className="text-slate-300 hover:text-red-500 ml-1"
+                        title="Remove phase"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="px-4 pt-2 pb-1">
@@ -825,7 +880,7 @@ export default function SowDetailPage({
                           </tr>
                         </thead>
                         <tbody>
-                          {phase.deliverables.map((d) => {
+                          {phase.deliverables.map((d, delivIdx) => {
                             const lineCents = computeLineCents(d)
                             const suffix = CADENCE_SUFFIX[d.cadence]
                             return (
@@ -985,12 +1040,19 @@ export default function SowDetailPage({
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    value={centsToInput(d.unit_price_cents)}
+                                    value={d.unit_price_input}
                                     onChange={(e) =>
                                       updateDeliverable(phase.id, d.id, {
-                                        unit_price_cents: inputToCents(e.target.value),
+                                        unit_price_input: e.target.value,
                                       })
                                     }
+                                    onBlur={(e) => {
+                                      const cents = inputToCents(e.target.value)
+                                      updateDeliverable(phase.id, d.id, {
+                                        unit_price_cents: cents,
+                                        unit_price_input: centsToInput(cents),
+                                      })
+                                    }}
                                     className="w-full border border-slate-200 rounded px-1.5 py-1 text-right text-sm"
                                   />
                                 </td>
@@ -1009,15 +1071,33 @@ export default function SowDetailPage({
                                   )}
                                 </td>
 
-                                {/* Delete */}
+                                {/* Reorder + Delete */}
                                 <td className="p-2 align-top">
-                                  <button
-                                    onClick={() => removeDeliverable(phase.id, d.id)}
-                                    className="text-slate-300 hover:text-red-500"
-                                    title="Remove"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
+                                  <div className="flex flex-col items-center gap-0.5">
+                                    <button
+                                      onClick={() => moveDeliverable(phase.id, delivIdx, -1)}
+                                      disabled={delivIdx === 0}
+                                      className="text-slate-400 hover:text-slate-600 disabled:opacity-25"
+                                      title="Move up"
+                                    >
+                                      <ChevronUp className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => moveDeliverable(phase.id, delivIdx, 1)}
+                                      disabled={delivIdx === phase.deliverables.length - 1}
+                                      className="text-slate-400 hover:text-slate-600 disabled:opacity-25"
+                                      title="Move down"
+                                    >
+                                      <ChevronDown className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => removeDeliverable(phase.id, d.id)}
+                                      className="text-slate-300 hover:text-red-500 mt-0.5"
+                                      title="Remove"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             )

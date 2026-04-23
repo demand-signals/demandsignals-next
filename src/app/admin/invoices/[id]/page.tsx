@@ -29,6 +29,7 @@ interface LineItem {
   description: string
   quantity: number
   unit_price_cents: number
+  unit_price_input: string  // raw string for the price input; committed to cents on blur
   discount_pct: number
   discount_label: string | null
   sort_order: number
@@ -169,6 +170,7 @@ export default function InvoiceDetailPage({
   const [dueDate, setDueDate] = useState('')
   const [sendDate, setSendDate] = useState('')
   const [lateFeeCents, setLateFeeCents] = useState(0)
+  const [lateFeeDollarsInput, setLateFeeDollarsInput] = useState('0.00')
   const [lateFeeGraceDays, setLateFeeGraceDays] = useState(0)
 
   function markDirty() {
@@ -183,6 +185,7 @@ export default function InvoiceDetailPage({
         description: li.description,
         quantity: li.quantity,
         unit_price_cents: li.unit_price_cents,
+        unit_price_input: centsToInput(li.unit_price_cents),
         discount_pct: li.discount_pct ?? 0,
         discount_label: li.discount_label ?? null,
         sort_order: li.sort_order ?? 0,
@@ -191,7 +194,9 @@ export default function InvoiceDetailPage({
     setNotes(d.invoice.notes ?? '')
     setDueDate(d.invoice.due_date ?? '')
     setSendDate(d.invoice.send_date ?? '')
-    setLateFeeCents(d.invoice.late_fee_cents ?? 0)
+    const lateFee = d.invoice.late_fee_cents ?? 0
+    setLateFeeCents(lateFee)
+    setLateFeeDollarsInput(centsToInput(lateFee))
     setLateFeeGraceDays(d.invoice.late_fee_grace_days ?? 0)
     setDirty(false)
   }
@@ -383,7 +388,7 @@ export default function InvoiceDetailPage({
   function addLine() {
     setLines((ls) => [
       ...ls,
-      { description: '', quantity: 1, unit_price_cents: 0, discount_pct: 0, discount_label: null, sort_order: ls.length },
+      { description: '', quantity: 1, unit_price_cents: 0, unit_price_input: '0.00', discount_pct: 0, discount_label: null, sort_order: ls.length },
     ])
     markDirty()
   }
@@ -704,9 +709,15 @@ export default function InvoiceDetailPage({
                         <input
                           type="number"
                           step="0.01"
-                          min="0"
-                          value={centsToInput(li.unit_price_cents)}
-                          onChange={(e) => updateLine(idx, { unit_price_cents: inputToCents(e.target.value) })}
+                          value={li.unit_price_input}
+                          onChange={(e) => updateLine(idx, { unit_price_input: e.target.value })}
+                          onBlur={(e) => {
+                            const cents = inputToCents(e.target.value)
+                            updateLine(idx, {
+                              unit_price_cents: cents,
+                              unit_price_input: centsToInput(cents),
+                            })
+                          }}
                           className="w-full border border-slate-200 rounded px-1.5 py-1 text-right text-sm"
                         />
                       </td>
@@ -789,8 +800,13 @@ export default function InvoiceDetailPage({
                   type="number"
                   step="0.01"
                   min="0"
-                  value={centsToInput(lateFeeCents)}
-                  onChange={(e) => { setLateFeeCents(inputToCents(e.target.value)); markDirty() }}
+                  value={lateFeeDollarsInput}
+                  onChange={(e) => { setLateFeeDollarsInput(e.target.value); markDirty() }}
+                  onBlur={(e) => {
+                    const cents = inputToCents(e.target.value)
+                    setLateFeeCents(cents)
+                    setLateFeeDollarsInput(centsToInput(cents))
+                  }}
                   className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
                 />
               </label>
