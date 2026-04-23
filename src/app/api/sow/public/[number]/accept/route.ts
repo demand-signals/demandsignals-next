@@ -9,7 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { getValueStackItems } from '@/lib/services-catalog'
-import type { SowPricing } from '@/lib/invoice-types'
+import type { SowPricing, SowPhase } from '@/lib/invoice-types'
 
 export async function POST(
   request: NextRequest,
@@ -173,6 +173,144 @@ export async function POST(
       deposit_invoice_id: depositInvoice.id,
     })
     .eq('id', sow.id)
+
+  // Materialize subscriptions for recurring deliverables in phases.
+  // Each monthly/quarterly/annual deliverable gets its own subscription row.
+  if (sow.prospect_id && Array.isArray(sow.phases) && (sow.phases as SowPhase[]).length > 0) {
+    const cadenceToBillingInterval: Record<string, string> = {
+      monthly: 'month',
+      quarterly: 'quarter',
+      annual: 'year',
+    }
+
+    for (const phase of sow.phases as SowPhase[]) {
+      for (const deliv of phase.deliverables) {
+        const cadence = deliv.cadence ?? 'one_time'
+        if (!['monthly', 'quarterly', 'annual'].includes(cadence)) continue
+
+        const billingInterval = cadenceToBillingInterval[cadence]
+        const lineCents = deliv.line_total_cents ?? (((deliv.hours ?? deliv.quantity ?? 1)) * (deliv.unit_price_cents ?? 0))
+
+        // Determine start date from trigger or default to now.
+        let periodStart = new Date()
+        if (deliv.start_trigger?.type === 'date' && deliv.start_trigger.date) {
+          periodStart = new Date(deliv.start_trigger.date)
+        }
+
+        // Compute period end based on billing interval.
+        const periodEnd = new Date(periodStart)
+        if (billingInterval === 'month') periodEnd.setMonth(periodEnd.getMonth() + 1)
+        else if (billingInterval === 'quarter') periodEnd.setMonth(periodEnd.getMonth() + 3)
+        else if (billingInterval === 'year') periodEnd.setFullYear(periodEnd.getFullYear() + 1)
+
+        // Try to find an existing subscription_plans row matching service_id.
+        let planId: string | null = null
+        if (deliv.service_id) {
+          const { data: existingPlan } = await supabaseAdmin
+            .from('subscription_plans')
+            .select('id')
+            .eq('slug', deliv.service_id)
+            .eq('active', true)
+            .maybeSingle()
+          if (existingPlan) planId = existingPlan.id
+        }
+
+        // If no matching plan found, create a throwaway plan for this deliverable.
+        if (!planId) {
+          const throwawaySlug = `sow-${sow.sow_number}-deliv-${deliv.id.slice(0, 8)}`
+          const { data: newPlan } = await supabaseAdmin
+            .from('subscription_plans')
+            .insert({
+              slug: throwawaySlug,
+              name: deliv.name,
+              description: `Auto-created from SOW ${sow.sow_number}`,
+              price_cents: lineCents,
+              billing_interval: billingInterval,
+              active: true,
+            })
+            .select('id')
+            .single()
+          if (newPlan) planId = newPlan.id
+        }
+
+        if (!planId) continue // skip if we couldn't get a plan
+
+        await supabaseAdmin.from('subscriptions').insert({
+          prospect_id: sow.prospect_id,
+          plan_id: planId,
+          status: 'active',
+          current_period_start: periodStart.toISOString(),
+          current_period_end: periodEnd.toISOString(),
+          next_invoice_date: periodEnd.toISOString().slice(0, 10),
+          override_monthly_amount_cents: lineCents,
+          notes: `Auto-created from SOW ${sow.sow_number} deliverable "${deliv.name}" (${cadence})`,
+        })
+      }
+    }
+  }
+
+  // ── Best-effort: mark prospect as client + create project ─────────
+  // Wrapped in try/catch so failures here never break the accept flow.
+  // The deposit invoice + subscriptions are already committed at this point.
+  try {
+    // 1. Mark prospect as client (idempotent — .eq('is_client', false) guard)
+    if (sow.prospect_id) {
+      await supabaseAdmin
+        .from('prospects')
+        .update({ is_client: true, became_client_at: new Date().toISOString() })
+        .eq('id', sow.prospect_id)
+        .eq('is_client', false)
+    }
+
+    // 2. Create project from SOW phases
+    const projectPhases = (sow.phases ?? []).map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      status: 'pending',
+      completed_at: null,
+      deliverables: (p.deliverables ?? []).map((d: any) => ({
+        id: d.id,
+        service_id: d.service_id ?? null,
+        name: d.name,
+        description: d.description,
+        cadence: d.cadence ?? 'one_time',
+        quantity: d.quantity,
+        hours: d.hours,
+        unit_price_cents: d.unit_price_cents,
+        line_total_cents: d.line_total_cents,
+        status: 'pending',
+        delivered_at: null,
+      })),
+    }))
+
+    // Monthly value = sum of monthly + (quarterly/3) + (annual/12) recurring deliverable cents
+    let monthlyCents = 0
+    for (const phase of sow.phases ?? []) {
+      for (const d of phase.deliverables ?? []) {
+        const cents = d.line_total_cents ?? 0
+        if (d.cadence === 'monthly') monthlyCents += cents
+        else if (d.cadence === 'quarterly') monthlyCents += Math.round(cents / 3)
+        else if (d.cadence === 'annual') monthlyCents += Math.round(cents / 12)
+      }
+    }
+
+    const { error: projErr } = await supabaseAdmin.from('projects').insert({
+      prospect_id: sow.prospect_id,
+      sow_document_id: sow.id,
+      name: sow.title,
+      type: 'website',
+      status: 'planning',
+      start_date: new Date().toISOString().slice(0, 10),
+      target_date: null,
+      phases: projectPhases,
+      monthly_value: monthlyCents > 0 ? monthlyCents / 100 : null,
+      notes: `Auto-created from accepted SOW ${sow.sow_number}`,
+    })
+    if (projErr) console.error('[accept] Project creation failed:', projErr.message)
+  } catch (lifecycleErr: any) {
+    console.error('[accept] Client lifecycle side-effect failed:', lifecycleErr?.message ?? lifecycleErr)
+  }
 
   const depositPublicUrl = `https://demandsignals.co/invoice/${depositInvoice.invoice_number}/${depositInvoice.public_uuid}`
 

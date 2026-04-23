@@ -66,7 +66,125 @@ const SHARED_STYLES = `
   </style>
 `
 
-export function renderSowHtml(sow: SowDocument, client: ClientInfo): string {
+const CADENCE_SUFFIX: Record<string, string> = {
+  one_time: '',
+  monthly: '/mo',
+  quarterly: '/qtr',
+  annual: '/yr',
+}
+
+const CADENCE_LABEL: Record<string, string> = {
+  one_time: 'One-time',
+  monthly: 'Monthly',
+  quarterly: 'Quarterly',
+  annual: 'Annual',
+}
+
+function renderPhasesSection(sow: SowDocument): string {
+  const phases = sow.phases
+  let oneTimeCents = 0
+  let monthlyCents = 0
+  let quarterlyCents = 0
+  let annualCents = 0
+
+  const phasesHtml = phases.map((phase, phaseIdx) => {
+    const rows = phase.deliverables.map((d) => {
+      const qty = d.quantity ?? 1
+      const hrs = d.hours
+      const unit = d.unit_price_cents ?? 0
+      const line = d.line_total_cents ?? ((hrs != null ? hrs : qty) * unit)
+      const cadence = d.cadence ?? 'one_time'
+      const suffix = CADENCE_SUFFIX[cadence] ?? ''
+      const cadenceLabel = CADENCE_LABEL[cadence] ?? cadence
+      const qtyCell = hrs != null ? `${hrs} hr` : `${qty}`
+      // Accumulate totals
+      if (cadence === 'one_time') oneTimeCents += line
+      else if (cadence === 'monthly') monthlyCents += line
+      else if (cadence === 'quarterly') quarterlyCents += line
+      else if (cadence === 'annual') annualCents += line
+      return `
+        <tr>
+          <td>
+            <strong>${escapeHtml(d.name)}</strong>
+            <br><span style="color:#5d6780;font-size:12px">${escapeHtml(d.description)}</span>
+          </td>
+          <td class="num" style="color:#5d6780;font-size:12px">${escapeHtml(cadenceLabel)}</td>
+          <td class="num">${qtyCell}</td>
+          <td class="num">${formatCents(unit)}${suffix ? `<span style="color:#5d6780;font-size:11px">${suffix}</span>` : ''}</td>
+          <td class="num">${line > 0 ? `${formatCents(line)}${suffix ? `<span style="color:#5d6780;font-size:11px">${suffix}</span>` : ''}` : '—'}</td>
+        </tr>
+      `
+    }).join('')
+
+    return `
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;text-transform:uppercase;color:#68c5ad;font-weight:700;letter-spacing:0.05em;margin-bottom:4px">
+          Phase ${phaseIdx + 1}
+        </div>
+        <h3 style="font-size:15px;font-weight:600;color:#1d2330;margin:0 0 4px 0">${escapeHtml(phase.name)}</h3>
+        ${phase.description ? `<p style="font-size:13px;color:#5d6780;margin:0 0 8px 0">${escapeHtml(phase.description)}</p>` : ''}
+        ${phase.deliverables.length > 0 ? `
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:6px 8px;background:#f4f6f9;font-weight:600;font-size:11px;text-transform:uppercase;color:#5d6780">Item</th>
+                <th style="text-align:right;padding:6px 8px;background:#f4f6f9;font-weight:600;font-size:11px;text-transform:uppercase;color:#5d6780;width:70px">Cadence</th>
+                <th style="text-align:right;padding:6px 8px;background:#f4f6f9;font-weight:600;font-size:11px;text-transform:uppercase;color:#5d6780;width:60px">Qty/Hrs</th>
+                <th style="text-align:right;padding:6px 8px;background:#f4f6f9;font-weight:600;font-size:11px;text-transform:uppercase;color:#5d6780;width:80px">Rate</th>
+                <th style="text-align:right;padding:6px 8px;background:#f4f6f9;font-weight:600;font-size:11px;text-transform:uppercase;color:#5d6780;width:90px">Total</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        ` : '<p style="font-size:13px;color:#5d6780;font-style:italic">No deliverables</p>'}
+      </div>
+    `
+  }).join('')
+
+  // Pricing section split by cadence
+  const depositPct = sow.pricing.deposit_pct
+  const depositCents = sow.pricing.deposit_cents
+  const balanceCents = oneTimeCents - depositCents
+
+  const pricingRows = [
+    oneTimeCents > 0
+      ? `<tr><td>One-time project total</td><td class="num">${formatCents(oneTimeCents)}</td></tr>`
+      : '',
+    monthlyCents > 0
+      ? `<tr><td>Monthly recurring</td><td class="num" style="color:#4fa894">${formatCents(monthlyCents)}<span style="font-size:11px;color:#5d6780">/mo</span></td></tr>`
+      : '',
+    quarterlyCents > 0
+      ? `<tr><td>Quarterly recurring</td><td class="num" style="color:#4fa894">${formatCents(quarterlyCents)}<span style="font-size:11px;color:#5d6780">/qtr</span></td></tr>`
+      : '',
+    annualCents > 0
+      ? `<tr><td>Annual recurring</td><td class="num" style="color:#4fa894">${formatCents(annualCents)}<span style="font-size:11px;color:#5d6780">/yr</span></td></tr>`
+      : '',
+    oneTimeCents > 0
+      ? `<tr><td>Deposit (${depositPct}%)</td><td class="num">${formatCents(depositCents)}</td></tr>`
+      : '',
+    oneTimeCents > 0
+      ? `<tr class="grand"><td>Balance on delivery</td><td class="num">${formatCents(balanceCents)}</td></tr>`
+      : '',
+  ].filter(Boolean).join('')
+
+  const hasRecurring = monthlyCents > 0 || quarterlyCents > 0 || annualCents > 0
+
+  return `
+    <section>
+      <h2>Phases</h2>
+      ${phasesHtml}
+    </section>
+    <section>
+      <h2>Pricing</h2>
+      <table class="totals">
+        <tbody>${pricingRows}</tbody>
+      </table>
+      ${hasRecurring ? '<p style="font-size:11px;color:#5d6780;margin-top:8px">Recurring charges begin per deliverable start trigger.</p>' : ''}
+    </section>
+  `
+}
+
+function renderLegacyDeliverables(sow: SowDocument): string {
   const rows = sow.deliverables.map((d) => {
     const qty = d.quantity ?? 1
     const hrs = d.hours
@@ -82,6 +200,39 @@ export function renderSowHtml(sow: SowDocument, client: ClientInfo): string {
       </tr>
     `
   }).join('')
+
+  return `
+    <section>
+      <h2>Deliverables</h2>
+      <table>
+        <thead><tr><th>Item</th><th class="num">Qty/Hours</th><th class="num">Rate</th><th class="num">Total</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </section>
+
+    ${sow.timeline.length > 0 ? `
+    <section>
+      <h2>Timeline</h2>
+      <ul>${sow.timeline.map((p) => `<li><strong>${escapeHtml(p.name)}</strong> (${p.duration_weeks}w) — ${escapeHtml(p.description)}</li>`).join('')}</ul>
+    </section>` : ''}
+
+    <section>
+      <h2>Pricing</h2>
+      <table class="totals">
+        <tr><td>Total</td><td class="num">${formatCents(sow.pricing.total_cents)}</td></tr>
+        <tr><td>Deposit (${sow.pricing.deposit_pct}%)</td><td class="num">${formatCents(sow.pricing.deposit_cents)}</td></tr>
+        <tr class="grand"><td>Balance on delivery</td><td class="num">${formatCents(sow.pricing.total_cents - sow.pricing.deposit_cents)}</td></tr>
+      </table>
+    </section>
+  `
+}
+
+export function renderSowHtml(sow: SowDocument, client: ClientInfo): string {
+  // Prefer phases when present (new model), fall back to legacy flat arrays.
+  const usePhasesModel = Array.isArray(sow.phases) && sow.phases.length > 0
+  const bodyContent = usePhasesModel
+    ? renderPhasesSection(sow)
+    : renderLegacyDeliverables(sow)
 
   return `<!doctype html>
 <html><head><meta charset="utf-8"><title>${escapeHtml(sow.title)}</title>${SHARED_STYLES}</head>
@@ -105,28 +256,7 @@ ${clientBlockHtml(client)}
   ${sow.scope_summary ? `<p>${escapeHtml(sow.scope_summary)}</p>` : ''}
 </section>
 
-<section>
-  <h2>Deliverables</h2>
-  <table>
-    <thead><tr><th>Item</th><th class="num">Qty/Hours</th><th class="num">Rate</th><th class="num">Total</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
-</section>
-
-${sow.timeline.length > 0 ? `
-<section>
-  <h2>Timeline</h2>
-  <ul>${sow.timeline.map((p) => `<li><strong>${escapeHtml(p.name)}</strong> (${p.duration_weeks}w) — ${escapeHtml(p.description)}</li>`).join('')}</ul>
-</section>` : ''}
-
-<section>
-  <h2>Pricing</h2>
-  <table class="totals">
-    <tr><td>Total</td><td class="num">${formatCents(sow.pricing.total_cents)}</td></tr>
-    <tr><td>Deposit (${sow.pricing.deposit_pct}%)</td><td class="num">${formatCents(sow.pricing.deposit_cents)}</td></tr>
-    <tr class="grand"><td>Balance on delivery</td><td class="num">${formatCents(sow.pricing.total_cents - sow.pricing.deposit_cents)}</td></tr>
-  </table>
-</section>
+${bodyContent}
 
 ${sow.payment_terms ? `<section><h2>Payment Terms</h2><p>${escapeHtml(sow.payment_terms)}</p></section>` : ''}
 ${sow.guarantees ? `<section><h2>Guarantees</h2><p>${escapeHtml(sow.guarantees)}</p></section>` : ''}

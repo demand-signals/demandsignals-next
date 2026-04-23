@@ -20,6 +20,8 @@ export interface CatalogPickerItem {
   display_price_cents: number
   base_range_low_cents: number
   base_range_high_cents: number
+  monthly_range_low_cents: number | null
+  monthly_range_high_cents: number | null
   included_with_paid_project: boolean
   pricing_type: string
 }

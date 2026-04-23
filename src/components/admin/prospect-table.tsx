@@ -22,6 +22,7 @@ type ProspectRow = {
   prospect_score: number | null
   score_factors: Record<string, any> | null
   stage: string
+  is_client?: boolean
   demos?: { id: string }[]
 }
 
@@ -317,7 +318,16 @@ export function ProspectTable() {
                   onClick={() => router.push(`/admin/prospects/${p.id}`)}
                   className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
                 >
-                  <td className="px-4 py-3 text-slate-800 font-medium">{p.business_name}</td>
+                  <td className="px-4 py-3 text-slate-800 font-medium">
+                    <span className="flex items-center gap-1.5 flex-wrap">
+                      {p.business_name}
+                      {p.is_client && (
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--teal)]/10 text-[var(--teal)]">
+                          CLIENT
+                        </span>
+                      )}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-slate-600">{p.owner_name ?? '—'}</td>
                   <td className="px-4 py-3 text-slate-500 capitalize">{p.industry ?? '—'}</td>
                   <td className="px-4 py-3 text-slate-500">{p.city ?? '—'}</td>

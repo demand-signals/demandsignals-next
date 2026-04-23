@@ -1,7 +1,7 @@
 // ── Map SOW document → PDF service payload ─────────────────────────
 // doc_type=sow. See dsig_pdf/docs/sow.py for Python counterpart.
 
-import type { SowDocument, SowOngoingServices } from '../invoice-types'
+import type { SowDocument, SowOngoingServices, SowPhase } from '../invoice-types'
 
 export interface SowPdfPayload {
   doc_type: 'sow'
@@ -19,6 +19,9 @@ export interface SowPdfPayload {
       email: string | null
     }
     scope_summary: string | null
+    // New phases model (preferred). Python renderer uses this when non-empty.
+    phases: SowPhase[]
+    // Legacy flat arrays (backward compat; present even when phases is used).
     deliverables: Array<{
       name: string
       description: string
@@ -69,6 +72,7 @@ export function sowToRenderPayload(
       title: sow.title,
       client,
       scope_summary: sow.scope_summary,
+      phases: sow.phases ?? [],
       deliverables: sow.deliverables,
       timeline: sow.timeline,
       pricing: sow.pricing,

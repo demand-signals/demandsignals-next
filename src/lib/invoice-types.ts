@@ -151,6 +151,36 @@ export interface Subscription {
   updated_at: string
 }
 
+// ── SOW phases + cadence types ─────────────────────────────────────
+
+export type Cadence = 'one_time' | 'monthly' | 'quarterly' | 'annual'
+
+export interface SowPhaseStartTrigger {
+  type: 'on_phase_complete' | 'date'
+  phase_id?: string | null
+  date?: string | null
+}
+
+export interface SowPhaseDeliverable {
+  id: string
+  service_id?: string | null
+  name: string
+  description: string
+  cadence: Cadence
+  quantity?: number
+  hours?: number
+  unit_price_cents?: number
+  line_total_cents?: number
+  start_trigger?: SowPhaseStartTrigger
+}
+
+export interface SowPhase {
+  id: string
+  name: string
+  description: string
+  deliverables: SowPhaseDeliverable[]
+}
+
 // ── SOW types ──────────────────────────────────────────────────────
 
 export type SowStatus =
@@ -215,6 +245,7 @@ export interface SowDocument {
   status: SowStatus
   title: string
   scope_summary: string | null
+  phases: SowPhase[]  // new preferred shape; [] if still using legacy
   deliverables: SowDeliverable[]
   timeline: SowTimelinePhase[]
   pricing: SowPricing
@@ -237,6 +268,49 @@ export interface SowDocument {
   void_reason: string | null
   deposit_invoice_id: string | null
   created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+// ── Project phase types ────────────────────────────────────────────
+
+export interface ProjectPhaseDeliverable {
+  id: string
+  service_id?: string | null
+  name: string
+  description: string
+  cadence: 'one_time' | 'monthly' | 'quarterly' | 'annual'
+  quantity?: number
+  hours?: number
+  unit_price_cents?: number
+  line_total_cents?: number
+  status: 'pending' | 'delivered'
+  delivered_at?: string | null
+}
+
+export interface ProjectPhase {
+  id: string
+  name: string
+  description: string
+  status: 'pending' | 'in_progress' | 'completed'
+  completed_at?: string | null
+  deliverables: ProjectPhaseDeliverable[]
+}
+
+export interface ProjectRow {
+  id: string
+  prospect_id: string
+  deal_id: string | null
+  sow_document_id: string | null
+  name: string
+  type: string
+  status: string
+  start_date: string | null
+  target_date: string | null
+  completed_at: string | null
+  monthly_value: number | null
+  notes: string | null
+  phases: ProjectPhase[]
   created_at: string
   updated_at: string
 }

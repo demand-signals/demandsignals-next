@@ -13,25 +13,39 @@ import {
   Save,
   FileText,
   Send,
+  Sparkles,
+  ChevronDown,
 } from 'lucide-react'
 import { formatCents } from '@/lib/format'
+import { CatalogPicker, type CatalogPickerItem } from '@/components/admin/catalog-picker'
 import ProspectContactEditor, { type ProspectContact } from '@/components/admin/ProspectContactEditor'
+import type { Cadence } from '@/lib/invoice-types'
 
 // ── Types ────────────────────────────────────────────────────────────
 
-interface Deliverable {
+interface StartTrigger {
+  type: 'on_phase_complete' | 'date'
+  phase_id?: string | null
+  date?: string | null
+}
+
+interface PhaseDeliverable {
+  id: string
+  service_id?: string | null
   name: string
   description: string
-  acceptance_criteria: string
+  cadence: Cadence
   quantity: number
   hours: number | null
   unit_price_cents: number
+  start_trigger?: StartTrigger
 }
 
-interface Phase {
+interface SowPhase {
+  id: string
   name: string
-  duration_weeks: number
   description: string
+  deliverables: PhaseDeliverable[]
 }
 
 interface SowData {
@@ -41,6 +55,8 @@ interface SowData {
   status: string
   title: string
   scope_summary: string | null
+  phases: SowPhase[]
+  // legacy fields kept for backward compat display
   deliverables: Array<{
     name: string
     description: string
@@ -76,9 +92,27 @@ function inputToCents(val: string): number {
   return Math.round(parseFloat(val || '0') * 100)
 }
 
-function computeLineCents(d: Deliverable): number {
+function computeLineCents(d: PhaseDeliverable): number {
   const qty = d.hours != null ? d.hours : d.quantity
   return Math.round((qty || 0) * (d.unit_price_cents || 0))
+}
+
+function newPhaseId(): string {
+  return crypto.randomUUID()
+}
+
+const CADENCE_LABELS: Record<Cadence, string> = {
+  one_time: 'One-time',
+  monthly: 'Monthly',
+  quarterly: 'Quarterly',
+  annual: 'Annual',
+}
+
+const CADENCE_SUFFIX: Record<Cadence, string> = {
+  one_time: '',
+  monthly: '/mo',
+  quarterly: '/qtr',
+  annual: '/yr',
 }
 
 // ── Sub-components for the branded document ───────────────────────────
@@ -147,6 +181,59 @@ function FieldTextarea({
   )
 }
 
+// ── CadencePicker dropdown for add-from-catalog with 'both' pricing ──
+
+function CadencePickModal({
+  item,
+  onConfirm,
+  onCancel,
+}: {
+  item: CatalogPickerItem
+  onConfirm: (cadence: Cadence, unitPrice: number) => void
+  onCancel: () => void
+}) {
+  const [cadence, setCadence] = useState<Cadence>(
+    item.pricing_type === 'monthly' ? 'monthly' : 'one_time',
+  )
+  const price =
+    cadence === 'one_time'
+      ? item.display_price_cents
+      : item.monthly_range_low_cents ?? item.display_price_cents
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl p-6 max-w-sm w-full space-y-4">
+        <h2 className="text-base font-bold">Choose cadence for "{item.name}"</h2>
+        <div className="space-y-2 text-sm">
+          {(['one_time', 'monthly', 'quarterly', 'annual'] as Cadence[]).map((c) => (
+            <label key={c} className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="cadence"
+                value={c}
+                checked={cadence === c}
+                onChange={() => setCadence(c)}
+              />
+              <span>{CADENCE_LABELS[c]}</span>
+            </label>
+          ))}
+        </div>
+        <div className="flex justify-end gap-2">
+          <button onClick={onCancel} className="px-3 py-1.5 text-sm text-slate-500">
+            Cancel
+          </button>
+          <button
+            onClick={() => onConfirm(cadence, price)}
+            className="bg-teal-500 text-white rounded px-4 py-1.5 text-sm font-bold"
+          >
+            Add
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────────
 
 export default function SowDetailPage({
@@ -157,7 +244,6 @@ export default function SowDetailPage({
   const { id } = use(params)
   const router = useRouter()
 
-  // Raw data from API
   const [sow, setSow] = useState<SowData | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -167,16 +253,19 @@ export default function SowDetailPage({
   // Editable field state
   const [title, setTitle] = useState('')
   const [scopeSummary, setScopeSummary] = useState('')
-  const [deliverables, setDeliverables] = useState<Deliverable[]>([])
-  const [computeFromDeliverables, setComputeFromDeliverables] = useState(true)
-  const [totalDollars, setTotalDollars] = useState('0.00')
+  const [phases, setPhases] = useState<SowPhase[]>([])
   const [depositPct, setDepositPct] = useState('25')
-  const [timeline, setTimeline] = useState<Phase[]>([])
   const [paymentTerms, setPaymentTerms] = useState('')
   const [guarantees, setGuarantees] = useState('')
   const [notes, setNotes] = useState('')
   const [sendDate, setSendDate] = useState('')
   const [dirty, setDirty] = useState(false)
+
+  // Catalog picker state — "both" pricing_type items show a cadence modal before adding
+  const [pendingCatalogItem, setPendingCatalogItem] = useState<{
+    item: CatalogPickerItem
+    phaseId: string
+  } | null>(null)
 
   function markDirty() {
     setDirty(true)
@@ -186,26 +275,32 @@ export default function SowDetailPage({
   function initState(s: SowData) {
     setTitle(s.title)
     setScopeSummary(s.scope_summary ?? '')
-    setDeliverables(
-      s.deliverables.map((d) => ({
-        name: d.name,
-        description: d.description,
-        acceptance_criteria: d.acceptance_criteria ?? '',
-        quantity: d.quantity ?? 1,
-        hours: d.hours ?? null,
-        unit_price_cents: d.unit_price_cents ?? 0,
-      })),
-    )
-    setComputeFromDeliverables(s.computed_from_deliverables !== false)
-    setTotalDollars(centsToInput(s.pricing?.total_cents ?? 0))
+
+    // If phases array is populated, use it; otherwise migrate legacy deliverables
+    // into a single "Phase 1" so the UI is always phase-centric.
+    if (s.phases && s.phases.length > 0) {
+      setPhases(s.phases)
+    } else {
+      // Migrate legacy flat deliverables into a single default phase.
+      const migrated: SowPhase = {
+        id: newPhaseId(),
+        name: 'Phase 1',
+        description: '',
+        deliverables: s.deliverables.map((d) => ({
+          id: newPhaseId(),
+          service_id: null,
+          name: d.name,
+          description: d.description,
+          cadence: 'one_time' as Cadence,
+          quantity: d.quantity ?? 1,
+          hours: d.hours ?? null,
+          unit_price_cents: d.unit_price_cents ?? 0,
+        })),
+      }
+      setPhases([migrated])
+    }
+
     setDepositPct(String(s.pricing?.deposit_pct ?? 25))
-    setTimeline(
-      s.timeline.map((p) => ({
-        name: p.name,
-        duration_weeks: p.duration_weeks,
-        description: p.description,
-      })),
-    )
     setPaymentTerms(s.payment_terms ?? '')
     setGuarantees(s.guarantees ?? '')
     setNotes(s.notes ?? '')
@@ -230,13 +325,27 @@ export default function SowDetailPage({
 
   // ── Computed values ───────────────────────────────────────────────
 
-  const deliverablesTotalCents = deliverables.reduce((s, d) => s + computeLineCents(d), 0)
-  const effectiveTotalCents = computeFromDeliverables
-    ? deliverablesTotalCents
-    : inputToCents(totalDollars)
+  const allDeliverables = phases.flatMap((p) => p.deliverables)
+
+  const oneTimeTotalCents = allDeliverables
+    .filter((d) => d.cadence === 'one_time')
+    .reduce((s, d) => s + computeLineCents(d), 0)
+
+  const monthlyTotalCents = allDeliverables
+    .filter((d) => d.cadence === 'monthly')
+    .reduce((s, d) => s + computeLineCents(d), 0)
+
+  const quarterlyTotalCents = allDeliverables
+    .filter((d) => d.cadence === 'quarterly')
+    .reduce((s, d) => s + computeLineCents(d), 0)
+
+  const annualTotalCents = allDeliverables
+    .filter((d) => d.cadence === 'annual')
+    .reduce((s, d) => s + computeLineCents(d), 0)
+
   const pct = parseFloat(depositPct) || 25
-  const depositCents = Math.round(effectiveTotalCents * pct / 100)
-  const balanceCents = effectiveTotalCents - depositCents
+  const depositCents = Math.round(oneTimeTotalCents * pct / 100)
+  const balanceCents = oneTimeTotalCents - depositCents
 
   // ── Actions ───────────────────────────────────────────────────────
 
@@ -247,26 +356,22 @@ export default function SowDetailPage({
       const body: Record<string, unknown> = {
         title,
         scope_summary: scopeSummary,
-        computed_from_deliverables: computeFromDeliverables,
-        deliverables: deliverables
-          .filter((d) => d.name.trim().length > 0)
+        computed_from_deliverables: true,
+        phases,
+        // Keep legacy fields in sync with one-time deliverables for backward compat
+        deliverables: allDeliverables
+          .filter((d) => d.cadence === 'one_time')
           .map((d) => ({
             name: d.name,
             description: d.description,
-            acceptance_criteria: d.acceptance_criteria || undefined,
             quantity: d.hours == null ? d.quantity : undefined,
             hours: d.hours ?? undefined,
             unit_price_cents: d.unit_price_cents || undefined,
+            line_total_cents: computeLineCents(d),
           })),
-        timeline: timeline
-          .filter((p) => p.name.trim().length > 0)
-          .map((p) => ({
-            name: p.name,
-            duration_weeks: p.duration_weeks,
-            description: p.description,
-          })),
+        timeline: [],
         pricing: {
-          total_cents: effectiveTotalCents,
+          total_cents: oneTimeTotalCents,
           deposit_cents: depositCents,
           deposit_pct: pct,
         },
@@ -328,41 +433,123 @@ export default function SowDetailPage({
     router.push('/admin/sow')
   }
 
-  // ── Deliverable helpers ───────────────────────────────────────────
+  // ── Phase helpers ─────────────────────────────────────────────────
 
-  function addDeliverable() {
-    setDeliverables((d) => [
-      ...d,
-      { name: '', description: '', acceptance_criteria: '', quantity: 1, hours: null, unit_price_cents: 0 },
+  function addPhase() {
+    setPhases((prev) => [
+      ...prev,
+      {
+        id: newPhaseId(),
+        name: `Phase ${prev.length + 1}`,
+        description: '',
+        deliverables: [],
+      },
     ])
     markDirty()
   }
 
-  function updateDeliverable(idx: number, patch: Partial<Deliverable>) {
-    setDeliverables((d) => d.map((x, i) => (i === idx ? { ...x, ...patch } : x)))
+  function updatePhase(phaseId: string, patch: Partial<Omit<SowPhase, 'deliverables'>>) {
+    setPhases((prev) => prev.map((p) => (p.id === phaseId ? { ...p, ...patch } : p)))
     markDirty()
   }
 
-  function removeDeliverable(idx: number) {
-    setDeliverables((d) => d.filter((_, i) => i !== idx))
+  function removePhase(phaseId: string) {
+    setPhases((prev) => prev.filter((p) => p.id !== phaseId))
     markDirty()
   }
 
-  // ── Timeline helpers ──────────────────────────────────────────────
+  // ── Deliverable helpers ───────────────────────────────────────────
 
-  function addPhase() {
-    setTimeline((t) => [...t, { name: '', duration_weeks: 1, description: '' }])
+  function addDeliverable(phaseId: string) {
+    setPhases((prev) =>
+      prev.map((p) =>
+        p.id === phaseId
+          ? {
+              ...p,
+              deliverables: [
+                ...p.deliverables,
+                {
+                  id: newPhaseId(),
+                  service_id: null,
+                  name: '',
+                  description: '',
+                  cadence: 'one_time' as Cadence,
+                  quantity: 1,
+                  hours: null,
+                  unit_price_cents: 0,
+                },
+              ],
+            }
+          : p,
+      ),
+    )
     markDirty()
   }
 
-  function updatePhase(idx: number, patch: Partial<Phase>) {
-    setTimeline((t) => t.map((x, i) => (i === idx ? { ...x, ...patch } : x)))
+  function addDeliverableFromCatalog(phaseId: string, item: CatalogPickerItem, cadence: Cadence, unitPrice: number) {
+    setPhases((prev) =>
+      prev.map((p) =>
+        p.id === phaseId
+          ? {
+              ...p,
+              deliverables: [
+                ...p.deliverables,
+                {
+                  id: newPhaseId(),
+                  service_id: item.id,
+                  name: item.name,
+                  description: item.description ?? item.benefit ?? '',
+                  cadence,
+                  quantity: 1,
+                  hours: null,
+                  unit_price_cents: unitPrice,
+                },
+              ],
+            }
+          : p,
+      ),
+    )
     markDirty()
   }
 
-  function removePhase(idx: number) {
-    setTimeline((t) => t.filter((_, i) => i !== idx))
+  function updateDeliverable(phaseId: string, delivId: string, patch: Partial<PhaseDeliverable>) {
+    setPhases((prev) =>
+      prev.map((p) =>
+        p.id === phaseId
+          ? {
+              ...p,
+              deliverables: p.deliverables.map((d) =>
+                d.id === delivId ? { ...d, ...patch } : d,
+              ),
+            }
+          : p,
+      ),
+    )
     markDirty()
+  }
+
+  function removeDeliverable(phaseId: string, delivId: string) {
+    setPhases((prev) =>
+      prev.map((p) =>
+        p.id === phaseId
+          ? { ...p, deliverables: p.deliverables.filter((d) => d.id !== delivId) }
+          : p,
+      ),
+    )
+    markDirty()
+  }
+
+  function handleCatalogPick(phaseId: string, item: CatalogPickerItem) {
+    if (item.pricing_type === 'both') {
+      setPendingCatalogItem({ item, phaseId })
+      return
+    }
+    const cadence: Cadence = item.pricing_type === 'monthly' ? 'monthly' : 'one_time'
+    const unitPrice =
+      cadence === 'monthly'
+        ? (item.monthly_range_low_cents ?? item.display_price_cents)
+        : item.display_price_cents
+    addDeliverableFromCatalog(phaseId, item, cadence, unitPrice)
   }
 
   // ── Render ────────────────────────────────────────────────────────
@@ -551,186 +738,321 @@ export default function SowDetailPage({
             </div>
           </section>
 
-          {/* Deliverables */}
+          {/* Phases */}
           <section>
             <div
               className="text-xs uppercase tracking-wide font-semibold pb-1.5 mb-4"
               style={{ color: '#5d6780', borderBottom: '1px solid #e2e8f0' }}
             >
-              Deliverables
+              Phases
             </div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr>
-                  <th
-                    className="text-left p-2 text-xs uppercase font-semibold"
-                    style={{ background: '#f4f6f9', color: '#5d6780' }}
-                  >
-                    Item
-                  </th>
-                  <th
-                    className="text-right p-2 text-xs uppercase font-semibold w-20"
-                    style={{ background: '#f4f6f9', color: '#5d6780' }}
-                  >
-                    Qty/Hrs
-                  </th>
-                  <th
-                    className="text-right p-2 text-xs uppercase font-semibold w-24"
-                    style={{ background: '#f4f6f9', color: '#5d6780' }}
-                  >
-                    Rate
-                  </th>
-                  <th
-                    className="text-right p-2 text-xs uppercase font-semibold w-24"
-                    style={{ background: '#f4f6f9', color: '#5d6780' }}
-                  >
-                    Total
-                  </th>
-                  <th className="w-8" style={{ background: '#f4f6f9' }} />
-                </tr>
-              </thead>
-              <tbody>
-                {deliverables.map((d, idx) => {
-                  const lineCents = computeLineCents(d)
-                  return (
-                    <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td className="p-2 align-top">
-                        <FieldInput
-                          value={d.name}
-                          onChange={(v) => updateDeliverable(idx, { name: v })}
-                          placeholder="Item name"
-                          className="font-semibold mb-1"
-                        />
-                        <FieldInput
-                          value={d.description}
-                          onChange={(v) => updateDeliverable(idx, { description: v })}
-                          placeholder="Description"
-                          className="text-xs"
-                        />
-                        <FieldInput
-                          value={d.acceptance_criteria}
-                          onChange={(v) => updateDeliverable(idx, { acceptance_criteria: v })}
-                          placeholder="Acceptance criteria (optional)"
-                          className="text-xs mt-1"
-                        />
-                      </td>
-                      <td className="p-2 align-top">
-                        <div className="flex flex-col gap-1">
-                          <label className="text-xs text-slate-400">
-                            {d.hours != null ? 'Hours' : 'Qty'}
-                          </label>
-                          {d.hours != null ? (
-                            <input
-                              type="number"
-                              step="0.25"
-                              min="0"
-                              value={d.hours}
-                              onChange={(e) => updateDeliverable(idx, { hours: parseFloat(e.target.value) || 0 })}
-                              className="w-full border border-slate-200 rounded px-1.5 py-1 text-right text-sm"
-                            />
-                          ) : (
-                            <input
-                              type="number"
-                              min="1"
-                              value={d.quantity}
-                              onChange={(e) => updateDeliverable(idx, { quantity: Math.max(1, parseInt(e.target.value) || 1) })}
-                              className="w-full border border-slate-200 rounded px-1.5 py-1 text-right text-sm"
-                            />
-                          )}
-                          <label className="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={d.hours != null}
-                              onChange={(e) => updateDeliverable(idx, { hours: e.target.checked ? (d.quantity || 1) : null })}
-                            />
-                            hourly
-                          </label>
-                        </div>
-                      </td>
-                      <td className="p-2 align-top">
-                        <div className="text-xs text-slate-400 mb-1">
-                          {d.hours != null ? '$/hr' : 'unit $'}
-                        </div>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={centsToInput(d.unit_price_cents)}
-                          onChange={(e) => updateDeliverable(idx, { unit_price_cents: inputToCents(e.target.value) })}
-                          className="w-full border border-slate-200 rounded px-1.5 py-1 text-right text-sm"
-                        />
-                      </td>
-                      <td className="p-2 text-right align-top font-semibold text-sm">
-                        {lineCents > 0 ? formatCents(lineCents) : '—'}
-                      </td>
-                      <td className="p-2 align-top">
-                        <button
-                          onClick={() => removeDeliverable(idx)}
-                          className="text-slate-300 hover:text-red-500"
-                          title="Remove"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-            <button
-              onClick={addDeliverable}
-              className="mt-3 inline-flex items-center gap-1 text-xs bg-slate-100 hover:bg-slate-200 rounded px-3 py-1.5"
-            >
-              <Plus className="w-3 h-3" /> Add deliverable
-            </button>
-          </section>
 
-          {/* Timeline */}
-          <section>
-            <div
-              className="text-xs uppercase tracking-wide font-semibold pb-1.5 mb-4"
-              style={{ color: '#5d6780', borderBottom: '1px solid #e2e8f0' }}
-            >
-              Timeline
-            </div>
-            {timeline.map((ph, idx) => (
-              <div key={idx} className="flex gap-3 mb-3 items-start">
-                <div className="flex-1 grid grid-cols-3 gap-2">
-                  <FieldInput
-                    value={ph.name}
-                    onChange={(v) => updatePhase(idx, { name: v })}
-                    placeholder="Phase name"
-                    className="font-semibold"
-                  />
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      min="1"
-                      value={ph.duration_weeks}
-                      onChange={(e) => updatePhase(idx, { duration_weeks: parseInt(e.target.value) || 1 })}
-                      className="w-16 border border-slate-200 rounded px-1.5 py-1 text-right text-sm"
-                    />
-                    <span className="text-xs text-slate-400">weeks</span>
-                  </div>
-                  <FieldInput
-                    value={ph.description}
-                    onChange={(v) => updatePhase(idx, { description: v })}
-                    placeholder="Description"
-                  />
-                </div>
-                <button
-                  onClick={() => removePhase(idx)}
-                  className="text-slate-300 hover:text-red-500 mt-0.5"
+            <div className="space-y-6">
+              {phases.map((phase, phaseIdx) => (
+                <div
+                  key={phase.id}
+                  className="rounded-lg border border-slate-200 overflow-hidden"
                 >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
+                  {/* Phase header */}
+                  <div
+                    className="flex items-center gap-3 px-4 py-3"
+                    style={{ background: '#f4f6f9' }}
+                  >
+                    <span className="text-xs font-bold uppercase text-teal-600 shrink-0">
+                      Phase {phaseIdx + 1}
+                    </span>
+                    <FieldInput
+                      value={phase.name}
+                      onChange={(v) => updatePhase(phase.id, { name: v })}
+                      placeholder="Phase name"
+                      className="font-semibold flex-1"
+                    />
+                    <button
+                      onClick={() => removePhase(phase.id)}
+                      className="text-slate-300 hover:text-red-500 shrink-0"
+                      title="Remove phase"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="px-4 pt-2 pb-1">
+                    <FieldTextarea
+                      value={phase.description}
+                      onChange={(v) => updatePhase(phase.id, { description: v })}
+                      placeholder="Phase description (optional)"
+                      rows={2}
+                    />
+                  </div>
+
+                  {/* Deliverables table */}
+                  <div className="px-4 pb-2">
+                    {phase.deliverables.length > 0 && (
+                      <table className="w-full text-sm mt-2">
+                        <thead>
+                          <tr>
+                            <th
+                              className="text-left p-2 text-xs uppercase font-semibold"
+                              style={{ background: '#f4f6f9', color: '#5d6780' }}
+                            >
+                              Item
+                            </th>
+                            <th
+                              className="text-center p-2 text-xs uppercase font-semibold w-24"
+                              style={{ background: '#f4f6f9', color: '#5d6780' }}
+                            >
+                              Cadence
+                            </th>
+                            <th
+                              className="text-right p-2 text-xs uppercase font-semibold w-20"
+                              style={{ background: '#f4f6f9', color: '#5d6780' }}
+                            >
+                              Qty/Hrs
+                            </th>
+                            <th
+                              className="text-right p-2 text-xs uppercase font-semibold w-24"
+                              style={{ background: '#f4f6f9', color: '#5d6780' }}
+                            >
+                              Rate
+                            </th>
+                            <th
+                              className="text-right p-2 text-xs uppercase font-semibold w-28"
+                              style={{ background: '#f4f6f9', color: '#5d6780' }}
+                            >
+                              Total
+                            </th>
+                            <th className="w-8" style={{ background: '#f4f6f9' }} />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {phase.deliverables.map((d) => {
+                            const lineCents = computeLineCents(d)
+                            const suffix = CADENCE_SUFFIX[d.cadence]
+                            return (
+                              <tr key={d.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                <td className="p-2 align-top">
+                                  {d.service_id && (
+                                    <span className="inline-flex items-center gap-1 text-teal-600 text-xs mb-1">
+                                      <Sparkles className="w-3 h-3" /> catalog
+                                    </span>
+                                  )}
+                                  <FieldInput
+                                    value={d.name}
+                                    onChange={(v) => updateDeliverable(phase.id, d.id, { name: v })}
+                                    placeholder="Item name"
+                                    className="font-semibold mb-1"
+                                  />
+                                  <FieldInput
+                                    value={d.description}
+                                    onChange={(v) => updateDeliverable(phase.id, d.id, { description: v })}
+                                    placeholder="Description"
+                                    className="text-xs"
+                                  />
+                                  {/* Start trigger */}
+                                  <div className="mt-1 flex items-center gap-1.5">
+                                    <select
+                                      value={d.start_trigger?.type ?? 'on_phase_complete'}
+                                      onChange={(e) =>
+                                        updateDeliverable(phase.id, d.id, {
+                                          start_trigger: {
+                                            type: e.target.value as 'on_phase_complete' | 'date',
+                                            phase_id: null,
+                                            date: null,
+                                          },
+                                        })
+                                      }
+                                      className="text-xs border border-slate-200 rounded px-1 py-0.5 text-slate-500"
+                                    >
+                                      <option value="on_phase_complete">Starts: on phase complete</option>
+                                      <option value="date">Starts: on date</option>
+                                    </select>
+                                    {d.start_trigger?.type === 'on_phase_complete' && (
+                                      <select
+                                        value={d.start_trigger?.phase_id ?? ''}
+                                        onChange={(e) =>
+                                          updateDeliverable(phase.id, d.id, {
+                                            start_trigger: {
+                                              type: 'on_phase_complete',
+                                              phase_id: e.target.value || null,
+                                              date: null,
+                                            },
+                                          })
+                                        }
+                                        className="text-xs border border-slate-200 rounded px-1 py-0.5 text-slate-500"
+                                      >
+                                        <option value="">— any phase —</option>
+                                        {phases
+                                          .filter((pp) => pp.id !== phase.id)
+                                          .map((pp, i) => (
+                                            <option key={pp.id} value={pp.id}>
+                                              Phase {i + 1}: {pp.name || '(unnamed)'}
+                                            </option>
+                                          ))}
+                                      </select>
+                                    )}
+                                    {d.start_trigger?.type === 'date' && (
+                                      <input
+                                        type="date"
+                                        value={d.start_trigger?.date ?? ''}
+                                        onChange={(e) =>
+                                          updateDeliverable(phase.id, d.id, {
+                                            start_trigger: {
+                                              type: 'date',
+                                              phase_id: null,
+                                              date: e.target.value || null,
+                                            },
+                                          })
+                                        }
+                                        className="text-xs border border-slate-200 rounded px-1 py-0.5"
+                                      />
+                                    )}
+                                  </div>
+                                </td>
+
+                                {/* Cadence */}
+                                <td className="p-2 align-top text-center">
+                                  <select
+                                    value={d.cadence}
+                                    onChange={(e) =>
+                                      updateDeliverable(phase.id, d.id, {
+                                        cadence: e.target.value as Cadence,
+                                      })
+                                    }
+                                    className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs"
+                                  >
+                                    {(Object.keys(CADENCE_LABELS) as Cadence[]).map((c) => (
+                                      <option key={c} value={c}>
+                                        {CADENCE_LABELS[c]}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </td>
+
+                                {/* Qty / Hours */}
+                                <td className="p-2 align-top">
+                                  <div className="flex flex-col gap-1">
+                                    <label className="text-xs text-slate-400">
+                                      {d.hours != null ? 'Hours' : 'Qty'}
+                                    </label>
+                                    {d.hours != null ? (
+                                      <input
+                                        type="number"
+                                        step="0.25"
+                                        min="0"
+                                        value={d.hours}
+                                        onChange={(e) =>
+                                          updateDeliverable(phase.id, d.id, {
+                                            hours: parseFloat(e.target.value) || 0,
+                                          })
+                                        }
+                                        className="w-full border border-slate-200 rounded px-1.5 py-1 text-right text-sm"
+                                      />
+                                    ) : (
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        value={d.quantity}
+                                        onChange={(e) =>
+                                          updateDeliverable(phase.id, d.id, {
+                                            quantity: Math.max(1, parseInt(e.target.value) || 1),
+                                          })
+                                        }
+                                        className="w-full border border-slate-200 rounded px-1.5 py-1 text-right text-sm"
+                                      />
+                                    )}
+                                    <label className="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={d.hours != null}
+                                        onChange={(e) =>
+                                          updateDeliverable(phase.id, d.id, {
+                                            hours: e.target.checked ? d.quantity || 1 : null,
+                                          })
+                                        }
+                                      />
+                                      hourly
+                                    </label>
+                                  </div>
+                                </td>
+
+                                {/* Rate */}
+                                <td className="p-2 align-top">
+                                  <div className="text-xs text-slate-400 mb-1">
+                                    {d.hours != null ? '$/hr' : 'unit $'}
+                                    {suffix && <span className="text-teal-600 ml-1">{suffix}</span>}
+                                  </div>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={centsToInput(d.unit_price_cents)}
+                                    onChange={(e) =>
+                                      updateDeliverable(phase.id, d.id, {
+                                        unit_price_cents: inputToCents(e.target.value),
+                                      })
+                                    }
+                                    className="w-full border border-slate-200 rounded px-1.5 py-1 text-right text-sm"
+                                  />
+                                </td>
+
+                                {/* Line total */}
+                                <td className="p-2 text-right align-top font-semibold text-sm">
+                                  {lineCents > 0 ? (
+                                    <>
+                                      {formatCents(lineCents)}
+                                      {suffix && (
+                                        <span className="text-xs text-teal-600 ml-0.5">{suffix}</span>
+                                      )}
+                                    </>
+                                  ) : (
+                                    '—'
+                                  )}
+                                </td>
+
+                                {/* Delete */}
+                                <td className="p-2 align-top">
+                                  <button
+                                    onClick={() => removeDeliverable(phase.id, d.id)}
+                                    className="text-slate-300 hover:text-red-500"
+                                    title="Remove"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    )}
+
+                    {/* Add deliverable actions */}
+                    <div className="mt-3 space-y-2">
+                      <div className="text-xs text-slate-400 font-semibold uppercase">
+                        Add from catalog
+                      </div>
+                      <CatalogPicker
+                        onPick={(item) => handleCatalogPick(phase.id, item)}
+                        placeholder="Search catalog…"
+                        compact
+                      />
+                      <button
+                        onClick={() => addDeliverable(phase.id)}
+                        className="inline-flex items-center gap-1 text-xs bg-slate-100 hover:bg-slate-200 rounded px-3 py-1.5"
+                      >
+                        <Plus className="w-3 h-3" /> Add ad-hoc deliverable
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
             <button
               onClick={addPhase}
-              className="inline-flex items-center gap-1 text-xs bg-slate-100 hover:bg-slate-200 rounded px-3 py-1.5"
+              className="mt-4 inline-flex items-center gap-1 text-xs bg-slate-100 hover:bg-slate-200 rounded px-4 py-2 font-semibold"
             >
-              <Plus className="w-3 h-3" /> Add phase
+              <Plus className="w-3.5 h-3.5" /> Add phase
             </button>
           </section>
 
@@ -742,61 +1064,68 @@ export default function SowDetailPage({
             >
               Pricing
             </div>
-            <div className="mb-3">
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={computeFromDeliverables}
-                  onChange={(e) => { setComputeFromDeliverables(e.target.checked); markDirty() }}
-                />
-                <span className="text-slate-600">Compute total from deliverables</span>
-                {computeFromDeliverables && (
-                  <span className="text-xs text-slate-400">
-                    ({formatCents(deliverablesTotalCents)})
-                  </span>
-                )}
-              </label>
-            </div>
             <table className="w-full max-w-xs ml-auto text-sm">
               <tbody>
-                <tr>
-                  <td className="py-1 text-slate-600">Total</td>
-                  <td className="py-1 text-right font-semibold">
-                    {computeFromDeliverables ? (
-                      <span>{formatCents(deliverablesTotalCents)}</span>
-                    ) : (
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={totalDollars}
-                        onChange={(e) => { setTotalDollars(e.target.value); markDirty() }}
-                        className="w-32 border border-slate-200 rounded px-2 py-1 text-right"
-                      />
-                    )}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-1 text-slate-600">
-                    Deposit (
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={depositPct}
-                      onChange={(e) => { setDepositPct(e.target.value); markDirty() }}
-                      className="w-12 border border-slate-200 rounded px-1 py-0 text-center inline"
-                    />
-                    %)
-                  </td>
-                  <td className="py-1 text-right font-semibold">{formatCents(depositCents)}</td>
-                </tr>
-                <tr style={{ borderTop: '2px solid #1d2330' }}>
-                  <td className="pt-3 font-bold">Balance on delivery</td>
-                  <td className="pt-3 text-right font-bold text-base">{formatCents(balanceCents)}</td>
-                </tr>
+                {oneTimeTotalCents > 0 && (
+                  <tr>
+                    <td className="py-1 text-slate-600">One-time project total</td>
+                    <td className="py-1 text-right font-semibold">{formatCents(oneTimeTotalCents)}</td>
+                  </tr>
+                )}
+                {monthlyTotalCents > 0 && (
+                  <tr>
+                    <td className="py-1 text-slate-600">Monthly recurring</td>
+                    <td className="py-1 text-right font-semibold text-teal-700">
+                      {formatCents(monthlyTotalCents)}<span className="text-xs text-slate-400">/mo</span>
+                    </td>
+                  </tr>
+                )}
+                {quarterlyTotalCents > 0 && (
+                  <tr>
+                    <td className="py-1 text-slate-600">Quarterly recurring</td>
+                    <td className="py-1 text-right font-semibold text-teal-700">
+                      {formatCents(quarterlyTotalCents)}<span className="text-xs text-slate-400">/qtr</span>
+                    </td>
+                  </tr>
+                )}
+                {annualTotalCents > 0 && (
+                  <tr>
+                    <td className="py-1 text-slate-600">Annual recurring</td>
+                    <td className="py-1 text-right font-semibold text-teal-700">
+                      {formatCents(annualTotalCents)}<span className="text-xs text-slate-400">/yr</span>
+                    </td>
+                  </tr>
+                )}
+                {oneTimeTotalCents > 0 && (
+                  <>
+                    <tr>
+                      <td className="py-1 text-slate-600">
+                        Deposit (
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={depositPct}
+                          onChange={(e) => { setDepositPct(e.target.value); markDirty() }}
+                          className="w-12 border border-slate-200 rounded px-1 py-0 text-center inline"
+                        />
+                        %)
+                      </td>
+                      <td className="py-1 text-right font-semibold">{formatCents(depositCents)}</td>
+                    </tr>
+                    <tr style={{ borderTop: '2px solid #1d2330' }}>
+                      <td className="pt-3 font-bold">Balance on delivery</td>
+                      <td className="pt-3 text-right font-bold text-base">{formatCents(balanceCents)}</td>
+                    </tr>
+                  </>
+                )}
               </tbody>
             </table>
+            {(monthlyTotalCents > 0 || quarterlyTotalCents > 0 || annualTotalCents > 0) && (
+              <p className="text-xs text-slate-400 mt-2 text-right">
+                Recurring charges begin per deliverable start trigger
+              </p>
+            )}
           </section>
 
           {/* Payment terms */}
@@ -904,6 +1233,18 @@ export default function SowDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Cadence picker modal for 'both' pricing_type items */}
+      {pendingCatalogItem && (
+        <CadencePickModal
+          item={pendingCatalogItem.item}
+          onConfirm={(cadence, unitPrice) => {
+            addDeliverableFromCatalog(pendingCatalogItem.phaseId, pendingCatalogItem.item, cadence, unitPrice)
+            setPendingCatalogItem(null)
+          }}
+          onCancel={() => setPendingCatalogItem(null)}
+        />
+      )}
 
       {/* Sent modal */}
       {sentModalUrl && (
