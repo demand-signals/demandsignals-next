@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { formatCents } from '@/lib/quote-engine'
+import { formatCents } from '@/lib/format'
 
 interface Props {
   quoteId: string

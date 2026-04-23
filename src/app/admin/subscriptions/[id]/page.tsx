@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
 import ProspectContactEditor, { ProspectContact } from '@/components/admin/ProspectContactEditor'
-import { formatCents } from '@/lib/quote-engine'
+import { formatCents } from '@/lib/format'
 
 interface SubscriptionDetail {
   subscription: {

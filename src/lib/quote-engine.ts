@@ -454,18 +454,10 @@ export function computeRoi(
 }
 
 // ============================================================
-// Formatting — cents → display string. Keep in one place so every surface agrees.
+// Formatting — re-exported from pure format.ts (zero imports, client-safe).
+// Server-side consumers that already import from quote-engine keep working.
 // ============================================================
-export function formatCents(cents: number): string {
-  if (cents < 0) cents = 0
-  const dollars = Math.round(cents / 100)
-  return '$' + dollars.toLocaleString('en-US')
-}
-
-export function formatRange(lowCents: number, highCents: number): string {
-  if (lowCents === highCents) return formatCents(lowCents)
-  return `${formatCents(lowCents)}–${formatCents(highCents)}`
-}
+export { formatCents, formatRange } from './format'
 
 // ============================================================
 // Line-item adapter — converts a simple service-identity shape into the

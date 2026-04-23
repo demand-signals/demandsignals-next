@@ -1,7 +1,7 @@
 'use client'
 
 import type { RetainerPlan } from '@/lib/retainer'
-import { formatCents } from '@/lib/quote-engine'
+import { formatCents } from '@/lib/format'
 
 interface Props {
   plan: RetainerPlan

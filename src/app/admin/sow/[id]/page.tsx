@@ -4,7 +4,7 @@ import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, ExternalLink, Copy, Pencil, Eye, EyeOff } from 'lucide-react'
-import { formatCents } from '@/lib/quote-engine'
+import { formatCents } from '@/lib/format'
 import DocumentPreview from '@/components/admin/DocumentPreview'
 import EditClient from './EditClient'
 

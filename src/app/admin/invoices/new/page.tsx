@@ -6,7 +6,7 @@ import { Plus, Trash2, Loader2, Sparkles, Eye } from 'lucide-react'
 import { CatalogPicker, type CatalogPickerItem } from '@/components/admin/catalog-picker'
 import ProspectContactEditor, { type ProspectContact } from '@/components/admin/ProspectContactEditor'
 import DocumentPreview from '@/components/admin/DocumentPreview'
-import { formatCents } from '@/lib/quote-engine'
+import { formatCents } from '@/lib/format'
 
 interface Prospect {
   id: string

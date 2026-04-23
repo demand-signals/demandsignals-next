@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { getRetainerPlans } from '@/lib/retainer'
-import { formatCents } from '@/lib/quote-engine'
+import { formatCents } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
 

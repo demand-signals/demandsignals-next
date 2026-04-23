@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, Trash2, Loader2 } from 'lucide-react'
-import { formatCents } from '@/lib/quote-engine'
+import { formatCents } from '@/lib/format'
 
 interface Deliverable {
   name: string

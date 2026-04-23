@@ -16,7 +16,7 @@ import {
   RotateCcw,
   RefreshCw,
 } from 'lucide-react'
-import { formatCents } from '@/lib/quote-engine'
+import { formatCents } from '@/lib/format'
 import DocumentPreview from '@/components/admin/DocumentPreview'
 import InvoiceEditClient from './EditClient'
 

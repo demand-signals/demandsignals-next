@@ -4,7 +4,7 @@
 // for embedding in an iframe via srcDoc, or serving directly as text/html.
 // No PDF — that goes through the Python dsig_pdf service.
 
-import { formatCents } from './quote-engine'
+import { formatCents } from './format'
 import type { SowDocument, InvoiceWithLineItems } from './invoice-types'
 
 export interface ClientInfo {
