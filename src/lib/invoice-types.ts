@@ -82,6 +82,10 @@ export interface Invoice {
   stripe_payment_link_url: string | null
   public_viewed_count: number
   notes: string | null
+  send_date: string | null
+  late_fee_cents: number
+  late_fee_grace_days: number
+  late_fee_applied_at: string | null
   created_by: string | null
   created_at: string
   updated_at: string
@@ -140,6 +144,9 @@ export interface Subscription {
   next_invoice_date: string
   canceled_at: string | null
   cancel_reason: string | null
+  end_date: string | null
+  notes: string | null
+  override_monthly_amount_cents: number | null
   created_at: string
   updated_at: string
 }
@@ -158,6 +165,12 @@ export interface SowDeliverable {
   name: string
   description: string
   acceptance_criteria?: string
+  // Pricing per deliverable. For hourly items set hours + unit_price_cents
+  // as the hourly rate. For fixed items set quantity=1, unit_price_cents=fee.
+  quantity?: number
+  hours?: number
+  unit_price_cents?: number
+  line_total_cents?: number  // computed: (hours ?? quantity) * unit_price_cents
 }
 
 export interface SowTimelinePhase {
@@ -205,6 +218,8 @@ export interface SowDocument {
   deliverables: SowDeliverable[]
   timeline: SowTimelinePhase[]
   pricing: SowPricing
+  send_date?: string | null
+  computed_from_deliverables?: boolean
   ongoing_services?: SowOngoingServices | null
   payment_terms: string | null
   guarantees: string | null

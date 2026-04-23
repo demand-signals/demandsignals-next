@@ -2,13 +2,24 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Plus, Trash2, Loader2, Sparkles } from 'lucide-react'
+import { Plus, Trash2, Loader2, Sparkles, Eye } from 'lucide-react'
 import { CatalogPicker, type CatalogPickerItem } from '@/components/admin/catalog-picker'
+import ProspectContactEditor, { type ProspectContact } from '@/components/admin/ProspectContactEditor'
+import DocumentPreview from '@/components/admin/DocumentPreview'
+import { formatCents } from '@/lib/quote-engine'
 
 interface Prospect {
   id: string
   business_name: string
+  owner_name: string | null
   owner_email: string | null
+  business_email: string | null
+  owner_phone: string | null
+  business_phone: string | null
+  address: string | null
+  city: string | null
+  state: string | null
+  zip: string | null
 }
 
 interface LineItemDraft {
@@ -61,9 +72,19 @@ function NewInvoiceForm() {
   const [valueStackItems, setValueStackItems] = useState<CatalogPickerItem[]>([])
   const [notes, setNotes] = useState('')
   const [dueDate, setDueDate] = useState('')
+  const [sendDate, setSendDate] = useState('')
+  const [lateFeeDollars, setLateFeeDollars] = useState('')
+  const [lateFeeGraceDays, setLateFeeGraceDays] = useState('0')
   const [categoryHint, setCategoryHint] = useState('service_revenue')
   const [busy, setBusy] = useState(false)
+  const [previewBusy, setPreviewBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [draftId, setDraftId] = useState<string | null>(null)
+  const [showPreview, setShowPreview] = useState(false)
+
+  // Selected prospect object (for ProspectContactEditor)
+  const selectedProspect: Prospect | null =
+    prospectId ? (prospects.find((p) => p.id === prospectId) ?? null) : null
 
   useEffect(() => {
     fetch('/api/admin/prospects?limit=100')
@@ -83,6 +104,12 @@ function NewInvoiceForm() {
       })
       .catch(() => {})
   }, [])
+
+  // When prospect changes, reset draft so stale preview is hidden
+  useEffect(() => {
+    setDraftId(null)
+    setShowPreview(false)
+  }, [prospectId])
 
   const valueStackTotalCents = valueStackItems.reduce(
     (sum, s) => sum + s.display_price_cents,
@@ -123,52 +150,81 @@ function NewInvoiceForm() {
     return s + (sub - disc)
   }, 0) / 100
 
+  function buildPostBody() {
+    const finalLines = lines.map((l) => ({
+      description: l.description,
+      quantity: l.quantity,
+      unit_price_cents: l.unit_price_cents,
+      discount_pct: l.discount_pct,
+      discount_label: l.discount_label || undefined,
+    }))
+
+    if (includeValueStack && valueStackItems.length > 0) {
+      for (const s of valueStackItems) {
+        finalLines.push({
+          description: s.name + (s.description ? ` — ${s.description}` : ''),
+          quantity: 1,
+          unit_price_cents: s.display_price_cents,
+          discount_pct: 0,
+          discount_label: undefined,
+        })
+      }
+      finalLines.push({
+        description: 'New Client Appreciation — included with your engagement',
+        quantity: 1,
+        unit_price_cents: -valueStackTotalCents,
+        discount_pct: 0,
+        discount_label: 'New Client Appreciation',
+      })
+    }
+
+    const lateFeeCents = Math.round(parseFloat(lateFeeDollars || '0') * 100)
+
+    return {
+      kind,
+      prospect_id: prospectId || undefined,
+      line_items: finalLines,
+      notes: notes || undefined,
+      due_date: dueDate || undefined,
+      send_date: sendDate || undefined,
+      late_fee_cents: lateFeeCents > 0 ? lateFeeCents : undefined,
+      late_fee_grace_days: parseInt(lateFeeGraceDays || '0') || undefined,
+      category_hint: categoryHint,
+    }
+  }
+
+  async function handlePreviewClick() {
+    if (lines.length === 0) {
+      setError('Add at least one line item before previewing.')
+      return
+    }
+    setError(null)
+    setPreviewBusy(true)
+    try {
+      const res = await fetch('/api/admin/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildPostBody()),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to save draft')
+      setDraftId(data.invoice.id)
+      setShowPreview(true)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to save draft for preview')
+    } finally {
+      setPreviewBusy(false)
+    }
+  }
+
   async function save(andSend: boolean) {
     setBusy(true)
     setError(null)
     try {
-      // Build final line items list. If value-stack toggle is on, append
-      // the stack items at full price plus a single 100% appreciation
-      // discount line. Frontend sends the lines already computed so the
-      // invoice PDF reflects the full stack + the discount.
-      const finalLines = lines.map((l) => ({
-        description: l.description,
-        quantity: l.quantity,
-        unit_price_cents: l.unit_price_cents,
-        discount_pct: l.discount_pct,
-        discount_label: l.discount_label || undefined,
-      }))
-
-      if (includeValueStack && valueStackItems.length > 0) {
-        for (const s of valueStackItems) {
-          finalLines.push({
-            description: s.name + (s.description ? ` — ${s.description}` : ''),
-            quantity: 1,
-            unit_price_cents: s.display_price_cents,
-            discount_pct: 0,
-            discount_label: undefined,
-          })
-        }
-        finalLines.push({
-          description: 'New Client Appreciation — included with your engagement',
-          quantity: 1,
-          unit_price_cents: -valueStackTotalCents,
-          discount_pct: 0,
-          discount_label: 'New Client Appreciation',
-        })
-      }
-
       const res = await fetch('/api/admin/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          kind,
-          prospect_id: prospectId || undefined,
-          line_items: finalLines,
-          notes: notes || undefined,
-          due_date: dueDate || undefined,
-          category_hint: categoryHint,
-        }),
+        body: JSON.stringify(buildPostBody()),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed')
@@ -189,7 +245,20 @@ function NewInvoiceForm() {
 
   return (
     <div className="p-6 space-y-6 max-w-4xl">
-      <h1 className="text-2xl font-bold text-slate-900">New Invoice</h1>
+      {/* ── Toolbar ── */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-slate-900">New Invoice</h1>
+        <button
+          onClick={handlePreviewClick}
+          disabled={previewBusy || lines.length === 0}
+          className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-50"
+        >
+          {previewBusy
+            ? <Loader2 className="w-4 h-4 animate-spin" />
+            : <Eye className="w-4 h-4" />}
+          Show preview
+        </button>
+      </div>
 
       <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
         <h2 className="font-semibold">Client + Kind</h2>
@@ -209,6 +278,22 @@ function NewInvoiceForm() {
             ))}
           </select>
         </label>
+
+        {/* ProspectContactEditor — shown when a prospect is selected */}
+        {selectedProspect && (
+          <div className="border border-slate-100 rounded-lg p-3 bg-slate-50">
+            <div className="text-xs font-semibold text-slate-500 uppercase mb-2">Bill-to contact</div>
+            <ProspectContactEditor
+              prospect={selectedProspect as ProspectContact}
+              onSaved={(updated) => {
+                setProspects((prev) =>
+                  prev.map((p) => (p.id === updated.id ? { ...p, ...updated } : p))
+                )
+              }}
+            />
+          </div>
+        )}
+
         <label className="block text-sm">
           Kind
           <select
@@ -244,7 +329,7 @@ function NewInvoiceForm() {
               <ul className="text-xs text-emerald-800 mt-1 ml-4 list-disc">
                 {valueStackItems.map((s) => (
                   <li key={s.id}>
-                    {s.name} — ${(s.display_price_cents / 100).toFixed(0)}
+                    {s.name} — {formatCents(s.display_price_cents)}
                   </li>
                 ))}
               </ul>
@@ -360,7 +445,7 @@ function NewInvoiceForm() {
                         max="100"
                       />
                     </td>
-                    <td className="text-right pr-2">${(lineTotal / 100).toFixed(2)}</td>
+                    <td className="text-right pr-2">{formatCents(lineTotal)}</td>
                     <td>
                       <button
                         onClick={() => removeLine(idx)}
@@ -378,23 +463,64 @@ function NewInvoiceForm() {
 
         <div className="flex justify-end text-sm space-y-1">
           <div className="text-right">
-            <div>Subtotal: ${subtotal.toFixed(2)}</div>
-            <div className="font-bold text-lg">Total: ${total.toFixed(2)}</div>
+            <div>Subtotal: {formatCents(Math.round(subtotal * 100))}</div>
+            <div className="font-bold text-lg">Total: {formatCents(Math.round(total * 100))}</div>
           </div>
         </div>
       </section>
 
       <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
         <h2 className="font-semibold">Details</h2>
-        <label className="block text-sm">
-          Due date
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className="block border border-slate-200 rounded px-3 py-1 mt-1"
-          />
-        </label>
+
+        {/* Send date + Due date — side by side */}
+        <div className="grid grid-cols-2 gap-4">
+          <label className="block text-sm">
+            Send date
+            <input
+              type="date"
+              value={sendDate}
+              onChange={(e) => setSendDate(e.target.value)}
+              className="block border border-slate-200 rounded px-3 py-1 mt-1"
+            />
+          </label>
+          <label className="block text-sm">
+            Due date
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="block border border-slate-200 rounded px-3 py-1 mt-1"
+            />
+          </label>
+        </div>
+
+        {/* Late fee config — side by side */}
+        <div className="grid grid-cols-2 gap-4">
+          <label className="block text-sm">
+            Late fee ($, optional)
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={lateFeeDollars}
+              onChange={(e) => setLateFeeDollars(e.target.value)}
+              placeholder="0.00"
+              className="block border border-slate-200 rounded px-3 py-1 mt-1 w-full"
+            />
+          </label>
+          <label className="block text-sm">
+            Grace days (0 = due date)
+            <input
+              type="number"
+              min="0"
+              value={lateFeeGraceDays}
+              onChange={(e) => setLateFeeGraceDays(e.target.value)}
+              placeholder="0"
+              className="block border border-slate-200 rounded px-3 py-1 mt-1 w-full"
+            />
+          </label>
+        </div>
+
         <label className="block text-sm">
           Notes
           <textarea
@@ -438,6 +564,35 @@ function NewInvoiceForm() {
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save & Send'}
         </button>
       </div>
+
+      {/* ── Preview panel — shown after save-as-draft ── */}
+      {showPreview && draftId && (
+        <section className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-slate-700">Invoice preview</h2>
+            <button
+              onClick={() => setShowPreview(false)}
+              className="text-xs text-slate-500 hover:text-slate-700"
+            >
+              Hide
+            </button>
+          </div>
+          <p className="text-xs text-slate-500">
+            This draft was saved as <span className="font-mono">{draftId}</span>.{' '}
+            <a
+              href={`/admin/invoices/${draftId}`}
+              className="text-teal-600 hover:underline"
+            >
+              Open full invoice
+            </a>{' '}
+            or continue editing below then save again to create a new invoice.
+          </p>
+          <DocumentPreview
+            src={`/api/admin/invoices/${draftId}/preview`}
+            title="Invoice preview"
+          />
+        </section>
+      )}
     </div>
   )
 }
