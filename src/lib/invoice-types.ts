@@ -158,6 +158,12 @@ export interface SowDeliverable {
   name: string
   description: string
   acceptance_criteria?: string
+  // Pricing per deliverable. For hourly items set hours + unit_price_cents
+  // as the hourly rate. For fixed items set quantity=1, unit_price_cents=fee.
+  quantity?: number
+  hours?: number
+  unit_price_cents?: number
+  line_total_cents?: number  // computed: (hours ?? quantity) * unit_price_cents
 }
 
 export interface SowTimelinePhase {
@@ -205,6 +211,8 @@ export interface SowDocument {
   deliverables: SowDeliverable[]
   timeline: SowTimelinePhase[]
   pricing: SowPricing
+  send_date?: string | null
+  computed_from_deliverables?: boolean
   ongoing_services?: SowOngoingServices | null
   payment_terms: string | null
   guarantees: string | null
