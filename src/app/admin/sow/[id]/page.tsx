@@ -248,19 +248,23 @@ export default function SowDetailPage({
         title,
         scope_summary: scopeSummary,
         computed_from_deliverables: computeFromDeliverables,
-        deliverables: deliverables.map((d) => ({
-          name: d.name,
-          description: d.description,
-          acceptance_criteria: d.acceptance_criteria || undefined,
-          quantity: d.hours == null ? d.quantity : undefined,
-          hours: d.hours ?? undefined,
-          unit_price_cents: d.unit_price_cents || undefined,
-        })),
-        timeline: timeline.map((p) => ({
-          name: p.name,
-          duration_weeks: p.duration_weeks,
-          description: p.description,
-        })),
+        deliverables: deliverables
+          .filter((d) => d.name.trim().length > 0)
+          .map((d) => ({
+            name: d.name,
+            description: d.description,
+            acceptance_criteria: d.acceptance_criteria || undefined,
+            quantity: d.hours == null ? d.quantity : undefined,
+            hours: d.hours ?? undefined,
+            unit_price_cents: d.unit_price_cents || undefined,
+          })),
+        timeline: timeline
+          .filter((p) => p.name.trim().length > 0)
+          .map((p) => ({
+            name: p.name,
+            duration_weeks: p.duration_weeks,
+            description: p.description,
+          })),
         pricing: {
           total_cents: effectiveTotalCents,
           deposit_cents: depositCents,

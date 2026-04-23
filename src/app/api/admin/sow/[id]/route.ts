@@ -30,7 +30,7 @@ export async function GET(
 
 const patchDeliverableSchema = z.object({
   name: z.string().min(1),
-  description: z.string(),
+  description: z.string().optional().default(''),
   acceptance_criteria: z.string().optional(),
   quantity: z.number().int().min(1).optional(),
   hours: z.number().nonnegative().optional(),
@@ -39,17 +39,17 @@ const patchDeliverableSchema = z.object({
 
 const patchBodySchema = z.object({
   title: z.string().min(1).optional(),
-  scope_summary: z.string().optional(),
-  payment_terms: z.string().optional(),
-  guarantees: z.string().optional(),
-  notes: z.string().optional(),
-  send_date: z.string().optional(),
+  scope_summary: z.string().nullable().optional(),
+  payment_terms: z.string().nullable().optional(),
+  guarantees: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  send_date: z.string().nullable().optional(),
   computed_from_deliverables: z.boolean().optional(),
   deliverables: z.array(patchDeliverableSchema).optional(),
   timeline: z.array(z.object({
     name: z.string().min(1),
     duration_weeks: z.number(),
-    description: z.string(),
+    description: z.string().optional().default(''),
     deliverables: z.array(z.string()).optional(),
   })).optional(),
   pricing: z.object({
