@@ -23,6 +23,10 @@ export interface SowPdfPayload {
       name: string
       description: string
       acceptance_criteria?: string
+      quantity?: number
+      hours?: number
+      unit_price_cents?: number
+      line_total_cents?: number
     }>
     timeline: Array<{
       name: string
