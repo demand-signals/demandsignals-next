@@ -6,6 +6,32 @@ import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import type { SowDeliverable } from '@/lib/invoice-types'
 
+// ── Phases shape (new client format) ────────────────────────────────
+
+const phaseDeliverableSchema = z.object({
+  id: z.string(),
+  service_id: z.string().nullable().optional(),
+  name: z.string().default(''),
+  description: z.string().default(''),
+  cadence: z.enum(['one_time', 'monthly', 'quarterly', 'annual']).default('one_time'),
+  quantity: z.number().int().min(0).optional(),
+  hours: z.number().nonnegative().nullable().optional(),
+  unit_price_cents: z.number().int().nonnegative().optional(),
+  line_total_cents: z.number().int().nonnegative().optional(),
+  start_trigger: z.object({
+    type: z.enum(['on_phase_complete', 'date']),
+    phase_id: z.string().nullable().optional(),
+    date: z.string().nullable().optional(),
+  }).optional(),
+})
+
+const phaseSchema = z.object({
+  id: z.string(),
+  name: z.string().default(''),
+  description: z.string().default(''),
+  deliverables: z.array(phaseDeliverableSchema).default([]),
+})
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -52,6 +78,7 @@ const patchBodySchema = z.object({
     description: z.string().optional().default(''),
     deliverables: z.array(z.string()).optional(),
   })).optional(),
+  phases: z.array(phaseSchema).optional(),
   pricing: z.object({
     total_cents: z.number().int(),
     deposit_cents: z.number().int().optional(),
@@ -86,8 +113,11 @@ export async function PATCH(
   let parsed: z.infer<typeof patchBodySchema>
   try {
     parsed = patchBodySchema.parse(await request.json())
-  } catch {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  } catch (e) {
+    const msg = e instanceof z.ZodError
+      ? e.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ')
+      : 'Invalid request body'
+    return NextResponse.json({ error: msg }, { status: 400 })
   }
 
   const { force_edit, ...fields } = parsed
@@ -114,6 +144,7 @@ export async function PATCH(
     updates.computed_from_deliverables = fields.computed_from_deliverables
   }
   if (fields.timeline !== undefined) updates.timeline = fields.timeline
+  if (fields.phases !== undefined) updates.phases = fields.phases
   if (fields.pricing !== undefined) updates.pricing = fields.pricing
   if (fields.deliverables !== undefined) {
     updates.deliverables = fields.deliverables.map(computeLineTotal)
