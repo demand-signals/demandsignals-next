@@ -4,25 +4,113 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, Loader2, Sparkles } from 'lucide-react'
 import { CatalogPicker, type CatalogPickerItem } from '@/components/admin/catalog-picker'
+import { formatCents } from '@/lib/format'
+import type { Cadence } from '@/lib/invoice-types'
 
 interface Prospect {
   id: string
   business_name: string
 }
 
-interface Deliverable {
-  name: string
-  description: string
-  acceptance_criteria: string
-  catalog_item_id?: string | null
-  quantity: number
-  hours: number | null  // null = not hourly
-  unit_price_cents: number
+interface StartTrigger {
+  type: 'on_phase_complete' | 'date'
+  phase_id?: string | null
+  date?: string | null
 }
-interface Phase {
+
+interface PhaseDeliverable {
+  id: string
+  service_id?: string | null
   name: string
-  duration_weeks: number
   description: string
+  cadence: Cadence
+  quantity: number
+  hours: number | null
+  unit_price_cents: number
+  start_trigger?: StartTrigger
+}
+
+interface SowPhase {
+  id: string
+  name: string
+  description: string
+  deliverables: PhaseDeliverable[]
+}
+
+const CADENCE_LABELS: Record<Cadence, string> = {
+  one_time: 'One-time',
+  monthly: 'Monthly',
+  quarterly: 'Quarterly',
+  annual: 'Annual',
+}
+
+const CADENCE_SUFFIX: Record<Cadence, string> = {
+  one_time: '',
+  monthly: '/mo',
+  quarterly: '/qtr',
+  annual: '/yr',
+}
+
+function newId(): string {
+  return crypto.randomUUID()
+}
+
+function computeLineCents(d: PhaseDeliverable): number {
+  const qty = d.hours != null ? d.hours : d.quantity
+  return Math.round((qty || 0) * (d.unit_price_cents || 0))
+}
+
+// ── Cadence pick modal for 'both' pricing_type catalog items ──────────
+
+function CadencePickModal({
+  item,
+  onConfirm,
+  onCancel,
+}: {
+  item: CatalogPickerItem
+  onConfirm: (cadence: Cadence, unitPrice: number) => void
+  onCancel: () => void
+}) {
+  const [cadence, setCadence] = useState<Cadence>(
+    item.pricing_type === 'monthly' ? 'monthly' : 'one_time',
+  )
+  const price =
+    cadence === 'one_time'
+      ? item.display_price_cents
+      : item.monthly_range_low_cents ?? item.display_price_cents
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl p-6 max-w-sm w-full space-y-4">
+        <h2 className="text-base font-bold">Choose cadence for "{item.name}"</h2>
+        <div className="space-y-2 text-sm">
+          {(['one_time', 'monthly', 'quarterly', 'annual'] as Cadence[]).map((c) => (
+            <label key={c} className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="cadence"
+                value={c}
+                checked={cadence === c}
+                onChange={() => setCadence(c)}
+              />
+              <span>{CADENCE_LABELS[c]}</span>
+            </label>
+          ))}
+        </div>
+        <div className="flex justify-end gap-2">
+          <button onClick={onCancel} className="px-3 py-1.5 text-sm text-slate-500">
+            Cancel
+          </button>
+          <button
+            onClick={() => onConfirm(cadence, price)}
+            className="bg-teal-500 text-white rounded px-4 py-1.5 text-sm font-bold"
+          >
+            Add
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function NewSowPage() {
@@ -31,14 +119,9 @@ export default function NewSowPage() {
   const [prospectId, setProspectId] = useState('')
   const [title, setTitle] = useState('')
   const [scopeSummary, setScopeSummary] = useState('')
-  const [deliverables, setDeliverables] = useState<Deliverable[]>([
-    { name: '', description: '', acceptance_criteria: '', quantity: 1, hours: null, unit_price_cents: 0 },
+  const [phases, setPhases] = useState<SowPhase[]>([
+    { id: newId(), name: 'Phase 1', description: '', deliverables: [] },
   ])
-  const [computeFromDeliverables, setComputeFromDeliverables] = useState(true)
-  const [timeline, setTimeline] = useState<Phase[]>([
-    { name: '', duration_weeks: 1, description: '' },
-  ])
-  const [totalDollars, setTotalDollars] = useState('')
   const [depositPct, setDepositPct] = useState('25')
   const [paymentTerms, setPaymentTerms] = useState(
     'Net 30. 25% deposit on acceptance; remainder on delivery.',
@@ -48,67 +131,150 @@ export default function NewSowPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Cadence modal for 'both' pricing_type
+  const [pendingCatalogItem, setPendingCatalogItem] = useState<{
+    item: CatalogPickerItem
+    phaseId: string
+  } | null>(null)
+
   useEffect(() => {
     fetch('/api/admin/prospects?limit=200')
       .then((r) => r.json())
       .then((d) => setProspects(d.data ?? []))
   }, [])
 
-  function addDeliverable() {
-    setDeliverables((d) => [...d, { name: '', description: '', acceptance_criteria: '', quantity: 1, hours: null, unit_price_cents: 0 }])
-  }
-  function addDeliverableFromCatalog(item: CatalogPickerItem) {
-    setDeliverables((d) => [
-      ...d,
-      {
-        name: item.name,
-        description: item.description ?? item.benefit ?? '',
-        acceptance_criteria: 'Delivered + client review',
-        catalog_item_id: item.id,
-        quantity: 1,
-        hours: null,
-        unit_price_cents: item.display_price_cents,
-      },
-    ])
-  }
-  function updateDeliverable(idx: number, patch: Partial<Deliverable>) {
-    setDeliverables((d) => d.map((x, i) => (i === idx ? { ...x, ...patch } : x)))
-  }
-  function removeDeliverable(idx: number) {
-    setDeliverables((d) => d.filter((_, i) => i !== idx))
-  }
+  // ── Phase helpers ─────────────────────────────────────────────────
 
   function addPhase() {
-    setTimeline((t) => [...t, { name: '', duration_weeks: 1, description: '' }])
+    setPhases((prev) => [
+      ...prev,
+      { id: newId(), name: `Phase ${prev.length + 1}`, description: '', deliverables: [] },
+    ])
   }
-  function updatePhase(idx: number, patch: Partial<Phase>) {
-    setTimeline((t) => t.map((x, i) => (i === idx ? { ...x, ...patch } : x)))
+
+  function updatePhase(phaseId: string, patch: Partial<Omit<SowPhase, 'deliverables'>>) {
+    setPhases((prev) => prev.map((p) => (p.id === phaseId ? { ...p, ...patch } : p)))
   }
-  function removePhase(idx: number) {
-    setTimeline((t) => t.filter((_, i) => i !== idx))
+
+  function removePhase(phaseId: string) {
+    setPhases((prev) => prev.filter((p) => p.id !== phaseId))
   }
+
+  // ── Deliverable helpers ───────────────────────────────────────────
+
+  function addDeliverable(phaseId: string) {
+    setPhases((prev) =>
+      prev.map((p) =>
+        p.id === phaseId
+          ? {
+              ...p,
+              deliverables: [
+                ...p.deliverables,
+                {
+                  id: newId(),
+                  service_id: null,
+                  name: '',
+                  description: '',
+                  cadence: 'one_time' as Cadence,
+                  quantity: 1,
+                  hours: null,
+                  unit_price_cents: 0,
+                },
+              ],
+            }
+          : p,
+      ),
+    )
+  }
+
+  function addDeliverableFromCatalog(phaseId: string, item: CatalogPickerItem, cadence: Cadence, unitPrice: number) {
+    setPhases((prev) =>
+      prev.map((p) =>
+        p.id === phaseId
+          ? {
+              ...p,
+              deliverables: [
+                ...p.deliverables,
+                {
+                  id: newId(),
+                  service_id: item.id,
+                  name: item.name,
+                  description: item.description ?? item.benefit ?? '',
+                  cadence,
+                  quantity: 1,
+                  hours: null,
+                  unit_price_cents: unitPrice,
+                },
+              ],
+            }
+          : p,
+      ),
+    )
+  }
+
+  function updateDeliverable(phaseId: string, delivId: string, patch: Partial<PhaseDeliverable>) {
+    setPhases((prev) =>
+      prev.map((p) =>
+        p.id === phaseId
+          ? {
+              ...p,
+              deliverables: p.deliverables.map((d) =>
+                d.id === delivId ? { ...d, ...patch } : d,
+              ),
+            }
+          : p,
+      ),
+    )
+  }
+
+  function removeDeliverable(phaseId: string, delivId: string) {
+    setPhases((prev) =>
+      prev.map((p) =>
+        p.id === phaseId
+          ? { ...p, deliverables: p.deliverables.filter((d) => d.id !== delivId) }
+          : p,
+      ),
+    )
+  }
+
+  function handleCatalogPick(phaseId: string, item: CatalogPickerItem) {
+    if (item.pricing_type === 'both') {
+      setPendingCatalogItem({ item, phaseId })
+      return
+    }
+    const cadence: Cadence = item.pricing_type === 'monthly' ? 'monthly' : 'one_time'
+    const unitPrice =
+      cadence === 'monthly'
+        ? (item.monthly_range_low_cents ?? item.display_price_cents)
+        : item.display_price_cents
+    addDeliverableFromCatalog(phaseId, item, cadence, unitPrice)
+  }
+
+  // ── Computed totals ───────────────────────────────────────────────
+
+  const allDeliverables = phases.flatMap((p) => p.deliverables)
+  const oneTimeTotalCents = allDeliverables
+    .filter((d) => d.cadence === 'one_time')
+    .reduce((s, d) => s + computeLineCents(d), 0)
+  const monthlyTotalCents = allDeliverables
+    .filter((d) => d.cadence === 'monthly')
+    .reduce((s, d) => s + computeLineCents(d), 0)
+  const quarterlyTotalCents = allDeliverables
+    .filter((d) => d.cadence === 'quarterly')
+    .reduce((s, d) => s + computeLineCents(d), 0)
+  const annualTotalCents = allDeliverables
+    .filter((d) => d.cadence === 'annual')
+    .reduce((s, d) => s + computeLineCents(d), 0)
+
+  const pct = parseInt(depositPct) || 25
+  const depositCents = Math.round((oneTimeTotalCents * pct) / 100)
+
+  // ── Save ──────────────────────────────────────────────────────────
 
   async function save(andSend: boolean) {
     setBusy(true)
     setError(null)
     try {
-      const computedTotalCents = deliverables.reduce(
-        (s, d) => s + Math.round(((d.hours ?? d.quantity) || 0) * (d.unit_price_cents || 0)),
-        0,
-      )
-      const total_cents = computeFromDeliverables
-        ? computedTotalCents
-        : Math.round(parseFloat(totalDollars || '0') * 100)
-      const deposit_pct = parseInt(depositPct) || 25
-      const deposit_cents = Math.round((total_cents * deposit_pct) / 100)
-
-      const enrichedDeliverables = deliverables
-        .filter((d) => d.name.trim())
-        .map((d) => ({
-          ...d,
-          line_total_cents: Math.round(((d.hours ?? d.quantity) || 0) * (d.unit_price_cents || 0)),
-        }))
-
       const res = await fetch('/api/admin/sow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -116,13 +282,28 @@ export default function NewSowPage() {
           title,
           prospect_id: prospectId || undefined,
           scope_summary: scopeSummary || undefined,
-          deliverables: enrichedDeliverables,
-          timeline: timeline.filter((p) => p.name.trim()),
-          pricing: { total_cents, deposit_cents, deposit_pct },
+          phases,
+          // Legacy fields kept for backward compat
+          deliverables: allDeliverables
+            .filter((d) => d.cadence === 'one_time' && d.name.trim())
+            .map((d) => ({
+              name: d.name,
+              description: d.description,
+              quantity: d.hours == null ? d.quantity : undefined,
+              hours: d.hours ?? undefined,
+              unit_price_cents: d.unit_price_cents || undefined,
+              line_total_cents: computeLineCents(d),
+            })),
+          timeline: [],
+          pricing: {
+            total_cents: oneTimeTotalCents,
+            deposit_cents: depositCents,
+            deposit_pct: pct,
+          },
           payment_terms: paymentTerms || undefined,
           guarantees: guarantees || undefined,
           notes: notes || undefined,
-          computed_from_deliverables: computeFromDeliverables,
+          computed_from_deliverables: true,
         }),
       })
       const data = await res.json()
@@ -143,6 +324,7 @@ export default function NewSowPage() {
     <div className="p-6 space-y-6 max-w-4xl">
       <h1 className="text-2xl font-bold text-slate-900">New SOW</h1>
 
+      {/* Basics */}
       <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 text-sm">
         <h2 className="font-semibold">Basics</h2>
         <label className="block">
@@ -180,192 +362,237 @@ export default function NewSowPage() {
         </label>
       </section>
 
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 text-sm">
+      {/* Phases */}
+      <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Deliverables</h2>
-          <button onClick={addDeliverable} className="text-xs text-slate-500 hover:text-slate-700">
-            + ad-hoc
+          <h2 className="font-semibold text-slate-900">Phases</h2>
+          <button
+            onClick={addPhase}
+            className="text-xs bg-slate-100 hover:bg-slate-200 rounded px-3 py-1.5 flex items-center gap-1"
+          >
+            <Plus className="w-3 h-3" /> Add phase
           </button>
         </div>
 
-        <div className="space-y-1">
-          <div className="text-xs text-slate-500 font-semibold uppercase">Add from catalog</div>
-          <CatalogPicker
-            onPick={addDeliverableFromCatalog}
-            placeholder="Search catalog to add as a deliverable…"
-          />
-        </div>
-
-        {deliverables.filter((d) => d.name || d.description).length === 0 && (
-          <div className="text-xs text-slate-400 italic">No deliverables yet. Pick from catalog above, or add ad-hoc.</div>
-        )}
-
-        {deliverables.map((d, idx) => (
+        {phases.map((phase, phaseIdx) => (
           <div
-            key={idx}
-            className={`border border-slate-100 rounded p-3 space-y-2 ${
-              d.catalog_item_id ? 'bg-teal-50/30' : ''
-            }`}
+            key={phase.id}
+            className="bg-white border border-slate-200 rounded-xl overflow-hidden"
           >
-            <div className="flex gap-2 items-start">
-              {d.catalog_item_id && (
-                <span title="From catalog" className="pt-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-teal-500" />
-                </span>
-              )}
+            {/* Phase header */}
+            <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border-b border-slate-200">
+              <span className="text-xs font-bold uppercase text-teal-600 shrink-0">
+                Phase {phaseIdx + 1}
+              </span>
               <input
-                value={d.name}
-                onChange={(e) => updateDeliverable(idx, { name: e.target.value })}
-                placeholder="Name (e.g. Next.js Website)"
-                className="flex-1 border border-slate-200 rounded px-2 py-1 font-medium"
+                value={phase.name}
+                onChange={(e) => updatePhase(phase.id, { name: e.target.value })}
+                placeholder="Phase name"
+                className="flex-1 border-0 bg-transparent font-semibold focus:outline-none"
               />
-              <button onClick={() => removeDeliverable(idx)} className="text-slate-400 hover:text-red-500">
-                <Trash2 className="w-4 h-4" />
-              </button>
+              {phases.length > 1 && (
+                <button
+                  onClick={() => removePhase(phase.id)}
+                  className="text-slate-300 hover:text-red-500 shrink-0"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
-            <textarea
-              value={d.description}
-              onChange={(e) => updateDeliverable(idx, { description: e.target.value })}
-              placeholder="Description"
-              rows={2}
-              className="w-full border border-slate-200 rounded px-2 py-1"
-            />
-            <input
-              value={d.acceptance_criteria}
-              onChange={(e) => updateDeliverable(idx, { acceptance_criteria: e.target.value })}
-              placeholder="Acceptance criteria"
-              className="w-full border border-slate-200 rounded px-2 py-1 text-xs"
-            />
-            <div className="grid grid-cols-4 gap-2">
-              <label className="text-xs">
-                Qty
-                <input
-                  type="number"
-                  min="1"
-                  value={d.quantity}
-                  onChange={(e) => updateDeliverable(idx, { quantity: Math.max(1, parseInt(e.target.value) || 1) })}
-                  className="w-full border border-slate-200 rounded px-2 py-1"
-                />
-              </label>
-              <label className="text-xs">
-                Hours (optional)
-                <input
-                  type="number"
-                  step="0.25"
-                  min="0"
-                  value={d.hours ?? ''}
-                  placeholder="—"
-                  onChange={(e) => updateDeliverable(idx, { hours: e.target.value ? parseFloat(e.target.value) : null })}
-                  className="w-full border border-slate-200 rounded px-2 py-1"
-                />
-              </label>
-              <label className="text-xs">
-                {d.hours != null ? 'Rate $/hr' : 'Unit $'}
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={(d.unit_price_cents / 100).toFixed(2)}
-                  onChange={(e) => updateDeliverable(idx, { unit_price_cents: Math.round(parseFloat(e.target.value || '0') * 100) })}
-                  className="w-full border border-slate-200 rounded px-2 py-1"
-                />
-              </label>
-              <div className="text-xs">
-                Line total
-                <div className="pt-1 font-semibold">
-                  ${(((d.hours ?? d.quantity) * d.unit_price_cents) / 100).toFixed(2)}
+
+            <div className="p-4 space-y-3">
+              <input
+                value={phase.description}
+                onChange={(e) => updatePhase(phase.id, { description: e.target.value })}
+                placeholder="Phase description (optional)"
+                className="w-full border border-slate-200 rounded px-2 py-1 text-sm"
+              />
+
+              {/* Deliverables */}
+              {phase.deliverables.map((d) => {
+                const lineCents = computeLineCents(d)
+                const suffix = CADENCE_SUFFIX[d.cadence]
+                return (
+                  <div
+                    key={d.id}
+                    className={`border border-slate-100 rounded p-3 space-y-2 text-sm ${
+                      d.service_id ? 'bg-teal-50/30' : ''
+                    }`}
+                  >
+                    <div className="flex gap-2 items-start">
+                      {d.service_id && (
+                        <span title="From catalog" className="pt-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-teal-500" />
+                        </span>
+                      )}
+                      <input
+                        value={d.name}
+                        onChange={(e) => updateDeliverable(phase.id, d.id, { name: e.target.value })}
+                        placeholder="Item name"
+                        className="flex-1 border border-slate-200 rounded px-2 py-1 font-medium"
+                      />
+                      <button
+                        onClick={() => removeDeliverable(phase.id, d.id)}
+                        className="text-slate-400 hover:text-red-500 shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <textarea
+                      value={d.description}
+                      onChange={(e) => updateDeliverable(phase.id, d.id, { description: e.target.value })}
+                      placeholder="Description"
+                      rows={2}
+                      className="w-full border border-slate-200 rounded px-2 py-1"
+                    />
+                    <div className="grid grid-cols-5 gap-2">
+                      <label className="text-xs">
+                        Cadence
+                        <select
+                          value={d.cadence}
+                          onChange={(e) =>
+                            updateDeliverable(phase.id, d.id, { cadence: e.target.value as Cadence })
+                          }
+                          className="w-full border border-slate-200 rounded px-2 py-1 mt-0.5"
+                        >
+                          {(Object.keys(CADENCE_LABELS) as Cadence[]).map((c) => (
+                            <option key={c} value={c}>
+                              {CADENCE_LABELS[c]}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="text-xs">
+                        Qty
+                        <input
+                          type="number"
+                          min="1"
+                          value={d.quantity}
+                          onChange={(e) =>
+                            updateDeliverable(phase.id, d.id, {
+                              quantity: Math.max(1, parseInt(e.target.value) || 1),
+                            })
+                          }
+                          className="w-full border border-slate-200 rounded px-2 py-1 mt-0.5"
+                        />
+                      </label>
+                      <label className="text-xs">
+                        Hours (optional)
+                        <input
+                          type="number"
+                          step="0.25"
+                          min="0"
+                          value={d.hours ?? ''}
+                          placeholder="—"
+                          onChange={(e) =>
+                            updateDeliverable(phase.id, d.id, {
+                              hours: e.target.value ? parseFloat(e.target.value) : null,
+                            })
+                          }
+                          className="w-full border border-slate-200 rounded px-2 py-1 mt-0.5"
+                        />
+                      </label>
+                      <label className="text-xs">
+                        {d.hours != null ? 'Rate $/hr' : 'Unit $'}
+                        {suffix && <span className="text-teal-600 ml-1">{suffix}</span>}
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={(d.unit_price_cents / 100).toFixed(2)}
+                          onChange={(e) =>
+                            updateDeliverable(phase.id, d.id, {
+                              unit_price_cents: Math.round(
+                                parseFloat(e.target.value || '0') * 100,
+                              ),
+                            })
+                          }
+                          className="w-full border border-slate-200 rounded px-2 py-1 mt-0.5"
+                        />
+                      </label>
+                      <div className="text-xs">
+                        Line total
+                        <div className="pt-1.5 font-semibold">
+                          {lineCents > 0 ? (
+                            <>
+                              {formatCents(lineCents)}
+                              {suffix && <span className="text-teal-600 ml-0.5">{suffix}</span>}
+                            </>
+                          ) : (
+                            '—'
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+
+              {/* Add deliverable actions */}
+              <div className="space-y-2">
+                <div className="text-xs text-slate-400 font-semibold uppercase">
+                  Add from catalog
                 </div>
+                <CatalogPicker
+                  onPick={(item) => handleCatalogPick(phase.id, item)}
+                  placeholder="Search catalog to add as a deliverable…"
+                />
+                <button
+                  onClick={() => addDeliverable(phase.id)}
+                  className="text-xs text-slate-500 hover:text-slate-700"
+                >
+                  + ad-hoc deliverable
+                </button>
               </div>
             </div>
           </div>
         ))}
       </section>
 
-      <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 text-sm">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Timeline</h2>
-          <button onClick={addPhase} className="text-xs bg-slate-100 hover:bg-slate-200 rounded px-3 py-1">
-            <Plus className="w-3 h-3 inline" /> Add phase
-          </button>
-        </div>
-        {timeline.map((p, idx) => (
-          <div key={idx} className="border border-slate-100 rounded p-3 space-y-2">
-            <div className="flex gap-2">
-              <input
-                value={p.name}
-                onChange={(e) => updatePhase(idx, { name: e.target.value })}
-                placeholder="Phase name"
-                className="flex-1 border border-slate-200 rounded px-2 py-1 font-medium"
-              />
-              <input
-                type="number"
-                value={p.duration_weeks}
-                onChange={(e) => updatePhase(idx, { duration_weeks: parseInt(e.target.value) || 1 })}
-                placeholder="Weeks"
-                className="w-20 border border-slate-200 rounded px-2 py-1 text-right"
-              />
-              <button onClick={() => removePhase(idx)} className="text-slate-400 hover:text-red-500">
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-            <input
-              value={p.description}
-              onChange={(e) => updatePhase(idx, { description: e.target.value })}
-              placeholder="Description"
-              className="w-full border border-slate-200 rounded px-2 py-1"
-            />
-          </div>
-        ))}
-      </section>
-
+      {/* Pricing summary */}
       <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 text-sm">
         <h2 className="font-semibold">Pricing</h2>
-        {(() => {
-          const computedTotalCents = deliverables.reduce(
-            (s, d) => s + Math.round(((d.hours ?? d.quantity) || 0) * (d.unit_price_cents || 0)),
-            0,
-          )
-          return (
-            <>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="compute"
-                  checked={computeFromDeliverables}
-                  onChange={(e) => {
-                    setComputeFromDeliverables(e.target.checked)
-                    if (e.target.checked) setTotalDollars((computedTotalCents / 100).toFixed(2))
-                  }}
-                />
-                <label htmlFor="compute" className="text-xs">
-                  Compute total from deliverables (currently ${(computedTotalCents / 100).toFixed(2)})
-                </label>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <label>
-                  Total ($)
-                  <input
-                    type="number"
-                    step="0.01"
-                    readOnly={computeFromDeliverables}
-                    value={computeFromDeliverables ? (computedTotalCents / 100).toFixed(2) : totalDollars}
-                    onChange={(e) => setTotalDollars(e.target.value)}
-                    className={`w-full border border-slate-200 rounded px-2 py-1 mt-1${computeFromDeliverables ? ' bg-slate-50' : ''}`}
-                  />
-                </label>
-                <label>
-                  Deposit %
-                  <input
-                    type="number"
-                    value={depositPct}
-                    onChange={(e) => setDepositPct(e.target.value)}
-                    className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
-                  />
-                </label>
-              </div>
-            </>
-          )
-        })()}
+        <div className="space-y-1 text-sm">
+          {oneTimeTotalCents > 0 && (
+            <div className="flex justify-between">
+              <span className="text-slate-600">One-time project total</span>
+              <span className="font-semibold">{formatCents(oneTimeTotalCents)}</span>
+            </div>
+          )}
+          {monthlyTotalCents > 0 && (
+            <div className="flex justify-between">
+              <span className="text-slate-600">Monthly recurring</span>
+              <span className="font-semibold text-teal-700">{formatCents(monthlyTotalCents)}/mo</span>
+            </div>
+          )}
+          {quarterlyTotalCents > 0 && (
+            <div className="flex justify-between">
+              <span className="text-slate-600">Quarterly recurring</span>
+              <span className="font-semibold text-teal-700">{formatCents(quarterlyTotalCents)}/qtr</span>
+            </div>
+          )}
+          {annualTotalCents > 0 && (
+            <div className="flex justify-between">
+              <span className="text-slate-600">Annual recurring</span>
+              <span className="font-semibold text-teal-700">{formatCents(annualTotalCents)}/yr</span>
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <label>
+            Deposit %
+            <input
+              type="number"
+              value={depositPct}
+              onChange={(e) => setDepositPct(e.target.value)}
+              className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+            />
+          </label>
+          <div>
+            Deposit amount
+            <div className="mt-1 font-semibold">{formatCents(depositCents)}</div>
+          </div>
+        </div>
         <label className="block">
           Payment terms
           <textarea
@@ -400,19 +627,31 @@ export default function NewSowPage() {
       <div className="flex gap-3">
         <button
           onClick={() => save(false)}
-          disabled={busy || !title || (!computeFromDeliverables && !totalDollars)}
+          disabled={busy || !title}
           className="bg-slate-100 hover:bg-slate-200 rounded-lg px-4 py-2 font-semibold disabled:opacity-50"
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save as draft'}
         </button>
         <button
           onClick={() => save(true)}
-          disabled={busy || !title || (!computeFromDeliverables && !totalDollars)}
+          disabled={busy || !title}
           className="bg-teal-500 text-white rounded-lg px-4 py-2 font-semibold hover:bg-teal-600 disabled:opacity-50"
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save & Send'}
         </button>
       </div>
+
+      {/* Cadence picker modal */}
+      {pendingCatalogItem && (
+        <CadencePickModal
+          item={pendingCatalogItem.item}
+          onConfirm={(cadence, unitPrice) => {
+            addDeliverableFromCatalog(pendingCatalogItem.phaseId, pendingCatalogItem.item, cadence, unitPrice)
+            setPendingCatalogItem(null)
+          }}
+          onCancel={() => setPendingCatalogItem(null)}
+        />
+      )}
     </div>
   )
 }

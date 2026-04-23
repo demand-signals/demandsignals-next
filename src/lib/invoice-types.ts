@@ -151,6 +151,36 @@ export interface Subscription {
   updated_at: string
 }
 
+// ── SOW phases + cadence types ─────────────────────────────────────
+
+export type Cadence = 'one_time' | 'monthly' | 'quarterly' | 'annual'
+
+export interface SowPhaseStartTrigger {
+  type: 'on_phase_complete' | 'date'
+  phase_id?: string | null
+  date?: string | null
+}
+
+export interface SowPhaseDeliverable {
+  id: string
+  service_id?: string | null
+  name: string
+  description: string
+  cadence: Cadence
+  quantity?: number
+  hours?: number
+  unit_price_cents?: number
+  line_total_cents?: number
+  start_trigger?: SowPhaseStartTrigger
+}
+
+export interface SowPhase {
+  id: string
+  name: string
+  description: string
+  deliverables: SowPhaseDeliverable[]
+}
+
 // ── SOW types ──────────────────────────────────────────────────────
 
 export type SowStatus =
@@ -215,6 +245,7 @@ export interface SowDocument {
   status: SowStatus
   title: string
   scope_summary: string | null
+  phases: SowPhase[]  // new preferred shape; [] if still using legacy
   deliverables: SowDeliverable[]
   timeline: SowTimelinePhase[]
   pricing: SowPricing

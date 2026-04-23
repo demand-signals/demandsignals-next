@@ -1,0 +1,41 @@
+-- 018a: Phases-with-deliverables hierarchy + cadence on deliverables.
+-- Phases replace the flat deliverables[] + timeline[] arrays. Each phase
+-- has its own deliverables[]. Cadence lets a deliverable be one-time,
+-- monthly, quarterly, or annual; subscription deliverables get
+-- materialized as `subscriptions` rows on SOW accept.
+--
+-- Backward compat: existing rows keep flat `deliverables` + `timeline`;
+-- we add `phases` as an optional jsonb array alongside. The renderer
+-- prefers `phases` when present, falls back to legacy shape otherwise.
+
+ALTER TABLE sow_documents
+  ADD COLUMN IF NOT EXISTS phases jsonb NOT NULL DEFAULT '[]'::jsonb;
+
+-- Phases shape (documented for humans; stored jsonb):
+-- [
+--   {
+--     "id": "<uuid>",
+--     "name": "Phase 1",
+--     "description": "Website build",
+--     "deliverables": [
+--       {
+--         "id": "<uuid>",
+--         "service_id": "react-nextjs-site" | null,  -- FK to services_catalog if from catalog
+--         "name": "React/Next.js Website",
+--         "description": "...",
+--         "cadence": "one_time" | "monthly" | "quarterly" | "annual",
+--         "quantity": 1,
+--         "hours": null,
+--         "unit_price_cents": 500000,
+--         "line_total_cents": 500000,
+--         "start_trigger": {
+--           "type": "on_phase_complete" | "date",
+--           "phase_id": "<uuid>" | null,  -- only if type=on_phase_complete
+--           "date": "2026-06-01" | null   -- only if type=date
+--         }
+--       }
+--     ]
+--   }
+-- ]
+--
+-- No FK enforcement at DB layer -- it's jsonb for flexibility.

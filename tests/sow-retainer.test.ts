@@ -12,6 +12,7 @@ describe('sowToRenderPayload', () => {
     status: 'draft',
     title: 'Test',
     scope_summary: null,
+    phases: [],
     deliverables: [],
     timeline: [],
     pricing: { total_cents: 100000, deposit_cents: 50000, deposit_pct: 50 },

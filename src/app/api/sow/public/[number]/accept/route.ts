@@ -9,7 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { getValueStackItems } from '@/lib/services-catalog'
-import type { SowPricing } from '@/lib/invoice-types'
+import type { SowPricing, SowPhase } from '@/lib/invoice-types'
 
 export async function POST(
   request: NextRequest,
@@ -173,6 +173,81 @@ export async function POST(
       deposit_invoice_id: depositInvoice.id,
     })
     .eq('id', sow.id)
+
+  // Materialize subscriptions for recurring deliverables in phases.
+  // Each monthly/quarterly/annual deliverable gets its own subscription row.
+  if (sow.prospect_id && Array.isArray(sow.phases) && (sow.phases as SowPhase[]).length > 0) {
+    const cadenceToBillingInterval: Record<string, string> = {
+      monthly: 'month',
+      quarterly: 'quarter',
+      annual: 'year',
+    }
+
+    for (const phase of sow.phases as SowPhase[]) {
+      for (const deliv of phase.deliverables) {
+        const cadence = deliv.cadence ?? 'one_time'
+        if (!['monthly', 'quarterly', 'annual'].includes(cadence)) continue
+
+        const billingInterval = cadenceToBillingInterval[cadence]
+        const lineCents = deliv.line_total_cents ?? (((deliv.hours ?? deliv.quantity ?? 1)) * (deliv.unit_price_cents ?? 0))
+
+        // Determine start date from trigger or default to now.
+        let periodStart = new Date()
+        if (deliv.start_trigger?.type === 'date' && deliv.start_trigger.date) {
+          periodStart = new Date(deliv.start_trigger.date)
+        }
+
+        // Compute period end based on billing interval.
+        const periodEnd = new Date(periodStart)
+        if (billingInterval === 'month') periodEnd.setMonth(periodEnd.getMonth() + 1)
+        else if (billingInterval === 'quarter') periodEnd.setMonth(periodEnd.getMonth() + 3)
+        else if (billingInterval === 'year') periodEnd.setFullYear(periodEnd.getFullYear() + 1)
+
+        // Try to find an existing subscription_plans row matching service_id.
+        let planId: string | null = null
+        if (deliv.service_id) {
+          const { data: existingPlan } = await supabaseAdmin
+            .from('subscription_plans')
+            .select('id')
+            .eq('slug', deliv.service_id)
+            .eq('active', true)
+            .maybeSingle()
+          if (existingPlan) planId = existingPlan.id
+        }
+
+        // If no matching plan found, create a throwaway plan for this deliverable.
+        if (!planId) {
+          const throwawaySlug = `sow-${sow.sow_number}-deliv-${deliv.id.slice(0, 8)}`
+          const { data: newPlan } = await supabaseAdmin
+            .from('subscription_plans')
+            .insert({
+              slug: throwawaySlug,
+              name: deliv.name,
+              description: `Auto-created from SOW ${sow.sow_number}`,
+              price_cents: lineCents,
+              billing_interval: billingInterval,
+              active: true,
+            })
+            .select('id')
+            .single()
+          if (newPlan) planId = newPlan.id
+        }
+
+        if (!planId) continue // skip if we couldn't get a plan
+
+        await supabaseAdmin.from('subscriptions').insert({
+          prospect_id: sow.prospect_id,
+          plan_id: planId,
+          status: 'active',
+          current_period_start: periodStart.toISOString(),
+          current_period_end: periodEnd.toISOString(),
+          next_invoice_date: periodEnd.toISOString().slice(0, 10),
+          override_monthly_amount_cents: lineCents,
+          notes: `Auto-created from SOW ${sow.sow_number} deliverable "${deliv.name}" (${cadence})`,
+        })
+      }
+    }
+  }
 
   const depositPublicUrl = `https://demandsignals.co/invoice/${depositInvoice.invoice_number}/${depositInvoice.public_uuid}`
 
