@@ -249,6 +249,69 @@ export async function POST(
     }
   }
 
+  // ── Best-effort: mark prospect as client + create project ─────────
+  // Wrapped in try/catch so failures here never break the accept flow.
+  // The deposit invoice + subscriptions are already committed at this point.
+  try {
+    // 1. Mark prospect as client (idempotent — .eq('is_client', false) guard)
+    if (sow.prospect_id) {
+      await supabaseAdmin
+        .from('prospects')
+        .update({ is_client: true, became_client_at: new Date().toISOString() })
+        .eq('id', sow.prospect_id)
+        .eq('is_client', false)
+    }
+
+    // 2. Create project from SOW phases
+    const projectPhases = (sow.phases ?? []).map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      status: 'pending',
+      completed_at: null,
+      deliverables: (p.deliverables ?? []).map((d: any) => ({
+        id: d.id,
+        service_id: d.service_id ?? null,
+        name: d.name,
+        description: d.description,
+        cadence: d.cadence ?? 'one_time',
+        quantity: d.quantity,
+        hours: d.hours,
+        unit_price_cents: d.unit_price_cents,
+        line_total_cents: d.line_total_cents,
+        status: 'pending',
+        delivered_at: null,
+      })),
+    }))
+
+    // Monthly value = sum of monthly + (quarterly/3) + (annual/12) recurring deliverable cents
+    let monthlyCents = 0
+    for (const phase of sow.phases ?? []) {
+      for (const d of phase.deliverables ?? []) {
+        const cents = d.line_total_cents ?? 0
+        if (d.cadence === 'monthly') monthlyCents += cents
+        else if (d.cadence === 'quarterly') monthlyCents += Math.round(cents / 3)
+        else if (d.cadence === 'annual') monthlyCents += Math.round(cents / 12)
+      }
+    }
+
+    const { error: projErr } = await supabaseAdmin.from('projects').insert({
+      prospect_id: sow.prospect_id,
+      sow_document_id: sow.id,
+      name: sow.title,
+      type: 'website',
+      status: 'planning',
+      start_date: new Date().toISOString().slice(0, 10),
+      target_date: null,
+      phases: projectPhases,
+      monthly_value: monthlyCents > 0 ? monthlyCents / 100 : null,
+      notes: `Auto-created from accepted SOW ${sow.sow_number}`,
+    })
+    if (projErr) console.error('[accept] Project creation failed:', projErr.message)
+  } catch (lifecycleErr: any) {
+    console.error('[accept] Client lifecycle side-effect failed:', lifecycleErr?.message ?? lifecycleErr)
+  }
+
   const depositPublicUrl = `https://demandsignals.co/invoice/${depositInvoice.invoice_number}/${depositInvoice.public_uuid}`
 
   return NextResponse.json({

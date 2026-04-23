@@ -416,6 +416,7 @@ Both templates auto-generate JSON-LD schema (Service, BreadcrumbList, FAQPage).
 - [x] AnalyticsTracker: privacy-preserving pageview tracking (SHA256 visitor hash, no cookies, no PII)
 - [x] 843 static pages building clean
 - [x] Retainer bundling at /quote: required selection step, 4 tiers (Essential/Growth/Full/Site-only), one-signature SOW flow with SowOngoingServices payload, launch activation creates subscription row via `activateRetainer()`
+- [x] SOW accept triggers client + project creation: prospects.is_client + became_client_at, projects row with phases materialized from SOW phases, monthly_value computed from recurring deliverable cents
 
 ---
 
@@ -428,6 +429,29 @@ Admin marks quote launched via `/admin/quotes/[id]` → `RetainerPanel` Mark Lau
 Retainer plans editable at `/admin/retainer-plans` + `/admin/retainer-plans/[id]`. The retainer menu is filtered rows of `services_catalog` where `pricing_type IN ('monthly','both')` — single source of truth, no parallel table.
 
 SOW includes `ongoing_services` (see `SowOngoingServices` in `invoice-types.ts`) populated via `buildSowOngoingServices(quoteId)`. Python PDF renderer wires this separately.
+
+---
+
+### Project lifecycle (added 2026-04-22)
+
+SOW accept (`/api/sow/public/[number]/accept`) now converts the prospect into a client
+(prospects.is_client=true) and materializes a projects row with phases copied from the
+SOW. Phases carry `status` (pending/in_progress/completed). Deliverables carry `status`
+(pending/delivered). Admin manages at `/admin/projects` + `/admin/projects/[id]`.
+Subscription rows are created for recurring deliverables as part of accept.
+
+Migration: `supabase/migrations/018b_client_lifecycle.sql` adds `prospects.is_client`,
+`prospects.became_client_at`, `projects.sow_document_id`, `projects.phases`.
+Apply via `supabase/migrations/APPLY-018-2026-04-22.sql`.
+
+Key files:
+- `src/lib/invoice-types.ts` — `ProjectPhaseDeliverable`, `ProjectPhase`, `ProjectRow` types
+- `src/app/api/admin/projects/route.ts` — list projects
+- `src/app/api/admin/projects/[id]/route.ts` — GET + PATCH project
+- `src/app/api/admin/projects/[id]/phases/[phaseId]/route.ts` — update phase status
+- `src/app/api/admin/projects/[id]/deliverables/[deliverableId]/route.ts` — update deliverable status
+- `src/app/admin/projects/page.tsx` — admin list view
+- `src/app/admin/projects/[id]/page.tsx` — admin detail with phase/deliverable management
 
 ---
 
