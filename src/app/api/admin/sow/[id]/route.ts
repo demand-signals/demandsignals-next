@@ -1,8 +1,10 @@
 // ── /api/admin/sow/[id] — detail + update + delete ──────────────────
 
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import type { SowDeliverable } from '@/lib/invoice-types'
 
 export async function GET(
   request: NextRequest,
@@ -24,6 +26,48 @@ export async function GET(
   return NextResponse.json({ sow: data })
 }
 
+// ── PATCH body schema ────────────────────────────────────────────────
+
+const patchDeliverableSchema = z.object({
+  name: z.string().min(1),
+  description: z.string(),
+  acceptance_criteria: z.string().optional(),
+  quantity: z.number().int().min(1).optional(),
+  hours: z.number().nonnegative().optional(),
+  unit_price_cents: z.number().int().nonnegative().optional(),
+})
+
+const patchBodySchema = z.object({
+  title: z.string().min(1).optional(),
+  scope_summary: z.string().optional(),
+  payment_terms: z.string().optional(),
+  guarantees: z.string().optional(),
+  notes: z.string().optional(),
+  send_date: z.string().optional(),
+  computed_from_deliverables: z.boolean().optional(),
+  deliverables: z.array(patchDeliverableSchema).optional(),
+  timeline: z.array(z.object({
+    name: z.string().min(1),
+    duration_weeks: z.number(),
+    description: z.string(),
+    deliverables: z.array(z.string()).optional(),
+  })).optional(),
+  pricing: z.object({
+    total_cents: z.number().int(),
+    deposit_cents: z.number().int().optional(),
+    deposit_pct: z.number().optional(),
+  }).optional(),
+  force_edit: z.boolean().optional(),
+})
+
+function computeLineTotal(d: z.infer<typeof patchDeliverableSchema>): SowDeliverable {
+  const line_total_cents =
+    d.unit_price_cents !== undefined
+      ? Math.round((d.hours ?? d.quantity ?? 1) * d.unit_price_cents)
+      : undefined
+  return { ...d, line_total_cents }
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -38,38 +82,50 @@ export async function PATCH(
     .eq('id', id)
     .maybeSingle()
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  if (existing.status !== 'draft') {
+
+  let parsed: z.infer<typeof patchBodySchema>
+  try {
+    parsed = patchBodySchema.parse(await request.json())
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
+
+  const { force_edit, ...fields } = parsed
+
+  if (existing.status !== 'draft' && force_edit !== true) {
     return NextResponse.json(
-      { error: 'Can only edit drafts' },
+      {
+        error: `Cannot edit SOW in status ${existing.status}. Pass force_edit: true to override.`,
+      },
       { status: 409 },
     )
   }
 
-  const body = await request.json().catch(() => ({}))
-  const allowed = [
-    'title',
-    'scope_summary',
-    'deliverables',
-    'timeline',
-    'pricing',
-    'payment_terms',
-    'guarantees',
-    'notes',
-  ] as const
+  // Build selective update — only include keys that were present in the body.
   const updates: Record<string, unknown> = {}
-  for (const k of allowed) {
-    if (body[k] !== undefined) updates[k] = body[k]
+
+  if (fields.title !== undefined) updates.title = fields.title
+  if (fields.scope_summary !== undefined) updates.scope_summary = fields.scope_summary
+  if (fields.payment_terms !== undefined) updates.payment_terms = fields.payment_terms
+  if (fields.guarantees !== undefined) updates.guarantees = fields.guarantees
+  if (fields.notes !== undefined) updates.notes = fields.notes
+  if (fields.send_date !== undefined) updates.send_date = fields.send_date
+  if (fields.computed_from_deliverables !== undefined) {
+    updates.computed_from_deliverables = fields.computed_from_deliverables
+  }
+  if (fields.timeline !== undefined) updates.timeline = fields.timeline
+  if (fields.pricing !== undefined) updates.pricing = fields.pricing
+  if (fields.deliverables !== undefined) {
+    updates.deliverables = fields.deliverables.map(computeLineTotal)
   }
 
-  const { data, error } = await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from('sow_documents')
     .update(updates)
     .eq('id', id)
-    .select('*')
-    .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ sow: data })
+  return NextResponse.json({ ok: true })
 }
 
 export async function DELETE(
