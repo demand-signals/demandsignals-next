@@ -73,6 +73,9 @@ export async function POST(request: NextRequest) {
     line_items,
     notes,
     due_date,
+    send_date,
+    late_fee_cents,
+    late_fee_grace_days,
     category_hint,
   }: {
     kind?: InvoiceKind
@@ -82,6 +85,9 @@ export async function POST(request: NextRequest) {
     line_items: CreateLineItem[]
     notes?: string
     due_date?: string
+    send_date?: string
+    late_fee_cents?: number
+    late_fee_grace_days?: number
     category_hint?: CategoryHint
   } = body
 
@@ -156,6 +162,9 @@ export async function POST(request: NextRequest) {
       total_due_cents: totalDueCents,
       currency: 'USD',
       due_date: due_date ?? null,
+      send_date: send_date ?? null,
+      late_fee_cents: late_fee_cents ?? 0,
+      late_fee_grace_days: late_fee_grace_days ?? 0,
       category_hint: category_hint ?? (effectiveKind === 'subscription_cycle' ? 'subscription_revenue' : 'service_revenue'),
       notes: notes ?? null,
       created_by: auth.user.id,
