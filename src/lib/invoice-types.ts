@@ -82,6 +82,10 @@ export interface Invoice {
   stripe_payment_link_url: string | null
   public_viewed_count: number
   notes: string | null
+  send_date: string | null
+  late_fee_cents: number
+  late_fee_grace_days: number
+  late_fee_applied_at: string | null
   created_by: string | null
   created_at: string
   updated_at: string
@@ -140,6 +144,9 @@ export interface Subscription {
   next_invoice_date: string
   canceled_at: string | null
   cancel_reason: string | null
+  end_date: string | null
+  notes: string | null
+  override_monthly_amount_cents: number | null
   created_at: string
   updated_at: string
 }
