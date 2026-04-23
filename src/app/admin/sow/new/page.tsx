@@ -15,6 +15,9 @@ interface Deliverable {
   description: string
   acceptance_criteria: string
   catalog_item_id?: string | null
+  quantity: number
+  hours: number | null  // null = not hourly
+  unit_price_cents: number
 }
 interface Phase {
   name: string
@@ -29,8 +32,9 @@ export default function NewSowPage() {
   const [title, setTitle] = useState('')
   const [scopeSummary, setScopeSummary] = useState('')
   const [deliverables, setDeliverables] = useState<Deliverable[]>([
-    { name: '', description: '', acceptance_criteria: '' },
+    { name: '', description: '', acceptance_criteria: '', quantity: 1, hours: null, unit_price_cents: 0 },
   ])
+  const [computeFromDeliverables, setComputeFromDeliverables] = useState(true)
   const [timeline, setTimeline] = useState<Phase[]>([
     { name: '', duration_weeks: 1, description: '' },
   ])
@@ -51,7 +55,7 @@ export default function NewSowPage() {
   }, [])
 
   function addDeliverable() {
-    setDeliverables((d) => [...d, { name: '', description: '', acceptance_criteria: '' }])
+    setDeliverables((d) => [...d, { name: '', description: '', acceptance_criteria: '', quantity: 1, hours: null, unit_price_cents: 0 }])
   }
   function addDeliverableFromCatalog(item: CatalogPickerItem) {
     setDeliverables((d) => [
@@ -61,6 +65,9 @@ export default function NewSowPage() {
         description: item.description ?? item.benefit ?? '',
         acceptance_criteria: 'Delivered + client review',
         catalog_item_id: item.id,
+        quantity: 1,
+        hours: null,
+        unit_price_cents: item.display_price_cents,
       },
     ])
   }
@@ -85,9 +92,22 @@ export default function NewSowPage() {
     setBusy(true)
     setError(null)
     try {
-      const total_cents = Math.round(parseFloat(totalDollars || '0') * 100)
+      const computedTotalCents = deliverables.reduce(
+        (s, d) => s + Math.round(((d.hours ?? d.quantity) || 0) * (d.unit_price_cents || 0)),
+        0,
+      )
+      const total_cents = computeFromDeliverables
+        ? computedTotalCents
+        : Math.round(parseFloat(totalDollars || '0') * 100)
       const deposit_pct = parseInt(depositPct) || 25
       const deposit_cents = Math.round((total_cents * deposit_pct) / 100)
+
+      const enrichedDeliverables = deliverables
+        .filter((d) => d.name.trim())
+        .map((d) => ({
+          ...d,
+          line_total_cents: Math.round(((d.hours ?? d.quantity) || 0) * (d.unit_price_cents || 0)),
+        }))
 
       const res = await fetch('/api/admin/sow', {
         method: 'POST',
@@ -96,12 +116,13 @@ export default function NewSowPage() {
           title,
           prospect_id: prospectId || undefined,
           scope_summary: scopeSummary || undefined,
-          deliverables: deliverables.filter((d) => d.name.trim()),
+          deliverables: enrichedDeliverables,
           timeline: timeline.filter((p) => p.name.trim()),
           pricing: { total_cents, deposit_cents, deposit_pct },
           payment_terms: paymentTerms || undefined,
           guarantees: guarantees || undefined,
           notes: notes || undefined,
+          computed_from_deliverables: computeFromDeliverables,
         }),
       })
       const data = await res.json()
@@ -215,6 +236,47 @@ export default function NewSowPage() {
               placeholder="Acceptance criteria"
               className="w-full border border-slate-200 rounded px-2 py-1 text-xs"
             />
+            <div className="grid grid-cols-4 gap-2">
+              <label className="text-xs">
+                Qty
+                <input
+                  type="number"
+                  min="1"
+                  value={d.quantity}
+                  onChange={(e) => updateDeliverable(idx, { quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+                  className="w-full border border-slate-200 rounded px-2 py-1"
+                />
+              </label>
+              <label className="text-xs">
+                Hours (optional)
+                <input
+                  type="number"
+                  step="0.25"
+                  min="0"
+                  value={d.hours ?? ''}
+                  placeholder="—"
+                  onChange={(e) => updateDeliverable(idx, { hours: e.target.value ? parseFloat(e.target.value) : null })}
+                  className="w-full border border-slate-200 rounded px-2 py-1"
+                />
+              </label>
+              <label className="text-xs">
+                {d.hours != null ? 'Rate $/hr' : 'Unit $'}
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={(d.unit_price_cents / 100).toFixed(2)}
+                  onChange={(e) => updateDeliverable(idx, { unit_price_cents: Math.round(parseFloat(e.target.value || '0') * 100) })}
+                  className="w-full border border-slate-200 rounded px-2 py-1"
+                />
+              </label>
+              <div className="text-xs">
+                Line total
+                <div className="pt-1 font-semibold">
+                  ${(((d.hours ?? d.quantity) * d.unit_price_cents) / 100).toFixed(2)}
+                </div>
+              </div>
+            </div>
           </div>
         ))}
       </section>
@@ -258,27 +320,52 @@ export default function NewSowPage() {
 
       <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 text-sm">
         <h2 className="font-semibold">Pricing</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <label>
-            Total ($)
-            <input
-              type="number"
-              step="0.01"
-              value={totalDollars}
-              onChange={(e) => setTotalDollars(e.target.value)}
-              className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
-            />
-          </label>
-          <label>
-            Deposit %
-            <input
-              type="number"
-              value={depositPct}
-              onChange={(e) => setDepositPct(e.target.value)}
-              className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
-            />
-          </label>
-        </div>
+        {(() => {
+          const computedTotalCents = deliverables.reduce(
+            (s, d) => s + Math.round(((d.hours ?? d.quantity) || 0) * (d.unit_price_cents || 0)),
+            0,
+          )
+          return (
+            <>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="compute"
+                  checked={computeFromDeliverables}
+                  onChange={(e) => {
+                    setComputeFromDeliverables(e.target.checked)
+                    if (e.target.checked) setTotalDollars((computedTotalCents / 100).toFixed(2))
+                  }}
+                />
+                <label htmlFor="compute" className="text-xs">
+                  Compute total from deliverables (currently ${(computedTotalCents / 100).toFixed(2)})
+                </label>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <label>
+                  Total ($)
+                  <input
+                    type="number"
+                    step="0.01"
+                    readOnly={computeFromDeliverables}
+                    value={computeFromDeliverables ? (computedTotalCents / 100).toFixed(2) : totalDollars}
+                    onChange={(e) => setTotalDollars(e.target.value)}
+                    className={`w-full border border-slate-200 rounded px-2 py-1 mt-1${computeFromDeliverables ? ' bg-slate-50' : ''}`}
+                  />
+                </label>
+                <label>
+                  Deposit %
+                  <input
+                    type="number"
+                    value={depositPct}
+                    onChange={(e) => setDepositPct(e.target.value)}
+                    className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+                  />
+                </label>
+              </div>
+            </>
+          )
+        })()}
         <label className="block">
           Payment terms
           <textarea
@@ -313,14 +400,14 @@ export default function NewSowPage() {
       <div className="flex gap-3">
         <button
           onClick={() => save(false)}
-          disabled={busy || !title || !totalDollars}
+          disabled={busy || !title || (!computeFromDeliverables && !totalDollars)}
           className="bg-slate-100 hover:bg-slate-200 rounded-lg px-4 py-2 font-semibold disabled:opacity-50"
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save as draft'}
         </button>
         <button
           onClick={() => save(true)}
-          disabled={busy || !title || !totalDollars}
+          disabled={busy || !title || (!computeFromDeliverables && !totalDollars)}
           className="bg-teal-500 text-white rounded-lg px-4 py-2 font-semibold hover:bg-teal-600 disabled:opacity-50"
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save & Send'}
