@@ -1020,13 +1020,8 @@ export default function ProspectDetailPage() {
             )}
           </Card>
 
-          {/* Notes */}
-          {prospect.notes && (
-            <Card>
-              <CardTitle>Notes</CardTitle>
-              <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{prospect.notes}</p>
-            </Card>
-          )}
+          {/* Notes Timeline */}
+          <ProspectNotes prospectId={id} legacyNotes={prospect.notes ?? null} />
         </div>
 
         {/* Right col */}
@@ -1251,6 +1246,217 @@ export default function ProspectDetailPage() {
         <ProspectEditModal prospect={prospect} onClose={() => setShowEdit(false)} />
       )}
     </div>
+  )
+}
+
+interface ProspectNote {
+  id: string
+  body: string
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+function formatTimestampFull(ts: string) {
+  const d = new Date(ts)
+  const now = new Date()
+  const diffMs = now.getTime() - d.getTime()
+  const diffMin = Math.floor(diffMs / 60_000)
+  const diffHr = Math.floor(diffMs / 3_600_000)
+  const diffDay = Math.floor(diffMs / 86_400_000)
+  if (diffMin < 1) return 'just now'
+  if (diffMin < 60) return `${diffMin}m ago`
+  if (diffHr < 24) return `${diffHr}h ago`
+  if (diffDay < 7) return `${diffDay}d ago`
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function ProspectNotes({ prospectId, legacyNotes }: { prospectId: string; legacyNotes: string | null }) {
+  const queryClient = useQueryClient()
+  const [newBody, setNewBody] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editBody, setEditBody] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [addError, setAddError] = useState<string | null>(null)
+
+  const notesQuery = useQuery({
+    queryKey: ['prospect-notes', prospectId],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/prospects/${prospectId}/notes`)
+      if (!res.ok) throw new Error('Failed to fetch notes')
+      return res.json() as Promise<{ notes: ProspectNote[] }>
+    },
+    enabled: !!prospectId,
+  })
+
+  const addMutation = useMutation({
+    mutationFn: async (body: string) => {
+      const res = await fetch(`/api/admin/prospects/${prospectId}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to add note')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prospect-notes', prospectId] })
+      setNewBody('')
+      setAddError(null)
+    },
+    onError: (e: Error) => setAddError(e.message),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async (noteId: string) => {
+      const res = await fetch(`/api/admin/prospects/${prospectId}/notes/${noteId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete note')
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prospect-notes', prospectId] })
+      setConfirmDeleteId(null)
+    },
+  })
+
+  async function saveEdit(noteId: string) {
+    if (!editBody.trim()) return
+    setSavingEdit(true)
+    try {
+      const res = await fetch(`/api/admin/prospects/${prospectId}/notes/${noteId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: editBody.trim() }),
+      })
+      if (!res.ok) throw new Error('Failed to update note')
+      queryClient.invalidateQueries({ queryKey: ['prospect-notes', prospectId] })
+      setEditingId(null)
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  const notes = notesQuery.data?.notes ?? []
+
+  return (
+    <Card>
+      <CardTitle>Notes</CardTitle>
+
+      {/* Add note form */}
+      <div className="mb-4 pb-4 border-b border-slate-100">
+        <textarea
+          value={newBody}
+          onChange={e => setNewBody(e.target.value)}
+          placeholder="Add a note…"
+          rows={3}
+          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[var(--teal)] resize-none"
+        />
+        {addError && <p className="text-xs text-red-500 mt-1">{addError}</p>}
+        <div className="flex justify-end mt-2">
+          <button
+            onClick={() => addMutation.mutate(newBody.trim())}
+            disabled={!newBody.trim() || addMutation.isPending}
+            className="px-3 py-1.5 bg-[var(--teal)] text-white text-xs font-medium rounded-lg hover:bg-[var(--teal-dark)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {addMutation.isPending ? 'Adding…' : 'Add Note'}
+          </button>
+        </div>
+      </div>
+
+      {/* Notes list */}
+      {notesQuery.isLoading ? (
+        <p className="text-slate-400 text-sm text-center py-4">Loading…</p>
+      ) : notes.length === 0 && !legacyNotes ? (
+        <p className="text-slate-400 text-sm text-center py-2">No notes yet.</p>
+      ) : (
+        <div className="space-y-3">
+          {notes.map(note => (
+            <div key={note.id} className="group border border-slate-100 rounded-lg p-3 bg-slate-50">
+              {editingId === note.id ? (
+                <div className="space-y-2">
+                  <textarea
+                    value={editBody}
+                    onChange={e => setEditBody(e.target.value)}
+                    rows={4}
+                    className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-[var(--teal)] resize-none"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => saveEdit(note.id)}
+                      disabled={savingEdit || !editBody.trim()}
+                      className="px-2.5 py-1 bg-[var(--teal)] text-white text-xs font-semibold rounded hover:bg-[var(--teal-dark)] disabled:opacity-40"
+                    >
+                      {savingEdit ? '…' : 'Save'}
+                    </button>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="px-2.5 py-1 text-xs text-slate-500 border border-slate-200 rounded hover:border-slate-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{note.body}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="text-xs text-slate-400 cursor-default"
+                        title={new Date(note.created_at).toLocaleString()}
+                      >
+                        {formatTimestampFull(note.created_at)}
+                      </span>
+                      {note.created_by && (
+                        <>
+                          <span className="text-slate-300 text-xs">·</span>
+                          <span className="text-xs text-slate-400">{note.created_by}</span>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => { setEditingId(note.id); setEditBody(note.body) }}
+                        className="text-xs text-slate-400 hover:text-slate-700 flex items-center gap-0.5"
+                      >
+                        <Pencil className="w-3 h-3" /> Edit
+                      </button>
+                      {confirmDeleteId === note.id ? (
+                        <button
+                          onClick={() => deleteMutation.mutate(note.id)}
+                          disabled={deleteMutation.isPending}
+                          className="text-xs text-red-600 font-semibold hover:text-red-800"
+                        >
+                          Confirm?
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeleteId(note.id)}
+                          className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-0.5"
+                        >
+                          <Trash2 className="w-3 h-3" /> Delete
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+
+          {/* Legacy notes (read-only) */}
+          {legacyNotes && (
+            <div className="border border-dashed border-slate-200 rounded-lg p-3 bg-white">
+              <p className="text-[0.65rem] font-semibold text-slate-400 uppercase tracking-wider mb-1">Legacy Notes (read-only)</p>
+              <p className="text-sm text-slate-500 whitespace-pre-wrap leading-relaxed">{legacyNotes}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
   )
 }
 
