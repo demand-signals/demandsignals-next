@@ -19,10 +19,13 @@ export async function GET(
     .select(`
       id, invoice_number, public_uuid, kind, status, currency,
       subtotal_cents, discount_cents, total_due_cents,
-      due_date, sent_at, paid_at, voided_at, void_reason,
+      due_date, send_date, sent_at, paid_at, voided_at, void_reason,
       notes, supersedes_invoice_id, superseded_by_invoice_id,
       stripe_payment_link_url, public_viewed_count,
-      prospect:prospects(business_name, owner_email)
+      late_fee_cents, late_fee_grace_days, late_fee_applied_at,
+      trade_credit_cents, trade_credit_description,
+      payment_terms,
+      prospect:prospects(business_name, owner_name, owner_email, address, city, state, zip)
     `)
     .eq('invoice_number', number)
     .eq('public_uuid', key)
@@ -35,7 +38,7 @@ export async function GET(
 
   const { data: lineItems } = await supabaseAdmin
     .from('invoice_line_items')
-    .select('description, quantity, unit_price_cents, line_total_cents, sort_order')
+    .select('description, quantity, unit_price_cents, discount_cents, discount_label, line_total_cents, sort_order')
     .eq('invoice_id', invoice.id)
     .order('sort_order', { ascending: true })
 
