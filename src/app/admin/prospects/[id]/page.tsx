@@ -990,35 +990,7 @@ export default function ProspectDetailPage() {
           )}
 
           {/* Demos */}
-          <Card>
-            <CardTitle>Demos</CardTitle>
-            {!prospect.demos || prospect.demos.length === 0 ? (
-              <p className="text-slate-400 text-sm">No demos yet</p>
-            ) : (
-              <div className="space-y-2">
-                {prospect.demos.map(demo => (
-                  <div key={demo.id} className="flex items-center justify-between">
-                    <a
-                      href={demo.demo_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-[var(--teal-dark)] hover:underline truncate"
-                    >
-                      {demo.demo_url}
-                    </a>
-                    <span
-                      className={cn(
-                        'ml-3 flex-shrink-0 text-xs px-2 py-0.5 rounded',
-                        demo.status === 'live' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-400'
-                      )}
-                    >
-                      {demo.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
+          <ProspectDemos prospectId={id} initialDemos={prospect.demos ?? []} />
 
           {/* Notes Timeline */}
           <ProspectNotes prospectId={id} legacyNotes={prospect.notes ?? null} />
@@ -1246,6 +1218,253 @@ export default function ProspectDetailPage() {
         <ProspectEditModal prospect={prospect} onClose={() => setShowEdit(false)} />
       )}
     </div>
+  )
+}
+
+const DEMO_STATUS_COLORS: Record<string, string> = {
+  published: 'bg-green-100 text-green-700',
+  draft: 'bg-slate-100 text-slate-500',
+  archived: 'bg-red-50 text-red-500',
+  live: 'bg-green-100 text-green-700',
+}
+
+function ProspectDemos({ prospectId, initialDemos }: { prospectId: string; initialDemos: Demo[] }) {
+  const queryClient = useQueryClient()
+  const [demos, setDemos] = useState<Demo[]>(initialDemos)
+  const [showAdd, setShowAdd] = useState(false)
+  const [addForm, setAddForm] = useState({
+    demo_url: '',
+    platform: 'other' as 'verpex' | 'vercel' | 'netlify' | 'other',
+    status: 'published' as 'draft' | 'published' | 'archived',
+    page_count: '',
+    notes: '',
+  })
+  const [addError, setAddError] = useState<string | null>(null)
+  const [addSaving, setAddSaving] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  // Keep demos in sync when initial data changes
+  useEffect(() => setDemos(initialDemos), [initialDemos])
+
+  async function addDemo() {
+    setAddSaving(true)
+    setAddError(null)
+    try {
+      const res = await fetch(`/api/admin/prospects/${prospectId}/demos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          demo_url: addForm.demo_url,
+          platform: addForm.platform,
+          status: addForm.status,
+          page_count: addForm.page_count ? parseInt(addForm.page_count) : null,
+          notes: addForm.notes || null,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to add demo')
+      }
+      const { demo } = await res.json()
+      setDemos(prev => [demo, ...prev])
+      setShowAdd(false)
+      setAddForm({ demo_url: '', platform: 'other', status: 'published', page_count: '', notes: '' })
+      queryClient.invalidateQueries({ queryKey: ['prospects-all'] })
+    } catch (e) {
+      setAddError(e instanceof Error ? e.message : 'Failed to add demo')
+    } finally {
+      setAddSaving(false)
+    }
+  }
+
+  async function deleteDemo(demoId: string) {
+    setDeletingId(demoId)
+    try {
+      const res = await fetch(`/api/admin/prospects/${prospectId}/demos/${demoId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete')
+      setDemos(prev => prev.filter(d => d.id !== demoId))
+      setConfirmDeleteId(null)
+      queryClient.invalidateQueries({ queryKey: ['prospects-all'] })
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-3">
+        <CardTitle>Demos</CardTitle>
+        <button
+          onClick={() => setShowAdd(v => !v)}
+          className="text-xs text-[var(--teal)] hover:text-[var(--teal-dark)] flex items-center gap-1"
+        >
+          <Plus className="w-3 h-3" /> Link Demo
+        </button>
+      </div>
+
+      {/* Add form */}
+      {showAdd && (
+        <div className="mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+          <div>
+            <label className="text-xs text-slate-500 font-medium">Demo URL *</label>
+            <input
+              type="url"
+              value={addForm.demo_url}
+              onChange={e => setAddForm(f => ({ ...f, demo_url: e.target.value }))}
+              placeholder="https://..."
+              className="mt-0.5 w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs text-slate-500 font-medium">Platform</label>
+              <select
+                value={addForm.platform}
+                onChange={e => setAddForm(f => ({ ...f, platform: e.target.value as typeof addForm.platform }))}
+                className="mt-0.5 w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+              >
+                <option value="verpex">Verpex</option>
+                <option value="vercel">Vercel</option>
+                <option value="netlify">Netlify</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-slate-500 font-medium">Status</label>
+              <select
+                value={addForm.status}
+                onChange={e => setAddForm(f => ({ ...f, status: e.target.value as typeof addForm.status }))}
+                className="mt-0.5 w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+              >
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-slate-500 font-medium">Page count</label>
+            <input
+              type="number"
+              value={addForm.page_count}
+              onChange={e => setAddForm(f => ({ ...f, page_count: e.target.value }))}
+              placeholder="e.g. 5"
+              min={0}
+              className="mt-0.5 w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-slate-500 font-medium">Notes</label>
+            <textarea
+              value={addForm.notes}
+              onChange={e => setAddForm(f => ({ ...f, notes: e.target.value }))}
+              placeholder="Optional notes…"
+              rows={2}
+              className="mt-0.5 w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[var(--teal)] resize-none"
+            />
+          </div>
+          {addError && <p className="text-xs text-red-500">{addError}</p>}
+          <div className="flex gap-2">
+            <button
+              onClick={addDemo}
+              disabled={!addForm.demo_url || addSaving}
+              className="px-2.5 py-1.5 bg-[var(--teal)] text-white text-xs font-semibold rounded hover:bg-[var(--teal-dark)] disabled:opacity-40"
+            >
+              {addSaving ? '…' : 'Link Demo'}
+            </button>
+            <button
+              onClick={() => { setShowAdd(false); setAddError(null) }}
+              className="px-2.5 py-1.5 text-xs text-slate-500 border border-slate-200 rounded hover:border-slate-300"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {demos.length === 0 ? (
+        <p className="text-slate-400 text-sm">No demos linked yet.</p>
+      ) : (
+        <div className="space-y-3">
+          {demos.map(demo => (
+            <div key={demo.id} className="group border border-slate-100 rounded-lg overflow-hidden">
+              {/* Screenshot thumbnail */}
+              {demo.screenshot_url && (
+                <div className="border-b border-slate-100">
+                  <img
+                    src={demo.screenshot_url}
+                    alt="Demo screenshot"
+                    className="w-full h-28 object-cover object-top"
+                  />
+                </div>
+              )}
+              <div className="p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <a
+                      href={demo.demo_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-[var(--teal-dark)] hover:underline flex items-center gap-1 truncate"
+                    >
+                      <span className="truncate">{demo.demo_url}</span>
+                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                    </a>
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                      <span className={cn(
+                        'text-[0.65rem] px-1.5 py-0.5 rounded font-medium',
+                        DEMO_STATUS_COLORS[demo.status] ?? 'bg-slate-100 text-slate-500'
+                      )}>
+                        {demo.status}
+                      </span>
+                      {demo.platform && (
+                        <span className="text-[0.65rem] text-slate-500">{demo.platform}</span>
+                      )}
+                      {demo.version > 0 && (
+                        <span className="text-[0.65rem] text-slate-500">v{demo.version}</span>
+                      )}
+                      {demo.page_count > 0 && (
+                        <span className="text-[0.65rem] text-slate-500">{demo.page_count} pages</span>
+                      )}
+                      {demo.view_count > 0 && (
+                        <span className="text-[0.65rem] text-slate-500">{demo.view_count} views</span>
+                      )}
+                      {demo.last_viewed_at && (
+                        <span className="text-[0.65rem] text-slate-400">
+                          last viewed {new Date(demo.last_viewed_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                    {demo.notes && (
+                      <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">{demo.notes}</p>
+                    )}
+                  </div>
+                  <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {confirmDeleteId === demo.id ? (
+                      <button
+                        onClick={() => deleteDemo(demo.id)}
+                        disabled={deletingId === demo.id}
+                        className="text-xs text-red-600 font-semibold hover:text-red-800"
+                      >
+                        {deletingId === demo.id ? '…' : 'Confirm?'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(demo.id)}
+                        className="text-slate-400 hover:text-red-500"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   )
 }
 
