@@ -10,6 +10,7 @@ interface QuoteDetail {
     id: string
     share_token: string
     prospect_id: string | null
+    doc_number: string | null
     business_name: string | null
     business_type: string | null
     business_location: string | null
@@ -161,8 +162,19 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
           <h1 className="text-2xl font-bold text-slate-900 mt-2">
             {session.business_name ?? '(anonymous session)'}
           </h1>
+          {session.doc_number ? (
+            <div className="inline-flex items-center gap-1.5 mt-1">
+              <span className="font-mono text-sm font-semibold text-[var(--teal)] bg-teal-50 border border-teal-200 px-2 py-0.5 rounded">
+                {session.doc_number}
+              </span>
+            </div>
+          ) : (
+            <div className="text-xs text-slate-400 mt-1 italic">
+              EST number pending (prospect not linked or no client code set)
+            </div>
+          )}
           {session.business_location && (
-            <div className="text-sm text-slate-500">{session.business_location}</div>
+            <div className="text-sm text-slate-500 mt-1">{session.business_location}</div>
           )}
         </div>
         <div className="flex gap-2 flex-wrap justify-end">

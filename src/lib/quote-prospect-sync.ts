@@ -16,6 +16,7 @@
 import { supabaseAdmin } from './supabase/admin'
 import { decryptPhone } from './quote-crypto'
 import { getServiceSync as getItem, hydrateCatalogSnapshot } from './services-catalog-sync'
+import { allocateDocNumber } from './doc-numbering'
 import type { QuoteSessionRow } from './quote-session'
 
 interface ResearchFindings {
@@ -254,6 +255,38 @@ export async function syncProspectFromSession(
     body: activityBody(trigger, session, scopeSummary),
     created_by: 'quote_estimator',
   })
+
+  // Allocate an EST number the first time this session is linked to a prospect.
+  // Guarded: only if the session doesn't already have a doc_number and the prospect
+  // has a client_code. Wrapped in try/catch — EST number is nice-to-have, not
+  // critical path; must not break the sync flow.
+  if (prospectId) {
+    try {
+      const { data: sess } = await supabaseAdmin
+        .from('quote_sessions')
+        .select('id, doc_number')
+        .eq('id', sessionId)
+        .single()
+
+      if (sess && !sess.doc_number) {
+        const estNumber = await allocateDocNumber({
+          doc_type: 'EST',
+          prospect_id: prospectId,
+          ref_table: 'quote_sessions',
+          ref_id: sess.id,
+        })
+        await supabaseAdmin
+          .from('quote_sessions')
+          .update({ doc_number: estNumber })
+          .eq('id', sess.id)
+      }
+    } catch (e) {
+      // Don't break the sync flow — EST number is nice-to-have, not critical path.
+      // allocateDocNumber throws if prospect has no client_code; that's expected for
+      // sessions where the prospect hasn't been assigned a code yet.
+      console.error('EST number allocation failed:', e)
+    }
+  }
 
   return prospectId
 }
