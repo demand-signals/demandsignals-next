@@ -2,121 +2,123 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
 import {
-  LayoutDashboard, Users, Kanban, Monitor, Upload, Bot, LogOut,
-  ChevronDown, Target, MapPin, FileText, BarChart3, Layers, LineChart,
-  Newspaper, Receipt, CreditCard, Repeat, ScrollText, DollarSign, Settings, CalendarClock,
-  FolderKanban, FileCheck, Coins,
+  LayoutDashboard, Users, Upload, Bot, LogOut,
+  Target, MapPin, FileText, BarChart3, Layers, LineChart,
+  Newspaper, Receipt, CreditCard, Repeat, ScrollText, Settings,
+  FolderKanban, FileCheck, Coins, UserCheck, MessageSquare, Zap,
+  Clock, UserCog, Shield, Eye, ExternalLink,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
-type NavItem = { href: string; label: string; icon: React.ElementType }
-
-const PROSPECTING_ITEMS: NavItem[] = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/prospects', label: 'Prospects', icon: Users },
-  { href: '/admin/pipeline', label: 'Pipeline', icon: Kanban },
-  { href: '/admin/quotes', label: 'Quotes', icon: Receipt },
-  { href: '/admin/demos', label: 'Demos', icon: Monitor },
-  { href: '/admin/import', label: 'Import', icon: Upload },
-]
-
-const CONTENT_ITEMS: NavItem[] = [
-  { href: '/admin/long-tails', label: 'Long-Tails', icon: MapPin },
-  { href: '/admin/blog', label: 'Blog Posts', icon: FileText },
-  { href: '/admin/changelog', label: 'ChangeLog', icon: Newspaper },
-]
-
-const INSIGHTS_ITEMS: NavItem[] = [
-  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-]
-
-const FINANCE_ITEMS: NavItem[] = [
-  { href: '/admin/services', label: 'Services Catalog', icon: Layers },
-  { href: '/admin/invoices', label: 'Invoices', icon: CreditCard },
-  { href: '/admin/receipts', label: 'Receipts', icon: FileCheck },
-  { href: '/admin/subscriptions', label: 'Subscriptions', icon: Repeat },
-  { href: '/admin/subscription-plans', label: 'Plans', icon: DollarSign },
-  { href: '/admin/retainer-plans', label: 'Retainer Plans', icon: CalendarClock },
-  { href: '/admin/sow', label: 'SOWs', icon: ScrollText },
-  { href: '/admin/projects', label: 'Projects', icon: FolderKanban },
-  { href: '/admin/trade-credits', label: 'Trade Credits', icon: Coins },
-]
-
-const OTHER_ITEMS: NavItem[] = [
-  { href: '/admin/agents', label: 'Agents', icon: Bot },
-  { href: '/admin/settings', label: 'Settings', icon: Settings },
-]
-
-function NavGroup({
-  label,
-  icon: Icon,
-  items,
-  open,
-  onToggle,
-  pathname,
-}: {
+type NavItem = {
+  href: string
   label: string
   icon: React.ElementType
-  items: NavItem[]
-  open: boolean
-  onToggle: () => void
-  pathname: string
-}) {
-  return (
-    <>
-      <button
-        onClick={onToggle}
-        className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
-      >
-        <span className="flex items-center gap-3">
-          <Icon className="w-4 h-4 text-[var(--teal)]" />
-          {label}
-        </span>
-        <ChevronDown className={cn(
-          'w-4 h-4 text-slate-400 transition-transform duration-200',
-          open && 'rotate-180'
-        )} />
-      </button>
-
-      {open && (
-        <div className="ml-3 space-y-0.5">
-          {items.map(({ href, label, icon: ItemIcon }) => {
-            const active = href === '/admin'
-              ? pathname === '/admin'
-              : pathname.startsWith(href)
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                  active
-                    ? 'bg-[var(--teal)]/10 text-[var(--teal)] font-medium'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                )}
-              >
-                <ItemIcon className="w-4 h-4" />
-                {label}
-              </Link>
-            )
-          })}
-        </div>
-      )}
-    </>
-  )
+  soon?: boolean
+  external?: boolean
 }
+
+type NavGroup = {
+  title: string
+  items: NavItem[]
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    title: 'PROSPECTING',
+    items: [
+      { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+      { href: '/admin/pipeline', label: 'Pipeline', icon: Target },
+      { href: '/admin/prospects', label: 'Prospects', icon: Users },
+      { href: '/admin/quotes', label: 'Budgetary Quotes', icon: FileText },
+      { href: '/admin/import', label: 'Import Prospects', icon: Upload },
+    ],
+  },
+  {
+    title: 'ONBOARDING',
+    items: [
+      { href: '/admin/demos', label: 'Demo Sites', icon: Layers },
+      { href: '/admin/sow', label: 'Statements of Work', icon: ScrollText },
+    ],
+  },
+  {
+    title: 'CLIENTS',
+    items: [
+      { href: '/admin/clients', label: 'Manage Clients', icon: UserCheck, soon: true },
+      { href: '/admin/communications', label: 'Communications', icon: MessageSquare, soon: true },
+      { href: '/admin/automations', label: 'Automations', icon: Zap, soon: true },
+    ],
+  },
+  {
+    title: 'PROJECTS',
+    items: [
+      { href: '/admin/projects/dashboard', label: 'Project Dashboard', icon: LineChart, soon: true },
+      { href: '/admin/projects', label: 'Manage Projects', icon: FolderKanban },
+      { href: '/admin/timekeeping', label: 'Timekeeping', icon: Clock, soon: true },
+    ],
+  },
+  {
+    title: 'FINANCE',
+    items: [
+      { href: '/admin/invoices', label: 'Invoices', icon: Receipt },
+      { href: '/admin/receipts', label: 'Receipts', icon: FileCheck },
+      { href: '/admin/subscriptions', label: 'Subscriptions', icon: Repeat },
+      { href: '/admin/trade-credits', label: 'Trade Credits', icon: Coins, soon: true },
+      { href: '/admin/finance-reports', label: 'Reports', icon: BarChart3, soon: true },
+    ],
+  },
+  {
+    title: 'SERVICES',
+    items: [
+      { href: '/admin/services', label: 'Service Catalog', icon: Layers },
+      { href: '/admin/service-plans', label: 'Service Plans', icon: CreditCard },
+    ],
+  },
+  {
+    title: 'CONTENT',
+    items: [
+      { href: '/admin/long-tails', label: 'Long-Tail Pages', icon: MapPin },
+      { href: '/admin/blog', label: 'Blog Posts', icon: Newspaper },
+      { href: '/admin/changelog', label: 'ChangeLog Posts', icon: FileText },
+    ],
+  },
+  {
+    title: 'AGENTS',
+    items: [
+      { href: '/admin/agents', label: 'Prospecting Agent', icon: Bot },
+      { href: '/admin/agents/scoring', label: 'Scoring Agent', icon: Bot, soon: true },
+      { href: '/admin/agents/research', label: 'Research Agent', icon: Bot, soon: true },
+      { href: '/admin/agents/outreach', label: 'Outreach Agent', icon: Bot, soon: true },
+    ],
+  },
+  {
+    title: 'INSIGHTS',
+    items: [
+      { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+      {
+        href: 'https://us.posthog.com/project/demandsignals',
+        label: 'PostHog',
+        icon: Eye,
+        external: true,
+      },
+    ],
+  },
+  {
+    title: 'ADMIN',
+    items: [
+      { href: '/admin/users', label: 'Users', icon: UserCog, soon: true },
+      { href: '/admin/settings', label: 'Settings', icon: Settings },
+      { href: '/admin/security', label: 'Security', icon: Shield, soon: true },
+    ],
+  },
+]
 
 export function AdminSidebar() {
   const pathname = usePathname()
   const router = useRouter()
-  const [prospectingOpen, setProspectingOpen] = useState(true)
-  const [contentOpen, setContentOpen] = useState(true)
-  const [insightsOpen, setInsightsOpen] = useState(true)
-  const [financeOpen, setFinanceOpen] = useState(true)
 
   async function handleLogout() {
     const supabase = createClient()
@@ -128,78 +130,89 @@ export function AdminSidebar() {
     <aside className="w-64 bg-white border-r border-slate-200 flex flex-col h-screen sticky top-0">
       <div className="p-4 border-b border-slate-200">
         <Link href="/admin" className="text-lg font-bold text-slate-800">
-          DSIG <span className="text-[var(--teal)] font-semibold text-xs tracking-wider uppercase">Admin Portal</span>
+          DSIG{' '}
+          <span className="text-[var(--teal)] font-semibold text-xs tracking-wider uppercase">
+            Admin Portal
+          </span>
         </Link>
       </div>
 
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {/* Prospecting */}
-        <NavGroup
-          label="Prospecting"
-          icon={Target}
-          items={PROSPECTING_ITEMS}
-          open={prospectingOpen}
-          onToggle={() => setProspectingOpen(!prospectingOpen)}
-          pathname={pathname}
-        />
+      <nav className="flex-1 p-3 overflow-y-auto space-y-4">
+        {NAV_GROUPS.map((group, gi) => (
+          <div key={group.title} className={gi > 0 ? 'border-t border-slate-100 pt-3' : undefined}>
+            <div className="px-3 mb-1 text-[10px] font-bold tracking-widest text-slate-400 uppercase select-none">
+              {group.title}
+            </div>
+            <div className="space-y-0.5">
+              {group.items.map(({ href, label, icon: Icon, soon, external }) => {
+                const active =
+                  !soon &&
+                  !external &&
+                  (href === '/admin'
+                    ? pathname === '/admin'
+                    : pathname.startsWith(href))
 
-        {/* Content */}
-        <div className="pt-2 border-t border-slate-100 mt-2">
-          <NavGroup
-            label="Content"
-            icon={Layers}
-            items={CONTENT_ITEMS}
-            open={contentOpen}
-            onToggle={() => setContentOpen(!contentOpen)}
-            pathname={pathname}
-          />
-        </div>
+                const baseClasses = cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors w-full text-left',
+                  soon
+                    ? 'opacity-50 cursor-default text-slate-500'
+                    : active
+                      ? 'bg-[var(--teal)]/10 text-[var(--teal)] font-medium'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100',
+                )
 
-        {/* Insights */}
-        <div className="pt-2 border-t border-slate-100 mt-2">
-          <NavGroup
-            label="Insights"
-            icon={LineChart}
-            items={INSIGHTS_ITEMS}
-            open={insightsOpen}
-            onToggle={() => setInsightsOpen(!insightsOpen)}
-            pathname={pathname}
-          />
-        </div>
+                const children = (
+                  <>
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="flex-1 truncate">{label}</span>
+                    {soon && (
+                      <span className="text-[9px] font-semibold tracking-wide text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">
+                        soon
+                      </span>
+                    )}
+                    {external && !soon && (
+                      <ExternalLink className="w-3 h-3 shrink-0 text-slate-400" />
+                    )}
+                  </>
+                )
 
-        {/* Finance */}
-        <div className="pt-2 border-t border-slate-100 mt-2">
-          <NavGroup
-            label="Finance"
-            icon={DollarSign}
-            items={FINANCE_ITEMS}
-            open={financeOpen}
-            onToggle={() => setFinanceOpen(!financeOpen)}
-            pathname={pathname}
-          />
-        </div>
+                if (soon) {
+                  return (
+                    <button
+                      key={href}
+                      className={baseClasses}
+                      onClick={(e) => e.preventDefault()}
+                      tabIndex={-1}
+                      aria-disabled="true"
+                    >
+                      {children}
+                    </button>
+                  )
+                }
 
-        {/* Standalone items */}
-        <div className="pt-2 border-t border-slate-100 mt-2">
-          {OTHER_ITEMS.map(({ href, label, icon: Icon }) => {
-            const active = pathname.startsWith(href)
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
-                  active
-                    ? 'bg-[var(--teal)]/10 text-[var(--teal)] font-medium'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                )}
-              >
-                <Icon className="w-4 h-4" />
-                {label}
-              </Link>
-            )
-          })}
-        </div>
+                if (external) {
+                  return (
+                    <a
+                      key={href}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={baseClasses}
+                    >
+                      {children}
+                    </a>
+                  )
+                }
+
+                return (
+                  <Link key={href} href={href} className={baseClasses}>
+                    {children}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       <div className="p-3 border-t border-slate-200">
