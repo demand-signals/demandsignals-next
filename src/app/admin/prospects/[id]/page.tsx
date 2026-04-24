@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Share2, Copy, Check, Download, Pencil, Trash2, Search, Loader2, Tag, CircleAlert } from 'lucide-react'
+import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Check, Download, Pencil, Trash2, Search, Loader2, Tag, CircleAlert, Plus, X, ChevronDown, ChevronUp, Link2 } from 'lucide-react'
+import { KNOWN_CHANNELS, type ProspectChannels, type ProspectOtherLink } from '@/lib/prospect-channels'
 import Link from 'next/link'
 import { ProspectScoreBadge, TierBadge } from '@/components/admin/prospect-score-badge'
 // suggestClientCode removed — now using the server-side suggest endpoint
@@ -146,6 +147,13 @@ export default function ProspectDetailPage() {
   const [clientCodeSaved, setClientCodeSaved] = useState(false)
   const [clientCodeSuggesting, setClientCodeSuggesting] = useState(false)
 
+  // Channels editor state
+  const [channelsEditing, setChannelsEditing] = useState(false)
+  const [channelsData, setChannelsData] = useState<ProspectChannels>({})
+  const [channelsSaving, setChannelsSaving] = useState(false)
+  const [channelsSaved, setChannelsSaved] = useState(false)
+  const [channelsError, setChannelsError] = useState<string | null>(null)
+
   // Availability check state
   type AvailStatus = 'idle' | 'checking' | 'available' | 'taken' | 'format_error'
   const [codeAvail, setCodeAvail] = useState<{
@@ -183,6 +191,11 @@ export default function ProspectDetailPage() {
   // Sync clientCodeInput when prospect loads/changes
   useEffect(() => {
     if (prospect) setClientCodeInput((prospect as any).client_code ?? '')
+  }, [prospect?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync channels when prospect loads/changes
+  useEffect(() => {
+    if (prospect) setChannelsData((prospect.channels as ProspectChannels) ?? {})
   }, [prospect?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debounced availability check whenever the input changes while editing
@@ -244,6 +257,31 @@ export default function ProspectDetailPage() {
       setClientCodeError(e instanceof Error ? e.message : 'Save failed')
     } finally {
       setClientCodeSaving(false)
+    }
+  }
+
+  async function saveChannels() {
+    if (!prospect) return
+    setChannelsSaving(true)
+    setChannelsError(null)
+    try {
+      const res = await fetch(`/api/admin/prospects/${prospect.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channels: channelsData }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Save failed')
+      }
+      setChannelsEditing(false)
+      setChannelsSaved(true)
+      setTimeout(() => setChannelsSaved(false), 2500)
+      queryClient.invalidateQueries({ queryKey: ['prospects-all'] })
+    } catch (e) {
+      setChannelsError(e instanceof Error ? e.message : 'Save failed')
+    } finally {
+      setChannelsSaving(false)
     }
   }
 
@@ -476,6 +514,152 @@ export default function ProspectDetailPage() {
                 </div>
               )}
             </div>
+          </Card>
+
+          {/* Channels Card */}
+          <Card>
+            <div className="flex items-center justify-between mb-3">
+              <CardTitle>Channels</CardTitle>
+              <div className="flex items-center gap-2">
+                {channelsSaved && <Check className="w-4 h-4 text-green-500" />}
+                {!channelsEditing ? (
+                  <button
+                    onClick={() => setChannelsEditing(true)}
+                    className="text-xs text-slate-400 hover:text-slate-700 flex items-center gap-1"
+                  >
+                    <Pencil className="w-3 h-3" /> Edit
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={saveChannels}
+                      disabled={channelsSaving}
+                      className="px-2.5 py-1 bg-[var(--teal)] text-white text-xs font-semibold rounded hover:bg-[var(--teal-dark)] disabled:opacity-40"
+                    >
+                      {channelsSaving ? '…' : 'Save'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setChannelsEditing(false)
+                        setChannelsError(null)
+                        setChannelsData((prospect.channels as ProspectChannels) ?? {})
+                      }}
+                      className="px-2.5 py-1 text-xs text-slate-500 hover:text-slate-800 rounded border border-slate-200"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            {channelsError && (
+              <p className="text-xs text-red-500 mb-2">{channelsError}</p>
+            )}
+            {channelsEditing ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {KNOWN_CHANNELS.map(ch => (
+                    <div key={ch.key} className="space-y-0.5">
+                      <label className="text-xs text-slate-500 font-medium">{ch.label}</label>
+                      <input
+                        type="url"
+                        value={channelsData[ch.key] ?? ''}
+                        onChange={e => setChannelsData(prev => ({ ...prev, [ch.key]: e.target.value || null }))}
+                        placeholder={ch.placeholder}
+                        className="w-full border border-slate-200 rounded px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Other links */}
+                <div className="pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-slate-500 font-medium">Other Links</span>
+                    <button
+                      onClick={() => setChannelsData(prev => ({
+                        ...prev,
+                        other: [...(prev.other ?? []), { label: '', url: '' }],
+                      }))}
+                      className="text-xs text-[var(--teal)] hover:text-[var(--teal-dark)] flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> Add
+                    </button>
+                  </div>
+                  {(channelsData.other ?? []).map((link, i) => (
+                    <div key={i} className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        value={link.label}
+                        onChange={e => {
+                          const other = [...(channelsData.other ?? [])]
+                          other[i] = { ...other[i], label: e.target.value }
+                          setChannelsData(prev => ({ ...prev, other }))
+                        }}
+                        placeholder="Label"
+                        className="w-28 flex-shrink-0 border border-slate-200 rounded px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+                      />
+                      <input
+                        type="url"
+                        value={link.url}
+                        onChange={e => {
+                          const other = [...(channelsData.other ?? [])]
+                          other[i] = { ...other[i], url: e.target.value }
+                          setChannelsData(prev => ({ ...prev, other }))
+                        }}
+                        placeholder="https://..."
+                        className="flex-1 border border-slate-200 rounded px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+                      />
+                      <button
+                        onClick={() => {
+                          const other = (channelsData.other ?? []).filter((_, j) => j !== i)
+                          setChannelsData(prev => ({ ...prev, other }))
+                        }}
+                        className="text-red-400 hover:text-red-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {KNOWN_CHANNELS.filter(ch => channelsData[ch.key]).map(ch => (
+                  <div key={ch.key} className="flex items-center gap-2 text-sm">
+                    <Link2 className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+                    <span className="text-xs text-slate-400 w-24 flex-shrink-0">{ch.label}</span>
+                    <a
+                      href={channelsData[ch.key] ?? ''}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[var(--teal-dark)] hover:underline truncate text-xs flex items-center gap-0.5"
+                    >
+                      {(channelsData[ch.key] ?? '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+                      <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 ml-0.5" />
+                    </a>
+                  </div>
+                ))}
+                {(channelsData.other ?? []).filter(l => l.url).map((link, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <Link2 className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+                    <span className="text-xs text-slate-400 w-24 flex-shrink-0">{link.label || 'Other'}</span>
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[var(--teal-dark)] hover:underline truncate text-xs flex items-center gap-0.5"
+                    >
+                      {link.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+                      <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 ml-0.5" />
+                    </a>
+                  </div>
+                ))}
+                {!KNOWN_CHANNELS.some(ch => channelsData[ch.key]) && !(channelsData.other?.length) && (
+                  <p className="text-xs text-slate-400">No channels linked yet. Click Edit to add.</p>
+                )}
+              </div>
+            )}
           </Card>
 
           {/* Intelligence Card */}

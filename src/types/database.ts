@@ -26,6 +26,7 @@ export type Prospect = {
   stage: string
   tags: string[]
   notes: string | null
+  channels: Record<string, any>
   created_at: string
   updated_at: string
   last_contacted_at: string | null
