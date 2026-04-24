@@ -464,6 +464,9 @@ Key files:
 4. **Import 142 prospects** via /admin/import using data/prospects-import.json
 5. **Demo Factory (Module 2)** — auto-generate demo sites
 6. **Outreach Engine (Module 3)** — email/SMS/voice via Resend/Twilio/Vapi
+- [ ] **Manual EST admin form** — standalone admin-created budgetary estimate not originating from the /quote AI conversation. Feeds into the same EST→SOW continuation path. Low priority; admin process starts with SOW when /quote wasn't used.
+- [ ] **Project expense tracking** — new table `project_expenses` (project_id, description, amount_cents, category, incurred_at, receipt_url). UI on `/admin/projects/[id]`.
+- [ ] **Project time tracking** — new table `project_time_entries` (project_id, phase_id, deliverable_id, hours, description, logged_at, logged_by). UI on `/admin/projects/[id]`. Aggregate hours roll up per phase and project.
 
 ### High Priority — Site
 1. **301 redirects from PHP site** — old .co URLs are Google-indexed; need redirects now that DNS is cutting over

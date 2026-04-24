@@ -47,6 +47,7 @@ export interface QuoteSessionRow {
   research_surfaced_at: string | null
   research_confirmed: number | null
   existing_site_url: string | null
+  doc_number: string | null
   created_at: string
   updated_at: string
 }

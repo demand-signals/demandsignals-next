@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
   let q = supabaseAdmin
     .from('sow_documents')
-    .select('id, sow_number, title, status, pricing, prospect_id, created_at, sent_at, accepted_at, prospects(business_name)')
+    .select('id, sow_number, title, status, pricing, prospect_id, quote_session_id, created_at, sent_at, accepted_at, prospects(business_name)')
     .order('created_at', { ascending: false })
 
   if (status) q = q.eq('status', status)

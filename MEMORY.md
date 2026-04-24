@@ -8,13 +8,19 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-04-23 (platform-wide document numbering shipped)
+**Last updated:** 2026-04-23 (EST doc numbering + EST→SOW continuation flow)
 
 ---
 
 ## Document numbering (locked-in 2026-04-23)
 
 Platform-wide: `TYPE-CLIENT-MMDDYY{A|B|C...}`. TYPE = EST/SOW/INV/RCT. CLIENT = 4-letter code on `prospects.client_code`. Suffix is sequential letter per (type, client, date). Allocated via `allocateDocNumber()` helper → `allocate_document_number()` RPC (atomic). Legacy numbers preserved. See CLAUDE.md §20.
+
+EST numbers on `quote_sessions.doc_number` allocated lazily on prospect-sync
+(when the session first gets linked to a prospect with a client_code).
+Continue-to-SOW at `/admin/quotes/[id]` pre-populates a SOW from the EST's
+`selected_items`; links back via `sow_documents.quote_session_id`. Roadmap:
+manual EST admin form, project expense + time tracking.
 
 ---
 

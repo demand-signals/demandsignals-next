@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState, use, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Loader2, ExternalLink, Flag, CreditCard, ScrollText } from 'lucide-react'
+import { Loader2, ExternalLink, Flag, CreditCard, ScrollText, ArrowRight } from 'lucide-react'
 import RetainerPanel from '@/components/admin/RetainerPanel'
 
 interface QuoteDetail {
@@ -10,6 +11,7 @@ interface QuoteDetail {
     id: string
     share_token: string
     prospect_id: string | null
+    doc_number: string | null
     business_name: string | null
     business_type: string | null
     business_location: string | null
@@ -105,11 +107,14 @@ function formatRange(low: number | null, high: number | null): string {
 
 export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const router = useRouter()
   const [detail, setDetail] = useState<QuoteDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [linkedSow, setLinkedSow] = useState<{ id: string; sow_number: string } | null | undefined>(undefined)
+  const [continueLoading, setContinueLoading] = useState(false)
 
-  async function refetchQuote() {
+  const refetchQuote = useCallback(async () => {
     try {
       const res = await fetch(`/api/admin/quotes/${id}`)
       const data = await res.json()
@@ -117,6 +122,38 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
       setDetail(data)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed')
+    }
+  }, [id])
+
+  // Check if a SOW already exists for this quote session
+  async function fetchLinkedSow(prospectId: string) {
+    try {
+      const res = await fetch(`/api/admin/sow?prospect_id=${prospectId}`)
+      const data = await res.json()
+      if (!res.ok) return
+      // Find a SOW linked to this specific session
+      const linked = (data.sows as Array<{ id: string; sow_number: string; quote_session_id?: string }>)
+        ?.find((s) => s.quote_session_id === id) ?? null
+      setLinkedSow(linked)
+    } catch {
+      setLinkedSow(null)
+    }
+  }
+
+  async function handleContinueToSow() {
+    setContinueLoading(true)
+    try {
+      const res = await fetch(`/api/admin/quotes/${id}/continue-to-sow`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(data.error ?? 'Failed to create SOW')
+        return
+      }
+      router.push(`/admin/sow/${data.sow_id}`)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to create SOW')
+    } finally {
+      setContinueLoading(false)
     }
   }
 
@@ -128,7 +165,15 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
         const res = await fetch(`/api/admin/quotes/${id}`)
         const data = await res.json()
         if (!res.ok) throw new Error(data.error ?? 'Failed to load')
-        if (!cancelled) setDetail(data)
+        if (!cancelled) {
+          setDetail(data)
+          // Check for an existing linked SOW if prospect is set
+          if (data.session?.prospect_id) {
+            fetchLinkedSow(data.session.prospect_id)
+          } else {
+            setLinkedSow(null)
+          }
+        }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Failed')
       } finally {
@@ -136,6 +181,7 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
       }
     })()
     return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   if (loading) {
@@ -161,8 +207,19 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
           <h1 className="text-2xl font-bold text-slate-900 mt-2">
             {session.business_name ?? '(anonymous session)'}
           </h1>
+          {session.doc_number ? (
+            <div className="inline-flex items-center gap-1.5 mt-1">
+              <span className="font-mono text-sm font-semibold text-[var(--teal)] bg-teal-50 border border-teal-200 px-2 py-0.5 rounded">
+                {session.doc_number}
+              </span>
+            </div>
+          ) : (
+            <div className="text-xs text-slate-400 mt-1 italic">
+              EST number pending (prospect not linked or no client code set)
+            </div>
+          )}
           {session.business_location && (
-            <div className="text-sm text-slate-500">{session.business_location}</div>
+            <div className="text-sm text-slate-500 mt-1">{session.business_location}</div>
           )}
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
@@ -185,13 +242,28 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
             </Link>
           )}
           {detail.prospect && (
-            <Link
-              href={`/admin/sow/new?prospect_id=${detail.prospect.id}`}
-              className="inline-flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-md text-sm"
-            >
-              <ScrollText className="w-4 h-4" />
-              Create SOW
-            </Link>
+            linkedSow ? (
+              <Link
+                href={`/admin/sow/${linkedSow.id}`}
+                className="inline-flex items-center gap-1 px-3 py-2 bg-indigo-100 hover:bg-indigo-200 rounded-md text-sm text-indigo-900"
+              >
+                <ScrollText className="w-4 h-4" />
+                {linkedSow.sow_number} →
+              </Link>
+            ) : (
+              <button
+                onClick={handleContinueToSow}
+                disabled={continueLoading}
+                className="inline-flex items-center gap-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm disabled:opacity-60"
+              >
+                {continueLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ArrowRight className="w-4 h-4" />
+                )}
+                Continue to SOW
+              </button>
+            )
           )}
           {detail.prospect && session.phone_verified && session.email && (
             <CourtesyDropdown sessionId={session.id} />
