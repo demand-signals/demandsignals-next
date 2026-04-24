@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Kanban, Monitor, Upload, Bot, LogOut,
   ChevronDown, Target, MapPin, FileText, BarChart3, Layers, LineChart,
   Newspaper, Receipt, CreditCard, Repeat, ScrollText, DollarSign, Settings, CalendarClock,
-  FolderKanban,
+  FolderKanban, FileCheck,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -37,6 +37,7 @@ const INSIGHTS_ITEMS: NavItem[] = [
 const FINANCE_ITEMS: NavItem[] = [
   { href: '/admin/services', label: 'Services Catalog', icon: Layers },
   { href: '/admin/invoices', label: 'Invoices', icon: CreditCard },
+  { href: '/admin/receipts', label: 'Receipts', icon: FileCheck },
   { href: '/admin/subscriptions', label: 'Subscriptions', icon: Repeat },
   { href: '/admin/subscription-plans', label: 'Plans', icon: DollarSign },
   { href: '/admin/retainer-plans', label: 'Retainer Plans', icon: CalendarClock },

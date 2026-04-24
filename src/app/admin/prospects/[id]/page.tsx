@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Share2, Copy, Check, Download, Pencil, Trash2, Search, Loader2 } from 'lucide-react'
+import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Share2, Copy, Check, Download, Pencil, Trash2, Search, Loader2, Tag } from 'lucide-react'
 import Link from 'next/link'
 import { ProspectScoreBadge, TierBadge } from '@/components/admin/prospect-score-badge'
+import { suggestClientCode } from '@/lib/doc-numbering'
 import { ProspectEditModal } from '@/components/admin/prospect-edit-modal'
 import { ActivityTimeline } from '@/components/admin/activity-timeline'
 import { ProspectMap } from '@/components/admin/prospect-map'
@@ -137,6 +138,13 @@ export default function ProspectDetailPage() {
   const [newActivityType, setNewActivityType] = useState('note')
   const [newActivityBody, setNewActivityBody] = useState('')
 
+  // Client code editing state
+  const [clientCodeInput, setClientCodeInput] = useState<string>('')
+  const [clientCodeEditing, setClientCodeEditing] = useState(false)
+  const [clientCodeSaving, setClientCodeSaving] = useState(false)
+  const [clientCodeError, setClientCodeError] = useState<string | null>(null)
+  const [clientCodeSaved, setClientCodeSaved] = useState(false)
+
   const addActivityMutation = useMutation({
     mutationFn: async () => {
       const typeLabels: Record<string, string> = { note: 'Note', call: 'Phone Call', email: 'Email', meeting: 'Meeting', stage_change: 'Stage Change' }
@@ -162,6 +170,37 @@ export default function ProspectDetailPage() {
 
   const prospect = prospectsQuery.data?.data.find(p => p.id === id)
   const activities = activitiesQuery.data?.data ?? []
+
+  // Sync clientCodeInput when prospect loads/changes
+  useEffect(() => {
+    if (prospect) setClientCodeInput((prospect as any).client_code ?? '')
+  }, [prospect?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function saveClientCode() {
+    if (!prospect) return
+    setClientCodeSaving(true)
+    setClientCodeError(null)
+    const code = clientCodeInput.toUpperCase().trim().slice(0, 4)
+    try {
+      const res = await fetch('/api/admin/prospects', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: prospect.id, client_code: code || null }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Save failed')
+      }
+      setClientCodeEditing(false)
+      setClientCodeSaved(true)
+      setTimeout(() => setClientCodeSaved(false), 2500)
+      queryClient.invalidateQueries({ queryKey: ['prospects-all'] })
+    } catch (e) {
+      setClientCodeError(e instanceof Error ? e.message : 'Save failed')
+    } finally {
+      setClientCodeSaving(false)
+    }
+  }
 
   if (prospectsQuery.isLoading) {
     return (
@@ -763,6 +802,77 @@ export default function ProspectDetailPage() {
 
         {/* Right col */}
         <div className="space-y-4">
+          {/* Client Code Card */}
+          <Card>
+            <CardTitle>Client Code</CardTitle>
+            <div className="space-y-2">
+              <p className="text-xs text-slate-400 leading-relaxed">
+                4-letter code used in all document numbers (e.g. INV-<span className="font-mono font-semibold text-slate-600">{(prospect as any).client_code || 'HANG'}</span>-042326A).
+                Required before issuing SOWs, invoices, or receipts.
+              </p>
+              {clientCodeEditing ? (
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    value={clientCodeInput}
+                    onChange={e => setClientCodeInput(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4))}
+                    placeholder="HANG"
+                    maxLength={4}
+                    className="flex-1 border border-slate-300 rounded px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--teal)] uppercase tracking-widest"
+                  />
+                  <button
+                    onClick={saveClientCode}
+                    disabled={clientCodeSaving}
+                    className="px-2.5 py-1.5 bg-[var(--teal)] text-white text-xs font-semibold rounded hover:bg-[var(--teal-dark)] disabled:opacity-50"
+                  >
+                    {clientCodeSaving ? '…' : 'Save'}
+                  </button>
+                  <button
+                    onClick={() => { setClientCodeEditing(false); setClientCodeError(null) }}
+                    className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-800 rounded border border-slate-200"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className={cn(
+                    'flex-1 font-mono text-base font-bold tracking-widest px-2 py-1 rounded',
+                    (prospect as any).client_code
+                      ? 'text-[var(--teal)] bg-[var(--teal-light)]'
+                      : 'text-slate-300 bg-slate-50'
+                  )}>
+                    {(prospect as any).client_code || '—'}
+                  </span>
+                  {clientCodeSaved && <Check className="w-4 h-4 text-green-500" />}
+                  <button
+                    onClick={() => { setClientCodeEditing(true); setClientCodeSaved(false) }}
+                    className="text-xs text-slate-400 hover:text-slate-700 flex items-center gap-1"
+                  >
+                    <Pencil className="w-3 h-3" />
+                    Edit
+                  </button>
+                  {!((prospect as any).client_code) && (
+                    <button
+                      onClick={() => {
+                        setClientCodeInput(suggestClientCode(prospect.business_name))
+                        setClientCodeEditing(true)
+                      }}
+                      className="text-xs text-[var(--teal)] hover:text-[var(--teal-dark)] flex items-center gap-1"
+                      title="Auto-suggest code from business name"
+                    >
+                      <Tag className="w-3 h-3" />
+                      Suggest
+                    </button>
+                  )}
+                </div>
+              )}
+              {clientCodeError && (
+                <p className="text-xs text-red-500">{clientCodeError}</p>
+              )}
+            </div>
+          </Card>
+
           {/* Location Map */}
           <Card>
             <CardTitle>Location</CardTitle>
