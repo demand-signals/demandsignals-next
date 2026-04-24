@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -8,6 +9,7 @@ import {
   Newspaper, Receipt, CreditCard, Repeat, ScrollText, Settings,
   FolderKanban, FileCheck, Coins, UserCheck, MessageSquare, Zap,
   Clock, UserCog, Shield, Eye, ExternalLink,
+  ChevronRight, ChevronDown,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -120,6 +122,34 @@ export function AdminSidebar() {
   const pathname = usePathname()
   const router = useRouter()
 
+  // Auto-open the group containing the active route; all others closed by default.
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
+    const initial = new Set<string>()
+    for (const group of NAV_GROUPS) {
+      for (const item of group.items) {
+        if (item.soon || item.external) continue
+        const active =
+          item.href === '/admin'
+            ? pathname === '/admin'
+            : pathname.startsWith(item.href)
+        if (active) {
+          initial.add(group.title)
+          break
+        }
+      }
+    }
+    return initial
+  })
+
+  function toggleGroup(title: string) {
+    setOpenGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(title)) next.delete(title)
+      else next.add(title)
+      return next
+    })
+  }
+
   async function handleLogout() {
     const supabase = createClient()
     await supabase.auth.signOut()
@@ -137,82 +167,94 @@ export function AdminSidebar() {
         </Link>
       </div>
 
-      <nav className="flex-1 p-3 overflow-y-auto space-y-4">
-        {NAV_GROUPS.map((group, gi) => (
-          <div key={group.title} className={gi > 0 ? 'border-t border-slate-100 pt-3' : undefined}>
-            <div className="px-3 mb-1 text-[10px] font-bold tracking-widest text-slate-400 uppercase select-none">
-              {group.title}
-            </div>
-            <div className="space-y-0.5">
-              {group.items.map(({ href, label, icon: Icon, soon, external }) => {
-                const active =
-                  !soon &&
-                  !external &&
-                  (href === '/admin'
-                    ? pathname === '/admin'
-                    : pathname.startsWith(href))
-
-                const baseClasses = cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors w-full text-left',
-                  soon
-                    ? 'opacity-50 cursor-default text-slate-500'
-                    : active
-                      ? 'bg-[var(--teal)]/10 text-[var(--teal)] font-medium'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100',
-                )
-
-                const children = (
-                  <>
-                    <Icon className="w-4 h-4 shrink-0" />
-                    <span className="flex-1 truncate">{label}</span>
-                    {soon && (
-                      <span className="text-[9px] font-semibold tracking-wide text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">
-                        soon
-                      </span>
-                    )}
-                    {external && !soon && (
-                      <ExternalLink className="w-3 h-3 shrink-0 text-slate-400" />
-                    )}
-                  </>
-                )
-
-                if (soon) {
-                  return (
-                    <button
-                      key={href}
-                      className={baseClasses}
-                      onClick={(e) => e.preventDefault()}
-                      tabIndex={-1}
-                      aria-disabled="true"
-                    >
-                      {children}
-                    </button>
-                  )
+      <nav className="flex-1 p-3 overflow-y-auto space-y-1">
+        {NAV_GROUPS.map((group) => {
+          const isOpen = openGroups.has(group.title)
+          return (
+            <div key={group.title}>
+              <button
+                onClick={() => toggleGroup(group.title)}
+                className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-bold tracking-widest text-slate-400 uppercase hover:text-slate-600 transition-colors"
+              >
+                <span>{group.title}</span>
+                {isOpen
+                  ? <ChevronDown className="w-3 h-3" />
+                  : <ChevronRight className="w-3 h-3" />
                 }
+              </button>
+              {isOpen && (
+                <div className="space-y-0.5 mb-2">
+                  {group.items.map(({ href, label, icon: Icon, soon, external }) => {
+                    const active =
+                      !soon &&
+                      !external &&
+                      (href === '/admin'
+                        ? pathname === '/admin'
+                        : pathname.startsWith(href))
 
-                if (external) {
-                  return (
-                    <a
-                      key={href}
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={baseClasses}
-                    >
-                      {children}
-                    </a>
-                  )
-                }
+                    const baseClasses = cn(
+                      'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors w-full text-left',
+                      soon
+                        ? 'opacity-50 cursor-default text-slate-500'
+                        : active
+                          ? 'bg-[var(--teal)]/10 text-[var(--teal)] font-medium'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100',
+                    )
 
-                return (
-                  <Link key={href} href={href} className={baseClasses}>
-                    {children}
-                  </Link>
-                )
-              })}
+                    const children = (
+                      <>
+                        <Icon className="w-4 h-4 shrink-0" />
+                        <span className="flex-1 truncate">{label}</span>
+                        {soon && (
+                          <span className="text-[9px] font-semibold tracking-wide text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">
+                            soon
+                          </span>
+                        )}
+                        {external && !soon && (
+                          <ExternalLink className="w-3 h-3 shrink-0 text-slate-400" />
+                        )}
+                      </>
+                    )
+
+                    if (soon) {
+                      return (
+                        <button
+                          key={href}
+                          className={baseClasses}
+                          onClick={(e) => e.preventDefault()}
+                          tabIndex={-1}
+                          aria-disabled="true"
+                        >
+                          {children}
+                        </button>
+                      )
+                    }
+
+                    if (external) {
+                      return (
+                        <a
+                          key={href}
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={baseClasses}
+                        >
+                          {children}
+                        </a>
+                      )
+                    }
+
+                    return (
+                      <Link key={href} href={href} className={baseClasses}>
+                        {children}
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          )
+        })}
       </nav>
 
       <div className="p-3 border-t border-slate-200">
