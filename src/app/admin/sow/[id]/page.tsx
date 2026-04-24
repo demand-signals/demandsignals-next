@@ -805,9 +805,6 @@ export default function SowDetailPage({
                     className="flex items-center gap-3 px-4 py-3"
                     style={{ background: '#f4f6f9' }}
                   >
-                    <span className="text-xs font-bold uppercase text-teal-600 shrink-0">
-                      Phase {phaseIdx + 1}
-                    </span>
                     <FieldInput
                       value={phase.name}
                       onChange={(v) => updatePhase(phase.id, { name: v })}

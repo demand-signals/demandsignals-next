@@ -414,9 +414,6 @@ export default function NewSowPage() {
           >
             {/* Phase header */}
             <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border-b border-slate-200">
-              <span className="text-xs font-bold uppercase text-teal-600 shrink-0">
-                Phase {phaseIdx + 1}
-              </span>
               <input
                 value={phase.name}
                 onChange={(e) => updatePhase(phase.id, { name: e.target.value })}
