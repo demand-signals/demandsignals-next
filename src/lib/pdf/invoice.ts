@@ -280,5 +280,5 @@ export async function renderInvoicePdf(
   </div>`
 
   const html = docShell(`Invoice ${invoice.invoice_number}`, body)
-  return htmlToPdfBuffer(html, { format: 'Letter', printBackground: true })
+  return htmlToPdfBuffer(html, { format: 'Legal', printBackground: true })
 }

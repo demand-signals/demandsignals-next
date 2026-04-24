@@ -203,5 +203,5 @@ export async function renderReceiptPdf(
     `Receipt ${receipt.receipt_number} — ${prospect.business_name}`,
     receiptBody(receipt, invoice, prospect),
   )
-  return htmlToPdfBuffer(html, { format: 'Letter', printBackground: true })
+  return htmlToPdfBuffer(html, { format: 'Legal', printBackground: true })
 }

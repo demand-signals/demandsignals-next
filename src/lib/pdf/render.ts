@@ -6,8 +6,8 @@
 import { launchChromium } from './chromium'
 
 export interface PdfOptions {
-  /** Page size. Defaults to 'Letter' (612×792pt). */
-  format?: 'Letter' | 'A4'
+  /** Page size. Defaults to 'Legal' (612×1008pt). */
+  format?: 'Letter' | 'Legal' | 'A4'
   /** Page margins. Default: all zero (templates handle their own padding). */
   margin?: { top: string; bottom: string; left: string; right: string }
   /** Whether to render CSS backgrounds. Default: true. */
@@ -24,7 +24,7 @@ export async function htmlToPdfBuffer(
     // waitUntil: 'networkidle0' ensures external images (logo URL) finish loading
     await page.setContent(html, { waitUntil: 'networkidle0' })
     const buf = await page.pdf({
-      format: options.format ?? 'Letter',
+      format: options.format ?? 'Legal',
       printBackground: options.printBackground ?? true,
       margin: options.margin ?? { top: '0', bottom: '0', left: '0', right: '0' },
     })

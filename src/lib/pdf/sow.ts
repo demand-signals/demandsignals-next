@@ -111,7 +111,7 @@ function coverPage(sow: SowDocument, prospect: SowProspect): string {
       align-items: center;
       padding: 40px 56px 0;
     ">
-      <img src="${LOGO_URL}" alt="Demand Signals" style="height:36px;object-fit:contain;filter:brightness(0) invert(1);opacity:0.9">
+      <img src="${LOGO_URL}" alt="Demand Signals" style="height:44px;object-fit:contain;">
       <span style="
         background: ${T.orangeDeep};
         color: #fff;
@@ -606,5 +606,5 @@ export async function renderSowPdf(
     + closingPage(sow),
   )
 
-  return htmlToPdfBuffer(html, { format: 'Letter', printBackground: true })
+  return htmlToPdfBuffer(html, { format: 'Legal', printBackground: true })
 }

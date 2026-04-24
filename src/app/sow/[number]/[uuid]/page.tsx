@@ -370,7 +370,7 @@ export default async function PublicSowPage({
             src="https://demandsignals.us/assets/logos/dsig_logo_v2b.png"
             alt="Demand Signals"
             className="h-9 object-contain"
-            style={{ filter: 'brightness(0) invert(1)', opacity: 0.9 }}
+            style={{}}
           />
           {isAccepted ? (
             <span className="inline-block px-4 py-1 rounded-full text-xs font-bold text-white" style={{ background: '#22c55e' }}>
