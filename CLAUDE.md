@@ -418,6 +418,20 @@ Both templates auto-generate JSON-LD schema (Service, BreadcrumbList, FAQPage).
 - [x] Retainer bundling at /quote: required selection step, 4 tiers (Essential/Growth/Full/Site-only), one-signature SOW flow with SowOngoingServices payload, launch activation creates subscription row via `activateRetainer()`
 - [x] SOW accept triggers client + project creation: prospects.is_client + became_client_at, projects row with phases materialized from SOW phases, monthly_value computed from recurring deliverable cents
 - [x] Executive dashboard at /admin: pipeline funnel (Visitors → Revenue) + per-category stat tiles for every sidebar section. 30-day rolling window default with 7d/30d/90d selector. Cached 5min at the edge.
+- [x] SOW phase hierarchy: phases with nested priced deliverables (one-time/monthly/quarterly/annual + start_trigger). Migrations 017a-c.
+- [x] Doc-system overhaul: in-repo editable SOW + invoice detail pages (no iframes). Invoice edit-after-create + refund + resend + mark-paid. Subscription detail: edit/refund/mark-paid/delete/end-date/override-amount. Subscription Plans admin CRUD.
+- [x] prospects.client_code (4-letter code, unique partial index) + prospects.channels jsonb (7 review channels + 7 simple channels with ratings/URLs). Migrations 019a-b, 020a, 022a.
+- [x] prospect_notes table: append-only timeline with add/edit/delete UI.
+- [x] Document numbering: TYPE-CLIENT-MMDDYY{A-Z} platform-wide convention. allocate_document_number() RPC + src/lib/doc-numbering.ts. Receipts table. Migration 019a-b + 021a.
+- [x] SOW accept auto-creates deposit invoice (INV-…). Invoice mark-paid auto-creates receipt (RCT-…). Partial payments supported.
+- [x] Quote sessions: doc_number (EST-CLIENT-MMDDYYA) allocated lazily on prospect-sync. Continue-to-SOW button at /admin/quotes/[id] pre-populates SOW from EST line items.
+- [x] Admin sidebar reorganized into 10 collapsible accordion groups: PROSPECTING / ONBOARDING / CLIENTS / PROJECTS / FINANCE / SERVICES / CONTENT / AGENTS / INSIGHTS / ADMIN.
+- [x] PDF pipeline replaced: Chromium HTML→PDF in-repo (puppeteer-core + @sparticuz/chromium). Legal format (8.5×14). Python dsig_pdf renderer deprecated. Renderer files: src/lib/pdf/{sow,invoice,receipt,render,chromium,_shared}.ts.
+- [x] PDF design reconciled to DSIG v2 spec: #3D4566 slate, #52C9A0 teal, #F26419 orange. Helvetica. Interior header/footer. Cover with decorative circles + 3-col meta band + orange pill badge. Back cover restored. Signatures on last interior content page.
+- [x] Public document pages branded to match PDF design: /sow/[number]/[uuid] (proposal microsite + Accept form), /invoice/[number]/[uuid] (Stripe-receipt treatment + Pay button), /quote/s/[token] (EST hero + next-steps CTAs).
+- [x] Trade-in-Kind on SOWs: sow_documents.trade_credit_cents + trade_credit_description. Shows TIK credit row in pricing section + PDF. Migration 023a.
+- [x] Supabase security hardening: SECURITY DEFINER views → security_invoker=true, 9 functions with explicit search_path, 5 permissive RLS policies dropped, leaked password protection enabled. Migration 024a.
+- [x] Channels + ratings: review channels (google_business, yelp, facebook, trustpilot, bbb, angi, nextdoor) store {url, rating, review_count, last_synced_at}. Simple channels (website, linkedin, tiktok, youtube, instagram, twitter_x, pinterest). Migration 022a backfills legacy website_url + google_rating/yelp_rating.
 
 ---
 
@@ -429,7 +443,7 @@ Admin marks quote launched via `/admin/quotes/[id]` → `RetainerPanel` Mark Lau
 
 Retainer plans editable at `/admin/retainer-plans` + `/admin/retainer-plans/[id]`. The retainer menu is filtered rows of `services_catalog` where `pricing_type IN ('monthly','both')` — single source of truth, no parallel table.
 
-SOW includes `ongoing_services` (see `SowOngoingServices` in `invoice-types.ts`) populated via `buildSowOngoingServices(quoteId)`. Python PDF renderer wires this separately.
+SOW includes `ongoing_services` (see `SowOngoingServices` in `invoice-types.ts`) populated via `buildSowOngoingServices(quoteId)`. The Python PDF renderer is deprecated — PDFs are now Chromium HTML→PDF (see §21).
 
 ---
 
@@ -468,6 +482,8 @@ Key files:
 - [ ] **Manual EST admin form** — standalone admin-created budgetary estimate not originating from the /quote AI conversation. Feeds into the same EST→SOW continuation path. Low priority; admin process starts with SOW when /quote wasn't used.
 - [ ] **Project expense tracking** — new table `project_expenses` (project_id, description, amount_cents, category, incurred_at, receipt_url). UI on `/admin/projects/[id]`.
 - [ ] **Project time tracking** — new table `project_time_entries` (project_id, phase_id, deliverable_id, hours, description, logged_at, logged_by). UI on `/admin/projects/[id]`. Aggregate hours roll up per phase and project.
+- [ ] **Scheduled rating sync for clients** — weekly/daily cron re-runs research specifically on `prospects.is_client = true` review channels. New cron: `scripts/sync-client-ratings.mjs` + Vercel cron entry.
+- [ ] **PDF design v2 fine-tuning** — iterate as real prospects respond; design spec at DSIG_PDF_STANDARDS_v2.md is authoritative.
 
 ### High Priority — Site
 1. **301 redirects from PHP site** — old .co URLs are Google-indexed; need redirects now that DNS is cutting over
@@ -480,7 +496,6 @@ Key files:
 - [ ] **OG image** — `/og-image.png` is placeholder, needs real branded asset
 - [ ] **Portfolio page** — needs real client case studies with results data
 - [ ] **GA4** — optional now that custom analytics tracker is deployed (Vercel Analytics also installed)
-- [ ] **Scheduled rating sync for clients** — weekly/daily background job that re-runs the research function specifically on review-channel ratings for `prospects.is_client = true`. Freshness indicator in UI shows "synced X days ago". Prospects (non-clients) stay on manual research runs only. New cron: `scripts/sync-client-ratings.mjs` + Vercel cron entry.
 
 ### Lower Priority
 - [ ] Blog: more posts targeting buyer search terms
@@ -531,6 +546,22 @@ Key files:
 
 ### Generated pages (Python script)
 15 service pages were batch-generated using `generate_pages.py` (in repo root). The script is a build artifact — content can be edited directly in the page files. The script can be deleted.
+
+### Supabase schema cache
+**Problem:** After applying a migration cleanly, API calls return "Could not find column X" or "relation does not exist".
+**Solution:** PostgREST's schema cache hasn't refreshed yet. Wait 30 seconds and retry, or reload the Supabase SQL Editor tab. This is not a migration bug — the migration applied; it's purely a cache TTL issue.
+
+### Chromium on Vercel (serverless PDF)
+**Problem:** `puppeteer-core` + `@sparticuz/chromium` will fail to bundle if not externalized. Also, `/var/task` is read-only in the Vercel runtime.
+**Solution:** Add `['puppeteer-core', '@sparticuz/chromium']` to `serverExternalPackages` in `next.config.ts`. Write any temp files to `/tmp` (writable). Use the remote binary URL in `chromium.executablePath('https://...')` for v147+; do NOT vendor the binary in the repo.
+
+### zod v4 rename
+**Problem:** Zod v4 renamed `e.errors` → `e.issues` on `ZodError`. Old code catches a `ZodError` but reads `.errors` and gets `undefined`.
+**Solution:** Use `e.issues` in all catch blocks when handling `ZodError`. Search for `.errors` on caught `ZodError` references and update.
+
+### Serverless write-only path
+**Problem:** Attempting to write temp files to `/var/task` on Vercel throws EROFS (read-only filesystem).
+**Solution:** Always use `/tmp` for any transient file writes in API routes (e.g., Chromium temp profile, downloaded logo). `/tmp` is writable and ephemeral in the serverless context.
 
 ---
 
@@ -873,4 +904,75 @@ Example: first invoice to Hangtown today → `INV-HANG-042326A`. Second same day
 - `/admin/receipts/[id]` — Receipt detail (immutable read-only)
 - Admin sidebar Finance group — "Receipts" link added (FileCheck icon)
 
-**EST (quote sessions):** not yet wired — requires a `doc_number` column migration on `quote_sessions`. See `TODO(est)` comment in `src/lib/doc-numbering.ts`.
+**EST (quote sessions):** `quote_sessions.doc_number` column added via migration 021a. Number is allocated lazily on prospect-sync (when the session first gets linked to a prospect with a `client_code`). `/admin/quotes/[id]` shows the EST number and a "Continue to SOW" button that pre-populates a new SOW from the EST's `selected_items`. Mapping: `pricing_type → cadence` (one-time/monthly; `both` defaults to one-time).
+
+---
+
+## 21. PDF Pipeline
+
+**Added 2026-04-24. Python dsig_pdf renderer is deprecated.**
+
+### Implementation
+
+PDFs are generated in-repo using **Chromium HTML→PDF** via `puppeteer-core` + `@sparticuz/chromium`. The remote Chromium binary is downloaded at cold-start via `chromium.executablePath('https://...')` (v147 tar URL). No binary is committed to the repo.
+
+**Page format:** Legal portrait (8.5 × 14 in = 612 × 1008 pt), matching the PDF standards spec.
+
+**Renderer files (`src/lib/pdf/`):**
+| File | Purpose |
+|------|---------|
+| `_shared.ts` | Brand tokens, color constants, shared HTML helpers |
+| `chromium.ts` | Chromium loader + executablePath resolution |
+| `render.ts` | `htmlToPdfBuffer()` — Puppeteer launch + PDF export |
+| `sow.ts` | SOW document: cover, scope, investment, signature pages |
+| `invoice.ts` | Invoice document: header, line items, totals, payment footer |
+| `receipt.ts` | Receipt document: confirmation + payment details |
+
+**next.config.ts requirement:**
+```ts
+serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium']
+```
+Without this, Vercel bundles the binary and deployment fails.
+
+**Temp path:** always `/tmp` (not `/var/task` which is read-only).
+
+### Design Authority
+
+**`J:\My Drive\Agentic Agents\CLAUDE\DSIG\DSIG_PDF_STANDARDS_v2.md`** governs colors, typography, layout, and component patterns. This spec was written for Python/ReportLab but applies directly to the HTML/CSS/Chromium pipeline — translate Flowable classes to equivalent HTML structures.
+
+Key tokens from the spec (authoritative — use these, not web CSS vars):
+- Slate: `#3D4566` (NOT `#1d2330`)
+- Teal: `#52C9A0` (implementation) / `#3ECFAA` (spec)
+- Orange: `#F26419` (spec dividers/badges) / `#FF6B2B` (implementation CTAs)
+- Helvetica font stack throughout
+
+### API routes
+
+- `GET /api/admin/sow/[id]/pdf` — renders + streams SOW PDF
+- `GET /api/admin/invoices/[id]/pdf` — renders + streams invoice PDF
+- `GET /api/admin/receipts/[id]/pdf` — renders + streams receipt PDF
+
+### Deprecated Python renderer
+
+`D:\CLAUDE\dsig-pdf-service` — the Python/ReportLab microservice at `pdf.demandsignals.co`. Files in the repo marked `@deprecated`. Not yet deleted (other DSIG client projects, e.g. Southside MMA, may still use it). The design spec in DSIG_PDF_STANDARDS_v2.md still applies to both implementations.
+
+---
+
+## 22. Public Document Pages
+
+**Added 2026-04-24.**
+
+Magic-link pages that clients see when they receive a document. All branded to match the PDF design treatment.
+
+| Route | Purpose |
+|-------|---------|
+| `/sow/[number]/[uuid]` | Premium proposal microsite — full scope summary + inline Accept form. Accept creates deposit invoice + project + flips is_client. |
+| `/invoice/[number]/[uuid]` | Stripe-receipt treatment — invoice details + Pay button (Stripe Payment Link). |
+| `/quote/s/[token]` | EST hero — budget estimate summary + next-steps CTAs (book call, accept, view full). |
+
+**Auth model:** UUID suffix is the auth token — no cookie, no login required. URLs are unguessable (UUID v4). Treat the URL itself as the secret.
+
+**Key files:**
+- `src/app/sow/[number]/[uuid]/page.tsx`
+- `src/app/invoice/[number]/[uuid]/page.tsx`
+- `src/app/quote/s/[token]/page.tsx`

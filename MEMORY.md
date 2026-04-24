@@ -8,7 +8,51 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-04-23 (EST doc numbering + EST→SOW continuation flow)
+**Last updated:** 2026-04-24 (PDF pipeline + design reconciliation + public doc pages + security hardening)
+
+---
+
+## SHIPPED 2026-04-22 through 2026-04-24
+
+- **SOW phase hierarchy** — phases with nested priced deliverables (one-time/monthly/quarterly/annual + start_trigger). Migrations 017a-c.
+- **Doc-system overhaul** — in-repo editable SOW + invoice detail pages (no iframes). Invoice edit/refund/resend/mark-paid. Subscription detail full CRUD. Subscription Plans CRUD.
+- **Client lifecycle + channels** — `prospects.client_code` (4-letter code), `prospects.channels` jsonb (7 review + 7 simple channels with ratings). `prospect_notes` append-only timeline. Migrations 019a-b, 020a, 022a.
+- **Document numbering shipped** — TYPE-CLIENT-MMDDYY{A-Z}. `allocate_document_number()` RPC. `src/lib/doc-numbering.ts`. Receipts table. Migrations 019a-b.
+- **SOW accept → INV auto-create** — deposit invoice with INV- number created on SOW accept. Migration path wired in `/api/sow/public/[number]/accept`.
+- **Invoice mark-paid → RCT auto-create** — receipt with RCT- number created on mark-paid. Partial payments leave invoice in `sent` state; balance tracked by sum(receipts).
+- **EST doc_number** — `quote_sessions.doc_number` (EST-CLIENT-MMDDYYA) allocated lazily on prospect-sync. Migration 021a. Continue-to-SOW at `/admin/quotes/[id]`.
+- **Admin sidebar** — 10 collapsible accordion groups: PROSPECTING / ONBOARDING / CLIENTS / PROJECTS / FINANCE / SERVICES / CONTENT / AGENTS / INSIGHTS / ADMIN. Commits: admin-sidebar.tsx refactor.
+- **Executive Command Center** — pipeline funnel hero (Visitors → Revenue MTD) + per-category stat tiles. 30d default, 7d/30d/90d selector. 5-min edge cache. (Commit in CLAUDE.md §10.)
+- **Chromium PDF pipeline** — replaced Python dsig_pdf. puppeteer-core + @sparticuz/chromium. Legal format. Remote binary via executablePath(url) v147. `src/lib/pdf/`. Commits: `dd43418` → `bbd6cfa`.
+- **PDF design v2 reconciliation** — #3D4566 slate, #52C9A0 teal, #F26419 orange. Helvetica. Interior header/footer gradient bar. Cover: decorative circles + 3-col meta band + orange pill badge. Back cover restored. Signatures on last interior content page. Commits: `e626a31`, `5734dba`, `bbd6cfa`.
+- **Public doc pages** — /sow/[number]/[uuid] proposal microsite, /invoice/[number]/[uuid] Stripe-receipt treatment, /quote/s/[token] EST hero. All branded to match PDF. Commits: `53913b0`, `6355df0`, `bbb613a`.
+- **Trade-in-Kind (TIK)** — `sow_documents.trade_credit_cents` + `trade_credit_description`. Shows in SOW pricing section + PDF. Migration 023a. Commit: `b773180`.
+- **Supabase security hardening** — SECURITY DEFINER views → security_invoker=true, 9 functions explicit search_path, 5 permissive RLS policies dropped, leaked password protection. Migration 024a. Commit: `1739f2b`.
+- **Channels backfill** — migration 022a backfills `website_url` + `google_rating`/`yelp_rating` into new `channels` jsonb field.
+
+## Migrations applied (in order)
+
+| Migration | Applied | What it adds |
+|-----------|---------|--------------|
+| 016a-d | APPLY-016-2026-04-21 | Retainer bundling |
+| 017a-c | APPLY-017-2026-04-22 | SOW phases + priced deliverables + late fee + sub end_date |
+| 018a-b | APPLY-018-2026-04-22 | Phase hierarchy + client lifecycle (is_client + projects.phases) |
+| 019a-b | APPLY-019-2026-04-23 | client_code + document_numbers table + receipts table |
+| 020a | APPLY-020-2026-04-23 | prospects.channels + prospect_notes table |
+| 021a | APPLY-021-2026-04-23 | quote_sessions.doc_number |
+| 022a | APPLY-022-2026-04-23 | Channels backfill (website_url, google/yelp ratings) |
+| 023a | APPLY-023-2026-04-24 | SOW trade-in-kind (trade_credit_cents, trade_credit_description) |
+| 024a | APPLY-024-2026-04-24 | Supabase security hardening |
+
+## Architectural decisions locked (do not re-debate)
+
+- **subscription_plans is the only plans table.** Retainer tiers are rows with `is_retainer=true`. No parallel `retainer_plans` table.
+- **services_catalog is the single source of truth** for line items across EST, SOW, INV, RCT.
+- **Document numbering format is TYPE-CLIENT-MMDDYY{A}.** Legacy numbers (DSIG-YYYY-NNNN, SOW-YYYY-NNNN) preserved, no backfill.
+- **PDF pipeline = Chromium HTML→PDF, in-repo, Legal format.** Python dsig_pdf is deprecated. Design spec DSIG_PDF_STANDARDS_v2.md still governs colors/typography/layout.
+- **Prospect lifecycle: prospect → is_client=true + projects row on SOW accept.** No separate clients table.
+- **One apex domain (demandsignals.co).** See CLAUDE.md §18.
+- **Cloudflare R2 for file storage.** Two buckets: public (`assets.demandsignals.co`) + private (signed URLs). See CLAUDE.md §19.
 
 ---
 
