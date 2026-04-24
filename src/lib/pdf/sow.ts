@@ -138,6 +138,9 @@ function coverPage(sow: SowDocument, prospect: SowProspect): string {
 
     <!-- CENTER ZONE: Title block — vertically centered in the remaining space above the meta band -->
     <div style="flex:1;min-height:0;position:relative;z-index:1;display:flex;flex-direction:column;justify-content:center;padding:0 56px">
+      <!-- Client business name (if available) -->
+      ${prospect?.business_name ? `<div style="font-family:Georgia, serif; font-style:italic; font-size:44px; font-weight:400; color:${T.WHITE}; line-height:1.1; text-align:left; margin-bottom:40px;">For ${esc(prospect.business_name)}</div>` : ''}
+
       <!-- Eyebrow: Statement of Work -->
       ${eyebrow('Statement of Work', T.ORANGE_S)}
 
