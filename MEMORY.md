@@ -8,7 +8,13 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-04-21 (catalog alignment + bulk import + settings page shipped)
+**Last updated:** 2026-04-23 (platform-wide document numbering shipped)
+
+---
+
+## Document numbering (locked-in 2026-04-23)
+
+Platform-wide: `TYPE-CLIENT-MMDDYY{A|B|C...}`. TYPE = EST/SOW/INV/RCT. CLIENT = 4-letter code on `prospects.client_code`. Suffix is sequential letter per (type, client, date). Allocated via `allocateDocNumber()` helper → `allocate_document_number()` RPC (atomic). Legacy numbers preserved. See CLAUDE.md §20.
 
 ---
 
