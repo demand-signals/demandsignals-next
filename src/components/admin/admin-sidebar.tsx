@@ -122,24 +122,7 @@ export function AdminSidebar() {
   const pathname = usePathname()
   const router = useRouter()
 
-  // Auto-open the group containing the active route; all others closed by default.
-  const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
-    const initial = new Set<string>()
-    for (const group of NAV_GROUPS) {
-      for (const item of group.items) {
-        if (item.soon || item.external) continue
-        const active =
-          item.href === '/admin'
-            ? pathname === '/admin'
-            : pathname.startsWith(item.href)
-        if (active) {
-          initial.add(group.title)
-          break
-        }
-      }
-    }
-    return initial
-  })
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set())
 
   function toggleGroup(title: string) {
     setOpenGroups((prev) => {

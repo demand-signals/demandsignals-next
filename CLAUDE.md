@@ -417,6 +417,7 @@ Both templates auto-generate JSON-LD schema (Service, BreadcrumbList, FAQPage).
 - [x] 843 static pages building clean
 - [x] Retainer bundling at /quote: required selection step, 4 tiers (Essential/Growth/Full/Site-only), one-signature SOW flow with SowOngoingServices payload, launch activation creates subscription row via `activateRetainer()`
 - [x] SOW accept triggers client + project creation: prospects.is_client + became_client_at, projects row with phases materialized from SOW phases, monthly_value computed from recurring deliverable cents
+- [x] Executive dashboard at /admin: pipeline funnel (Visitors → Revenue) + per-category stat tiles for every sidebar section. 30-day rolling window default with 7d/30d/90d selector. Cached 5min at the edge.
 
 ---
 
