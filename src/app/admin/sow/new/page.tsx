@@ -410,7 +410,7 @@ export default function NewSowPage() {
         {phases.map((phase, phaseIdx) => (
           <div
             key={phase.id}
-            className="bg-white border border-slate-200 rounded-xl overflow-hidden"
+            className="bg-white border border-slate-200 rounded-xl"
           >
             {/* Phase header */}
             <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border-b border-slate-200">

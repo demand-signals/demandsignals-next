@@ -699,7 +699,7 @@ export default function SowDetailPage({
 
       {/* Branded document */}
       <div
-        className="max-w-3xl mx-auto my-8 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+        className="max-w-3xl mx-auto my-8 bg-white rounded-xl shadow-sm border border-slate-200"
         style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}
       >
         {/* Document header */}
@@ -798,7 +798,7 @@ export default function SowDetailPage({
               {phases.map((phase, phaseIdx) => (
                 <div
                   key={phase.id}
-                  className="rounded-lg border border-slate-200 overflow-hidden"
+                  className="rounded-lg border border-slate-200"
                 >
                   {/* Phase header */}
                   <div
