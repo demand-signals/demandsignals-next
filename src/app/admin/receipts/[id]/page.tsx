@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, ExternalLink } from 'lucide-react'
+import { ArrowLeft, ExternalLink, FileDown } from 'lucide-react'
 import { formatCents } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -101,14 +101,23 @@ export default function ReceiptDetailPage({
               {receipt.prospects?.business_name ?? 'Unknown client'}
             </p>
           </div>
-          <div className="text-right">
+          <div className="text-right flex flex-col items-end gap-2">
             <div className="text-2xl font-bold text-emerald-600">{formatCents(receipt.amount_cents)}</div>
             <span className={cn(
-              'inline-flex px-2.5 py-0.5 rounded text-xs font-medium mt-1',
+              'inline-flex px-2.5 py-0.5 rounded text-xs font-medium',
               METHOD_BADGE[receipt.payment_method] ?? 'bg-slate-100 text-slate-600',
             )}>
               {receipt.payment_method.replace('_', ' ')}
             </span>
+            <a
+              href={`/api/admin/receipts/${receipt.id}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--teal)] text-white hover:bg-[var(--teal-dark)] transition-colors"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              PDF
+            </a>
           </div>
         </div>
       </div>
