@@ -174,7 +174,7 @@ export function AdminSidebar() {
             <div key={group.title}>
               <button
                 onClick={() => toggleGroup(group.title)}
-                className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-bold tracking-widest text-slate-400 uppercase hover:text-slate-600 transition-colors"
+                className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold tracking-widest text-[var(--orange)] uppercase hover:opacity-80 transition-opacity"
               >
                 <span>{group.title}</span>
                 {isOpen
