@@ -479,6 +479,7 @@ Key files:
 - [ ] **OG image** — `/og-image.png` is placeholder, needs real branded asset
 - [ ] **Portfolio page** — needs real client case studies with results data
 - [ ] **GA4** — optional now that custom analytics tracker is deployed (Vercel Analytics also installed)
+- [ ] **Scheduled rating sync for clients** — weekly/daily background job that re-runs the research function specifically on review-channel ratings for `prospects.is_client = true`. Freshness indicator in UI shows "synced X days ago". Prospects (non-clients) stay on manual research runs only. New cron: `scripts/sync-client-ratings.mjs` + Vercel cron entry.
 
 ### Lower Priority
 - [ ] Blog: more posts targeting buyer search terms
