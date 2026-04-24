@@ -100,7 +100,8 @@ export function decorativeCircles(): string {
 
 /**
  * Eyebrow label: spaced caps in TEAL (or custom color).
- * 8pt (~11px), letter-spacing 0.35em + word-spacing 0.6em, uppercase.
+ * 8pt (~11px), letter-spacing 0.2em + word-spacing 0.8em, uppercase.
+ * Tight character spacing keeps words readable; wider word gap creates clear word boundaries.
  * NOTE: text is embedded raw (no esc()) — callers must pass literal/safe strings.
  * This avoids double-escaping when callers pass hardcoded labels.
  */
@@ -108,8 +109,8 @@ export function eyebrow(text: string, color: string = T.TEAL): string {
   return `<p style="
     font-size:11px;
     font-weight:400;
-    letter-spacing:0.35em;
-    word-spacing:0.6em;
+    letter-spacing:0.2em;
+    word-spacing:0.8em;
     text-transform:uppercase;
     color:${color};
     margin:0 0 10px 0;
@@ -154,8 +155,8 @@ export function interiorPageHeader(sectionLabel: string): string {
       <span style="
         font-size:10px;
         font-weight:400;
-        letter-spacing:0.25em;
-        word-spacing:0.5em;
+        letter-spacing:0.15em;
+        word-spacing:0.7em;
         text-transform:uppercase;
         color:${T.GRAY};
         font-family:${FONT_STACK};
@@ -182,6 +183,113 @@ export function interiorPageFooter(): string {
       padding:10px 54px;
       font-family:${FONT_STACK};
     ">Demand Signals — Confidential &nbsp;|&nbsp; DemandSignals.co</p>
+  </div>`
+}
+
+// ── Dark cover shared chrome ──────────────────────────────────────────
+// These three helpers render the identical top strip, meta band, and footer
+// strip used on both the front cover and rear cover of SOW/invoice PDFs.
+
+/**
+ * Dark cover top strip: logo left + PROPOSAL pill right.
+ * Identical on front and back cover — extracted to avoid duplication.
+ */
+export function darkCoverTopStrip(): string {
+  return `
+  <div style="
+    position:relative;
+    z-index:1;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:54px 56px 0;
+    flex-shrink:0;
+  ">
+    <img src="${LOGO_URL}" alt="Demand Signals" style="height:36px;object-fit:contain;">
+    <span style="
+      background:${T.ORANGE_S};
+      color:${T.WHITE};
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:0.2em;
+      text-transform:uppercase;
+      padding:5px 16px;
+      border-radius:17px;
+    ">PROPOSAL</span>
+  </div>`
+}
+
+/**
+ * Dark cover meta band: 3-column PREPARED FOR | PREPARED BY | DATE.
+ * Semi-transparent dark overlay over the SLATE background.
+ */
+export function darkCoverMetaBand(
+  preparedFor: string,
+  preparedBy: string,
+  issueDate: string,
+): string {
+  function metaCol(label: string, value: string, isLast = false): string {
+    return `
+    <div style="
+      flex:1;
+      padding:0 28px;
+      ${!isLast ? `border-right:1px solid rgba(255,255,255,0.12);` : ''}
+    ">
+      <p style="
+        font-size:8px;
+        font-weight:400;
+        letter-spacing:0.2em;
+        word-spacing:0.7em;
+        text-transform:uppercase;
+        color:${T.GRAY};
+        margin-bottom:6px;
+        font-family:${FONT_STACK};
+      ">${label}</p>
+      <p style="
+        font-size:13px;
+        font-weight:700;
+        color:${T.WHITE};
+        line-height:1.25;
+        font-family:${FONT_STACK};
+      ">${value}</p>
+    </div>`
+  }
+
+  return `
+  <div style="
+    background:rgba(0,0,0,0.25);
+    padding:24px 28px;
+    display:flex;
+    gap:0;
+  ">
+    ${metaCol('PREPARED FOR', preparedFor)}
+    ${metaCol('PREPARED BY', preparedBy)}
+    ${metaCol('DATE', issueDate, true)}
+  </div>`
+}
+
+/**
+ * Dark cover footer strip: domain + phone left, PROPOSAL pill right.
+ */
+export function darkCoverFooterStrip(): string {
+  return `
+  <div style="
+    padding:12px 56px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  ">
+    <p style="font-size:9px;color:${T.GRAY};font-family:${FONT_STACK};">DemandSignals.co &nbsp;|&nbsp; (916) 542-2423</p>
+    <span style="
+      background:${T.ORANGE_S};
+      color:${T.WHITE};
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:0.15em;
+      text-transform:uppercase;
+      padding:3px 12px;
+      border-radius:17px;
+    ">PROPOSAL</span>
   </div>`
 }
 

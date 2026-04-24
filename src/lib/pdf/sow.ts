@@ -11,6 +11,7 @@ import {
   esc, escNl, docShell,
   decorativeCircles, eyebrow, oDiv,
   interiorPageHeader, interiorPageFooter,
+  darkCoverTopStrip, darkCoverMetaBand, darkCoverFooterStrip,
 } from './_shared'
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -116,33 +117,6 @@ function coverPage(sow: SowDocument, prospect: SowProspect): string {
     }
   }
 
-  // Cover meta band: PREPARED FOR | PREPARED BY | DATE (3 columns, spec)
-  function metaCol(label: string, value: string, isLast = false): string {
-    return `
-    <div style="
-      flex:1;
-      padding:0 28px;
-      ${!isLast ? `border-right:1px solid rgba(255,255,255,0.12);` : ''}
-    ">
-      <p style="
-        font-size:8px;
-        font-weight:400;
-        letter-spacing:0.3em;
-        text-transform:uppercase;
-        color:${T.GRAY};
-        margin-bottom:6px;
-        font-family:${FONT_STACK};
-      ">${label}</p>
-      <p style="
-        font-size:13px;
-        font-weight:700;
-        color:${T.WHITE};
-        line-height:1.25;
-        font-family:${FONT_STACK};
-      ">${value}</p>
-    </div>`
-  }
-
   return `
   <div style="
     position:relative;
@@ -159,28 +133,8 @@ function coverPage(sow: SowDocument, prospect: SowProspect): string {
   ">
     ${decorativeCircles()}
 
-    <!-- TOP ZONE: Logo row + pill badge -->
-    <div style="
-      position:relative;
-      z-index:1;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      padding:54px 56px 0;
-      flex-shrink:0;
-    ">
-      <img src="${LOGO_URL}" alt="Demand Signals" style="height:36px;object-fit:contain;">
-      <span style="
-        background:${T.ORANGE_S};
-        color:${T.WHITE};
-        font-size:9px;
-        font-weight:700;
-        letter-spacing:0.2em;
-        text-transform:uppercase;
-        padding:5px 16px;
-        border-radius:17px;
-      ">PROPOSAL</span>
-    </div>
+    <!-- TOP ZONE: Logo row + pill badge (shared chrome) -->
+    ${darkCoverTopStrip()}
 
     <!-- CENTER ZONE: Title block — vertically centered in the remaining space above the meta band -->
     <div style="flex:1;min-height:0;position:relative;z-index:1;display:flex;flex-direction:column;justify-content:center;padding:0 56px">
@@ -212,39 +166,10 @@ function coverPage(sow: SowDocument, prospect: SowProspect): string {
       ">Prepared by Demand Signals — Digital Growth &amp; Strategy</p>
     </div>
 
-    <!-- BOTTOM ZONE: Meta band + footer strip -->
+    <!-- BOTTOM ZONE: Meta band + footer strip (shared chrome) -->
     <div style="position:relative;z-index:1;flex-shrink:0">
-      <!-- Meta band: 3 columns — PREPARED FOR | PREPARED BY | DATE -->
-      <div style="
-        background:rgba(0,0,0,0.25);
-        padding:24px 28px;
-        display:flex;
-        gap:0;
-      ">
-        ${metaCol('PREPARED FOR', esc(prospect.business_name))}
-        ${metaCol('PREPARED BY', 'Demand Signals')}
-        ${metaCol('DATE', issueDate, true)}
-      </div>
-
-      <!-- Footer strip -->
-      <div style="
-        padding:12px 56px;
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-      ">
-        <p style="font-size:9px;color:${T.GRAY};">DemandSignals.co &nbsp;|&nbsp; (916) 542-2423</p>
-        <span style="
-          background:${T.ORANGE_S};
-          color:${T.WHITE};
-          font-size:9px;
-          font-weight:700;
-          letter-spacing:0.15em;
-          text-transform:uppercase;
-          padding:3px 12px;
-          border-radius:17px;
-        ">PROPOSAL</span>
-      </div>
+      ${darkCoverMetaBand(esc(prospect.business_name), 'Demand Signals', issueDate)}
+      ${darkCoverFooterStrip()}
     </div>
   </div>`
 }
@@ -558,9 +483,9 @@ function investmentPage(sow: SowDocument): string {
 }
 
 // ── PAGE 4 — Back Cover ────────────────────────────────────────────────
-// Dark bg + circles + centered headline + CTA + contact grid.
+// Dark bg + circles + shared top/bottom chrome + centered Godin quote + CTA.
 
-function backCoverPage(): string {
+function backCoverPage(prospect: SowProspect, issueDate: string): string {
   return `
   <div style="
     position:relative;
@@ -576,38 +501,41 @@ function backCoverPage(): string {
   ">
     ${decorativeCircles()}
 
-    <!-- UPPER ZONE: Godin quote — hero, centered in top ~55% -->
+    <!-- TOP ZONE: Logo row + pill badge (shared chrome, identical to front cover) -->
+    ${darkCoverTopStrip()}
+
+    <!-- CENTER ZONE: Godin quote + logo + CTA + contact grid -->
     <div style="
       position:relative;
       z-index:1;
-      flex:0 0 55%;
+      flex:1;
       display:flex;
       flex-direction:column;
       align-items:center;
       justify-content:center;
-      padding:60px 72px 0;
+      padding:20px 72px;
       text-align:center;
     ">
       <!-- Quote mark -->
       <div style="
-        font-size:80px;
+        font-size:72px;
         font-weight:700;
         color:${T.TEAL_S};
         line-height:0.7;
-        margin-bottom:20px;
+        margin-bottom:16px;
         opacity:0.6;
         font-family:Georgia,'Times New Roman',serif;
       ">&ldquo;</div>
 
       <!-- The quote itself: large, italic, serif-fallback, white -->
       <p style="
-        font-size:28px;
+        font-size:26px;
         font-style:italic;
         font-weight:400;
         color:${T.WHITE};
         line-height:1.45;
-        max-width:680px;
-        margin:0 0 24px 0;
+        max-width:640px;
+        margin:0 0 20px 0;
         font-family:Georgia,'Times New Roman',${FONT_STACK};
         letter-spacing:-0.01em;
       ">Marketing is no longer about the stuff that you make, but about the stories you tell.</p>
@@ -617,36 +545,26 @@ function backCoverPage(): string {
         font-size:13px;
         color:${T.TEAL_S};
         font-weight:600;
-        letter-spacing:0.25em;
-        word-spacing:0.4em;
+        letter-spacing:0.2em;
+        word-spacing:0.7em;
         text-transform:uppercase;
-        margin:0;
+        margin:0 0 28px 0;
       ">&mdash; Seth Godin</p>
-    </div>
 
-    <!-- LOWER ZONE: Logo + CTA + contacts — centered in bottom ~45% -->
-    <div style="
-      position:relative;
-      z-index:1;
-      flex:0 0 45%;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      padding:0 64px 28px;
-      text-align:center;
-    ">
+      <!-- Divider -->
+      <div style="width:40pt;height:1pt;background:rgba(255,255,255,0.15);margin:0 auto 28px;"></div>
+
       <!-- Logo -->
-      <img src="${LOGO_URL}" alt="Demand Signals" style="height:40px;object-fit:contain;margin-bottom:24px;">
+      <img src="${LOGO_URL}" alt="Demand Signals" style="height:36px;object-fit:contain;margin-bottom:20px;">
 
       <!-- Headline -->
       <h2 style="
-        font-size:22px;
+        font-size:21px;
         font-weight:700;
         color:${T.WHITE};
         letter-spacing:-0.01em;
         line-height:1.2;
-        margin:0 0 24px 0;
+        margin:0 0 20px 0;
       ">Let&rsquo;s get to work &mdash; <span style="color:${T.TEAL_S};">together.</span></h2>
 
       <!-- CTA button -->
@@ -661,28 +579,33 @@ function backCoverPage(): string {
         padding:11px 28px;
         border-radius:17px;
         text-decoration:none;
-        margin-bottom:28px;
+        margin-bottom:24px;
       ">QUESTIONS? GET IN TOUCH &rarr;</a>
 
       <!-- Contact grid: 3 columns -->
-      <div style="display:flex;justify-content:center;gap:0;margin:0 auto 20px;max-width:480px;width:100%">
-        <div style="flex:1;padding:0 20px;border-right:1px solid rgba(255,255,255,0.12)">
-          <p style="font-size:8px;font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:${T.GRAY};margin-bottom:5px">EMAIL</p>
+      <div style="display:flex;justify-content:center;gap:0;margin:0 auto 16px;max-width:460px;width:100%">
+        <div style="flex:1;padding:0 18px;border-right:1px solid rgba(255,255,255,0.12)">
+          <p style="font-size:8px;font-weight:400;letter-spacing:0.2em;word-spacing:0.6em;text-transform:uppercase;color:${T.GRAY};margin-bottom:5px">EMAIL</p>
           <p style="font-size:10px;font-weight:700;color:${T.WHITE}">DemandSignals@gmail.com</p>
         </div>
-        <div style="flex:1;padding:0 20px;border-right:1px solid rgba(255,255,255,0.12)">
-          <p style="font-size:8px;font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:${T.GRAY};margin-bottom:5px">PHONE</p>
+        <div style="flex:1;padding:0 18px;border-right:1px solid rgba(255,255,255,0.12)">
+          <p style="font-size:8px;font-weight:400;letter-spacing:0.2em;word-spacing:0.6em;text-transform:uppercase;color:${T.GRAY};margin-bottom:5px">PHONE</p>
           <p style="font-size:10px;font-weight:700;color:${T.WHITE}">(916) 542-2423</p>
         </div>
-        <div style="flex:1;padding:0 20px">
-          <p style="font-size:8px;font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:${T.GRAY};margin-bottom:5px">WEB</p>
+        <div style="flex:1;padding:0 18px">
+          <p style="font-size:8px;font-weight:400;letter-spacing:0.2em;word-spacing:0.6em;text-transform:uppercase;color:${T.GRAY};margin-bottom:5px">WEB</p>
           <p style="font-size:10px;font-weight:700;color:${T.WHITE}">DemandSignals.co</p>
         </div>
       </div>
 
       <!-- Copyright -->
-      <p style="font-size:9px;color:${T.GRAY};margin-bottom:2px">Proposal prepared by Demand Signals — Digital Growth &amp; Strategy</p>
       <p style="font-size:9px;color:${T.MUTED}">&copy; 2026 Demand Signals. Confidential.</p>
+    </div>
+
+    <!-- BOTTOM ZONE: Meta band + footer strip (shared chrome, identical to front cover) -->
+    <div style="position:relative;z-index:1;flex-shrink:0">
+      ${darkCoverMetaBand(esc(prospect.business_name), 'Demand Signals', issueDate)}
+      ${darkCoverFooterStrip()}
     </div>
   </div>`
 }
@@ -697,12 +620,16 @@ export async function renderSowPdf(
   sow: SowDocument,
   prospect: SowProspect,
 ): Promise<Buffer> {
+  const issueDate = sow.send_date
+    ? new Date(sow.send_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+
   const html = docShell(
     `SOW — ${sow.sow_number} — ${prospect.business_name}`,
     coverPage(sow, prospect)
     + scopePage(sow)
     + investmentPage(sow)
-    + backCoverPage(),
+    + backCoverPage(prospect, issueDate),
   )
 
   return htmlToPdfBuffer(html, { format: 'Legal', printBackground: true })
