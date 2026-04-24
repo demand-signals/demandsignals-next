@@ -78,6 +78,8 @@ export async function POST(request: NextRequest) {
     late_fee_cents,
     late_fee_grace_days,
     category_hint,
+    trade_credit_cents,
+    trade_credit_description,
   }: {
     kind?: InvoiceKind
     prospect_id?: string
@@ -90,6 +92,8 @@ export async function POST(request: NextRequest) {
     late_fee_cents?: number
     late_fee_grace_days?: number
     category_hint?: CategoryHint
+    trade_credit_cents?: number
+    trade_credit_description?: string | null
   } = body
 
   const effectiveKind: InvoiceKind = kind ?? (quote_session_id ? 'quote_driven' : 'business')
@@ -139,7 +143,9 @@ export async function POST(request: NextRequest) {
 
   const subtotalCents = resolved.reduce((s, r) => s + Math.max(0, r.subtotal_cents), 0)
   const discountCents = resolved.reduce((s, r) => s + r.discount_cents, 0)
-  const totalDueCents = resolved.reduce((s, r) => s + r.line_total_cents, 0)
+  const lineTotalCents = resolved.reduce((s, r) => s + r.line_total_cents, 0)
+  const tikCents = trade_credit_cents ?? 0
+  const totalDueCents = Math.max(0, lineTotalCents - tikCents)
 
   // ── New numbering: TYPE-CLIENT-MMDDYY{SUFFIX} ───────────────────────
   // Insert with temp placeholder → allocate number → update row.
@@ -167,6 +173,8 @@ export async function POST(request: NextRequest) {
       late_fee_grace_days: late_fee_grace_days ?? 0,
       category_hint: category_hint ?? (effectiveKind === 'subscription_cycle' ? 'subscription_revenue' : 'service_revenue'),
       notes: notes ?? null,
+      trade_credit_cents: tikCents,
+      trade_credit_description: trade_credit_description ?? null,
       created_by: auth.user.id,
     })
     .select('*')

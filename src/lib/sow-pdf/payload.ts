@@ -53,6 +53,8 @@ export interface SowPdfPayload {
     accepted_at: string | null
     accepted_signature: string | null
     ongoing_services?: SowOngoingServices | null
+    trade_credit_cents: number
+    trade_credit_description: string | null
   }
 }
 
@@ -82,6 +84,8 @@ export function sowToRenderPayload(
       accepted_at: sow.accepted_at,
       accepted_signature: sow.accepted_signature,
       ongoing_services: sow.ongoing_services ?? null,
+      trade_credit_cents: sow.trade_credit_cents ?? 0,
+      trade_credit_description: sow.trade_credit_description ?? null,
     },
   }
 }

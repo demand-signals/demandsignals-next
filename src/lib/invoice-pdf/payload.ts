@@ -30,6 +30,8 @@ export interface InvoicePdfPayload {
     }>
     subtotal_cents: number
     discount_cents: number
+    trade_credit_cents: number
+    trade_credit_description: string | null
     total_due_cents: number
     notes: string | null
   }
@@ -61,6 +63,8 @@ export function invoiceToRenderPayload(inv: InvoiceWithLineItems): InvoicePdfPay
       })),
       subtotal_cents: inv.subtotal_cents,
       discount_cents: inv.discount_cents,
+      trade_credit_cents: inv.trade_credit_cents ?? 0,
+      trade_credit_description: inv.trade_credit_description ?? null,
       total_due_cents: inv.total_due_cents,
       notes: inv.notes,
     },

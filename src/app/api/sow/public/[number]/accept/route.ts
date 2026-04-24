@@ -276,6 +276,19 @@ export async function POST(
     }
   }
 
+  // ── Create trade credit if SOW has a TIK discount ─────────────────
+  if (sow.trade_credit_cents && sow.trade_credit_cents > 0 && sow.prospect_id) {
+    const { error: tcErr } = await supabaseAdmin.from('trade_credits').insert({
+      prospect_id: sow.prospect_id,
+      sow_document_id: sow.id,
+      original_amount_cents: sow.trade_credit_cents,
+      remaining_cents: sow.trade_credit_cents,
+      description: sow.trade_credit_description ?? `Trade credit from SOW ${sow.sow_number}`,
+      status: 'outstanding',
+    })
+    if (tcErr) console.error('trade_credits insert failed:', tcErr.message)
+  }
+
   // ── Best-effort: mark prospect as client + create project ─────────
   // Wrapped in try/catch so failures here never break the accept flow.
   // The deposit invoice + subscriptions are already committed at this point.

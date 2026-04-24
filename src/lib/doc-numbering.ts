@@ -20,25 +20,68 @@ export type DocRefTable = 'quote_sessions' | 'sow_documents' | 'invoices' | 'rec
 
 /**
  * Auto-suggest a 4-letter client code from a business name.
- * Takes the first 2 letters of each of the first 2 words, uppercased.
+ *
+ * Rules:
+ *   - Skip articles/fillers: the, and, of, for, at, to, or, a, an
+ *   - Skip business suffixes: inc, llc, co, corp, pc, pllc, ltd, lp
+ *   - Skip credentials: cpa, cpas, od, dmd, do (NOT md, dds, dr, mr, mrs, ms, miss — those are part of brand)
+ *   - Skip single-letter tokens (initials like "J." / "B.")
+ *   - Convert digit runs to first letter of first digit's English spelling
+ *     (0→Z, 1→O, 2→T, 3→T, 4→F, 5→F, 6→S, 7→S, 8→E, 9→N)
+ *   - Single remaining word → first 4 letters (pad with last char if shorter)
+ *   - Two+ remaining words → 2 chars from each until we have 4
+ *   - Collision resolution happens DB-side via the partial unique index;
+ *     admin overrides in /admin/prospects if auto-generated collides.
  *
  * Examples:
- *   "Hangtown Range & Retail Store" → "HANG"  (Ha + ng → first 2 of "Hangtown" + first 2 of "Range")
- *   "South Side MMA"                → "SOSI"  (So + Si from first two words)
- *   "Acme"                          → "ACME"  (first 4 of single word)
+ *   "Hangtown Range & Retail Store"     → "HARA"  (Ha + Ra)
+ *   "The MD Aesthetics"                 → "MDAE"  (MD kept; The dropped)
+ *   "Spa-520"                           → "SPAF"  (Spa + F for "five")
+ *   "Brickyard"                         → "BRIC"  (single word, first 4)
+ *   "Aaron B. Dosh, Attorney at Law"    → "AADO"  (B dropped, at dropped)
+ *   "G & O Body Shop Inc."              → "BOSH"  (single letters + Inc dropped)
  *
- * Admin can override via /admin/prospects/[id] — this is just a default.
+ * Admin can override via /admin/prospects/[id].
  */
-export function suggestClientCode(businessName: string): string {
-  const words = businessName
-    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
-    .split(/\s+/)
-    .filter((w) => w.length > 0)
-    .slice(0, 2)
+const NOISE_WORDS = new Set([
+  'THE', 'AND', 'OF', 'FOR', 'AT', 'TO', 'OR', 'A', 'AN',
+  'INC', 'LLC', 'CO', 'CORP', 'PC', 'PLLC', 'LTD', 'LP',
+  'CPA', 'CPAS', 'OD', 'DMD', 'DO',
+])
 
-  if (words.length === 0) return 'XXXX'
-  if (words.length === 1) return words[0].substring(0, 4).toUpperCase().padEnd(4, 'X')
-  return (words[0].substring(0, 2) + words[1].substring(0, 2)).toUpperCase().padEnd(4, 'X')
+const DIGIT_INITIAL: Record<string, string> = {
+  '0': 'Z', '1': 'O', '2': 'T', '3': 'T', '4': 'F',
+  '5': 'F', '6': 'S', '7': 'S', '8': 'E', '9': 'N',
+}
+
+export function suggestClientCode(businessName: string): string {
+  // Split into letter-runs and digit-runs; drop everything else
+  const rawTokens = businessName.match(/[A-Za-z]+|[0-9]+/g) ?? []
+
+  const tokens = rawTokens
+    .map((t) => {
+      if (/^[0-9]+$/.test(t)) return DIGIT_INITIAL[t[0]] ?? ''
+      return t
+    })
+    .filter((t) => {
+      if (t.length === 0) return false
+      if (/^[A-Za-z]$/.test(t)) return false  // single-letter initials
+      if (NOISE_WORDS.has(t.toUpperCase())) return false
+      return true
+    })
+
+  let base: string
+  if (tokens.length === 0) {
+    base = 'XXXX'
+  } else if (tokens.length === 1) {
+    const w = tokens[0]
+    base = w.length >= 4 ? w.substring(0, 4) : w.padEnd(4, w[w.length - 1])
+  } else {
+    base = tokens.map((t) => t.substring(0, 2)).join('').substring(0, 4)
+  }
+
+  if (base.length < 4) base = base.padEnd(4, base[base.length - 1] ?? 'X')
+  return base.toUpperCase()
 }
 
 /**

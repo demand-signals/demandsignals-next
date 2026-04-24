@@ -261,6 +261,9 @@ export default function SowDetailPage({
   const [guarantees, setGuarantees] = useState('')
   const [notes, setNotes] = useState('')
   const [sendDate, setSendDate] = useState('')
+  const [tradeCents, setTradeCents] = useState(0)
+  const [tradeAmountInput, setTradeAmountInput] = useState('0.00')
+  const [tradeDescription, setTradeDescription] = useState('')
   const [dirty, setDirty] = useState(false)
 
   // Catalog picker state — "both" pricing_type items show a cadence modal before adding
@@ -315,6 +318,10 @@ export default function SowDetailPage({
     setGuarantees(s.guarantees ?? '')
     setNotes(s.notes ?? '')
     setSendDate(s.send_date ?? '')
+    const tc = (s as SowData & { trade_credit_cents?: number; trade_credit_description?: string | null }).trade_credit_cents ?? 0
+    setTradeCents(tc)
+    setTradeAmountInput((tc / 100).toFixed(2))
+    setTradeDescription((s as SowData & { trade_credit_description?: string | null }).trade_credit_description ?? '')
     setDirty(false)
   }
 
@@ -354,8 +361,9 @@ export default function SowDetailPage({
     .reduce((s, d) => s + computeLineCents(d), 0)
 
   const pct = parseFloat(depositPct) || 25
-  const depositCents = Math.round(oneTimeTotalCents * pct / 100)
-  const balanceCents = oneTimeTotalCents - depositCents
+  const cashTotalCents = Math.max(0, oneTimeTotalCents - tradeCents)
+  const depositCents = Math.round(cashTotalCents * pct / 100)
+  const balanceCents = cashTotalCents - depositCents
 
   // ── Actions ───────────────────────────────────────────────────────
 
@@ -389,6 +397,8 @@ export default function SowDetailPage({
         guarantees,
         notes,
         send_date: sendDate || null,
+        trade_credit_cents: tradeCents,
+        trade_credit_description: tradeDescription || null,
       }
       if (forceEdit) body.force_edit = true
 
@@ -1144,6 +1154,45 @@ export default function SowDetailPage({
             >
               Pricing
             </div>
+
+            {/* TIK block */}
+            <div className="mb-4 p-3 border border-slate-100 rounded-lg bg-slate-50/50">
+              <div className="text-xs uppercase text-slate-500 font-semibold mb-1">
+                Trade-in-Kind (TIK)
+              </div>
+              <p className="text-xs text-slate-400 mb-2">
+                Amount client pays in trade instead of cash. Reduces cash owed.
+              </p>
+              <div className="grid grid-cols-[1fr_160px] gap-3">
+                <label className="text-xs">
+                  Trade description
+                  <input
+                    type="text"
+                    value={tradeDescription}
+                    onChange={(e) => { setTradeDescription(e.target.value); markDirty() }}
+                    placeholder="e.g. 10 hours mobile mechanic work"
+                    className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+                  />
+                </label>
+                <label className="text-xs">
+                  Trade amount ($)
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={tradeAmountInput}
+                    onChange={(e) => setTradeAmountInput(e.target.value)}
+                    onBlur={() => {
+                      const cents = Math.round(parseFloat(tradeAmountInput || '0') * 100)
+                      setTradeCents(cents)
+                      setTradeAmountInput((cents / 100).toFixed(2))
+                      markDirty()
+                    }}
+                    className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+                  />
+                </label>
+              </div>
+            </div>
+
             <table className="w-full max-w-xs ml-auto text-sm">
               <tbody>
                 {oneTimeTotalCents > 0 && (
@@ -1175,6 +1224,20 @@ export default function SowDetailPage({
                       {formatCents(annualTotalCents)}<span className="text-xs text-slate-400">/yr</span>
                     </td>
                   </tr>
+                )}
+                {(oneTimeTotalCents > 0 && tradeCents > 0) && (
+                  <>
+                    <tr>
+                      <td className="py-1 text-amber-700">Trade-in-Kind credit</td>
+                      <td className="py-1 text-right font-semibold text-amber-700">
+                        −{formatCents(tradeCents)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-1 text-slate-600">Cash project total</td>
+                      <td className="py-1 text-right font-semibold">{formatCents(cashTotalCents)}</td>
+                    </tr>
+                  </>
                 )}
                 {oneTimeTotalCents > 0 && (
                   <>

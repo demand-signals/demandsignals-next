@@ -85,6 +85,8 @@ const patchBodySchema = z.object({
     deposit_pct: z.number().optional(),
   }).optional(),
   force_edit: z.boolean().optional(),
+  trade_credit_cents: z.number().int().nonnegative().optional(),
+  trade_credit_description: z.string().nullable().optional(),
 })
 
 function computeLineTotal(d: z.infer<typeof patchDeliverableSchema>): SowDeliverable {
@@ -149,6 +151,8 @@ export async function PATCH(
   if (fields.deliverables !== undefined) {
     updates.deliverables = fields.deliverables.map(computeLineTotal)
   }
+  if (fields.trade_credit_cents !== undefined) updates.trade_credit_cents = fields.trade_credit_cents
+  if (fields.trade_credit_description !== undefined) updates.trade_credit_description = fields.trade_credit_description
 
   const { error } = await supabaseAdmin
     .from('sow_documents')

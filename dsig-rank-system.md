@@ -1275,11 +1275,691 @@ Format: `{city-slug}-{service-slug}` (e.g., `elk-grove-local-seo`, `sacramento-w
 
 ---
 
-## Document History
+## 16. MCP (Model Context Protocol) Integration Layer
+
+**Status: Stable spec, active adoption. Ship it where it fits.**
+
+### 16.1 Philosophy
+
+MCP turns a website from a thing crawlers scrape into a thing agents call. Instead of "read my markdown," it's "invoke my tools, query my resources, subscribe to my events." A crawled site is a static artifact; an MCP server is a live interface.
+
+For DSIG and its clients, MCP is the agent-native equivalent of the content API layer documented in §4 — except where `/feeds/*` serves pre-rendered markdown, `/mcp/*` serves typed tools, parameterized resources, and streaming updates.
+
+### 16.2 Architecture
+
+```
+Agent (Claude Desktop, Cursor, custom) ──▶ MCP Client
+                                              │
+                                              ▼
+                          /.well-known/mcp.json  (discovery)
+                                              │
+                                              ▼
+                          /mcp/manifest.json     (capability manifest)
+                                              │
+                                              ▼
+                          /mcp/v1  (HTTP+SSE transport)
+                                ├─ Resources: dsig://...
+                                ├─ Tools: search, quote, book
+                                └─ Prompts: reusable templates
+```
+
+### 16.3 Endpoints
+
+| Endpoint | Purpose |
+|---|---|
+| `/.well-known/mcp.json` | Discovery file. Mirrors `security.txt` pattern. |
+| `/mcp/manifest.json` | Full server manifest: name, version, transport, auth, capabilities. |
+| `/mcp/v1` | HTTP+SSE transport for live tool invocation and resource queries. |
+| `/mcp/schema/tools.json` | Published JSON Schema for every tool (args + returns). |
+| `/mcp/schema/resources.json` | Published URI scheme for resources. |
+
+### 16.4 Resources (read-only, free, unauthenticated)
+
+Same content as `/feeds/*` but exposed as MCP resources with stable URIs:
+
+- `dsig://services/{slug}` — service page content
+- `dsig://locations/{county}/{city}` — city hub content
+- `dsig://ltp/{city-service}` — long-tail page
+- `dsig://blog/{slug}` — blog post
+- `dsig://faqs` — full FAQ registry
+- `dsig://catalog` — productized offer list (links to §17 ACO layer)
+
+### 16.5 Tools (authenticated, write-capable)
+
+| Tool | Args | Returns | Auth Scope |
+|---|---|---|---|
+| `search_services` | `{query, city?, category?}` | ranked service list | `read:public` |
+| `get_quote_estimate` | `{service_slug, scope_desc, budget?}` | quote object (signed, expiring) | `read:quotes` |
+| `book_discovery_call` | `{name, email, topic, preferred_times[]}` | booking confirmation | `write:booking` |
+| `request_audit` | `{url, email, audit_type}` | audit request ID | `write:booking` |
+| `check_availability` | `{date_range}` | open slots | `read:public` |
+
+Every tool returns **typed JSON** against published schemas, not free-form text. This is what distinguishes an MCP server from a scraped page.
+
+### 16.6 Prompts (reusable templates)
+
+- `dsig/scope-a-project` — walks the agent through the discovery script
+- `dsig/compare-services` — structured comparison template
+- `dsig/audit-a-site` — prompts the agent to gather the inputs the audit tool needs
+
+### 16.7 Auth
+
+- **Public tier:** read-only resources, no auth.
+- **Authenticated tier:** tools that write. OAuth 2.1 + PKCE per MCP spec. See §19 AZA for capability scopes.
+
+### 16.8 HTTP Signals
+
+- `Content-Type: application/json` on manifest/schema
+- `Content-Type: text/event-stream` on `/mcp/v1` for SSE
+- `X-Robots-Tag: noindex, follow` on all `/mcp/*` endpoints
+- `Link: </mcp/manifest.json>; rel="mcp-manifest"` header on HTML pages
+- Add `## MCP Server: https://{domain}/mcp/v1` line to `llms.txt`
+- Add `mcp` block to `content-index.json`
+
+### 16.9 Observability
+
+Every tool call logged to Supabase `mcp_audit` table: agent ID (from OAuth sub), tool name, args hash, duration, outcome, error class. Per-agent rate limits via token bucket. This is non-optional — agents retry aggressively and will hammer tools without limits.
+
+### 16.10 Should This Project Use MCP?
+
+The AI building or auditing the project evaluates against these criteria:
+
+| Signal | Weight | Meaning |
+|---|---|---|
+| Client has transactable services or products with stable SKUs | High | MCP tools can wrap the catalog. |
+| Client target customer is technical / agent-using | High | B2B SaaS, developer tools, agency services → yes. |
+| Client has bookable resources (calendars, inventory, service slots) | High | Tools turn these into agent-reachable capabilities. |
+| Client has high-volume content that agents would query | Medium | Resources alone already justify a minimal MCP server. |
+| Client is local-only, foot-traffic, non-technical customer base | Low / skip | Plumber in Folsom does not need MCP. Marketing site is sufficient. |
+| Client infra cannot host custom endpoints (static-only Wix/Squarespace) | Blocker | Cannot ship without a backend shim. Note as follow-up. |
+
+**Decision rule:** If two or more High signals hit, MCP is beneficial. If the client sells agent-consumable services and also books time or inventory, MCP is **necessary** for future-proofing — skipping it leaves revenue on the table as agent purchasing grows.
+
+### 16.11 Client Applicability Matrix
+
+| Platform | MCP Resources | MCP Tools | Auth | Approach |
+|---|---|---|---|---|
+| **DSIG Next.js (self + modern client builds)** | Full | Full | OAuth 2.1 | Native route handlers + TypeScript MCP SDK. |
+| **WordPress (standard host)** | Partial | Partial | Application Passwords → bridge | Custom plugin exposes REST → MCP bridge. SSE limited by host. |
+| **WordPress (managed, e.g., WP Engine)** | Resources only | Skip | None | Static MCP manifest + resource endpoints, skip tools. |
+| **Shopify** | Resources only (via Functions/proxy) | Skip (use ACP instead) | N/A | Shopify's own agent surfaces cover this — use §17 ACO instead. |
+| **WooCommerce** | Full | Full | WooCommerce REST keys | Plugin wraps WC REST in MCP tool endpoints. |
+| **Squarespace / Wix** | None | None | N/A | Platform closed. Note as limitation. |
+| **Static / JAMstack (Astro, Hugo)** | Full | Requires serverless | OAuth via Clerk/Auth0 | Route handlers on Cloudflare Workers / Vercel Functions. |
+| **Legacy PHP custom** | Full | Full | Custom | Bolt-on `/mcp/` directory with thin PHP handlers. |
+
+### 16.12 Research Refresh Log
+
+| Date | Finding | Source | Action |
+|---|---|---|---|
+| 2026-04-17 | Initial §16 authored. MCP spec stable, HTTP+SSE transport defined, Claude Desktop + Cursor + VS Code MCP clients in production. Anthropic has explicitly positioned MCP as the agent-commerce substrate. | MCP spec baseline | Baseline entry — refresh per §21 procedure. |
+
+---
+
+## 17. ACO (Agentic Commerce Optimization) Layer
+
+**Status: Partially stable. ACP spec shipped; adoption uneven. Ship where clients have productizable SKUs.**
+
+### 17.1 Philosophy
+
+Search Engine Optimization got you ranked. Answer Engine Optimization got you cited. Agentic Commerce Optimization gets you **bought** — inside the LLM, without the user leaving the conversation.
+
+ChatGPT Instant Checkout, Perplexity Buy with Pro, Gemini Shopping, and Amazon Rufus are already doing this. The common substrate emerging is the **Agentic Commerce Protocol (ACP)** — a Stripe + OpenAI open spec that defines three objects: Product Feed, Checkout, Delegate Payment.
+
+### 17.2 Architecture
+
+```
+LLM Surface (ChatGPT / Perplexity / Gemini)
+      │
+      ▼
+  Product Feed Ingestion (ACP + Google Merchant Center)
+      │
+      ▼
+  Agent Constructs Intent
+      │
+      ▼
+  POST /commerce/quote          ─▶ signed, expiring offer
+      │
+      ▼
+  POST /commerce/checkout       ─▶ Stripe Shared Payment Token
+      │
+      ▼
+  GET  /commerce/order/{id}     ─▶ fulfillment status
+      │
+      ▼
+  Receipt via §18 ATXP          ─▶ signed, auditable
+```
+
+### 17.3 Endpoints
+
+| Endpoint | Purpose |
+|---|---|
+| `/commerce/catalog.json` | ACP-format product/service feed |
+| `/commerce/merchant-feed.xml` | Google Merchant Center feed (XML) |
+| `/.well-known/agent-trust.json` | Business trust credentials (incorporation, refund policy, SLAs) |
+| `POST /commerce/quote` | Agent submits intent, receives signed quote |
+| `POST /commerce/checkout` | Agent confirms quote, receives payment intent |
+| `GET /commerce/order/{id}` | Order status and delivery artifacts |
+| `POST /commerce/dispute/{order_id}` | Structured dispute codes, resolution timeline |
+
+### 17.4 Offer Modeling
+
+Every offer in the catalog has:
+
+```json
+{
+  "sku": "dsig-starter-audit-v1",
+  "name": "Starter Demand Audit",
+  "price": { "amount": 49900, "currency": "USD" },
+  "deliverable": "PDF report + 30-min review call",
+  "sla": "3 business days",
+  "terms_url": "https://demandsignals.co/terms#audits",
+  "agent_bookable": true,
+  "fulfillment_type": "digital_service",
+  "variants": [],
+  "availability": "in_stock",
+  "price_valid_until": "2026-07-01T00:00:00Z"
+}
+```
+
+Crucial field: **`agent_bookable`**. Custom-quote, long-negotiation engagements set this to `false`; standardized, productized offers set it to `true`.
+
+### 17.5 Schema Additions
+
+Extend `Organization` JSON-LD with:
+
+```json
+{
+  "acceptsAgent": true,
+  "agentPaymentMethods": ["stripe-acp", "card", "ach"],
+  "hasOfferCatalog": { /* existing, but now every Offer has agent_bookable */ }
+}
+```
+
+Every `Product` / `Service` schema gets `gtin` or `sku`, `availability`, `priceValidUntil`, `shippingDetails`, `hasMerchantReturnPolicy`.
+
+### 17.6 Review + Trust Infrastructure
+
+LLMs heavily weight review quantity, recency, and substance. Required:
+
+- `AggregateRating` on every productized offer
+- `Review` items with reviewer name, date, body (not just stars)
+- Feed-level `reviewCount` exposed in `/commerce/catalog.json`
+
+Agent-trust signals in `/.well-known/agent-trust.json`:
+
+- Business legal name, incorporation state/ID
+- Tax ID (hashed or last-four)
+- Refund policy URL
+- Dispute resolution SLA
+- Years in business
+- Public reviews aggregate
+- Signed by a key the agent can verify against a known registry
+
+### 17.7 Observability
+
+UTM convention for agent-origin traffic:
+
+- `utm_source=chatgpt|perplexity|gemini|copilot|claude|other-agent`
+- `utm_medium=agent`
+- `utm_campaign={surface}-{offer-sku}`
+
+Parse inbound requests for known agent user-agents (GPTBot, PerplexityBot, etc.) and stamp sessions. Supabase `agent_attribution` table reconciles feed impressions ↔ quotes ↔ orders.
+
+### 17.8 Should This Project Use ACO?
+
+| Signal | Weight | Meaning |
+|---|---|---|
+| Client sells products or productizable services with stable pricing | High | Required substrate. |
+| Client's target buyer uses LLM surfaces to research/buy | High | B2C retail, SMB tools, consumer services. |
+| Client has ≥5 SKUs with clear specs | Medium | Below 5, not worth the feed maintenance overhead. |
+| Client ships on Shopify or WooCommerce | Medium | Integration nearly free on these platforms. |
+| Client is custom-bid services only (enterprise consulting, bespoke) | Low | No productizable SKUs → no agent-buyable offers. Skip ACO, keep MCP booking tools. |
+| Client has no payment processor or merchant account | Blocker | Stand up Stripe first, then revisit. |
+
+**Decision rule:** Ship ACO when (a) client has productizable SKUs AND (b) their buyer could plausibly be recommended by ChatGPT/Perplexity/Gemini. Custom-quote agencies skip §17 and rely on §16 MCP booking tools instead.
+
+### 17.9 Client Applicability Matrix
+
+| Platform | ACP Feed | Merchant Center Feed | Inline Checkout | Approach |
+|---|---|---|---|---|
+| **DSIG Next.js (self + modern client builds)** | Full | Full | Full via Stripe ACP | Route handlers generate feeds; Stripe ACP for checkout. |
+| **Shopify** | Auto (native) | Auto (native) | Auto (ChatGPT, Perplexity, Google integrated) | Tune feed quality, add agent_bookable flags via metafields. |
+| **WooCommerce** | Plugin | Plugin (Google Listings & Ads) | Stripe ACP plugin | Productized bundle of WC → ACP feed + Stripe. Becomes a DSIG service offering. |
+| **BigCommerce** | Plugin/app | Native | Native | Similar to Shopify, slightly less mature. |
+| **WordPress (non-WC)** | Custom endpoints | Custom endpoints | Redirect checkout | Generate feeds via PHP; full inline checkout not realistic. |
+| **Squarespace** | Native commerce feed (limited) | Native | Limited | Use Squarespace's own feed; can't extend to full ACP. |
+| **Wix** | Native (Wix Stores) | Native | Limited | Similar to Squarespace. |
+| **Static (no backend)** | Generated at build | Generated at build | Not possible | Publish feeds only; checkout via external redirect. |
+| **Services-only site (no cart)** | Custom `/commerce/catalog.json` | N/A | N/A | Publish productized services feed; checkout via `/commerce/checkout` → Stripe. |
+
+### 17.10 Experimental Surfaces (watch list, not committed)
+
+- **Meta AI Shopping** — inline but closed to Meta's shops graph
+- **Alexa+ Commerce** — voice-native checkout, Amazon ecosystem only
+- **Siri Apple Intelligence** — announced, implementation vague as of refresh date
+- **Browser-level agent checkout (Arc, Dia)** — early, watch
+
+### 17.11 Research Refresh Log
+
+| Date | Finding | Source | Action |
+|---|---|---|---|
+| 2026-04-17 | Initial §17 authored. ACP spec stable. ChatGPT Instant Checkout (Sept 2025) live. Perplexity Buy with Pro live. Gemini Shopping inline. Attribution still weak — no "Search Console for ChatGPT" equivalent. | CLAUDE.md context + baseline research | Baseline entry — refresh per §21 procedure. |
+
+---
+
+## 18. ATXP (Agent Transaction + Provenance) Layer
+
+**Status: Emerging. W3C VC is stable; agent-specific application is still crystallizing. Build behind adapters.**
+
+### 18.1 Philosophy
+
+ACO tells agents what you sell and how to buy it. ATXP tells agents — and auditors, and dispute processes, and the agents' owners — that the transaction actually happened, what was agreed, and how to settle disputes when a bot got something wrong. It is the rails underneath §17.
+
+Without ATXP, agent commerce fails the first time a customer asks "did my AI actually buy that, and at what terms?"
+
+### 18.2 Architecture
+
+```
+Agent places order (§17 ACO)
+      │
+      ▼
+  Idempotency-Key required on writes
+      │
+      ▼
+  Verifiable Credentials exchange
+      │  Agent presents VC (who am I, on whose behalf)
+      │  Merchant returns VC (who are we, signed)
+      │
+      ▼
+  Signed Receipt issued (JWS)
+      │
+      ▼
+  Three-way audit: agent log ↔ merchant log ↔ processor log
+      │
+      ▼
+  Dispute API if mismatch
+```
+
+### 18.3 Endpoints
+
+| Endpoint | Purpose |
+|---|---|
+| `/.well-known/agent-credentials.json` | VC issuers we trust + VCs we issue |
+| `/commerce/receipts/{id}` | JWS-signed receipt |
+| `GET /commerce/audit/{agent_id}` | Full signed transaction history for an agent |
+| `POST /commerce/dispute/{order_id}` | Structured dispute codes |
+| `GET /commerce/dispute/{id}/status` | Resolution progress |
+
+### 18.4 Required Guarantees
+
+- **Idempotency:** `Idempotency-Key: <uuid>` header mandatory on all writes, 24-hour replay window. Agents retry — without this, double billing.
+- **Signed receipts:** JWS format, signs offer hash, agent ID, amount, timestamp, delivery commitment. Stored immutably.
+- **Replay protection:** request timestamps, nonces, rejection of clock skew > 5 min.
+- **Reconciliation:** daily signed summary at `/commerce/audit/daily/{YYYY-MM-DD}` so agents can cross-check.
+
+### 18.5 Dispute Codes (structured vocabulary)
+
+```
+delivery_failed
+spec_mismatch
+quality_breach
+duplicate_charge
+unauthorized_agent
+offer_misrepresentation
+sla_violation
+other
+```
+
+Each code has a defined resolution timeline published in `/.well-known/agent-trust.json`. Agents need machine-actionable dispute paths, not "email us."
+
+### 18.6 Anti-Abuse
+
+- Velocity limits per agent ID (daily, weekly, monthly $ caps)
+- KYB (know-your-business) required above $X threshold — agent must present a VC chain rooting in a known issuer
+- Risk scoring hook before authorization — plug-in point for Stripe Radar / custom model
+- Manual-review queue in admin portal for flagged transactions
+
+### 18.7 Should This Project Use ATXP?
+
+| Signal | Weight | Meaning |
+|---|---|---|
+| Project ships §17 ACO | High | ATXP is ACO's required partner. You don't ship one without the other. |
+| Transaction sizes > $500 | High | Dispute/audit infrastructure becomes necessary at meaningful dollar amounts. |
+| Service has SLA commitments (delivery time, quality) | High | SLA = dispute surface. Need structured codes. |
+| B2B recurring subscriptions | High | Multi-period reconciliation is a nightmare without signed receipts. |
+| One-off micro-transactions, B2C, < $50 | Medium | Stripe's own receipt infrastructure may be sufficient; full ATXP overkill. |
+| No agent-facing commerce at all | Skip | Not applicable. |
+
+**Decision rule:** If shipping §17, ship §18. Minimum viable ATXP = idempotency keys + signed receipts + dispute endpoint with structured codes. Full VC exchange is experimental — implement only for enterprise or regulated clients where auditability is a sales requirement.
+
+### 18.8 Client Applicability Matrix
+
+| Platform | Idempotency | Signed Receipts | VC Exchange | Dispute API | Approach |
+|---|---|---|---|---|---|
+| **DSIG Next.js** | Full | Full (JWS via jose) | Experimental | Full | Native route handlers; Supabase for audit log. |
+| **WordPress + WC** | Plugin | Plugin | Skip | Plugin | WC has order status hooks; bolt on receipt signing. |
+| **Shopify** | Native (Idempotency-Key honored) | App-level | Skip | App | Use Shopify's dispute API + layer signed receipts via webhook app. |
+| **Static / no backend** | N/A | N/A | N/A | N/A | Cannot host ATXP without serverless. Blocker. |
+| **Enterprise / regulated** | Full | Full + notarization option | Required | Full + audit export | Add WORM storage for receipts, export to client's GRC system. |
+
+### 18.9 Research Refresh Log
+
+| Date | Finding | Source | Action |
+|---|---|---|---|
+| 2026-04-17 | Initial §18 authored. W3C VC 2.0 stable. Agent-specific VC issuers emerging (OpenAI agent-identity VCs rumored, not confirmed shipped). Stripe's ACP includes idempotency + receipts — piggyback on their infrastructure where possible. | Baseline | Baseline — refresh per §21. |
+
+---
+
+## 19. AZA (Agent Zone Authorization) Layer
+
+**Status: Emerging. OAuth 2.1 is stable; capability-token patterns (Macaroons, GNAP) are mature-but-niche. Delegation UX unsolved industry-wide.**
+
+### 19.1 Philosophy
+
+AZA is "who is allowed to do what, on whose behalf, for how long, with what limits." It is the foundation that MCP tools, ACO checkout, and ATXP receipts all depend on.
+
+Without AZA, you either expose everything publicly (safe but useless for real commerce) or authenticate agents as humans (dangerous — agent gets full human permissions with no caveats).
+
+### 19.2 Architecture
+
+```
+Human (client)                     Agent (ChatGPT / Claude / custom)
+    │                                   │
+    │ grants scoped, revocable         │ authenticates to DSIG
+    │ capability token                 │
+    ▼                                   ▼
+DSIG Authorization Server ◀─────────────┘
+    │
+    ▼
+Capability Token (scopes + caveats)
+    │
+    ▼
+Agent uses token to call MCP / ACO / ATXP
+    │
+    ▼
+Every call logged → admin portal audit view
+```
+
+### 19.3 Endpoints
+
+| Endpoint | Purpose |
+|---|---|
+| `/.well-known/agent-scopes.json` | Scope vocabulary, per-scope rate limits |
+| `/auth/agent/authorize` | OAuth 2.1 authorization endpoint (PKCE required) |
+| `/auth/agent/token` | Token endpoint |
+| `/auth/agent/revoke` | Revocation with audit trail |
+| `/auth/agent/delegate` | Human grants agent scoped access to their own portal account |
+| `/auth/agent/registry.json` | Trusted agent operators + default trust levels |
+
+### 19.4 Scope Vocabulary (published)
+
+```
+read:public              Free. Anything already on marketing site.
+read:quotes              Generate quotes, no commit. Rate limited.
+read:catalog             Full catalog incl. internal SKUs.
+write:booking            Book discovery calls, submit audit requests.
+write:order              Place orders. Capability-limited amount.
+read:client-portal       Delegated: human grants agent access to own data.
+write:client-portal      Delegated: agent can update on human's behalf.
+admin:*                  Reserved. Not granted to external agents.
+```
+
+### 19.5 Capability Tokens (not bearer tokens)
+
+Tokens carry caveats, not just identity:
+
+```json
+{
+  "sub": "agent:claude-desktop:user-abc",
+  "iss": "https://demandsignals.co",
+  "scopes": ["write:order"],
+  "caveats": {
+    "max_amount_usd": 1000,
+    "expires_at": "2026-04-18T00:00:00Z",
+    "allowed_endpoints": ["/commerce/checkout", "/commerce/quote"],
+    "rate_limit": "10/hour"
+  },
+  "delegator": "user:hunter@demandsignals.co"
+}
+```
+
+Stripe's ACP uses a similar pattern. Conceptually rooted in Macaroons (2014) and GNAP (IETF draft).
+
+### 19.6 Delegation Flows
+
+**Direct agent:** Agent authenticates as itself (Claude Desktop, ChatGPT agent). Gets default trust level from `/auth/agent/registry.json`. Limited scopes.
+
+**Delegated agent:** Human in client portal grants an agent scoped, capability-limited access to their own account. UI shows "Claude is requesting: read your invoices, place orders up to $500, expires in 24 hours." Human clicks approve → capability token minted. Visible in audit log. Revocable.
+
+### 19.7 Admin Portal Integration
+
+DSIG's admin portal (§10 in CLAUDE.md) shows:
+
+- Every active agent token across every client account
+- Per-token: scope, caveats, expiry, invocation count, last used
+- Per-client: "agents acting on your behalf" table
+- Revoke button (immediate)
+- Spending cap configuration per client
+
+### 19.8 Should This Project Use AZA?
+
+| Signal | Weight | Meaning |
+|---|---|---|
+| Project ships §16 MCP write-tools | High | Any write-tool requires AZA. |
+| Project ships §17 ACO | High | Required for agent-initiated purchases. |
+| Project has client portal with authenticated users | High | Delegation flow becomes real value-add. |
+| Marketing-only site, no auth, no transactions | Skip | No surface to authorize. |
+| Static site | Blocker | Cannot host auth server. Use external (Clerk/Auth0) if truly needed. |
+
+**Decision rule:** AZA is required whenever §16 write-tools or §17 ACO ship. For read-only sites, skip. For client-portal sites, delegation flow (§19.6) is strongly recommended even if agent commerce isn't shipping yet — it's the pattern that future-proofs the portal.
+
+### 19.9 Client Applicability Matrix
+
+| Platform | OAuth 2.1 | Capability Tokens | Delegation UX | Admin Audit View | Approach |
+|---|---|---|---|---|---|
+| **DSIG Next.js** | Full | Full (custom JWT w/ caveats) | Full (built in admin portal) | Full | Native. Supabase auth + custom token layer. |
+| **WordPress** | Plugin (WP OAuth Server) | Limited | Plugin-level | Plugin | Bolt-on, not native. |
+| **Shopify** | Native (Shopify OAuth) | No (Shopify scopes only) | N/A | Shopify admin | Use Shopify's native OAuth; skip capability layer. |
+| **WooCommerce** | Plugin | Limited | Plugin | Plugin | Bolt onto WC REST key system. |
+| **Clerk / Auth0-backed static** | Full | Via provider | Via provider UI | Via provider | Outsource entirely to provider. |
+| **Enterprise** | Full + SAML/SCIM bridge | Full | Full | Full + SIEM export | Treat as core platform feature. |
+
+### 19.10 Research Refresh Log
+
+| Date | Finding | Source | Action |
+|---|---|---|---|
+| 2026-04-17 | Initial §19 authored. OAuth 2.1 stable. GNAP still IETF draft. Capability-token pattern used by Stripe ACP but no standard agent-scope vocabulary industry-wide. Delegation UX unsolved — no one has nailed the "human grants agent access" flow yet. | Baseline | Baseline — refresh per §21. |
+
+---
+
+## 20. Inline Commerce Optimization (LLM-Surface Buying)
+
+**Status: Live on ChatGPT, Perplexity, Gemini. Attribution weak. Optimize aggressively where client has productizable SKUs.**
+
+### 20.1 Philosophy
+
+§17 is the protocol. §20 is the *optimization discipline* — the SEO/AEO equivalent for agent-surfaced commerce. SEO gets you ranked; AEO gets you cited; §20 gets you **bought inline** inside ChatGPT, Perplexity, and Gemini surfaces.
+
+### 20.2 Platform Surface Matrix (Refresh This Quarterly Per §21)
+
+| Platform | Status | Surface | Protocol | Merchant Access |
+|---|---|---|---|---|
+| **ChatGPT Instant Checkout** | Live (US, expanding) | Inline in chat | ACP | Shopify auto; Stripe ACP direct; Etsy, Walmart, Target, Best Buy |
+| **Perplexity Buy with Pro** | Live | Shopping cards inline | Shopify + Amazon partnerships | Shopify auto; merchant feed ingestion |
+| **Gemini Shopping** | Live (in AI Overviews) | Carousels + Gemini chat | Google Merchant Center | Existing GMC feed |
+| **Amazon Rufus** | Live | Amazon app only | Closed | Amazon seller only |
+| **Copilot Shopping** | Live (discovery) | Bing Shopping inline | Merchant Center + ACP (announced) | Bing Webmaster + GMC |
+| **Meta AI Shopping** | Live | IG/FB shops only | Closed | Meta Shops |
+| **Claude** | **Not shipped.** Claude recommends and links; no inline checkout. | — | MCP (emerging) | Expose via §16 MCP server |
+| **Alexa+ / Siri** | Announced, early | Voice | Closed (Amazon / Apple) | Partner programs |
+
+### 20.3 Optimization Priorities (Ranked)
+
+1. **Ship ACP product feed** (`/commerce/catalog.json`) — required for ChatGPT, adopted by Copilot, convergent standard.
+2. **Ship Google Merchant Center feed** — required for Gemini/Google surfaces. Extended fields: `product_highlight`, `certification`, `sustainability_incentive`, `lifestyle_image_link`.
+3. **Productize SKUs** — every offer needs stable SKU, stable price, structured deliverable, SLA, terms URL. Custom-quote services are not LLM-surfaceable.
+4. **Review infrastructure** — quantity + recency + substance. LLMs mine review text for feature matching.
+5. **Product/Service JSON-LD depth** — `gtin`, `mpn`, `brand`, `AggregateRating`, `Review`, `shippingDetails`, `hasMerchantReturnPolicy`, `priceValidUntil`.
+6. **Trust signals** — `/.well-known/agent-trust.json`, public reviews, incorporation details, refund SLA.
+7. **Entity authority** — `sameAs` across platforms, Wikipedia/Wikidata presence where possible, press mentions.
+8. **Freshness** — `availability: in_stock` accurate, `price_valid_until` rolling, stale items suppressed aggressively by LLMs.
+9. **AEO for jobs-to-be-done queries** — comparison tables, decision trees, use-case tagging in content.
+10. **Attribution infrastructure** — UTM conventions, agent-UA detection, Supabase reconciliation (§17.7).
+
+### 20.4 DSIG Self-Application (Productizable Offers)
+
+Candidate offers to publish as agent-buyable:
+
+- **Demand Audit** — existing tool page, already productized, publish as SKU
+- **Research Report** — existing tool, productize pricing tiers
+- **Starter Local SEO package** — stable scope, stable price
+- **Quote Estimator Run** — flat-fee productized engagement
+- **LLM Optimization Audit** — new candidate SKU
+
+Custom engagements (multi-month retainers, full site builds) stay `agent_bookable: false` — require human discovery.
+
+### 20.5 New Productized DSIG Offering — "AI Commerce Feed Setup"
+
+§20 itself becomes a DSIG service: standing up ACP + Merchant Center feeds + trust files + attribution plumbing for clients. Priced as a one-time setup + monthly tune.
+
+### 20.6 Should This Project Use §20 Optimization?
+
+| Signal | Weight | Meaning |
+|---|---|---|
+| Client has ≥5 productizable SKUs | High | Required floor for feed maintenance to pay off. |
+| Client's buyer is consumer / SMB researching via LLM | High | Highest return surface. |
+| Client on Shopify | Auto-yes | ChatGPT + Perplexity + Google already ingesting. Tune, don't rebuild. |
+| Client is enterprise B2B with 6-month sales cycles | Low | LLM inline purchase unlikely; AEO + MCP booking tools sufficient. |
+| Client is local services (plumber, dentist) | Low | Inline purchase not the shape of their sale. GBP + local SEO primary. |
+| Client has no review infrastructure | Blocker until fixed | Can ship feed but will not be surfaced. Reviews first, then feed. |
+
+**Decision rule:** Ship §20 aggressively for consumer/SMB product merchants. Ship minimally (feed only, skip checkout) for service businesses with productizable entry-points. Skip for custom-quote-only agencies and local-services clients with no SKU surface.
+
+### 20.7 Client Applicability Matrix
+
+| Platform | ACP Feed | GMC Feed | Reviews | Trust File | Attribution | Approach |
+|---|---|---|---|---|---|---|
+| **DSIG Next.js** | Full | Full | Build native | Full | Full (Supabase) | Native implementation. |
+| **Shopify** | Auto | Auto | Native (Reviews app) | Manual file | Partial (need UTM discipline) | Mostly tuning work. |
+| **WooCommerce** | Plugin | Plugin (Google Listings & Ads) | Plugin | Manual | Plugin | "AI Commerce Feed Setup" as a service. |
+| **BigCommerce** | Plugin | Native | Native | Manual | Plugin | Similar to Shopify. |
+| **Squarespace** | Native (limited) | Native | Native | Manual | Limited | Accept platform ceiling. |
+| **Wix** | Native (limited) | Native | Native | Manual | Limited | Accept platform ceiling. |
+| **Static** | Build-time generated | Build-time generated | External (e.g., Trustpilot embed) | Manual | Limited | Feasible but manual. |
+| **WordPress (non-WC)** | Custom | Custom | Plugin | Manual | Manual | Only if productized services warrant it. |
+
+### 20.8 Attribution & Measurement
+
+The weakest link. No Search Console for ChatGPT exists yet. Current best practice:
+
+- **UTM discipline:** every outbound link in ACP feed has `utm_source`, `utm_medium=agent`, `utm_campaign={surface}-{sku}`.
+- **Agent UA detection:** log inbound requests with known bot user-agents, stamp sessions.
+- **Supabase `agent_attribution` table:** columns `timestamp, agent_ua, surface_guess, utm_*, landing_url, converted, order_id`.
+- **Stripe metadata:** every ACP checkout stamps `metadata.agent_surface` — reconciles at payment layer.
+- **Monthly refresh report:** compare agent-origin revenue to direct, watch trend.
+
+### 20.9 Experimental / Speculative (document, do not commit)
+
+- **Voice commerce** — Alexa+ Commerce, Siri Apple Intelligence. Partnership-gated.
+- **Browser-agent checkout** — Arc, Dia, Comet. Too early to optimize for.
+- **Claude inline purchase** — not shipped. When it ships, expect MCP-tool-based rather than ACP-feed-based. Pre-position via §16.
+- **Agent-native advertising** — sponsored agent results. Announced by nobody credibly. Watch.
+
+### 20.10 Research Refresh Log
+
+| Date | Finding | Source | Action |
+|---|---|---|---|
+| 2026-04-17 | Initial §20 authored. Platform surface matrix current to April 2026. Attribution remains the open problem. DSIG's own productizable SKUs identified for pilot. | Baseline + CLAUDE.md context | Baseline — refresh per §21. |
+
+---
+
+## 21. Research Refresh Protocol
+
+**Governs how §16–§20 stay current. Runs on every invocation of this ranking system for a client, plus quarterly regardless of client activity.**
+
+### 21.1 When to Refresh
+
+| Trigger | Scope | Who runs |
+|---|---|---|
+| New client engagement touching commerce/agents/auth | Full refresh of §16–20 + client-specific applicability decision | AI session doing the engagement |
+| Quarterly (Jan 1, Apr 1, Jul 1, Oct 1) | Full refresh of §16–20 | Scheduled session |
+| Major spec release (MCP vX, ACP vX, etc.) | Affected section only | First AI session to notice |
+| Client audit / health check | §16–20 applicability re-evaluation for that client | Auditing session |
+
+### 21.2 Refresh Procedure
+
+Each refresh session executes:
+
+1. **WebSearch** each of: "MCP spec changes 2026", "Agentic Commerce Protocol adoption", "ChatGPT Instant Checkout merchant list", "Perplexity shopping partners", "Gemini Shopping API", "Google Merchant Center AI fields", "Claude MCP commerce", "Stripe ACP changelog", "W3C Verifiable Credentials agent identity". Substitute current quarter.
+2. **WebFetch** primary specs: MCP spec repo, Stripe ACP docs, OpenAI Agents docs, Google Merchant Center docs.
+3. **Compare to existing §16–20 content.** Flag: shipped-since-last-refresh, deprecated-since, merchants-added, adoption-stalled.
+4. **Append to each section's Research Refresh Log** with date, finding, source URL, action taken.
+5. **Update endpoint tables, applicability matrices, platform surface matrix** inline where changes are material.
+6. **Audit existing clients** — list every DSIG client and note whether the refresh surfaced new applicable optimizations. Output as a "Retroactive Actions" section in the refresh entry.
+7. **Bump doc version** in §22 Document History.
+
+### 21.3 Refresh Output Format
+
+Each refresh produces a dated block appended to each section's Research Refresh Log table. Example:
+
+```
+| 2026-07-01 | ChatGPT added Home Depot + Lowe's to Instant Checkout. ACP v1.2
+released — adds `sustainability_score` field. | openai.com/blog, stripe.com/acp |
+Updated §20 surface matrix, §17.4 offer schema. Retroactive: Shopify clients
+automatically covered, no action. |
+```
+
+Plus a **Retroactive Client Actions** sub-entry when applicable:
+
+```
+Retroactive actions from 2026-07-01 refresh:
+- Client "acme-dental": no action (local services, not applicable)
+- Client "bluehat-ecom": sustainability_score field now fed from WC attributes.
+  Ticket opened.
+- Client "drive-tech": migrate ACP feed from v1.1 to v1.2 within 30 days.
+```
+
+### 21.4 Decision Criteria for Adopting a Change
+
+AI evaluates every new finding against:
+
+- **Is it shipped (not announced)?** Announcements don't trigger implementation.
+- **Is it supported by ≥2 platforms or is it a convergent standard?** One-vendor-only features go on watch list, not implementation list.
+- **Does it affect DSIG itself or client projects?** Decide scope.
+- **Does it invalidate existing implementation?** Deprecations require migration planning.
+- **Is the effort justified by the surface?** A Gemini-only field that moves 2% of traffic is not worth rewriting for every client.
+
+### 21.5 Per-Client Applicability Decision
+
+On each invocation for a specific client project, the AI writes a short decision memo at the top of the client's own CLAUDE.md or project doc:
+
+```
+DSIG Ranking System — Applicability for {client}
+Evaluated: {date}
+Refresh baseline: {refresh date}
+
+§16 MCP:       {Ship full | Ship resources only | Skip}   Reason: ...
+§17 ACO:       {Ship | Skip}                              Reason: ...
+§18 ATXP:      {Ship | Skip}                              Reason: ...
+§19 AZA:       {Ship | Skip}                              Reason: ...
+§20 Inline:    {Ship full | Feed only | Skip}             Reason: ...
+
+Retroactive opportunities from latest refresh: ...
+```
+
+### 21.6 Refresh Log Location
+
+**Inline in each section.** §16–§20 each carry their own Research Refresh Log table. §21 is the index/procedure. This keeps findings adjacent to the content they update, at the cost of the doc growing over time. When any section's log exceeds ~30 entries, archive the oldest entries to `docs/rank-system/archive/{section}-refresh-log-{year}.md` and keep the doc itself focused on the last 8 quarters.
+
+---
+
+## 22. Document History
 
 | Date | Version | Change |
 |---|---|---|
 | 2026-04-09 | 1.0 | Initial release -- complete DSIG Ranking & Discovery System playbook |
+| 2026-04-17 | 1.1 | Added §16 MCP, §17 ACO, §18 ATXP, §19 AZA, §20 Inline Commerce, §21 Research Refresh Protocol. Per-section applicability decision guides and client matrices. Research refresh logs inline per §21.6. |
 
 ---
 

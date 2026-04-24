@@ -1,4 +1,5 @@
 // ── Shared invoice TypeScript types ─────────────────────────────────
+// Also includes Trade-in-Kind (TIK) credit types.
 // Used across admin API routes, public routes, Stripe sync, PDF rendering,
 // and UI components. Single source of truth.
 
@@ -86,6 +87,9 @@ export interface Invoice {
   late_fee_cents: number
   late_fee_grace_days: number
   late_fee_applied_at: string | null
+  trade_credit_cents: number
+  trade_credit_description: string | null
+  trade_credit_id: string | null
   created_by: string | null
   created_at: string
   updated_at: string
@@ -267,6 +271,8 @@ export interface SowDocument {
   voided_at: string | null
   void_reason: string | null
   deposit_invoice_id: string | null
+  trade_credit_cents?: number
+  trade_credit_description?: string | null
   created_by: string | null
   created_at: string
   updated_at: string
@@ -313,6 +319,37 @@ export interface ProjectRow {
   phases: ProjectPhase[]
   created_at: string
   updated_at: string
+}
+
+// ── Trade-in-Kind types ────────────────────────────────────────────
+
+export type TradeCreditStatus = 'outstanding' | 'partial' | 'fulfilled' | 'written_off'
+
+export interface TradeCredit {
+  id: string
+  prospect_id: string
+  sow_document_id: string | null
+  invoice_id: string | null
+  original_amount_cents: number
+  remaining_cents: number
+  description: string
+  status: TradeCreditStatus
+  opened_at: string
+  closed_at: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface TradeCreditDrawdown {
+  id: string
+  trade_credit_id: string
+  amount_cents: number
+  description: string
+  delivered_on: string
+  recorded_by: string | null
+  notes: string | null
+  created_at: string
 }
 
 // ── Stripe event log ───────────────────────────────────────────────

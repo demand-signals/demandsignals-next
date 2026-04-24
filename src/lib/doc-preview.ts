@@ -146,6 +146,11 @@ function renderPhasesSection(sow: SowDocument): string {
   const depositCents = sow.pricing.deposit_cents
   const balanceCents = oneTimeCents - depositCents
 
+  const tikCents = (sow.trade_credit_cents ?? 0)
+  const cashTotal = oneTimeCents - tikCents
+  const cashDepositCents = Math.round((cashTotal * depositPct) / 100)
+  const cashBalance = cashTotal - cashDepositCents
+
   const pricingRows = [
     oneTimeCents > 0
       ? `<tr><td>One-time project total</td><td class="num">${formatCents(oneTimeCents)}</td></tr>`
@@ -159,11 +164,17 @@ function renderPhasesSection(sow: SowDocument): string {
     annualCents > 0
       ? `<tr><td>Annual recurring</td><td class="num" style="color:#4fa894">${formatCents(annualCents)}<span style="font-size:11px;color:#5d6780">/yr</span></td></tr>`
       : '',
-    oneTimeCents > 0
-      ? `<tr><td>Deposit (${depositPct}%)</td><td class="num">${formatCents(depositCents)}</td></tr>`
+    (oneTimeCents > 0 && tikCents > 0)
+      ? `<tr><td>Trade-in-Kind credit${sow.trade_credit_description ? `<br><span style="font-size:11px;color:#5d6780">${escapeHtml(sow.trade_credit_description)}</span>` : ''}</td><td class="num" style="color:#f28500">-${formatCents(tikCents)}</td></tr>`
+      : '',
+    (oneTimeCents > 0 && tikCents > 0)
+      ? `<tr><td>Cash project total</td><td class="num">${formatCents(cashTotal)}</td></tr>`
       : '',
     oneTimeCents > 0
-      ? `<tr class="grand"><td>Balance on delivery</td><td class="num">${formatCents(balanceCents)}</td></tr>`
+      ? `<tr><td>Deposit (${depositPct}%)</td><td class="num">${formatCents(tikCents > 0 ? cashDepositCents : depositCents)}</td></tr>`
+      : '',
+    oneTimeCents > 0
+      ? `<tr class="grand"><td>Balance on delivery</td><td class="num">${formatCents(tikCents > 0 ? cashBalance : balanceCents)}</td></tr>`
       : '',
   ].filter(Boolean).join('')
 
@@ -312,6 +323,7 @@ ${clientBlockHtml(client)}
 <table class="totals">
   <tr><td>Subtotal</td><td class="num">${formatCents(inv.subtotal_cents)}</td></tr>
   ${inv.discount_cents > 0 ? `<tr><td>Discount</td><td class="num">-${formatCents(inv.discount_cents)}</td></tr>` : ''}
+  ${(inv.trade_credit_cents ?? 0) > 0 ? `<tr><td>Trade-in-Kind credit${inv.trade_credit_description ? `<br><span style="font-size:11px;color:#5d6780">${escapeHtml(inv.trade_credit_description)}</span>` : ''}</td><td class="num" style="color:#f28500">-${formatCents(inv.trade_credit_cents ?? 0)}</td></tr>` : ''}
   ${inv.late_fee_cents > 0 && inv.late_fee_applied_at ? `<tr><td>Late fee</td><td class="num">${formatCents(inv.late_fee_cents)}</td></tr>` : ''}
   <tr class="grand"><td>Total due</td><td class="num">${formatCents(inv.total_due_cents + ((inv.late_fee_applied_at ? inv.late_fee_cents : 0)))}</td></tr>
 </table>

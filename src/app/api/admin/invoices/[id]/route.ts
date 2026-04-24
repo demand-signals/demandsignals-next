@@ -23,6 +23,8 @@ const patchSchema = z.object({
     )
     .optional(),
   force_edit: z.boolean().optional(),
+  trade_credit_cents: z.number().int().nonnegative().optional(),
+  trade_credit_description: z.string().nullable().optional(),
 })
 
 export async function GET(
@@ -110,6 +112,8 @@ export async function PATCH(
   if (body.send_date !== undefined) updates.send_date = body.send_date
   if (body.late_fee_cents !== undefined) updates.late_fee_cents = body.late_fee_cents
   if (body.late_fee_grace_days !== undefined) updates.late_fee_grace_days = body.late_fee_grace_days
+  if (body.trade_credit_cents !== undefined) updates.trade_credit_cents = body.trade_credit_cents
+  if (body.trade_credit_description !== undefined) updates.trade_credit_description = body.trade_credit_description
 
   if (body.line_items !== undefined) {
     // Delete all existing line items and reinsert.
@@ -147,7 +151,10 @@ export async function PATCH(
     // Recompute totals on the invoice row.
     updates.subtotal_cents = newRows.reduce((s, r) => s + r.subtotal_cents, 0)
     updates.discount_cents = newRows.reduce((s, r) => s + r.discount_cents, 0)
-    updates.total_due_cents = newRows.reduce((s, r) => s + r.line_total_cents, 0)
+    const lineTotal = newRows.reduce((s, r) => s + r.line_total_cents, 0)
+    // Subtract TIK credit (existing or newly-set) from total_due_cents
+    const tikCents = body.trade_credit_cents ?? 0
+    updates.total_due_cents = Math.max(0, lineTotal - tikCents)
   }
 
   if (Object.keys(updates).length > 0) {

@@ -79,6 +79,9 @@ function NewInvoiceForm() {
   const [lateFeeDollars, setLateFeeDollars] = useState('')
   const [lateFeeGraceDays, setLateFeeGraceDays] = useState('0')
   const [categoryHint, setCategoryHint] = useState('service_revenue')
+  const [tikCents, setTikCents] = useState(0)
+  const [tikAmountInput, setTikAmountInput] = useState('0.00')
+  const [tikDescription, setTikDescription] = useState('')
   const [busy, setBusy] = useState(false)
   const [previewBusy, setPreviewBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -148,11 +151,12 @@ function NewInvoiceForm() {
   }
 
   const subtotal = lines.reduce((s, l) => s + Math.max(0, l.unit_price_cents * l.quantity), 0) / 100
-  const total = lines.reduce((s, l) => {
+  const lineTotal = lines.reduce((s, l) => {
     const sub = l.unit_price_cents * l.quantity
     const disc = Math.round((sub * l.discount_pct) / 100)
     return s + (sub - disc)
   }, 0) / 100
+  const total = Math.max(0, lineTotal - tikCents / 100)
 
   function buildPostBody() {
     const finalLines = lines.map((l) => ({
@@ -194,6 +198,8 @@ function NewInvoiceForm() {
       late_fee_cents: lateFeeCents > 0 ? lateFeeCents : undefined,
       late_fee_grace_days: parseInt(lateFeeGraceDays || '0') || undefined,
       category_hint: categoryHint,
+      trade_credit_cents: tikCents > 0 ? tikCents : undefined,
+      trade_credit_description: tikDescription || undefined,
     }
   }
 
@@ -471,9 +477,51 @@ function NewInvoiceForm() {
         )}
 
         <div className="flex justify-end text-sm space-y-1">
-          <div className="text-right">
+          <div className="text-right space-y-0.5">
             <div>Subtotal: {formatCents(Math.round(subtotal * 100))}</div>
-            <div className="font-bold text-lg">Total: {formatCents(Math.round(total * 100))}</div>
+            {tikCents > 0 && (
+              <div className="text-amber-700">
+                Trade-in-Kind credit: −{formatCents(tikCents)}
+              </div>
+            )}
+            <div className="font-bold text-lg">Total due (cash): {formatCents(Math.round(total * 100))}</div>
+          </div>
+        </div>
+
+        {/* TIK block */}
+        <div className="pt-4 border-t border-slate-100">
+          <div className="text-xs uppercase text-slate-500 font-semibold mb-1">
+            Trade-in-Kind (TIK)
+          </div>
+          <p className="text-xs text-slate-400 mb-2">
+            Amount the client will pay in trade instead of cash. Reduces total due.
+          </p>
+          <div className="grid grid-cols-[1fr_180px] gap-3">
+            <label className="text-xs">
+              Trade description
+              <input
+                type="text"
+                value={tikDescription}
+                onChange={(e) => setTikDescription(e.target.value)}
+                placeholder="e.g. 10 hours mobile mechanic work"
+                className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+              />
+            </label>
+            <label className="text-xs">
+              Trade amount ($)
+              <input
+                type="text"
+                inputMode="decimal"
+                value={tikAmountInput}
+                onChange={(e) => setTikAmountInput(e.target.value)}
+                onBlur={() => {
+                  const cents = Math.round(parseFloat(tikAmountInput || '0') * 100)
+                  setTikCents(cents)
+                  setTikAmountInput((cents / 100).toFixed(2))
+                }}
+                className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+              />
+            </label>
           </div>
         </div>
       </section>

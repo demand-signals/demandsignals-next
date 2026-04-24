@@ -172,6 +172,9 @@ export default function InvoiceDetailPage({
   const [lateFeeCents, setLateFeeCents] = useState(0)
   const [lateFeeDollarsInput, setLateFeeDollarsInput] = useState('0.00')
   const [lateFeeGraceDays, setLateFeeGraceDays] = useState(0)
+  const [tikCents, setTikCents] = useState(0)
+  const [tikAmountInput, setTikAmountInput] = useState('0.00')
+  const [tikDescription, setTikDescription] = useState('')
 
   function markDirty() {
     setDirty(true)
@@ -198,6 +201,10 @@ export default function InvoiceDetailPage({
     setLateFeeCents(lateFee)
     setLateFeeDollarsInput(centsToInput(lateFee))
     setLateFeeGraceDays(d.invoice.late_fee_grace_days ?? 0)
+    const tc = (d.invoice as typeof d.invoice & { trade_credit_cents?: number; trade_credit_description?: string | null }).trade_credit_cents ?? 0
+    setTikCents(tc)
+    setTikAmountInput(centsToInput(tc))
+    setTikDescription((d.invoice as typeof d.invoice & { trade_credit_description?: string | null }).trade_credit_description ?? '')
     setDirty(false)
   }
 
@@ -224,7 +231,7 @@ export default function InvoiceDetailPage({
     const sub = li.quantity * li.unit_price_cents
     return s + Math.round(sub * (li.discount_pct || 0) / 100)
   }, 0)
-  const totalDueCents = subtotalCents - discountCents
+  const totalDueCents = Math.max(0, subtotalCents - discountCents - tikCents)
 
   // ── Save ──────────────────────────────────────────────────────────
 
@@ -238,6 +245,8 @@ export default function InvoiceDetailPage({
         send_date: sendDate || null,
         late_fee_cents: lateFeeCents,
         late_fee_grace_days: lateFeeGraceDays,
+        trade_credit_cents: tikCents,
+        trade_credit_description: tikDescription || null,
         line_items: lines
           .filter((l) => l.description.trim())
           .map((l) => ({
@@ -771,6 +780,17 @@ export default function InvoiceDetailPage({
                     </td>
                   </tr>
                 )}
+                {tikCents > 0 && (
+                  <tr>
+                    <td className="py-1 text-amber-700">
+                      Trade-in-Kind
+                      {tikDescription && <span className="text-xs text-slate-400 block">{tikDescription}</span>}
+                    </td>
+                    <td className="py-1 text-right font-semibold text-amber-700">
+                      -{formatCents(tikCents)}
+                    </td>
+                  </tr>
+                )}
                 {lateFeeCents > 0 && invoice.late_fee_applied_at && (
                   <tr>
                     <td className="py-1 text-slate-600">Late fee</td>
@@ -778,11 +798,49 @@ export default function InvoiceDetailPage({
                   </tr>
                 )}
                 <tr style={{ borderTop: '2px solid #1d2330' }}>
-                  <td className="pt-3 font-bold text-base">Total due</td>
+                  <td className="pt-3 font-bold text-base">Total due (cash)</td>
                   <td className="pt-3 text-right font-bold text-base">{formatCents(totalDueCents)}</td>
                 </tr>
               </tbody>
             </table>
+
+            {/* TIK block */}
+            <div className="mt-6 p-3 border border-slate-100 rounded-lg bg-slate-50/50">
+              <div className="text-xs uppercase text-slate-500 font-semibold mb-1">
+                Trade-in-Kind (TIK)
+              </div>
+              <p className="text-xs text-slate-400 mb-2">
+                Amount client pays in trade instead of cash. Reduces total due.
+              </p>
+              <div className="grid grid-cols-[1fr_160px] gap-3">
+                <label className="text-xs">
+                  Trade description
+                  <input
+                    type="text"
+                    value={tikDescription}
+                    onChange={(e) => { setTikDescription(e.target.value); markDirty() }}
+                    placeholder="e.g. 10 hours mobile mechanic work"
+                    className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+                  />
+                </label>
+                <label className="text-xs">
+                  Trade amount ($)
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={tikAmountInput}
+                    onChange={(e) => setTikAmountInput(e.target.value)}
+                    onBlur={() => {
+                      const cents = Math.round(parseFloat(tikAmountInput || '0') * 100)
+                      setTikCents(cents)
+                      setTikAmountInput(centsToInput(cents))
+                      markDirty()
+                    }}
+                    className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+                  />
+                </label>
+              </div>
+            </div>
           </section>
 
           {/* Late fee settings */}

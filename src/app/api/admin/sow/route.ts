@@ -95,6 +95,8 @@ const postBodySchema = z.object({
   notes: z.string().nullable().optional(),
   computed_from_deliverables: z.boolean().optional(),
   send_date: z.string().nullable().optional(), // ISO date string
+  trade_credit_cents: z.number().int().nonnegative().optional(),
+  trade_credit_description: z.string().nullable().optional(),
 })
 
 function computeLineTotal(d: z.infer<typeof deliverableSchema>): SowDeliverable {
@@ -133,6 +135,8 @@ export async function POST(request: NextRequest) {
     notes,
     computed_from_deliverables,
     send_date,
+    trade_credit_cents,
+    trade_credit_description,
   } = parsed
 
   // If phases present, compute total from one_time deliverables when client didn't supply one.
@@ -181,6 +185,8 @@ export async function POST(request: NextRequest) {
       notes: notes ?? null,
       computed_from_deliverables: computed_from_deliverables ?? null,
       send_date: send_date ?? null,
+      trade_credit_cents: trade_credit_cents ?? 0,
+      trade_credit_description: trade_credit_description ?? null,
       created_by: auth.user.id,
     })
     .select('*')

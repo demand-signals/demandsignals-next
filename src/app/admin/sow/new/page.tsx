@@ -129,6 +129,9 @@ export default function NewSowPage() {
   )
   const [guarantees, setGuarantees] = useState('')
   const [notes, setNotes] = useState('')
+  const [tradeCents, setTradeCents] = useState(0)
+  const [tradeAmountInput, setTradeAmountInput] = useState('0.00')
+  const [tradeDescription, setTradeDescription] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -293,7 +296,9 @@ export default function NewSowPage() {
     .reduce((s, d) => s + computeLineCents(d), 0)
 
   const pct = parseInt(depositPct) || 25
-  const depositCents = Math.round((oneTimeTotalCents * pct) / 100)
+  const cashTotalCents = Math.max(0, oneTimeTotalCents - tradeCents)
+  const depositCents = Math.round((cashTotalCents * pct) / 100)
+  const balanceCents = cashTotalCents - depositCents
 
   // ── Save ──────────────────────────────────────────────────────────
 
@@ -330,6 +335,8 @@ export default function NewSowPage() {
           guarantees: guarantees || undefined,
           notes: notes || undefined,
           computed_from_deliverables: true,
+          trade_credit_cents: tradeCents > 0 ? tradeCents : undefined,
+          trade_credit_description: tradeDescription || undefined,
         }),
       })
       const data = await res.json()
@@ -645,6 +652,72 @@ export default function NewSowPage() {
             </div>
           )}
         </div>
+        {/* TIK block */}
+        <div className="pt-4 border-t border-slate-100">
+          <div className="text-xs uppercase text-slate-500 mb-2">Trade-in-Kind (TIK)</div>
+          <p className="text-xs text-slate-500 mb-2">
+            Amount the client will pay in trade (goods/services delivered to DSIG) instead of cash.
+            Reduces cash owed. Recorded as a credit until client delivers the trade.
+          </p>
+          <div className="grid grid-cols-[1fr_180px] gap-3">
+            <label className="text-xs">
+              Trade description
+              <input
+                type="text"
+                value={tradeDescription}
+                onChange={(e) => setTradeDescription(e.target.value)}
+                placeholder="e.g. 10 hours mobile mechanic work"
+                className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+              />
+            </label>
+            <label className="text-xs">
+              Trade amount ($)
+              <input
+                type="text"
+                inputMode="decimal"
+                value={tradeAmountInput}
+                onChange={(e) => setTradeAmountInput(e.target.value)}
+                onBlur={() => {
+                  const cents = Math.round(parseFloat(tradeAmountInput || '0') * 100)
+                  setTradeCents(cents)
+                  setTradeAmountInput((cents / 100).toFixed(2))
+                }}
+                className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Pricing totals */}
+        {oneTimeTotalCents > 0 && (
+          <div className="space-y-1 text-sm pt-2 border-t border-slate-100">
+            <div className="flex justify-between">
+              <span className="text-slate-600">One-time project total</span>
+              <span className="font-semibold">{formatCents(oneTimeTotalCents)}</span>
+            </div>
+            {tradeCents > 0 && (
+              <>
+                <div className="flex justify-between text-amber-700">
+                  <span>Trade-in-Kind credit</span>
+                  <span className="font-semibold">−{formatCents(tradeCents)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Cash project total</span>
+                  <span className="font-semibold">{formatCents(cashTotalCents)}</span>
+                </div>
+              </>
+            )}
+            <div className="flex justify-between text-slate-500">
+              <span>Deposit ({pct}%)</span>
+              <span>{formatCents(depositCents)}</span>
+            </div>
+            <div className="flex justify-between font-bold">
+              <span>Balance on delivery</span>
+              <span>{formatCents(balanceCents)}</span>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
           <label>
             Deposit %
