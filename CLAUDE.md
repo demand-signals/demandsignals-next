@@ -830,3 +830,42 @@ try {
 ### Why NOT Supabase Storage
 
 Supabase Storage egress is `$0.09/GB` — punishes exactly the video/media use cases DSIG will grow into. R2's free egress wins decisively at scale. And consistency across DSIG projects matters more than the minor transactional-atomicity gain Supabase Storage offers.
+
+---
+
+## 20. Document Numbering Convention
+
+**Format:** `TYPE-CLIENT-MMDDYY{SUFFIX}`
+
+| Component | Meaning |
+|---|---|
+| TYPE | `EST` · `SOW` · `INV` · `RCT` |
+| CLIENT | 4-letter code on `prospects.client_code` (auto-suggested from business_name, admin-editable) |
+| MMDDYY | America/Los_Angeles date |
+| SUFFIX | Sequential letter per (type, client, date): A, B, ..., Z, AA, AB |
+
+Example: first invoice to Hangtown today → `INV-HANG-042326A`. Second same day → `INV-HANG-042326B`.
+
+**Allocation:** server-side via `allocateDocNumber()` in `src/lib/doc-numbering.ts` → DB RPC `allocate_document_number()` (atomic, race-safe, SECURITY DEFINER, service_role only).
+
+**Audit log:** every allocated number is recorded in `document_numbers` table with `ref_table` + `ref_id` back-pointer.
+
+**Legacy numbers preserved:** existing records (pre-2026-04-23) keep their old numbers (`DSIG-2026-0001`, `SOW-2026-0001`) — do NOT backfill.
+
+**Legacy RPCs preserved:** `generate_sow_number()` and `generate_invoice_number()` remain in the DB as fallbacks when no prospect/client_code is present. Do NOT drop them.
+
+**Auto-transitions:**
+- SOW `accept` creates an invoice for the deposit amount (`INV-...`), linked via `sow_documents.deposit_invoice_id`
+- Invoice `mark-paid` creates a receipt (`RCT-...`), linked via `receipts.invoice_id`
+- Partial payments: if `amount_paid_cents < total_due_cents`, invoice status stays `sent` (not flipped to `paid`); a receipt is created for the partial amount. Sum of receipt amounts vs `invoice.total_due_cents` tracks outstanding balance.
+- Receipt creation is always best-effort — failures are logged but never fail mark-paid.
+
+**Client code convention:** first 2 letters of each of the first 2 words in business_name, uppercased. E.g. "Hangtown Range & Retail Store" → `HANG`, "South Side MMA" → `SOSI`. Admin can edit on the prospect record (/admin/prospects/[id]).
+
+**Admin UI:**
+- `/admin/prospects/[id]` — Client Code card with inline edit + Suggest button
+- `/admin/receipts` — Receipts list (Receipt #, Client, Invoice #, Amount, Method, Paid At)
+- `/admin/receipts/[id]` — Receipt detail (immutable read-only)
+- Admin sidebar Finance group — "Receipts" link added (FileCheck icon)
+
+**EST (quote sessions):** not yet wired — requires a `doc_number` column migration on `quote_sessions`. See `TODO(est)` comment in `src/lib/doc-numbering.ts`.
