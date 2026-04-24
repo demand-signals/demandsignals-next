@@ -94,53 +94,53 @@ export function ShareActions({
   }
 
   return (
-    <div className="border-t border-slate-200 bg-slate-50 p-6 space-y-4">
-      <div className="text-sm font-semibold text-slate-900">Ways to keep this going</div>
-
+    <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Primary: Resume the conversation with full context */}
-        <button
-          onClick={handleResume}
-          disabled={resuming}
-          className="bg-[var(--teal)] hover:bg-[var(--teal-dark)] disabled:opacity-50 text-white rounded-lg py-3 font-semibold text-center"
-        >
-          {resuming ? 'Loading…' : '💬 Resume the conversation'}
-          <div className="text-xs font-normal opacity-90 mt-0.5">
-            Pick up where you left off — your plan carries over
-          </div>
-        </button>
-
-        {/* Book a call */}
+        {/* Primary: Book a strategy call (orange) */}
         <a
           href={BOOKING_URL}
           target="_blank"
           rel="noopener"
-          className="bg-slate-900 hover:bg-slate-800 text-white rounded-lg py-3 font-semibold text-center"
+          className="rounded-xl py-4 px-5 font-semibold text-center text-white transition-opacity hover:opacity-90"
+          style={{ background: '#FF6B2B' }}
         >
-          📅 Book a strategy call
+          Book a strategy call
           <div className="text-xs font-normal opacity-90 mt-0.5">
             30 mins with Hunter — no pressure
           </div>
         </a>
 
-        {/* Text */}
-        <a
-          href={`sms:${DSIG_PHONE_TEL}?body=${encodeURIComponent(`Hey — it's ${businessName}. Just saved my plan at /quote/s/${shareToken.slice(0, 10)}… Can we talk?`)}`}
-          className="border border-slate-300 hover:border-[var(--teal)] hover:text-[var(--teal)] text-slate-700 rounded-lg py-3 font-semibold text-center"
+        {/* Secondary: Resume the conversation (teal) */}
+        <button
+          onClick={handleResume}
+          disabled={resuming}
+          className="rounded-xl py-4 px-5 font-semibold text-center text-white disabled:opacity-50 transition-opacity hover:opacity-90"
+          style={{ background: 'var(--teal, #68c5ad)' }}
         >
-          💬 Text us
+          {resuming ? 'Loading…' : 'Resume this conversation'}
+          <div className="text-xs font-normal opacity-90 mt-0.5">
+            Pick up where you left off — your plan carries over
+          </div>
+        </button>
+
+        {/* Tertiary: Text */}
+        <a
+          href={`sms:${DSIG_PHONE_TEL}?body=${encodeURIComponent(`Hey — it's ${businessName}. Just saw my estimate. Can we talk?`)}`}
+          className="border border-slate-300 hover:border-[var(--teal)] hover:text-[var(--teal)] text-slate-700 rounded-xl py-4 px-5 font-semibold text-center transition-colors"
+        >
+          Text us
           <div className="text-xs font-normal text-slate-500 mt-0.5">
             {DSIG_PHONE}
           </div>
         </a>
 
-        {/* Email the plan */}
+        {/* Tertiary: Email the plan */}
         <button
           onClick={() => setEmailMode((v) => !v)}
           disabled={emailSent}
-          className="border border-slate-300 hover:border-[var(--teal)] hover:text-[var(--teal)] disabled:opacity-70 text-slate-700 rounded-lg py-3 font-semibold text-center"
+          className="border border-slate-300 hover:border-[var(--teal)] hover:text-[var(--teal)] disabled:opacity-70 text-slate-700 rounded-xl py-4 px-5 font-semibold text-center transition-colors"
         >
-          {emailSent ? '✓ Plan sent to your email' : '✉️ Email me the full plan'}
+          {emailSent ? 'Plan sent to your email' : 'Email me the full plan'}
           {!emailSent && (
             <div className="text-xs font-normal text-slate-500 mt-0.5">
               Pricing, scope, timeline
@@ -173,9 +173,9 @@ export function ShareActions({
       {resumeError && <div className="text-xs text-red-600">{resumeError}</div>}
 
       {!phoneVerified && (
-        <div className="text-xs text-slate-500 text-center pt-2 border-t border-slate-200">
+        <p className="text-xs text-center pt-2" style={{ color: '#94a0b8' }}>
           Full pricing unlocks when you verify your phone in the live conversation.
-        </div>
+        </p>
       )}
     </div>
   )
