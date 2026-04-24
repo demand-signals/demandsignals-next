@@ -1,6 +1,8 @@
 // ── HTTP client for dsig-pdf-service ────────────────────────────────
-// Sends invoice data to pdf.demandsignals.co, returns PDF bytes.
-// Service is live and verified (pdf.demandsignals.co — Plan 2 shipped).
+// @deprecated Use src/lib/pdf/invoice.ts (renderInvoicePdf) instead.
+// This file POSTs to the external Python PDF service (PDF_SERVICE_URL).
+// The new path uses headless Chromium in-process — no external service needed.
+// This file is kept for reference and will be deleted in a future cleanup commit.
 
 import type { InvoiceWithLineItems } from '../invoice-types'
 import { invoiceToRenderPayload } from './payload'
