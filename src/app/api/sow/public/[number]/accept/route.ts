@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { allocateDocNumber } from '@/lib/doc-numbering'
 import { getValueStackItems } from '@/lib/services-catalog'
 import type { SowPricing, SowPhase } from '@/lib/invoice-types'
 
@@ -56,14 +57,6 @@ export async function POST(
   const pricing = sow.pricing as SowPricing
   const depositCents = pricing.deposit_cents ?? Math.round(pricing.total_cents * 0.25)
 
-  const { data: invNum, error: numErr } = await supabaseAdmin.rpc('generate_invoice_number')
-  if (numErr || !invNum) {
-    return NextResponse.json(
-      { error: `Invoice number generation: ${numErr?.message}` },
-      { status: 500 },
-    )
-  }
-
   // Pull the "New Client Appreciation" value stack from services_catalog.
   // These auto-populate as 100%-discounted lines on the deposit invoice,
   // giving the client visible proof of $X,XXX in included value on day one.
@@ -79,10 +72,14 @@ export async function POST(
   //   displayed discount = -value_stack (the courtesy discount)
   //   total due          = deposit (actual money owed)
   const displayedSubtotalCents = depositCents + valueStackSubtotalCents
+
+  // Insert deposit invoice with a temp placeholder number, then allocate
+  // a proper INV-CLIENT-MMDDYY{SUFFIX} number once we have the row id.
+  const tempInvNumber = `PENDING-${crypto.randomUUID()}`
   const { data: depositInvoice, error: invErr } = await supabaseAdmin
     .from('invoices')
     .insert({
-      invoice_number: invNum,
+      invoice_number: tempInvNumber,
       kind: 'business',
       prospect_id: sow.prospect_id,
       quote_session_id: sow.quote_session_id,
@@ -107,6 +104,36 @@ export async function POST(
       { error: `Deposit invoice insert: ${invErr?.message}` },
       { status: 500 },
     )
+  }
+
+  // Allocate new-format invoice number. Fall back to legacy RPC if prospect
+  // has no client_code (best-effort — don't break the accept flow).
+  if (sow.prospect_id) {
+    try {
+      const invNumber = await allocateDocNumber({
+        doc_type: 'INV',
+        prospect_id: sow.prospect_id,
+        ref_table: 'invoices',
+        ref_id: depositInvoice.id,
+      })
+      await supabaseAdmin
+        .from('invoices')
+        .update({ invoice_number: invNumber })
+        .eq('id', depositInvoice.id)
+      depositInvoice.invoice_number = invNumber
+    } catch (numErr) {
+      // Prospect may not yet have a client_code. Fall back to legacy number.
+      console.warn('[accept] New-format numbering failed, falling back:', numErr instanceof Error ? numErr.message : numErr)
+      const { data: legacyNum } = await supabaseAdmin.rpc('generate_invoice_number')
+      if (legacyNum) {
+        await supabaseAdmin
+          .from('invoices')
+          .update({ invoice_number: legacyNum })
+          .eq('id', depositInvoice.id)
+        depositInvoice.invoice_number = legacyNum
+      }
+      // If legacy also fails, the PENDING number stays — visible in admin, fixable manually.
+    }
   }
 
   // Build line items:
