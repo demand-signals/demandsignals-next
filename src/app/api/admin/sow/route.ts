@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { allocateDocNumber } from '@/lib/doc-numbering'
 import type { SowDeliverable, SowPricing } from '@/lib/invoice-types'
 
 // ── Phases shape (new client format) ────────────────────────────────
@@ -154,18 +155,18 @@ export async function POST(request: NextRequest) {
   // Compute line_total_cents per legacy deliverable.
   const finalDeliverables: SowDeliverable[] = (deliverables ?? []).map(computeLineTotal)
 
-  const { data: numResult, error: numErr } = await supabaseAdmin.rpc('generate_sow_number')
-  if (numErr || !numResult) {
-    return NextResponse.json(
-      { error: `Number generation: ${numErr?.message}` },
-      { status: 500 },
-    )
-  }
+  // ── New numbering: TYPE-CLIENT-MMDDYY{SUFFIX} ───────────────────────
+  // If the SOW has a prospect with a client_code, allocate a new-format
+  // number (SOW-HANG-042326A). Otherwise fall back to legacy generate_sow_number().
+  // Flow: insert with temp placeholder → allocate number → update row.
+  // On allocation failure we roll back the SOW row so no PENDING leaks.
+
+  const tempNumber = `PENDING-${crypto.randomUUID()}`
 
   const { data: sow, error } = await supabaseAdmin
     .from('sow_documents')
     .insert({
-      sow_number: numResult,
+      sow_number: tempNumber,
       prospect_id: prospect_id ?? null,
       quote_session_id: quote_session_id ?? null,
       status: 'draft',
@@ -186,5 +187,39 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Attempt new-format numbering when prospect is linked.
+  if (sow.prospect_id) {
+    try {
+      const sowNumber = await allocateDocNumber({
+        doc_type: 'SOW',
+        prospect_id: sow.prospect_id,
+        ref_table: 'sow_documents',
+        ref_id: sow.id,
+      })
+      await supabaseAdmin.from('sow_documents').update({ sow_number: sowNumber }).eq('id', sow.id)
+      sow.sow_number = sowNumber
+    } catch (numErr) {
+      // Roll back the SOW row so we don't leak a PENDING record.
+      await supabaseAdmin.from('sow_documents').delete().eq('id', sow.id)
+      return NextResponse.json(
+        { error: numErr instanceof Error ? numErr.message : 'Numbering failed' },
+        { status: 400 },
+      )
+    }
+  } else {
+    // No prospect linked — fall back to legacy sequential number.
+    const { data: legacyNum, error: numErr } = await supabaseAdmin.rpc('generate_sow_number')
+    if (numErr || !legacyNum) {
+      await supabaseAdmin.from('sow_documents').delete().eq('id', sow.id)
+      return NextResponse.json(
+        { error: `Number generation: ${numErr?.message}` },
+        { status: 500 },
+      )
+    }
+    await supabaseAdmin.from('sow_documents').update({ sow_number: legacyNum }).eq('id', sow.id)
+    sow.sow_number = legacyNum
+  }
+
   return NextResponse.json({ sow })
 }

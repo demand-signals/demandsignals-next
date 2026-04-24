@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { CATALOG_VERSION } from '@/lib/quote-pricing'
+import { allocateDocNumber } from '@/lib/doc-numbering'
 import type { InvoiceKind, CategoryHint } from '@/lib/invoice-types'
 
 interface CreateLineItem {
@@ -140,18 +141,17 @@ export async function POST(request: NextRequest) {
   const discountCents = resolved.reduce((s, r) => s + r.discount_cents, 0)
   const totalDueCents = resolved.reduce((s, r) => s + r.line_total_cents, 0)
 
-  const { data: numResult, error: numErr } = await supabaseAdmin.rpc('generate_invoice_number')
-  if (numErr || !numResult) {
-    return NextResponse.json(
-      { error: `Number generation failed: ${numErr?.message}` },
-      { status: 500 },
-    )
-  }
+  // ── New numbering: TYPE-CLIENT-MMDDYY{SUFFIX} ───────────────────────
+  // Insert with temp placeholder → allocate number → update row.
+  // If prospect has no client_code, fall back to legacy generate_invoice_number().
+  // On allocation failure we roll back the invoice row.
+
+  const tempNumber = `PENDING-${crypto.randomUUID()}`
 
   const { data: inv, error: invErr } = await supabaseAdmin
     .from('invoices')
     .insert({
-      invoice_number: numResult,
+      invoice_number: tempNumber,
       kind: effectiveKind,
       prospect_id: prospect_id ?? null,
       quote_session_id: quote_session_id ?? null,
@@ -173,6 +173,38 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (invErr) return NextResponse.json({ error: invErr.message }, { status: 500 })
+
+  // Allocate document number.
+  if (prospect_id) {
+    try {
+      const invNumber = await allocateDocNumber({
+        doc_type: 'INV',
+        prospect_id,
+        ref_table: 'invoices',
+        ref_id: inv.id,
+      })
+      await supabaseAdmin.from('invoices').update({ invoice_number: invNumber }).eq('id', inv.id)
+      inv.invoice_number = invNumber
+    } catch (numErr) {
+      await supabaseAdmin.from('invoices').delete().eq('id', inv.id)
+      return NextResponse.json(
+        { error: numErr instanceof Error ? numErr.message : 'Numbering failed' },
+        { status: 400 },
+      )
+    }
+  } else {
+    // No prospect linked — fall back to legacy sequential number.
+    const { data: legacyNum, error: numErr } = await supabaseAdmin.rpc('generate_invoice_number')
+    if (numErr || !legacyNum) {
+      await supabaseAdmin.from('invoices').delete().eq('id', inv.id)
+      return NextResponse.json(
+        { error: `Number generation failed: ${numErr?.message}` },
+        { status: 500 },
+      )
+    }
+    await supabaseAdmin.from('invoices').update({ invoice_number: legacyNum }).eq('id', inv.id)
+    inv.invoice_number = legacyNum
+  }
 
   const lineInserts = resolved.map((r, idx) => ({
     invoice_id: inv.id,
