@@ -1,6 +1,7 @@
 // ── pdf/sow.ts ────────────────────────────────────────────────────────
-// Premium 4-page SOW PDF. Design brief: Stripe receipts + Linear type ramp
+// Premium 3-page SOW PDF. Design brief: Stripe receipts + Linear type ramp
 // + Apple Keynote covers. Clean, bold, confident. Full inline CSS.
+// Pages: Cover / Scope+Phases / Investment+Signature (no standalone rear cover)
 
 import { formatCents } from '@/lib/format'
 import type { SowDocument, SowPhase, SowPhaseDeliverable } from '@/lib/invoice-types'
@@ -343,7 +344,7 @@ function legacyDeliverablesFallback(sow: SowDocument): string {
   </table>`
 }
 
-// ── PAGE 3 — Investment & Terms ────────────────────────────────────────
+// ── PAGE 3 — Investment, Signature & Close ────────────────────────────
 
 function infoCard(title: string, body: string, bg = T.tealSoft, borderColor = T.teal): string {
   return `
@@ -372,55 +373,60 @@ function investmentPage(sow: SowDocument): string {
 
   const bigNumber = tikCents > 0 ? formatCents(cashOneTime) : formatCents(totals.oneTime)
 
+  const isAccepted = !!sow.accepted_at && !!sow.accepted_signature
+  const acceptedDate = isAccepted
+    ? new Date(sow.accepted_at!).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : ''
+
   const rows: string[] = []
 
   if (totals.oneTime > 0) {
     rows.push(`<tr>
-      <td style="padding:10px 0;border-bottom:1px solid ${T.rule};font-size:13px;color:${T.slate}">One-time project total</td>
-      <td style="padding:10px 0;border-bottom:1px solid ${T.rule};text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${T.dark}">${formatCents(totals.oneTime)}</td>
+      <td style="padding:8px 0;border-bottom:1px solid ${T.rule};font-size:13px;color:${T.slate}">One-time project total</td>
+      <td style="padding:8px 0;border-bottom:1px solid ${T.rule};text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${T.dark}">${formatCents(totals.oneTime)}</td>
     </tr>`)
   }
   if (totals.monthly > 0) {
     rows.push(`<tr>
-      <td style="padding:10px 0;border-bottom:1px solid ${T.rule};font-size:13px;color:${T.slate}">Monthly recurring</td>
-      <td style="padding:10px 0;border-bottom:1px solid ${T.rule};text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${T.teal}">${formatCents(totals.monthly)}<span style="font-size:11px;color:${T.slateSoft}">/mo</span></td>
+      <td style="padding:8px 0;border-bottom:1px solid ${T.rule};font-size:13px;color:${T.slate}">Monthly recurring</td>
+      <td style="padding:8px 0;border-bottom:1px solid ${T.rule};text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${T.teal}">${formatCents(totals.monthly)}<span style="font-size:11px;color:${T.slateSoft}">/mo</span></td>
     </tr>`)
   }
   if (totals.quarterly > 0) {
     rows.push(`<tr>
-      <td style="padding:10px 0;border-bottom:1px solid ${T.rule};font-size:13px;color:${T.slate}">Quarterly recurring</td>
-      <td style="padding:10px 0;border-bottom:1px solid ${T.rule};text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${T.teal}">${formatCents(totals.quarterly)}<span style="font-size:11px;color:${T.slateSoft}">/qtr</span></td>
+      <td style="padding:8px 0;border-bottom:1px solid ${T.rule};font-size:13px;color:${T.slate}">Quarterly recurring</td>
+      <td style="padding:8px 0;border-bottom:1px solid ${T.rule};text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${T.teal}">${formatCents(totals.quarterly)}<span style="font-size:11px;color:${T.slateSoft}">/qtr</span></td>
     </tr>`)
   }
   if (totals.annual > 0) {
     rows.push(`<tr>
-      <td style="padding:10px 0;border-bottom:1px solid ${T.rule};font-size:13px;color:${T.slate}">Annual recurring</td>
-      <td style="padding:10px 0;border-bottom:1px solid ${T.rule};text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${T.teal}">${formatCents(totals.annual)}<span style="font-size:11px;color:${T.slateSoft}">/yr</span></td>
+      <td style="padding:8px 0;border-bottom:1px solid ${T.rule};font-size:13px;color:${T.slate}">Annual recurring</td>
+      <td style="padding:8px 0;border-bottom:1px solid ${T.rule};text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${T.teal}">${formatCents(totals.annual)}<span style="font-size:11px;color:${T.slateSoft}">/yr</span></td>
     </tr>`)
   }
   if (tikCents > 0) {
     rows.push(`<tr>
-      <td style="padding:10px 0;border-bottom:1px solid ${T.rule};font-size:13px;color:${T.slate}">
+      <td style="padding:8px 0;border-bottom:1px solid ${T.rule};font-size:13px;color:${T.slate}">
         Trade-in-Kind credit
         ${sow.trade_credit_description ? `<div style="font-size:11px;color:${T.slateSoft};margin-top:2px">${esc(sow.trade_credit_description)}</div>` : ''}
       </td>
-      <td style="padding:10px 0;border-bottom:1px solid ${T.rule};text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${T.orange}">−${formatCents(tikCents)}</td>
+      <td style="padding:8px 0;border-bottom:1px solid ${T.rule};text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${T.orange}">−${formatCents(tikCents)}</td>
     </tr>`)
 
     rows.push(`<tr>
-      <td style="padding:10px 0;border-bottom:2px solid ${T.rule};font-size:13px;font-weight:600;color:${T.dark}">Cash project total</td>
-      <td style="padding:10px 0;border-bottom:2px solid ${T.rule};text-align:right;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:${T.dark}">${formatCents(cashOneTime)}</td>
+      <td style="padding:8px 0;border-bottom:2px solid ${T.rule};font-size:13px;font-weight:600;color:${T.dark}">Cash project total</td>
+      <td style="padding:8px 0;border-bottom:2px solid ${T.rule};text-align:right;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:${T.dark}">${formatCents(cashOneTime)}</td>
     </tr>`)
   }
 
   if (hasCash) {
     rows.push(`<tr>
-      <td style="padding:10px 0;border-bottom:1px solid ${T.rule};font-size:13px;color:${T.slate}">Deposit (${depositPct}%)</td>
-      <td style="padding:10px 0;border-bottom:1px solid ${T.rule};text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${T.dark}">${formatCents(depositCents)}</td>
+      <td style="padding:8px 0;border-bottom:1px solid ${T.rule};font-size:13px;color:${T.slate}">Deposit (${depositPct}%)</td>
+      <td style="padding:8px 0;border-bottom:1px solid ${T.rule};text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${T.dark}">${formatCents(depositCents)}</td>
     </tr>`)
     rows.push(`<tr>
-      <td style="padding:12px 0 0;font-size:14px;font-weight:700;color:${T.dark}">Balance on delivery</td>
-      <td style="padding:12px 0 0;text-align:right;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:${T.dark}">${formatCents(balanceCents)}</td>
+      <td style="padding:10px 0 0;font-size:14px;font-weight:700;color:${T.dark}">Balance on delivery</td>
+      <td style="padding:10px 0 0;text-align:right;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:${T.dark}">${formatCents(balanceCents)}</td>
     </tr>`)
   }
 
@@ -433,166 +439,70 @@ function investmentPage(sow: SowDocument): string {
     background:${T.bgWarm};
     display:flex;
     flex-direction:column;
-    page-break-after:always;
   ">
     <div style="height:6px;background:linear-gradient(90deg,${T.orangeDeep},${T.teal});width:100%;flex-shrink:0"></div>
 
-    <div style="padding:48px 56px;flex:1">
-      <p style="font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:${T.slateSoft};margin-bottom:10px">INVESTMENT</p>
-      <div style="font-size:60px;font-weight:700;color:${T.dark};letter-spacing:-0.03em;line-height:1;margin-bottom:4px">${bigNumber}</div>
-      ${tikCents > 0 ? `<p style="font-size:13px;color:${T.slate};margin-bottom:4px">cash project total (after ${formatCents(tikCents)} trade-in-kind credit)</p>` : ''}
-      ${hasRecurring ? `<p style="font-size:13px;color:${T.teal};margin-bottom:4px">+ recurring services as scheduled below</p>` : ''}
+    <div style="padding:40px 56px 32px;flex:1">
+      <p style="font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:${T.slateSoft};margin-bottom:8px">INVESTMENT</p>
+      <div style="font-size:52px;font-weight:700;color:${T.dark};letter-spacing:-0.03em;line-height:1;margin-bottom:4px">${bigNumber}</div>
+      ${tikCents > 0 ? `<p style="font-size:13px;color:${T.slate};margin-bottom:2px">cash project total (after ${formatCents(tikCents)} trade-in-kind credit)</p>` : ''}
+      ${hasRecurring ? `<p style="font-size:13px;color:${T.teal};margin-bottom:2px">+ recurring services as scheduled below</p>` : ''}
 
       <!-- Breakdown table (Stripe receipt style) -->
-      <div style="max-width:480px;margin-top:32px;margin-bottom:32px">
+      <div style="max-width:480px;margin-top:24px;margin-bottom:24px">
         <table style="width:100%;border-collapse:collapse;font-family:${FONT_STACK}">
           <tbody>${rows.join('')}</tbody>
         </table>
       </div>
 
-      ${hasRecurring ? `<p style="font-size:11px;color:${T.slateSoft};margin-bottom:28px">Recurring charges begin per deliverable start trigger.</p>` : ''}
-
-      <!-- Orange accent rule -->
-      <div style="width:100%;height:1px;background:${T.orangeDeep};opacity:0.3;margin-bottom:28px"></div>
+      ${hasRecurring ? `<p style="font-size:11px;color:${T.slateSoft};margin-bottom:20px">Recurring charges begin per deliverable start trigger.</p>` : ''}
 
       ${sow.payment_terms ? infoCard('PAYMENT TERMS', escNl(sow.payment_terms)) : ''}
       ${sow.guarantees ? infoCard('GUARANTEES', escNl(sow.guarantees), 'rgba(104,197,173,0.05)', T.tealDark) : ''}
       ${sow.notes ? infoCard('NOTES', escNl(sow.notes), 'rgba(242,133,0,0.06)', T.orange) : ''}
+
+      <!-- Divider before signature -->
+      <div style="width:100%;height:1px;background:${T.rule};margin:28px 0 24px"></div>
+
+      <!-- Signature block -->
+      <p style="font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:${T.slateSoft};margin-bottom:16px">AUTHORIZATION &amp; SIGNATURES</p>
+      <div style="display:flex;gap:40px;max-width:560px;margin-bottom:20px">
+        <!-- Client signature -->
+        <div style="flex:1">
+          <p style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.slateSoft};margin-bottom:6px">CLIENT</p>
+          ${isAccepted
+            ? `<p style="font-family:'Brush Script MT','Segoe Script',cursive;font-size:26px;color:${T.dark};border-bottom:1px solid ${T.slate};padding-bottom:4px;min-height:44px;line-height:1.2">${esc(sow.accepted_signature ?? '')}</p>`
+            : `<div style="border-bottom:1px solid ${T.slate};height:44px;min-width:180px"></div>`}
+          <p style="font-size:11px;color:${T.slateSoft};margin-top:5px">
+            ${isAccepted ? `Date: ${acceptedDate}` : 'Date'}
+          </p>
+        </div>
+
+        <!-- DSIG signature -->
+        <div style="flex:1">
+          <p style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.slateSoft};margin-bottom:6px">DEMAND SIGNALS</p>
+          <div style="border-bottom:1px solid ${T.slate};height:44px;min-width:180px"></div>
+          <p style="font-size:11px;color:${T.slateSoft};margin-top:5px">Date</p>
+        </div>
+      </div>
+
+      <!-- Van Gogh quote -->
+      <p style="font-style:italic;font-size:12px;color:${T.slateSoft};line-height:1.5;margin-top:4px">&ldquo;Great things are done by a series of small things brought together.&rdquo; &mdash; Vincent Van Gogh</p>
     </div>
 
+    <!-- Footer with contact info -->
     <div style="border-top:1px solid ${T.rule};padding:12px 56px;display:flex;justify-content:space-between;align-items:center">
-      <p style="font-size:11px;color:${T.slateSoft}">${esc(sow.sow_number)}</p>
-      <p style="font-size:11px;color:${T.slateSoft}">Confidential — Demand Signals</p>
+      <p style="font-size:11px;color:${T.slateSoft}">${esc(sow.sow_number)} &nbsp;|&nbsp; DemandSignals@gmail.com &nbsp;|&nbsp; (916) 542-2423 &nbsp;|&nbsp; demandsignals.co</p>
+      <p style="font-size:11px;color:${T.slateSoft};opacity:0.6">&copy; 2026 Demand Signals. Confidential.</p>
     </div>
-  </div>`
-}
-
-// ── PAGE 4 — Signature & Close ────────────────────────────────────────
-
-function closingPage(sow: SowDocument): string {
-  const isAccepted = !!sow.accepted_at && !!sow.accepted_signature
-  const acceptedDate = isAccepted
-    ? new Date(sow.accepted_at!).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-    : ''
-
-  return `
-  <div style="
-    position:relative;
-    width:100%;
-    min-height:100vh;
-    background:${T.dark};
-    background-image:radial-gradient(circle at 110% -10%, rgba(104,197,173,0.35), transparent 50%);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    padding:64px 56px;
-    -webkit-print-color-adjust:exact;
-    print-color-adjust:exact;
-    text-align:center;
-  ">
-    <!-- Decorative quote -->
-    <p style="
-      font-style:italic;
-      font-size:18px;
-      color:${T.teal};
-      max-width:540px;
-      line-height:1.6;
-      margin-bottom:10px;
-    ">&ldquo;Great things are done by a series of small things brought together.&rdquo;</p>
-    <p style="font-size:12px;color:${T.slateSoft};margin-bottom:48px">— Vincent Van Gogh</p>
-
-    <!-- CTA headline -->
-    <h2 style="
-      font-size:40px;
-      font-weight:700;
-      color:#fff;
-      letter-spacing:-0.02em;
-      line-height:1.1;
-      margin-bottom:48px;
-    ">Let&rsquo;s get to work &mdash; together</h2>
-
-    <!-- Signature block -->
-    <div style="
-      width:100%;
-      max-width:520px;
-      display:flex;
-      gap:40px;
-      margin-bottom:48px;
-    ">
-      <!-- Client signature -->
-      <div style="flex:1;text-align:left">
-        <p style="font-size:11px;color:${T.slateSoft};margin-bottom:6px">CLIENT SIGNATURE</p>
-        ${isAccepted
-          ? `<p style="font-family:'Brush Script MT','Segoe Script',cursive;font-size:28px;color:#fff;border-bottom:1px solid ${T.slateSoft};padding-bottom:4px;min-height:48px">${esc(sow.accepted_signature ?? '')}</p>`
-          : `<div style="border-bottom:1px solid ${T.slateSoft};height:48px;min-width:180px"></div>`}
-        <p style="font-size:11px;color:${T.slateSoft};margin-top:6px">
-          ${isAccepted ? `Date: ${acceptedDate}` : 'Date'}
-        </p>
-      </div>
-
-      <!-- DSIG signature -->
-      <div style="flex:1;text-align:left">
-        <p style="font-size:11px;color:${T.slateSoft};margin-bottom:6px">DEMAND SIGNALS</p>
-        <div style="border-bottom:1px solid ${T.slateSoft};height:48px;min-width:180px"></div>
-        <p style="font-size:11px;color:${T.slateSoft};margin-top:6px">Date</p>
-      </div>
-    </div>
-
-    <!-- CTA pill -->
-    <div style="margin-bottom:48px">
-      <span style="
-        display:inline-block;
-        background:${T.orangeDeep};
-        color:#fff;
-        font-size:12px;
-        font-weight:700;
-        letter-spacing:0.1em;
-        text-transform:uppercase;
-        padding:10px 24px;
-        border-radius:99px;
-      ">QUESTIONS? GET IN TOUCH &rarr;</span>
-    </div>
-
-    <!-- Contact 3-col -->
-    <div style="
-      display:flex;
-      gap:0;
-      border-top:1px solid rgba(255,255,255,0.1);
-      padding-top:32px;
-      width:100%;
-      max-width:520px;
-    ">
-      <div style="flex:1;text-align:center;padding:0 16px;border-right:1px solid rgba(255,255,255,0.1)">
-        <p style="font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:${T.slateSoft};margin-bottom:6px">EMAIL</p>
-        <p style="font-size:12px;color:#fff">DemandSignals@gmail.com</p>
-      </div>
-      <div style="flex:1;text-align:center;padding:0 16px;border-right:1px solid rgba(255,255,255,0.1)">
-        <p style="font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:${T.slateSoft};margin-bottom:6px">PHONE</p>
-        <p style="font-size:12px;color:#fff">(916) 542-2423</p>
-      </div>
-      <div style="flex:1;text-align:center;padding:0 16px">
-        <p style="font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:${T.slateSoft};margin-bottom:6px">WEB</p>
-        <p style="font-size:12px;color:#fff">demandsignals.co</p>
-      </div>
-    </div>
-
-    <!-- Footer -->
-    <p style="
-      position:absolute;
-      bottom:24px;
-      font-size:11px;
-      color:${T.slateSoft};
-      opacity:0.6;
-    ">&copy; 2026 Demand Signals. Confidential.</p>
   </div>`
 }
 
 // ── Main export ───────────────────────────────────────────────────────
 
 /**
- * Render a premium 4-page SOW PDF and return the raw Buffer.
- * Replaces the old Python dsig-pdf-service path.
+ * Render a 3-page SOW PDF and return the raw Buffer.
+ * Pages: Cover / Scope+Phases / Investment+Signature
  */
 export async function renderSowPdf(
   sow: SowDocument,
@@ -602,8 +512,7 @@ export async function renderSowPdf(
     `SOW — ${sow.sow_number} — ${prospect.business_name}`,
     coverPage(sow, prospect)
     + scopePage(sow)
-    + investmentPage(sow)
-    + closingPage(sow),
+    + investmentPage(sow),
   )
 
   return htmlToPdfBuffer(html, { format: 'Legal', printBackground: true })
