@@ -3,7 +3,7 @@
 import { useEffect, useState, use, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Loader2, ExternalLink, Flag, CreditCard, ScrollText, ArrowRight } from 'lucide-react'
+import { Loader2, ExternalLink, Flag, CreditCard, ScrollText, ArrowRight, Trash2 } from 'lucide-react'
 import RetainerPanel from '@/components/admin/RetainerPanel'
 
 interface QuoteDetail {
@@ -113,6 +113,7 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
   const [error, setError] = useState<string | null>(null)
   const [linkedSow, setLinkedSow] = useState<{ id: string; sow_number: string } | null | undefined>(undefined)
   const [continueLoading, setContinueLoading] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   const refetchQuote = useCallback(async () => {
     try {
@@ -137,6 +138,29 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
       setLinkedSow(linked)
     } catch {
       setLinkedSow(null)
+    }
+  }
+
+  async function handleDeleteQuote() {
+    if (
+      !confirm(
+        'Delete this quote session? This also removes all its messages and events. The linked SOW (if any) is NOT deleted.',
+      )
+    )
+      return
+    setDeleteLoading(true)
+    try {
+      const res = await fetch(`/api/admin/quotes/${id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(data.error ?? 'Delete failed')
+        return
+      }
+      router.push('/admin/quotes')
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Delete failed')
+    } finally {
+      setDeleteLoading(false)
     }
   }
 
@@ -268,6 +292,19 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
           {detail.prospect && session.phone_verified && session.email && (
             <CourtesyDropdown sessionId={session.id} />
           )}
+          <button
+            onClick={handleDeleteQuote}
+            disabled={deleteLoading}
+            className="inline-flex items-center gap-1 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-md text-sm disabled:opacity-60 transition-colors"
+            title="Delete this quote session"
+          >
+            {deleteLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Trash2 className="w-4 h-4" />
+            )}
+            Delete
+          </button>
         </div>
       </div>
 

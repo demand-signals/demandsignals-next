@@ -4,6 +4,33 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 
 interface Params { params: Promise<{ id: string }> }
 
+export async function DELETE(request: NextRequest, { params }: Params) {
+  const auth = await requireAdmin(request)
+  if ('error' in auth) return auth.error
+
+  const { id } = await params
+
+  // Explicit cleanup of child rows (CASCADE may not be set on all FKs)
+  await supabaseAdmin.from('quote_messages').delete().eq('session_id', id)
+  await supabaseAdmin.from('quote_events').delete().eq('session_id', id)
+
+  // Null-out quote_session_id on any linked SOW (FK should be ON DELETE SET NULL,
+  // but belt-and-suspenders in case migration hasn't run yet)
+  await supabaseAdmin
+    .from('sow_documents')
+    .update({ quote_session_id: null })
+    .eq('quote_session_id', id)
+
+  const { error } = await supabaseAdmin
+    .from('quote_sessions')
+    .delete()
+    .eq('id', id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ ok: true })
+}
+
 export async function GET(request: NextRequest, { params }: Params) {
   const auth = await requireAdmin(request)
   if ('error' in auth) return auth.error
