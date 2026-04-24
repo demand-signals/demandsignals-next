@@ -491,34 +491,6 @@ export default function ProspectDetailPage() {
               <InfoRow icon={Phone} label="Business Phone" value={prospect.business_phone} />
               <InfoRow icon={Mail} label="Business Email" value={prospect.business_email} />
               <InfoRow icon={MapPin} label="Address" value={addressLine || null} />
-              {prospect.website_url && (
-                <div className="flex items-start gap-2 text-sm">
-                  <Globe className="w-4 h-4 text-slate-300 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <span className="text-slate-400 text-xs block">Website</span>
-                    <a
-                      href={prospect.website_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[var(--teal-dark)] hover:underline break-all"
-                    >
-                      {prospect.website_url}
-                    </a>
-                  </div>
-                </div>
-              )}
-              {prospect.google_rating != null && (
-                <div className="flex items-start gap-2 text-sm">
-                  <Star className="w-4 h-4 text-slate-300 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <span className="text-slate-400 text-xs block">Google Rating</span>
-                    <span className="text-slate-700">
-                      {prospect.google_rating}★{' '}
-                      <span className="text-slate-400 text-xs">({prospect.google_review_count ?? 0} reviews)</span>
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
           </Card>
 
