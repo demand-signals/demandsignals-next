@@ -1,12 +1,15 @@
 // ── GET /api/admin/invoices/[id]/pdf — admin signed-URL redirect ────
 // Fast path: if pdf_storage_path exists, redirect to signed R2 URL.
-// Draft path: render on-demand (no upload, no persistence) for preview.
+// Draft path: render on-demand via headless Chromium (no upload, no persistence).
+
+export const runtime = 'nodejs'
+export const maxDuration = 30
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { getPrivateSignedUrl } from '@/lib/r2-storage'
-import { renderInvoicePdf } from '@/lib/invoice-pdf/render'
+import { renderInvoicePdf } from '@/lib/pdf/invoice'
 import type { InvoiceWithLineItems } from '@/lib/invoice-types'
 
 export async function GET(

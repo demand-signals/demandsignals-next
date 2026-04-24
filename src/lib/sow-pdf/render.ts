@@ -1,4 +1,8 @@
 // ── HTTP client for dsig-pdf-service: SOW renderer ─────────────────
+// @deprecated Use src/lib/pdf/sow.ts (renderSowPdf) instead.
+// This file POSTs to the external Python PDF service (PDF_SERVICE_URL).
+// The new path uses headless Chromium in-process — no external service needed.
+// This file is kept for reference and will be deleted in a future cleanup commit.
 
 import type { SowDocument } from '../invoice-types'
 import { sowToRenderPayload } from './payload'

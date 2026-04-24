@@ -1,10 +1,13 @@
 // ── POST /api/admin/sow/[id]/send ───────────────────────────────────
-// Draft → sent. Renders SOW PDF via dsig-pdf-service, uploads to R2.
+// Draft → sent. Renders SOW PDF via headless Chromium, uploads to R2.
+
+export const runtime = 'nodejs'
+export const maxDuration = 30
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { renderSowPdf } from '@/lib/sow-pdf/render'
+import { renderSowPdf } from '@/lib/pdf/sow'
 import { uploadPrivate, deletePrivate } from '@/lib/r2-storage'
 import type { SowDocument } from '@/lib/invoice-types'
 
@@ -32,8 +35,8 @@ export async function POST(
   try {
     pdfBuffer = await renderSowPdf(sow as SowDocument, {
       business_name: sow.prospect?.business_name ?? 'Client',
-      contact_name: null,
-      email: sow.prospect?.owner_email ?? null,
+      owner_name: null,
+      owner_email: sow.prospect?.owner_email ?? null,
     })
   } catch (e) {
     return NextResponse.json(

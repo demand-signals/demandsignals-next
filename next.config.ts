@@ -2,6 +2,8 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   trailingSlash: false,
+  // Prevent Next.js from bundling Chromium/Puppeteer — they must load as-is
+  serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core', 'puppeteer'],
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'demandsignals.us' },

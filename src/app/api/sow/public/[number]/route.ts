@@ -17,7 +17,9 @@ export async function GET(
     .from('sow_documents')
     .select(`
       id, sow_number, public_uuid, status, title, scope_summary,
-      deliverables, timeline, pricing, payment_terms, guarantees, notes,
+      phases, deliverables, timeline, pricing,
+      trade_credit_cents, trade_credit_description,
+      payment_terms, guarantees, notes,
       sent_at, viewed_at, accepted_at, accepted_signature, declined_at, decline_reason,
       voided_at, void_reason,
       prospect:prospects(business_name, owner_email)

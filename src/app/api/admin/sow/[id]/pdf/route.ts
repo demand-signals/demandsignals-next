@@ -1,12 +1,15 @@
 // ── GET /api/admin/sow/[id]/pdf ─────────────────────────────────────
 // Fast path: if pdf_storage_path exists, redirect to signed R2 URL.
-// Draft path: render on-demand (no upload, no persistence) for preview.
+// Draft path: render on-demand via headless Chromium (no upload, no persistence).
+
+export const runtime = 'nodejs'
+export const maxDuration = 30
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { getPrivateSignedUrl } from '@/lib/r2-storage'
-import { renderSowPdf } from '@/lib/sow-pdf/render'
+import { renderSowPdf } from '@/lib/pdf/sow'
 import type { SowDocument } from '@/lib/invoice-types'
 
 export async function GET(
@@ -36,8 +39,8 @@ export async function GET(
   try {
     const pdfBuffer = await renderSowPdf(sow as SowDocument, {
       business_name: p.business_name ?? 'Unknown',
-      contact_name: p.owner_name ?? null,
-      email: p.owner_email ?? p.business_email ?? null,
+      owner_name: p.owner_name ?? null,
+      owner_email: p.owner_email ?? p.business_email ?? null,
     })
     return new Response(new Uint8Array(pdfBuffer), {
       headers: {
