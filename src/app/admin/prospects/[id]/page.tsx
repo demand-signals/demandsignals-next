@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Share2, Copy, Check, Download, Pencil, Trash2, Search, Loader2, Tag } from 'lucide-react'
+import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Share2, Copy, Check, Download, Pencil, Trash2, Search, Loader2, Tag, CircleAlert } from 'lucide-react'
 import Link from 'next/link'
 import { ProspectScoreBadge, TierBadge } from '@/components/admin/prospect-score-badge'
-import { suggestClientCode } from '@/lib/doc-numbering'
+// suggestClientCode removed — now using the server-side suggest endpoint
 import { ProspectEditModal } from '@/components/admin/prospect-edit-modal'
 import { ActivityTimeline } from '@/components/admin/activity-timeline'
 import { ProspectMap } from '@/components/admin/prospect-map'
@@ -144,6 +144,15 @@ export default function ProspectDetailPage() {
   const [clientCodeSaving, setClientCodeSaving] = useState(false)
   const [clientCodeError, setClientCodeError] = useState<string | null>(null)
   const [clientCodeSaved, setClientCodeSaved] = useState(false)
+  const [clientCodeSuggesting, setClientCodeSuggesting] = useState(false)
+
+  // Availability check state
+  type AvailStatus = 'idle' | 'checking' | 'available' | 'taken' | 'format_error'
+  const [codeAvail, setCodeAvail] = useState<{
+    status: AvailStatus
+    takenBy?: { id: string; business_name: string }
+  }>({ status: 'idle' })
+  const availDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const addActivityMutation = useMutation({
     mutationFn: async () => {
@@ -176,16 +185,51 @@ export default function ProspectDetailPage() {
     if (prospect) setClientCodeInput((prospect as any).client_code ?? '')
   }, [prospect?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Debounced availability check whenever the input changes while editing
+  useEffect(() => {
+    if (!clientCodeEditing) return
+    if (availDebounceRef.current) clearTimeout(availDebounceRef.current)
+
+    const code = clientCodeInput.toUpperCase().trim()
+    if (code.length === 0) {
+      setCodeAvail({ status: 'idle' })
+      return
+    }
+    if (code.length < 4 || !/^[A-Z]{4}$/.test(code)) {
+      setCodeAvail({ status: 'format_error' })
+      return
+    }
+
+    setCodeAvail({ status: 'checking' })
+    availDebounceRef.current = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ code })
+        if (id) params.set('except_id', id)
+        const res = await fetch(`/api/admin/prospects/client-code-available?${params}`)
+        const json = await res.json()
+        if (json.available) {
+          setCodeAvail({ status: 'available' })
+        } else if (json.error) {
+          setCodeAvail({ status: 'format_error' })
+        } else {
+          setCodeAvail({ status: 'taken', takenBy: json.taken_by })
+        }
+      } catch {
+        setCodeAvail({ status: 'idle' })
+      }
+    }, 500)
+  }, [clientCodeInput, clientCodeEditing, id]) // eslint-disable-line react-hooks/exhaustive-deps
+
   async function saveClientCode() {
     if (!prospect) return
     setClientCodeSaving(true)
     setClientCodeError(null)
     const code = clientCodeInput.toUpperCase().trim().slice(0, 4)
     try {
-      const res = await fetch('/api/admin/prospects', {
+      const res = await fetch(`/api/admin/prospects/${prospect.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: prospect.id, client_code: code || null }),
+        body: JSON.stringify({ client_code: code || null }),
       })
       if (!res.ok) {
         const err = await res.json()
@@ -193,6 +237,7 @@ export default function ProspectDetailPage() {
       }
       setClientCodeEditing(false)
       setClientCodeSaved(true)
+      setCodeAvail({ status: 'idle' })
       setTimeout(() => setClientCodeSaved(false), 2500)
       queryClient.invalidateQueries({ queryKey: ['prospects-all'] })
     } catch (e) {
@@ -811,28 +856,102 @@ export default function ProspectDetailPage() {
                 Required before issuing SOWs, invoices, or receipts.
               </p>
               {clientCodeEditing ? (
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="text"
-                    value={clientCodeInput}
-                    onChange={e => setClientCodeInput(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4))}
-                    placeholder="HANG"
-                    maxLength={4}
-                    className="flex-1 border border-slate-300 rounded px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[var(--teal)] uppercase tracking-widest"
-                  />
-                  <button
-                    onClick={saveClientCode}
-                    disabled={clientCodeSaving}
-                    className="px-2.5 py-1.5 bg-[var(--teal)] text-white text-xs font-semibold rounded hover:bg-[var(--teal-dark)] disabled:opacity-50"
-                  >
-                    {clientCodeSaving ? '…' : 'Save'}
-                  </button>
-                  <button
-                    onClick={() => { setClientCodeEditing(false); setClientCodeError(null) }}
-                    className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-800 rounded border border-slate-200"
-                  >
-                    Cancel
-                  </button>
+                <div className="space-y-1.5">
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      value={clientCodeInput}
+                      onChange={e => setClientCodeInput(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4))}
+                      placeholder="HANG"
+                      maxLength={4}
+                      className={cn(
+                        'flex-1 border rounded px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-1 uppercase tracking-widest',
+                        codeAvail.status === 'taken' || codeAvail.status === 'format_error'
+                          ? 'border-red-300 focus:ring-red-400'
+                          : codeAvail.status === 'available'
+                          ? 'border-green-400 focus:ring-green-400'
+                          : 'border-slate-300 focus:ring-[var(--teal)]',
+                      )}
+                    />
+                    <button
+                      onClick={saveClientCode}
+                      disabled={
+                        clientCodeSaving ||
+                        codeAvail.status === 'taken' ||
+                        codeAvail.status === 'format_error' ||
+                        codeAvail.status === 'checking'
+                      }
+                      className="px-2.5 py-1.5 bg-[var(--teal)] text-white text-xs font-semibold rounded hover:bg-[var(--teal-dark)] disabled:opacity-40"
+                    >
+                      {clientCodeSaving ? '…' : 'Save'}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        setClientCodeSuggesting(true)
+                        setClientCodeError(null)
+                        try {
+                          const res = await fetch(`/api/admin/prospects/${id}/suggest-client-code`)
+                          const json = await res.json()
+                          if (json.code) setClientCodeInput(json.code)
+                        } catch {
+                          // ignore — leave current input unchanged
+                        } finally {
+                          setClientCodeSuggesting(false)
+                        }
+                      }}
+                      disabled={clientCodeSuggesting}
+                      className="text-xs text-[var(--teal)] hover:text-[var(--teal-dark)] flex items-center gap-1 disabled:opacity-50"
+                      title="Auto-suggest an available code"
+                    >
+                      {clientCodeSuggesting ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Tag className="w-3 h-3" />
+                      )}
+                      Suggest
+                    </button>
+                    <button
+                      onClick={() => {
+                        setClientCodeEditing(false)
+                        setClientCodeError(null)
+                        setCodeAvail({ status: 'idle' })
+                      }}
+                      className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-800 rounded border border-slate-200"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  {/* Availability indicator */}
+                  {codeAvail.status === 'checking' && (
+                    <p className="text-xs text-slate-400 flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Checking…
+                    </p>
+                  )}
+                  {codeAvail.status === 'available' && (
+                    <p className="text-xs text-green-600 flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" /> Available
+                    </p>
+                  )}
+                  {codeAvail.status === 'taken' && codeAvail.takenBy && (
+                    <p className="text-xs text-red-600 flex items-center gap-1">
+                      <CircleAlert className="w-3 h-3 flex-shrink-0" />
+                      Taken by{' '}
+                      <a
+                        href={`/admin/prospects/${codeAvail.takenBy.id}`}
+                        className="underline hover:text-red-800"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {codeAvail.takenBy.business_name}
+                      </a>
+                    </p>
+                  )}
+                  {codeAvail.status === 'format_error' && clientCodeInput.length > 0 && (
+                    <p className="text-xs text-red-500 flex items-center gap-1">
+                      <CircleAlert className="w-3 h-3" /> Must be 4 letters A-Z
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
@@ -854,14 +973,29 @@ export default function ProspectDetailPage() {
                   </button>
                   {!((prospect as any).client_code) && (
                     <button
-                      onClick={() => {
-                        setClientCodeInput(suggestClientCode(prospect.business_name))
+                      onClick={async () => {
+                        setClientCodeSuggesting(true)
                         setClientCodeEditing(true)
+                        setClientCodeSaved(false)
+                        try {
+                          const res = await fetch(`/api/admin/prospects/${id}/suggest-client-code`)
+                          const json = await res.json()
+                          if (json.code) setClientCodeInput(json.code)
+                        } catch {
+                          // leave input blank — admin can type manually
+                        } finally {
+                          setClientCodeSuggesting(false)
+                        }
                       }}
-                      className="text-xs text-[var(--teal)] hover:text-[var(--teal-dark)] flex items-center gap-1"
-                      title="Auto-suggest code from business name"
+                      disabled={clientCodeSuggesting}
+                      className="text-xs text-[var(--teal)] hover:text-[var(--teal-dark)] flex items-center gap-1 disabled:opacity-50"
+                      title="Auto-suggest an available code"
                     >
-                      <Tag className="w-3 h-3" />
+                      {clientCodeSuggesting ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Tag className="w-3 h-3" />
+                      )}
                       Suggest
                     </button>
                   )}

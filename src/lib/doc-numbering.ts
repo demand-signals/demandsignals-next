@@ -85,6 +85,55 @@ export function suggestClientCode(businessName: string): string {
 }
 
 /**
+ * Like suggestClientCode but checks the DB for collisions and resolves them
+ * deterministically. If the base code is taken, tries base[0..2] + A/B/C/… (last
+ * char varies), then base[0..1] + A/B/C/… + base[3] (third char varies).
+ *
+ * Pass exceptProspectId to skip that prospect's own existing code (edit case).
+ */
+export async function suggestAvailableClientCode(
+  businessName: string,
+  exceptProspectId?: string,
+): Promise<string> {
+  const base = suggestClientCode(businessName)
+
+  // Fetch all existing client_codes (at most a few hundred — tiny result set)
+  const { data } = await supabaseAdmin
+    .from('prospects')
+    .select('client_code, id')
+    .not('client_code', 'is', null)
+
+  const taken = new Set(
+    (data ?? [])
+      .filter((r: { id: string; client_code: string }) => r.id !== exceptProspectId)
+      .map((r: { id: string; client_code: string }) => r.client_code as string),
+  )
+
+  if (!taken.has(base)) return base
+
+  // First pass: replace last char with A..Z
+  const prefix3 = base.substring(0, 3)
+  for (let i = 0; i < 26; i++) {
+    const candidate = prefix3 + String.fromCharCode(65 + i)
+    if (candidate !== base && !taken.has(candidate)) return candidate
+  }
+
+  // Second pass: replace 3rd char A..Z, keep last char from base
+  const prefix2 = base.substring(0, 2)
+  const lastChar = base.substring(3, 4)
+  for (let i = 0; i < 26; i++) {
+    const candidate = prefix2 + String.fromCharCode(65 + i) + lastChar
+    if (candidate !== base && !taken.has(candidate)) return candidate
+  }
+
+  // Extreme fallback: 2 random chars after prefix2 (shouldn't happen at realistic scale)
+  const rand = Array.from({ length: 2 }, () =>
+    String.fromCharCode(65 + Math.floor(Math.random() * 26)),
+  ).join('')
+  return prefix2 + rand
+}
+
+/**
  * Allocates a new document number via the allocate_document_number() RPC.
  * Atomic, race-safe (DB takes a row-level lock on the (type, client, date) triple).
  *
