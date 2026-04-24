@@ -26,7 +26,7 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
   const { id } = await ctx.params
   let parsed
   try { parsed = patchSchema.parse(await request.json()) } catch (e) {
-    const msg = e instanceof z.ZodError ? e.errors[0]?.message : 'invalid body'
+    const msg = e instanceof z.ZodError ? e.issues[0]?.message : 'invalid body'
     return NextResponse.json({ error: msg ?? 'invalid body' }, { status: 400 })
   }
   // strip undefined (keep nulls — null means explicit clear)
