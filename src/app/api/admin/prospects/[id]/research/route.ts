@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { getAnthropicClient, logAgentActivity } from '@/lib/agent-utils'
 import { calculateProspectScore } from '@/lib/scoring'
+import { normalizeReviewChannel, normalizeSimpleChannel, isReviewChannel } from '@/lib/prospect-channels'
 
 export async function POST(
   request: NextRequest,
@@ -85,20 +86,22 @@ CRITICAL: You MUST use the web_search tool to look up real information about thi
 5. Search for their social media profiles (Facebook, Instagram, LinkedIn, etc.)
 6. Search for industry-specific review platforms (${prospect.industry === 'dental' || prospect.industry === 'medical' ? 'Healthgrades, Zocdoc, Vitals' : prospect.industry === 'legal' ? 'Avvo, Martindale-Hubbell' : prospect.industry === 'contractor' || prospect.industry === 'hvac' || prospect.industry === 'plumbing' ? 'HomeAdvisor, Angi, BBB, Houzz' : 'BBB, industry directories'})
 7. Search for competitors in their area
-8. For each platform below, search for this business's direct profile URL and include it in the "channels" object (set to null if not found):
-   - Google Business / Google Maps listing
-   - Yelp business profile
-   - Facebook page
-   - Instagram profile
-   - LinkedIn company page
-   - TikTok profile
-   - YouTube channel
-   - Twitter/X profile
-   - Pinterest profile
-   - BBB (Better Business Bureau) listing
-   - Angi profile
-   - Trustpilot review page
-   - Nextdoor business page
+8. For each platform below, search for this business's direct profile URL and include it in the "channels" object:
+   Simple channels (return string URL or null):
+   - website: official site URL
+   - linkedin: LinkedIn company page
+   - tiktok: TikTok profile
+   - youtube: YouTube channel
+   - instagram: Instagram profile
+   - twitter_x: Twitter/X profile
+   - pinterest: Pinterest profile
+
+   Review-capable channels (return an object or null):
+   - google_business, yelp, facebook, trustpilot, bbb, angi, nextdoor
+   For each review channel, return: { "url": string|null, "rating": number|null, "review_count": integer|null }
+   If you find the profile but cannot confirm current rating/count, return url with rating and review_count as null.
+   If the business has no presence on a platform, return null for the entire key.
+
    If you find any OTHER directories or profiles (chamber of commerce, industry-specific directories, forum presence), include them in the channels.other array as [{label, url}].
 
 After completing your research, provide your findings.
@@ -180,19 +183,19 @@ Return ONLY a JSON object (no markdown, no explanation) with these fields:
 
   "channels": {
     "website": "string or null — official site URL",
-    "google_business": "string or null — Google Maps / GBP listing URL",
-    "yelp": "string or null — Yelp business profile URL",
-    "facebook": "string or null — Facebook page URL",
-    "instagram": "string or null — Instagram profile URL",
     "linkedin": "string or null — LinkedIn company page URL",
     "tiktok": "string or null — TikTok profile URL",
     "youtube": "string or null — YouTube channel URL",
+    "instagram": "string or null — Instagram profile URL",
     "twitter_x": "string or null — Twitter/X profile URL",
     "pinterest": "string or null — Pinterest profile URL",
-    "bbb": "string or null — Better Business Bureau listing URL",
-    "angi": "string or null — Angi (formerly Angie's List) profile URL",
-    "trustpilot": "string or null — Trustpilot review page URL",
-    "nextdoor": "string or null — Nextdoor business page URL",
+    "google_business": {"url": "string or null", "rating": "number or null", "review_count": "integer or null"},
+    "yelp": {"url": "string or null", "rating": "number or null", "review_count": "integer or null"},
+    "facebook": {"url": "string or null", "rating": "number or null", "review_count": "integer or null"},
+    "trustpilot": {"url": "string or null", "rating": "number or null", "review_count": "integer or null"},
+    "bbb": {"url": "string or null", "rating": "number or null", "review_count": "integer or null"},
+    "angi": {"url": "string or null", "rating": "number or null", "review_count": "integer or null"},
+    "nextdoor": {"url": "string or null", "rating": "number or null", "review_count": "integer or null"},
     "other": [{"label": "string — directory/platform name", "url": "string — full URL"}]
   }
 }
@@ -254,28 +257,58 @@ IMPORTANT REMINDERS:
     rd.deep_dive_at = new Date().toISOString()
     rd.deep_dive_by = auth.admin.id
 
-    // Parse channels from research response (additive — preserve existing channel values)
+    // Parse channels from research response (admin edits win; Claude fills what's missing)
+    const now = new Date().toISOString()
     let channelsUpdate: Record<string, any> | undefined
     if (research.channels && typeof research.channels === 'object') {
       try {
         const existingChannels: Record<string, any> = (prospect as any).channels || {}
         const newChannels: Record<string, any> = { ...existingChannels }
-        const knownKeys = [
-          'website', 'google_business', 'yelp', 'facebook', 'instagram',
-          'linkedin', 'tiktok', 'youtube', 'twitter_x', 'pinterest',
-          'bbb', 'angi', 'trustpilot', 'nextdoor',
-        ]
-        for (const key of knownKeys) {
-          if (research.channels[key] && !existingChannels[key]) {
-            newChannels[key] = research.channels[key]
+
+        const simpleKeys = ['website', 'linkedin', 'tiktok', 'youtube', 'instagram', 'twitter_x', 'pinterest']
+        const reviewKeys = ['google_business', 'yelp', 'facebook', 'trustpilot', 'bbb', 'angi', 'nextdoor']
+
+        // Simple channels: only fill when admin hasn't set a value
+        for (const key of simpleKeys) {
+          const claudeVal = normalizeSimpleChannel(research.channels[key])
+          if (claudeVal && !existingChannels[key]) {
+            newChannels[key] = claudeVal
           }
         }
+
+        // Review channels: merge per-field; admin-set fields win, Claude fills nulls
+        for (const key of reviewKeys) {
+          if (!isReviewChannel(key)) continue
+          const claudeRaw = research.channels[key]
+          if (!claudeRaw) continue // Claude found nothing — don't touch admin's entry
+
+          const claudeEntry = normalizeReviewChannel(claudeRaw)
+          const existingEntry = existingChannels[key]
+            ? normalizeReviewChannel(existingChannels[key])
+            : { url: null, rating: null, review_count: null, last_synced_at: null }
+
+          // Admin value wins per field, Claude fills nulls
+          const mergedEntry = {
+            url: existingEntry.url ?? claudeEntry.url,
+            rating: existingEntry.rating !== null ? existingEntry.rating : claudeEntry.rating,
+            review_count: existingEntry.review_count !== null ? existingEntry.review_count : claudeEntry.review_count,
+            last_synced_at: now,
+          }
+
+          // Only write if Claude brought something new
+          const hasNewData = claudeEntry.url || claudeEntry.rating !== null || claudeEntry.review_count !== null
+          if (hasNewData) {
+            newChannels[key] = mergedEntry
+          }
+        }
+
         // Merge other[] — append new entries not already present
         const existingOther: Array<{ label: string; url: string }> = existingChannels.other || []
         const newOther: Array<{ label: string; url: string }> = research.channels.other || []
         const existingUrls = new Set(existingOther.map((o: any) => o.url))
-        const merged = [...existingOther, ...newOther.filter((o: any) => o?.url && !existingUrls.has(o.url))]
-        if (merged.length > 0) newChannels.other = merged
+        const mergedOther = [...existingOther, ...newOther.filter((o: any) => o?.url && !existingUrls.has(o.url))]
+        if (mergedOther.length > 0) newChannels.other = mergedOther
+
         channelsUpdate = newChannels
       } catch {
         // channels parse failed — skip, don't break research flow
