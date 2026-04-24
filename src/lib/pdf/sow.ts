@@ -138,8 +138,8 @@ function coverPage(sow: SowDocument, prospect: SowProspect): string {
 
     <!-- CENTER ZONE: Title block — vertically centered in the remaining space above the meta band -->
     <div style="flex:1;min-height:0;position:relative;z-index:1;display:flex;flex-direction:column;justify-content:center;padding:0 56px">
-      <!-- Eyebrow: STATEMENT OF WORK -->
-      ${eyebrow('S T A T E M E N T   O F   W O R K', T.GRAY)}
+      <!-- Eyebrow: Statement of Work -->
+      ${eyebrow('Statement of Work', T.ORANGE_S)}
 
       <!-- Title block: alternating white + teal lines -->
       <h1 style="
@@ -295,11 +295,11 @@ function scopePage(sow: SowDocument): string {
     page-break-after:always;
     font-family:${FONT_STACK};
   ">
-    ${interiorPageHeader('01 — SCOPE')}
+    ${interiorPageHeader('01 — Scope')}
 
     <div style="padding:32px 54px;flex:1">
       <!-- Section eyebrow + H1 + ODiv -->
-      ${eyebrow('S C O P E')}
+      ${eyebrow('Scope')}
       <h1 style="
         font-size:24px;
         font-weight:700;
@@ -314,7 +314,7 @@ function scopePage(sow: SowDocument): string {
       ${sow.scope_summary ? `<p style="font-size:13px;color:${T.BODY};line-height:1.7;margin-bottom:28px;max-width:540px">${escNl(sow.scope_summary)}</p>` : ''}
 
       <!-- Phases eyebrow -->
-      ${eyebrow('P H A S E S   &amp;   D E L I V E R A B L E S')}
+      ${eyebrow('Phases &amp; Deliverables')}
 
       ${phasesHtml}
     </div>
@@ -338,7 +338,7 @@ function infoCard(
     padding:16px 20px;
     margin-bottom:14px;
   ">
-    <p style="font-size:9px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:${borderColor};margin-bottom:8px;font-family:${FONT_STACK}">${title}</p>
+    <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${borderColor};margin-bottom:8px;font-family:${FONT_STACK}">${title}</p>
     <div style="font-size:12px;color:${T.BODY};line-height:1.6;font-family:${FONT_STACK}">${body}</div>
   </div>`
 }
@@ -421,11 +421,11 @@ function investmentPage(sow: SowDocument): string {
     flex-direction:column;
     font-family:${FONT_STACK};
   ">
-    ${interiorPageHeader('02 — INVESTMENT')}
+    ${interiorPageHeader('02 — Investment')}
 
     <div style="padding:28px 54px 24px;flex:1">
       <!-- Section eyebrow + big number + ODiv -->
-      ${eyebrow('I N V E S T M E N T')}
+      ${eyebrow('Investment')}
       <div style="
         font-size:48px;
         font-weight:700;
@@ -456,12 +456,12 @@ function investmentPage(sow: SowDocument): string {
       <!-- Signature block — lives on this page per spec -->
       <div style="width:100%;height:0.5pt;background:${T.RULE};margin:24px 0 20px"></div>
 
-      ${eyebrow('A U T H O R I Z A T I O N   &amp;   S I G N A T U R E S')}
+      ${eyebrow('Authorization &amp; Signatures')}
 
       <div style="display:flex;gap:36px;max-width:520px;margin-bottom:16px">
         <!-- Client -->
         <div style="flex:1">
-          <p style="font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px;font-family:${FONT_STACK}">CLIENT</p>
+          <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px;font-family:${FONT_STACK}">CLIENT</p>
           ${isAccepted
             ? `<p style="font-family:'Brush Script MT','Segoe Script',cursive;font-size:24px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:4px;min-height:40px;line-height:1.2">${esc(sow.accepted_signature ?? '')}</p>`
             : `<div style="border-bottom:1px solid ${T.RULE};height:40px;min-width:160px"></div>`}
@@ -471,7 +471,7 @@ function investmentPage(sow: SowDocument): string {
         </div>
         <!-- DSIG -->
         <div style="flex:1">
-          <p style="font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px;font-family:${FONT_STACK}">DEMAND SIGNALS</p>
+          <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px;font-family:${FONT_STACK}">DEMAND SIGNALS</p>
           <div style="border-bottom:1px solid ${T.RULE};height:40px;min-width:160px"></div>
           <p style="font-size:10px;color:${T.GRAY};margin-top:4px;font-family:${FONT_STACK}">Date</p>
         </div>
@@ -585,15 +585,15 @@ function backCoverPage(prospect: SowProspect, issueDate: string): string {
       <!-- Contact grid: 3 columns -->
       <div style="display:flex;justify-content:center;gap:0;margin:0 auto 16px;max-width:460px;width:100%">
         <div style="flex:1;padding:0 18px;border-right:1px solid rgba(255,255,255,0.12)">
-          <p style="font-size:8px;font-weight:400;letter-spacing:0.2em;word-spacing:0.6em;text-transform:uppercase;color:${T.GRAY};margin-bottom:5px">EMAIL</p>
+          <p style="font-size:8px;font-weight:400;letter-spacing:0.1em;word-spacing:normal;text-transform:uppercase;color:${T.GRAY};margin-bottom:5px">EMAIL</p>
           <p style="font-size:10px;font-weight:700;color:${T.WHITE}">DemandSignals@gmail.com</p>
         </div>
         <div style="flex:1;padding:0 18px;border-right:1px solid rgba(255,255,255,0.12)">
-          <p style="font-size:8px;font-weight:400;letter-spacing:0.2em;word-spacing:0.6em;text-transform:uppercase;color:${T.GRAY};margin-bottom:5px">PHONE</p>
+          <p style="font-size:8px;font-weight:400;letter-spacing:0.1em;word-spacing:normal;text-transform:uppercase;color:${T.GRAY};margin-bottom:5px">PHONE</p>
           <p style="font-size:10px;font-weight:700;color:${T.WHITE}">(916) 542-2423</p>
         </div>
         <div style="flex:1;padding:0 18px">
-          <p style="font-size:8px;font-weight:400;letter-spacing:0.2em;word-spacing:0.6em;text-transform:uppercase;color:${T.GRAY};margin-bottom:5px">WEB</p>
+          <p style="font-size:8px;font-weight:400;letter-spacing:0.1em;word-spacing:normal;text-transform:uppercase;color:${T.GRAY};margin-bottom:5px">WEB</p>
           <p style="font-size:10px;font-weight:700;color:${T.WHITE}">DemandSignals.co</p>
         </div>
       </div>

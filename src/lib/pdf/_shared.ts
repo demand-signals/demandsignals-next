@@ -99,19 +99,18 @@ export function decorativeCircles(): string {
 }
 
 /**
- * Eyebrow label: spaced caps in TEAL (or custom color).
- * 8pt (~11px), letter-spacing 0.2em + word-spacing 0.8em, uppercase.
- * Tight character spacing keeps words readable; wider word gap creates clear word boundaries.
+ * Eyebrow label: sentence-case in ORANGE_S (or custom color).
+ * 12px semibold, normal letter/word spacing, no uppercase transform.
  * NOTE: text is embedded raw (no esc()) — callers must pass literal/safe strings.
  * This avoids double-escaping when callers pass hardcoded labels.
  */
-export function eyebrow(text: string, color: string = T.TEAL): string {
+export function eyebrow(text: string, color: string = T.ORANGE_S): string {
   return `<p style="
-    font-size:11px;
-    font-weight:400;
-    letter-spacing:0.2em;
-    word-spacing:0.8em;
-    text-transform:uppercase;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:normal;
+    word-spacing:normal;
+    text-transform:none;
     color:${color};
     margin:0 0 10px 0;
     font-family:${FONT_STACK};
@@ -153,12 +152,12 @@ export function interiorPageHeader(sectionLabel: string): string {
     ">
       <img src="${LOGO_URL}" alt="Demand Signals" style="height:28px;object-fit:contain;">
       <span style="
-        font-size:10px;
-        font-weight:400;
-        letter-spacing:0.15em;
-        word-spacing:0.7em;
-        text-transform:uppercase;
-        color:${T.GRAY};
+        font-size:11px;
+        font-weight:600;
+        letter-spacing:normal;
+        word-spacing:normal;
+        text-transform:none;
+        color:${T.ORANGE_S};
         font-family:${FONT_STACK};
       ">${esc(sectionLabel)}</span>
     </div>
@@ -238,8 +237,8 @@ export function darkCoverMetaBand(
       <p style="
         font-size:8px;
         font-weight:400;
-        letter-spacing:0.2em;
-        word-spacing:0.7em;
+        letter-spacing:0.1em;
+        word-spacing:normal;
         text-transform:uppercase;
         color:${T.GRAY};
         margin-bottom:6px;

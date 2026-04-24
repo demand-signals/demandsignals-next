@@ -83,7 +83,7 @@ function billToBlock(inv: InvoiceWithLineItems, prospect: InvoiceProspect): stri
   <div style="display:flex;gap:0;padding:20px 54px;border-bottom:1px solid ${T.BORDER};font-family:${FONT_STACK}">
     <!-- Bill To -->
     <div style="flex:2;padding-right:36px">
-      <p style="font-size:9px;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:${T.GRAY};margin-bottom:8px">BILL TO</p>
+      <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:8px">BILL TO</p>
       <p style="font-size:14px;font-weight:700;color:${T.SLATE};line-height:1.3">${esc(bt.business_name || prospect.business_name)}</p>
       ${bt.contact_name || prospect.owner_name ? `<p style="font-size:12px;color:${T.BODY};margin-top:2px">${esc(bt.contact_name ?? prospect.owner_name ?? '')}</p>` : ''}
       ${prospect.address ? `<p style="font-size:12px;color:${T.BODY};margin-top:2px">${esc(prospect.address)}</p>` : ''}
@@ -95,17 +95,17 @@ function billToBlock(inv: InvoiceWithLineItems, prospect: InvoiceProspect): stri
     <div style="flex:1;display:flex;flex-direction:column;gap:12px;border-left:1px solid ${T.BORDER};padding-left:36px">
       ${inv.send_date ? `
       <div>
-        <p style="font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:${T.GRAY};margin-bottom:3px">INVOICE DATE</p>
+        <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:3px">INVOICE DATE</p>
         <p style="font-size:12px;color:${T.SLATE}">${formatDate(inv.send_date)}</p>
       </div>` : ''}
       ${inv.due_date ? `
       <div>
-        <p style="font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:${T.GRAY};margin-bottom:3px">DUE DATE</p>
+        <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:3px">DUE DATE</p>
         <p style="font-size:12px;color:${T.SLATE};font-weight:600">${formatDate(inv.due_date)}</p>
       </div>` : ''}
       ${inv.paid_at ? `
       <div>
-        <p style="font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:${T.GRAY};margin-bottom:3px">PAID</p>
+        <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:3px">PAID</p>
         <p style="font-size:12px;color:${T.TEAL};font-weight:600">${formatDate(inv.paid_at)}</p>
       </div>` : ''}
     </div>
@@ -217,7 +217,7 @@ function paymentCard(): string {
     padding:14px 20px;
     font-family:${FONT_STACK};
   ">
-    <p style="font-size:9px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:${T.TEAL};margin-bottom:7px">PAYMENT</p>
+    <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.TEAL};margin-bottom:7px">PAYMENT</p>
     <p style="font-size:12px;color:${T.BODY};line-height:1.6">
       Pay by check, wire transfer, or via the secure link on your invoice email.
       Please reference your invoice number when submitting payment.
@@ -238,7 +238,7 @@ function notesSection(inv: InvoiceWithLineItems): string {
     padding:14px 20px;
     font-family:${FONT_STACK};
   ">
-    <p style="font-size:9px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:${T.ORANGE_S};margin-bottom:7px">NOTES</p>
+    <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.ORANGE_S};margin-bottom:7px">NOTES</p>
     <p style="font-size:12px;color:${T.BODY};line-height:1.7">${escNl(inv.notes)}</p>
   </div>`
 }
@@ -261,7 +261,7 @@ export async function renderInvoicePdf(
 
   const body = `
   <div style="width:100%;min-height:100vh;background:${T.WHITE};display:flex;flex-direction:column;font-family:${FONT_STACK};">
-    ${interiorPageHeader('INVOICE')}
+    ${interiorPageHeader('Invoice')}
     ${invoiceMeta(invoice)}
     ${billToBlock(invoice, p)}
     ${lineItemsTable(invoice)}
