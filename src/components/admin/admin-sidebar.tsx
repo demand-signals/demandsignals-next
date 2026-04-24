@@ -157,7 +157,7 @@ export function AdminSidebar() {
   }
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col h-screen sticky top-0">
+    <aside className="w-72 bg-white border-r border-slate-200 flex flex-col h-screen sticky top-0">
       <div className="p-4 border-b border-slate-200">
         <Link href="/admin" className="text-lg font-bold text-slate-800">
           DSIG{' '}
@@ -204,7 +204,7 @@ export function AdminSidebar() {
                     const children = (
                       <>
                         <Icon className="w-4 h-4 shrink-0" />
-                        <span className="flex-1 truncate">{label}</span>
+                        <span className="flex-1 whitespace-nowrap">{label}</span>
                         {soon && (
                           <span className="text-[9px] font-semibold tracking-wide text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">
                             soon
