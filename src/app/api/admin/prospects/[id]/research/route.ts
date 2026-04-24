@@ -85,6 +85,21 @@ CRITICAL: You MUST use the web_search tool to look up real information about thi
 5. Search for their social media profiles (Facebook, Instagram, LinkedIn, etc.)
 6. Search for industry-specific review platforms (${prospect.industry === 'dental' || prospect.industry === 'medical' ? 'Healthgrades, Zocdoc, Vitals' : prospect.industry === 'legal' ? 'Avvo, Martindale-Hubbell' : prospect.industry === 'contractor' || prospect.industry === 'hvac' || prospect.industry === 'plumbing' ? 'HomeAdvisor, Angi, BBB, Houzz' : 'BBB, industry directories'})
 7. Search for competitors in their area
+8. For each platform below, search for this business's direct profile URL and include it in the "channels" object (set to null if not found):
+   - Google Business / Google Maps listing
+   - Yelp business profile
+   - Facebook page
+   - Instagram profile
+   - LinkedIn company page
+   - TikTok profile
+   - YouTube channel
+   - Twitter/X profile
+   - Pinterest profile
+   - BBB (Better Business Bureau) listing
+   - Angi profile
+   - Trustpilot review page
+   - Nextdoor business page
+   If you find any OTHER directories or profiles (chamber of commerce, industry-specific directories, forum presence), include them in the channels.other array as [{label, url}].
 
 After completing your research, provide your findings.
 
@@ -161,7 +176,25 @@ Return ONLY a JSON object (no markdown, no explanation) with these fields:
 
   "recommended_approach": "string — how to approach this prospect (cold email, demo drop, referral, etc.)",
 
-  "site_quality_score": number // 0-100, lower = worse site = better prospect for us
+  "site_quality_score": number, // 0-100, lower = worse site = better prospect for us
+
+  "channels": {
+    "website": "string or null — official site URL",
+    "google_business": "string or null — Google Maps / GBP listing URL",
+    "yelp": "string or null — Yelp business profile URL",
+    "facebook": "string or null — Facebook page URL",
+    "instagram": "string or null — Instagram profile URL",
+    "linkedin": "string or null — LinkedIn company page URL",
+    "tiktok": "string or null — TikTok profile URL",
+    "youtube": "string or null — YouTube channel URL",
+    "twitter_x": "string or null — Twitter/X profile URL",
+    "pinterest": "string or null — Pinterest profile URL",
+    "bbb": "string or null — Better Business Bureau listing URL",
+    "angi": "string or null — Angi (formerly Angie's List) profile URL",
+    "trustpilot": "string or null — Trustpilot review page URL",
+    "nextdoor": "string or null — Nextdoor business page URL",
+    "other": [{"label": "string — directory/platform name", "url": "string — full URL"}]
+  }
 }
 
 IMPORTANT REMINDERS:
@@ -221,9 +254,38 @@ IMPORTANT REMINDERS:
     rd.deep_dive_at = new Date().toISOString()
     rd.deep_dive_by = auth.admin.id
 
+    // Parse channels from research response (additive — preserve existing channel values)
+    let channelsUpdate: Record<string, any> | undefined
+    if (research.channels && typeof research.channels === 'object') {
+      try {
+        const existingChannels: Record<string, any> = (prospect as any).channels || {}
+        const newChannels: Record<string, any> = { ...existingChannels }
+        const knownKeys = [
+          'website', 'google_business', 'yelp', 'facebook', 'instagram',
+          'linkedin', 'tiktok', 'youtube', 'twitter_x', 'pinterest',
+          'bbb', 'angi', 'trustpilot', 'nextdoor',
+        ]
+        for (const key of knownKeys) {
+          if (research.channels[key] && !existingChannels[key]) {
+            newChannels[key] = research.channels[key]
+          }
+        }
+        // Merge other[] — append new entries not already present
+        const existingOther: Array<{ label: string; url: string }> = existingChannels.other || []
+        const newOther: Array<{ label: string; url: string }> = research.channels.other || []
+        const existingUrls = new Set(existingOther.map((o: any) => o.url))
+        const merged = [...existingOther, ...newOther.filter((o: any) => o?.url && !existingUrls.has(o.url))]
+        if (merged.length > 0) newChannels.other = merged
+        channelsUpdate = newChannels
+      } catch {
+        // channels parse failed — skip, don't break research flow
+      }
+    }
+
     // Build prospect updates
     const updates: Record<string, any> = {
       research_data: rd,
+      ...(channelsUpdate ? { channels: channelsUpdate } : {}),
       updated_at: new Date().toISOString(),
     }
 
