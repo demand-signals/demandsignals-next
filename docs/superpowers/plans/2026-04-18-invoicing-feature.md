@@ -1,5 +1,12 @@
 # Invoicing Feature Implementation Plan
 
+**Status:** SHIPPED 2026-04-18 · DEPLOYED
+**Commit range:** various (invoicing v1 sprint)
+**See also:** `docs/runbooks/invoicing-morning-2026-04-18.md`, `docs/runbooks/sow-lifecycle.md`
+**Notes:** This was v1. The expanded v2 plan (`2026-04-18-invoicing-v2-expanded.md`) superseded parts of this plan. The PDF rendering section was later replaced by the Chromium in-repo pipeline (see `docs/superpowers/specs/2026-04-24-pdf-pipeline.md`).
+
+---
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship the full invoicing system in `demandsignals-next` — schema migrations, R2+PDF-service integration, admin API, admin UI, public invoice viewer, Restaurant Rule automation, manual-routed Phase 1 delivery. Working end-to-end: admin creates invoice → PDF rendered → stored in R2 → public URL shareable → void+re-issue preserves history.

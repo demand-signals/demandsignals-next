@@ -1,5 +1,12 @@
 # Doc System Overhaul — Proposals (SOW) + Invoices + Subscriptions
 
+**Status:** SHIPPED 2026-04-22 · DEPLOYED
+**Commit range:** various (doc system overhaul sprint — see commit `7485cd9` and nearby)
+**See also:** `docs/runbooks/sow-lifecycle.md`, `docs/runbooks/invoicing-morning-2026-04-18.md`, `docs/runbooks/pdf-pipeline.md`
+**Notes:** Priced deliverables on SOW, edit-after-create for SOW/Invoice/Subscription, HTML preview (`doc-preview.ts` / `DocumentPreview.tsx`), late fee config on invoices, subscription end date and notes — all shipped. The `DocumentPreview` iframe component is the in-browser WYSIWYG preview; the PDF endpoint uses the Chromium pipeline. `ProspectContactEditor` was shipped. Money input typing fixes landed in commit `7485cd9`.
+
+---
+
 > **For agentic workers:** use superpowers:subagent-driven-development to implement this plan task-by-task.
 
 **Goal:** Make SOW, Invoice, and Subscription documents production-grade — editable after creation, client-info-aware, priced per deliverable, with branded PDF preview and download. Hunter needs to issue several deals tomorrow morning.

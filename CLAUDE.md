@@ -2,6 +2,8 @@
 
 > **Read this entire file before making any changes.** It contains architecture decisions, known issues, credentials, and hard constraints that prevent regressions.
 
+**For everything else** — runbooks, specs, plans, history — see [`docs/INDEX.md`](docs/INDEX.md).
+
 ---
 
 ## 1. What This Project Is

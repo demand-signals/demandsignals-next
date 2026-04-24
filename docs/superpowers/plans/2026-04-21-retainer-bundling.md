@@ -1,5 +1,12 @@
 # Retainer Bundling Implementation Plan
 
+**Status:** SHIPPED 2026-04-21 · DEPLOYED
+**Commit range:** various (retainer bundling sprint)
+**See also:** `docs/runbooks/retainer-bundling.md`, `docs/superpowers/specs/2026-04-21-retainer-bundling-design.md`
+**Notes:** All 4 retainer tiers (Essential/Growth/Full/Site-only) are seeded in `subscription_plans`. The `/quote` retainer step is live. `activateRetainer()` creates subscription rows on Mark Launched. `site_only` is intentionally a no-op for subscription creation.
+
+---
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add a required retainer-selection step to `/quote` so build + retainer are sold on one signature; activate the retainer at project launch.

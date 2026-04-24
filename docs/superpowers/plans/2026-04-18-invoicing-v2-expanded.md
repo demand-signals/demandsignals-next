@@ -1,5 +1,12 @@
 # Expanded Invoicing System v2 — Implementation Plan
 
+**Status:** SHIPPED 2026-04-18 · DEPLOYED
+**Commit range:** various (overnight invoicing v2 build)
+**See also:** `docs/runbooks/invoicing-morning-2026-04-18.md`, `docs/runbooks/sow-lifecycle.md`, `docs/runbooks/receipts-and-payments.md`
+**Notes:** Phase A (schema) fully shipped. Phases B–G were executed incrementally. PDF rendering (Phase B) was later replaced by the Chromium in-repo pipeline. Stripe integration (Phase C) and SMS delivery (Phase F) remain partially deferred. SOW accept cascade (Phase E) shipped via the client lifecycle work (see `docs/superpowers/specs/2026-04-24-client-lifecycle.md`).
+
+---
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship a production invoicing system that handles (1) quote-driven invoices, (2) ad-hoc business invoices, (3) recurring subscription invoices, all with Stripe payment collection, branded DSIG PDFs, hosted-by-us invoice pages, SMS + email delivery, and SOW PDF generation for prospect proposals. April 20 deadline. Replaces canceled Bonsai subscription.

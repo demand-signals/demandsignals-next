@@ -1,5 +1,12 @@
 # DSIG PDF Service Bootstrap Implementation Plan
 
+**Status:** DEPRECATED 2026-04-24 · replaced by in-repo Chromium HTML→PDF
+**Commit range:** — (Python service was in a separate repo: `demand-signals/dsig-pdf-service`)
+**See also:** `docs/superpowers/specs/2026-04-24-pdf-pipeline.md`, `docs/runbooks/pdf-pipeline.md`
+**Notes:** Python Flask microservice retired. Implementation files in `src/lib/pdf/` use puppeteer-core + @sparticuz/chromium instead. The `pdf.demandsignals.co` subdomain and `PDF_SERVICE_URL` / `PDF_SERVICE_SECRET` env vars can be retired. `DSIG_PDF_STANDARDS_v2.md` (external) still governs the visual design.
+
+---
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Bootstrap a new standalone repo `dsig-pdf-service` that renders branded PDFs from JSON payloads. First and only doc type shipped in this plan: `invoice`. Future doc types (proposal, SOW, estimate, report, audit) slot in as additional files in `dsig_pdf/docs/` sharing the same covers/components/typography.
