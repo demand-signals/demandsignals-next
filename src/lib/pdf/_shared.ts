@@ -100,18 +100,21 @@ export function decorativeCircles(): string {
 
 /**
  * Eyebrow label: spaced caps in TEAL (or custom color).
- * 8pt (~11px), letter-spacing 0.35em, uppercase.
+ * 8pt (~11px), letter-spacing 0.35em + word-spacing 0.6em, uppercase.
+ * NOTE: text is embedded raw (no esc()) — callers must pass literal/safe strings.
+ * This avoids double-escaping when callers pass hardcoded labels.
  */
 export function eyebrow(text: string, color: string = T.TEAL): string {
   return `<p style="
     font-size:11px;
     font-weight:400;
     letter-spacing:0.35em;
+    word-spacing:0.6em;
     text-transform:uppercase;
     color:${color};
     margin:0 0 10px 0;
     font-family:${FONT_STACK};
-  ">${esc(text)}</p>`
+  ">${text}</p>`
 }
 
 /**
@@ -152,6 +155,7 @@ export function interiorPageHeader(sectionLabel: string): string {
         font-size:10px;
         font-weight:400;
         letter-spacing:0.25em;
+        word-spacing:0.5em;
         text-transform:uppercase;
         color:${T.GRAY};
         font-family:${FONT_STACK};

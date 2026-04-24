@@ -159,7 +159,7 @@ function coverPage(sow: SowDocument, prospect: SowProspect): string {
   ">
     ${decorativeCircles()}
 
-    <!-- Logo row: top-left logo + pill badge top-right -->
+    <!-- TOP ZONE: Logo row + pill badge -->
     <div style="
       position:relative;
       z-index:1;
@@ -167,9 +167,9 @@ function coverPage(sow: SowDocument, prospect: SowProspect): string {
       justify-content:space-between;
       align-items:center;
       padding:54px 56px 0;
+      flex-shrink:0;
     ">
       <img src="${LOGO_URL}" alt="Demand Signals" style="height:36px;object-fit:contain;">
-      <!-- Pill badge: PROPOSAL -->
       <span style="
         background:${T.ORANGE_S};
         color:${T.WHITE};
@@ -182,8 +182,8 @@ function coverPage(sow: SowDocument, prospect: SowProspect): string {
       ">PROPOSAL</span>
     </div>
 
-    <!-- Spacer to push main content to ~56% down -->
-    <div style="flex:1;min-height:0;position:relative;z-index:1;display:flex;flex-direction:column;justify-content:flex-end;padding:0 56px 40px">
+    <!-- CENTER ZONE: Title block — vertically centered in the remaining space above the meta band -->
+    <div style="flex:1;min-height:0;position:relative;z-index:1;display:flex;flex-direction:column;justify-content:center;padding:0 56px">
       <!-- Eyebrow: STATEMENT OF WORK -->
       ${eyebrow('S T A T E M E N T   O F   W O R K', T.GRAY)}
 
@@ -212,40 +212,39 @@ function coverPage(sow: SowDocument, prospect: SowProspect): string {
       ">Prepared by Demand Signals — Digital Growth &amp; Strategy</p>
     </div>
 
-    <!-- Meta band: 3 columns — PREPARED FOR | PREPARED BY | DATE -->
-    <div style="
-      position:relative;
-      z-index:1;
-      background:rgba(0,0,0,0.25);
-      padding:24px 28px;
-      display:flex;
-      gap:0;
-    ">
-      ${metaCol('PREPARED FOR', esc(prospect.business_name))}
-      ${metaCol('PREPARED BY', 'Demand Signals')}
-      ${metaCol('DATE', issueDate, true)}
-    </div>
+    <!-- BOTTOM ZONE: Meta band + footer strip -->
+    <div style="position:relative;z-index:1;flex-shrink:0">
+      <!-- Meta band: 3 columns — PREPARED FOR | PREPARED BY | DATE -->
+      <div style="
+        background:rgba(0,0,0,0.25);
+        padding:24px 28px;
+        display:flex;
+        gap:0;
+      ">
+        ${metaCol('PREPARED FOR', esc(prospect.business_name))}
+        ${metaCol('PREPARED BY', 'Demand Signals')}
+        ${metaCol('DATE', issueDate, true)}
+      </div>
 
-    <!-- Footer strip -->
-    <div style="
-      position:relative;
-      z-index:1;
-      padding:12px 56px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-    ">
-      <p style="font-size:9px;color:${T.GRAY};">DemandSignals.co &nbsp;|&nbsp; (916) 542-2423</p>
-      <span style="
-        background:${T.ORANGE_S};
-        color:${T.WHITE};
-        font-size:9px;
-        font-weight:700;
-        letter-spacing:0.15em;
-        text-transform:uppercase;
-        padding:3px 12px;
-        border-radius:17px;
-      ">PROPOSAL</span>
+      <!-- Footer strip -->
+      <div style="
+        padding:12px 56px;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+      ">
+        <p style="font-size:9px;color:${T.GRAY};">DemandSignals.co &nbsp;|&nbsp; (916) 542-2423</p>
+        <span style="
+          background:${T.ORANGE_S};
+          color:${T.WHITE};
+          font-size:9px;
+          font-weight:700;
+          letter-spacing:0.15em;
+          text-transform:uppercase;
+          padding:3px 12px;
+          border-radius:17px;
+        ">PROPOSAL</span>
+      </div>
     </div>
   </div>`
 }
@@ -570,8 +569,6 @@ function backCoverPage(): string {
     background:${T.SLATE};
     display:flex;
     flex-direction:column;
-    align-items:center;
-    justify-content:center;
     overflow:hidden;
     -webkit-print-color-adjust:exact;
     print-color-adjust:exact;
@@ -579,34 +576,78 @@ function backCoverPage(): string {
   ">
     ${decorativeCircles()}
 
-    <!-- Centered content -->
-    <div style="position:relative;z-index:1;text-align:center;padding:0 64px;width:100%;max-width:580px;">
-      <!-- Logo -->
-      <img src="${LOGO_URL}" alt="Demand Signals" style="height:40px;object-fit:contain;margin-bottom:40px;">
-
-      <!-- Headline: two lines alternating white + teal -->
-      <h2 style="
-        font-size:30px;
+    <!-- UPPER ZONE: Godin quote — hero, centered in top ~55% -->
+    <div style="
+      position:relative;
+      z-index:1;
+      flex:0 0 55%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:60px 72px 0;
+      text-align:center;
+    ">
+      <!-- Quote mark -->
+      <div style="
+        font-size:80px;
         font-weight:700;
-        line-height:1.2;
-        margin:0 0 20px 0;
-        letter-spacing:-0.01em;
-      ">
-        <span style="color:${T.WHITE};">Let&rsquo;s get to work &mdash;</span><br>
-        <span style="color:${T.TEAL_S};">together.</span>
-      </h2>
+        color:${T.TEAL_S};
+        line-height:0.7;
+        margin-bottom:20px;
+        opacity:0.6;
+        font-family:Georgia,'Times New Roman',serif;
+      ">&ldquo;</div>
 
-      <!-- Van Gogh quote -->
+      <!-- The quote itself: large, italic, serif-fallback, white -->
       <p style="
-        font-size:12px;
-        color:${T.CCCC};
+        font-size:28px;
         font-style:italic;
-        line-height:1.6;
-        margin:0 0 32px 0;
-        max-width:400px;
-        margin-left:auto;
-        margin-right:auto;
-      ">&ldquo;Great things are done by a series of small things brought together.&rdquo;</p>
+        font-weight:400;
+        color:${T.WHITE};
+        line-height:1.45;
+        max-width:680px;
+        margin:0 0 24px 0;
+        font-family:Georgia,'Times New Roman',${FONT_STACK};
+        letter-spacing:-0.01em;
+      ">Marketing is no longer about the stuff that you make, but about the stories you tell.</p>
+
+      <!-- Attribution -->
+      <p style="
+        font-size:13px;
+        color:${T.TEAL_S};
+        font-weight:600;
+        letter-spacing:0.25em;
+        word-spacing:0.4em;
+        text-transform:uppercase;
+        margin:0;
+      ">&mdash; Seth Godin</p>
+    </div>
+
+    <!-- LOWER ZONE: Logo + CTA + contacts — centered in bottom ~45% -->
+    <div style="
+      position:relative;
+      z-index:1;
+      flex:0 0 45%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:0 64px 28px;
+      text-align:center;
+    ">
+      <!-- Logo -->
+      <img src="${LOGO_URL}" alt="Demand Signals" style="height:40px;object-fit:contain;margin-bottom:24px;">
+
+      <!-- Headline -->
+      <h2 style="
+        font-size:22px;
+        font-weight:700;
+        color:${T.WHITE};
+        letter-spacing:-0.01em;
+        line-height:1.2;
+        margin:0 0 24px 0;
+      ">Let&rsquo;s get to work &mdash; <span style="color:${T.TEAL_S};">together.</span></h2>
 
       <!-- CTA button -->
       <a style="
@@ -617,32 +658,30 @@ function backCoverPage(): string {
         font-weight:700;
         letter-spacing:0.1em;
         text-transform:uppercase;
-        padding:12px 28px;
+        padding:11px 28px;
         border-radius:17px;
         text-decoration:none;
-        margin-bottom:40px;
+        margin-bottom:28px;
       ">QUESTIONS? GET IN TOUCH &rarr;</a>
 
       <!-- Contact grid: 3 columns -->
-      <div style="display:flex;justify-content:center;gap:0;margin:0 auto;max-width:480px">
+      <div style="display:flex;justify-content:center;gap:0;margin:0 auto 20px;max-width:480px;width:100%">
         <div style="flex:1;padding:0 20px;border-right:1px solid rgba(255,255,255,0.12)">
-          <p style="font-size:8px;font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px">EMAIL</p>
-          <p style="font-size:11px;font-weight:700;color:${T.WHITE}">DemandSignals@gmail.com</p>
+          <p style="font-size:8px;font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:${T.GRAY};margin-bottom:5px">EMAIL</p>
+          <p style="font-size:10px;font-weight:700;color:${T.WHITE}">DemandSignals@gmail.com</p>
         </div>
         <div style="flex:1;padding:0 20px;border-right:1px solid rgba(255,255,255,0.12)">
-          <p style="font-size:8px;font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px">PHONE</p>
-          <p style="font-size:11px;font-weight:700;color:${T.WHITE}">(916) 542-2423</p>
+          <p style="font-size:8px;font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:${T.GRAY};margin-bottom:5px">PHONE</p>
+          <p style="font-size:10px;font-weight:700;color:${T.WHITE}">(916) 542-2423</p>
         </div>
         <div style="flex:1;padding:0 20px">
-          <p style="font-size:8px;font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px">WEB</p>
-          <p style="font-size:11px;font-weight:700;color:${T.WHITE}">DemandSignals.co</p>
+          <p style="font-size:8px;font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:${T.GRAY};margin-bottom:5px">WEB</p>
+          <p style="font-size:10px;font-weight:700;color:${T.WHITE}">DemandSignals.co</p>
         </div>
       </div>
-    </div>
 
-    <!-- Attribution + copyright at bottom -->
-    <div style="position:absolute;bottom:28px;left:0;right:0;text-align:center;z-index:1">
-      <p style="font-size:10px;color:${T.GRAY};margin-bottom:4px">Proposal prepared by Demand Signals — Digital Growth &amp; Strategy</p>
+      <!-- Copyright -->
+      <p style="font-size:9px;color:${T.GRAY};margin-bottom:2px">Proposal prepared by Demand Signals — Digital Growth &amp; Strategy</p>
       <p style="font-size:9px;color:${T.MUTED}">&copy; 2026 Demand Signals. Confidential.</p>
     </div>
   </div>`
