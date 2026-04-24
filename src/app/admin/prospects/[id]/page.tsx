@@ -4,7 +4,13 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Check, Download, Pencil, Trash2, Search, Loader2, Tag, CircleAlert, Plus, X, ChevronDown, ChevronUp, Link2 } from 'lucide-react'
-import { KNOWN_CHANNELS, type ProspectChannels, type ProspectOtherLink } from '@/lib/prospect-channels'
+import {
+  REVIEW_CHANNELS,
+  SIMPLE_CHANNELS,
+  normalizeReviewChannel,
+  type ProspectChannels,
+  type ReviewChannelEntry,
+} from '@/lib/prospect-channels'
 import Link from 'next/link'
 import { ProspectScoreBadge, TierBadge } from '@/components/admin/prospect-score-badge'
 // suggestClientCode removed — now using the server-side suggest endpoint
@@ -556,20 +562,84 @@ export default function ProspectDetailPage() {
               <p className="text-xs text-red-500 mb-2">{channelsError}</p>
             )}
             {channelsEditing ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {KNOWN_CHANNELS.map(ch => (
-                    <div key={ch.key} className="space-y-0.5">
-                      <label className="text-xs text-slate-500 font-medium">{ch.label}</label>
-                      <input
-                        type="url"
-                        value={channelsData[ch.key] ?? ''}
-                        onChange={e => setChannelsData(prev => ({ ...prev, [ch.key]: e.target.value || null }))}
-                        placeholder={ch.placeholder}
-                        className="w-full border border-slate-200 rounded px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
-                      />
-                    </div>
-                  ))}
+              <div className="space-y-4">
+                {/* Simple channels — URL only */}
+                <div>
+                  <p className="text-[0.65rem] font-semibold text-slate-400 uppercase tracking-wider mb-2">Website &amp; Social</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {SIMPLE_CHANNELS.map(ch => (
+                      <div key={ch.key} className="space-y-0.5">
+                        <label className="text-xs text-slate-500 font-medium">{ch.label}</label>
+                        <input
+                          type="url"
+                          value={(channelsData[ch.key] as string | null | undefined) ?? ''}
+                          onChange={e => setChannelsData(prev => ({ ...prev, [ch.key]: e.target.value || null }))}
+                          placeholder={ch.placeholder}
+                          className="w-full border border-slate-200 rounded px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Review channels — URL + rating + review_count */}
+                <div>
+                  <p className="text-[0.65rem] font-semibold text-slate-400 uppercase tracking-wider mb-2">Review Platforms</p>
+                  <div className="space-y-3">
+                    {REVIEW_CHANNELS.map(ch => {
+                      const entry = normalizeReviewChannel(channelsData[ch.key])
+                      function updateEntry(patch: Partial<ReviewChannelEntry>) {
+                        const next = { ...normalizeReviewChannel(channelsData[ch.key]), ...patch }
+                        // If all meaningful fields are cleared, set null
+                        const isEmpty = !next.url && next.rating === null && next.review_count === null
+                        setChannelsData(prev => ({ ...prev, [ch.key]: isEmpty ? null : next }))
+                      }
+                      return (
+                        <div key={ch.key} className="border border-slate-100 rounded-lg p-2.5 space-y-2">
+                          <p className="text-xs font-semibold text-slate-600">{ch.label}</p>
+                          <input
+                            type="url"
+                            value={entry.url ?? ''}
+                            onChange={e => updateEntry({ url: e.target.value || null })}
+                            placeholder={ch.placeholder}
+                            className="w-full border border-slate-200 rounded px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+                          />
+                          <div className="flex gap-2">
+                            <div className="flex-1 space-y-0.5">
+                              <label className="text-[0.6rem] text-slate-400">Rating (0–5)</label>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="5"
+                                value={entry.rating ?? ''}
+                                onChange={e => updateEntry({ rating: e.target.value ? parseFloat(e.target.value) : null })}
+                                placeholder="4.8"
+                                className="w-full border border-slate-200 rounded px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+                              />
+                            </div>
+                            <div className="flex-1 space-y-0.5">
+                              <label className="text-[0.6rem] text-slate-400">Reviews</label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={entry.review_count ?? ''}
+                                onChange={e => updateEntry({ review_count: e.target.value ? parseInt(e.target.value, 10) : null })}
+                                placeholder="125"
+                                className="w-full border border-slate-200 rounded px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+                              />
+                            </div>
+                          </div>
+                          {entry.last_synced_at && (
+                            <p className="text-[0.6rem] text-slate-400">
+                              Last synced {new Date(entry.last_synced_at).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 {/* Other links */}
@@ -625,21 +695,61 @@ export default function ProspectDetailPage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {KNOWN_CHANNELS.filter(ch => channelsData[ch.key]).map(ch => (
-                  <div key={ch.key} className="flex items-center gap-2 text-sm">
-                    <Link2 className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
-                    <span className="text-xs text-slate-400 w-24 flex-shrink-0">{ch.label}</span>
-                    <a
-                      href={channelsData[ch.key] ?? ''}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[var(--teal-dark)] hover:underline truncate text-xs flex items-center gap-0.5"
-                    >
-                      {(channelsData[ch.key] ?? '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
-                      <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 ml-0.5" />
-                    </a>
-                  </div>
-                ))}
+                {/* Simple channels — URL string */}
+                {SIMPLE_CHANNELS.filter(ch => channelsData[ch.key]).map(ch => {
+                  const url = channelsData[ch.key] as string
+                  return (
+                    <div key={ch.key} className="flex items-center gap-2 text-sm">
+                      <Link2 className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+                      <span className="text-xs text-slate-400 w-24 flex-shrink-0">{ch.label}</span>
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[var(--teal-dark)] hover:underline truncate text-xs flex items-center gap-0.5"
+                      >
+                        {url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+                        <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 ml-0.5" />
+                      </a>
+                    </div>
+                  )
+                })}
+                {/* Review channels — object with optional rating/count */}
+                {REVIEW_CHANNELS.filter(ch => {
+                  const v = channelsData[ch.key]
+                  if (!v) return false
+                  const e = normalizeReviewChannel(v)
+                  return e.url || e.rating !== null || e.review_count !== null
+                }).map(ch => {
+                  const entry = normalizeReviewChannel(channelsData[ch.key])
+                  return (
+                    <div key={ch.key} className="flex items-center gap-2 text-sm flex-wrap">
+                      <Link2 className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+                      <span className="text-xs text-slate-400 w-24 flex-shrink-0">{ch.label}</span>
+                      {entry.url ? (
+                        <a
+                          href={entry.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[var(--teal-dark)] hover:underline truncate text-xs flex items-center gap-0.5"
+                        >
+                          {entry.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+                          <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 ml-0.5" />
+                        </a>
+                      ) : (
+                        <span className="text-xs text-slate-300">no URL</span>
+                      )}
+                      {entry.rating !== null && (
+                        <span className="text-xs font-semibold text-amber-500 ml-auto">
+                          {entry.rating}★
+                          {entry.review_count !== null && (
+                            <span className="text-slate-400 font-normal ml-1">({entry.review_count})</span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
                 {(channelsData.other ?? []).filter(l => l.url).map((link, i) => (
                   <div key={i} className="flex items-center gap-2 text-sm">
                     <Link2 className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
@@ -655,7 +765,14 @@ export default function ProspectDetailPage() {
                     </a>
                   </div>
                 ))}
-                {!KNOWN_CHANNELS.some(ch => channelsData[ch.key]) && !(channelsData.other?.length) && (
+                {!SIMPLE_CHANNELS.some(ch => channelsData[ch.key]) &&
+                  !REVIEW_CHANNELS.some(ch => {
+                    const v = channelsData[ch.key]
+                    if (!v) return false
+                    const e = normalizeReviewChannel(v)
+                    return e.url || e.rating !== null || e.review_count !== null
+                  }) &&
+                  !(channelsData.other?.length) && (
                   <p className="text-xs text-slate-400">No channels linked yet. Click Edit to add.</p>
                 )}
               </div>
