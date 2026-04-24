@@ -18,6 +18,7 @@ const patchSchema = z.object({
     .regex(/^[A-Z]{4}$/, 'client_code must be exactly 4 uppercase letters')
     .nullable()
     .optional(),
+  channels: z.record(z.string(), z.any()).optional(),
 })
 
 export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {

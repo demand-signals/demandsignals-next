@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Share2, Copy, Check, Download, Pencil, Trash2, Search, Loader2, Tag, CircleAlert } from 'lucide-react'
+import { ArrowLeft, Globe, Star, Phone, Mail, MapPin, User, Target, Zap, TrendingUp, Shield, DollarSign, AlertTriangle, CheckCircle, XCircle, ExternalLink, Lock, Unlock, Monitor, Check, Download, Pencil, Trash2, Search, Loader2, Tag, CircleAlert, Plus, X, ChevronDown, ChevronUp, Link2 } from 'lucide-react'
+import { KNOWN_CHANNELS, type ProspectChannels, type ProspectOtherLink } from '@/lib/prospect-channels'
 import Link from 'next/link'
 import { ProspectScoreBadge, TierBadge } from '@/components/admin/prospect-score-badge'
 // suggestClientCode removed — now using the server-side suggest endpoint
@@ -146,6 +147,13 @@ export default function ProspectDetailPage() {
   const [clientCodeSaved, setClientCodeSaved] = useState(false)
   const [clientCodeSuggesting, setClientCodeSuggesting] = useState(false)
 
+  // Channels editor state
+  const [channelsEditing, setChannelsEditing] = useState(false)
+  const [channelsData, setChannelsData] = useState<ProspectChannels>({})
+  const [channelsSaving, setChannelsSaving] = useState(false)
+  const [channelsSaved, setChannelsSaved] = useState(false)
+  const [channelsError, setChannelsError] = useState<string | null>(null)
+
   // Availability check state
   type AvailStatus = 'idle' | 'checking' | 'available' | 'taken' | 'format_error'
   const [codeAvail, setCodeAvail] = useState<{
@@ -183,6 +191,11 @@ export default function ProspectDetailPage() {
   // Sync clientCodeInput when prospect loads/changes
   useEffect(() => {
     if (prospect) setClientCodeInput((prospect as any).client_code ?? '')
+  }, [prospect?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync channels when prospect loads/changes
+  useEffect(() => {
+    if (prospect) setChannelsData((prospect.channels as ProspectChannels) ?? {})
   }, [prospect?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debounced availability check whenever the input changes while editing
@@ -244,6 +257,31 @@ export default function ProspectDetailPage() {
       setClientCodeError(e instanceof Error ? e.message : 'Save failed')
     } finally {
       setClientCodeSaving(false)
+    }
+  }
+
+  async function saveChannels() {
+    if (!prospect) return
+    setChannelsSaving(true)
+    setChannelsError(null)
+    try {
+      const res = await fetch(`/api/admin/prospects/${prospect.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channels: channelsData }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Save failed')
+      }
+      setChannelsEditing(false)
+      setChannelsSaved(true)
+      setTimeout(() => setChannelsSaved(false), 2500)
+      queryClient.invalidateQueries({ queryKey: ['prospects-all'] })
+    } catch (e) {
+      setChannelsError(e instanceof Error ? e.message : 'Save failed')
+    } finally {
+      setChannelsSaving(false)
     }
   }
 
@@ -476,6 +514,152 @@ export default function ProspectDetailPage() {
                 </div>
               )}
             </div>
+          </Card>
+
+          {/* Channels Card */}
+          <Card>
+            <div className="flex items-center justify-between mb-3">
+              <CardTitle>Channels</CardTitle>
+              <div className="flex items-center gap-2">
+                {channelsSaved && <Check className="w-4 h-4 text-green-500" />}
+                {!channelsEditing ? (
+                  <button
+                    onClick={() => setChannelsEditing(true)}
+                    className="text-xs text-slate-400 hover:text-slate-700 flex items-center gap-1"
+                  >
+                    <Pencil className="w-3 h-3" /> Edit
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={saveChannels}
+                      disabled={channelsSaving}
+                      className="px-2.5 py-1 bg-[var(--teal)] text-white text-xs font-semibold rounded hover:bg-[var(--teal-dark)] disabled:opacity-40"
+                    >
+                      {channelsSaving ? '…' : 'Save'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setChannelsEditing(false)
+                        setChannelsError(null)
+                        setChannelsData((prospect.channels as ProspectChannels) ?? {})
+                      }}
+                      className="px-2.5 py-1 text-xs text-slate-500 hover:text-slate-800 rounded border border-slate-200"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            {channelsError && (
+              <p className="text-xs text-red-500 mb-2">{channelsError}</p>
+            )}
+            {channelsEditing ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {KNOWN_CHANNELS.map(ch => (
+                    <div key={ch.key} className="space-y-0.5">
+                      <label className="text-xs text-slate-500 font-medium">{ch.label}</label>
+                      <input
+                        type="url"
+                        value={channelsData[ch.key] ?? ''}
+                        onChange={e => setChannelsData(prev => ({ ...prev, [ch.key]: e.target.value || null }))}
+                        placeholder={ch.placeholder}
+                        className="w-full border border-slate-200 rounded px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Other links */}
+                <div className="pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-slate-500 font-medium">Other Links</span>
+                    <button
+                      onClick={() => setChannelsData(prev => ({
+                        ...prev,
+                        other: [...(prev.other ?? []), { label: '', url: '' }],
+                      }))}
+                      className="text-xs text-[var(--teal)] hover:text-[var(--teal-dark)] flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> Add
+                    </button>
+                  </div>
+                  {(channelsData.other ?? []).map((link, i) => (
+                    <div key={i} className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        value={link.label}
+                        onChange={e => {
+                          const other = [...(channelsData.other ?? [])]
+                          other[i] = { ...other[i], label: e.target.value }
+                          setChannelsData(prev => ({ ...prev, other }))
+                        }}
+                        placeholder="Label"
+                        className="w-28 flex-shrink-0 border border-slate-200 rounded px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+                      />
+                      <input
+                        type="url"
+                        value={link.url}
+                        onChange={e => {
+                          const other = [...(channelsData.other ?? [])]
+                          other[i] = { ...other[i], url: e.target.value }
+                          setChannelsData(prev => ({ ...prev, other }))
+                        }}
+                        placeholder="https://..."
+                        className="flex-1 border border-slate-200 rounded px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+                      />
+                      <button
+                        onClick={() => {
+                          const other = (channelsData.other ?? []).filter((_, j) => j !== i)
+                          setChannelsData(prev => ({ ...prev, other }))
+                        }}
+                        className="text-red-400 hover:text-red-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {KNOWN_CHANNELS.filter(ch => channelsData[ch.key]).map(ch => (
+                  <div key={ch.key} className="flex items-center gap-2 text-sm">
+                    <Link2 className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+                    <span className="text-xs text-slate-400 w-24 flex-shrink-0">{ch.label}</span>
+                    <a
+                      href={channelsData[ch.key] ?? ''}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[var(--teal-dark)] hover:underline truncate text-xs flex items-center gap-0.5"
+                    >
+                      {(channelsData[ch.key] ?? '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+                      <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 ml-0.5" />
+                    </a>
+                  </div>
+                ))}
+                {(channelsData.other ?? []).filter(l => l.url).map((link, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <Link2 className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+                    <span className="text-xs text-slate-400 w-24 flex-shrink-0">{link.label || 'Other'}</span>
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[var(--teal-dark)] hover:underline truncate text-xs flex items-center gap-0.5"
+                    >
+                      {link.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+                      <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 ml-0.5" />
+                    </a>
+                  </div>
+                ))}
+                {!KNOWN_CHANNELS.some(ch => channelsData[ch.key]) && !(channelsData.other?.length) && (
+                  <p className="text-xs text-slate-400">No channels linked yet. Click Edit to add.</p>
+                )}
+              </div>
+            )}
           </Card>
 
           {/* Intelligence Card */}
@@ -806,43 +990,10 @@ export default function ProspectDetailPage() {
           )}
 
           {/* Demos */}
-          <Card>
-            <CardTitle>Demos</CardTitle>
-            {!prospect.demos || prospect.demos.length === 0 ? (
-              <p className="text-slate-400 text-sm">No demos yet</p>
-            ) : (
-              <div className="space-y-2">
-                {prospect.demos.map(demo => (
-                  <div key={demo.id} className="flex items-center justify-between">
-                    <a
-                      href={demo.demo_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-[var(--teal-dark)] hover:underline truncate"
-                    >
-                      {demo.demo_url}
-                    </a>
-                    <span
-                      className={cn(
-                        'ml-3 flex-shrink-0 text-xs px-2 py-0.5 rounded',
-                        demo.status === 'live' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-400'
-                      )}
-                    >
-                      {demo.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
+          <ProspectDemos prospectId={id} initialDemos={prospect.demos ?? []} />
 
-          {/* Notes */}
-          {prospect.notes && (
-            <Card>
-              <CardTitle>Notes</CardTitle>
-              <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{prospect.notes}</p>
-            </Card>
-          )}
+          {/* Notes Timeline */}
+          <ProspectNotes prospectId={id} legacyNotes={prospect.notes ?? null} />
         </div>
 
         {/* Right col */}
@@ -1067,6 +1218,464 @@ export default function ProspectDetailPage() {
         <ProspectEditModal prospect={prospect} onClose={() => setShowEdit(false)} />
       )}
     </div>
+  )
+}
+
+const DEMO_STATUS_COLORS: Record<string, string> = {
+  published: 'bg-green-100 text-green-700',
+  draft: 'bg-slate-100 text-slate-500',
+  archived: 'bg-red-50 text-red-500',
+  live: 'bg-green-100 text-green-700',
+}
+
+function ProspectDemos({ prospectId, initialDemos }: { prospectId: string; initialDemos: Demo[] }) {
+  const queryClient = useQueryClient()
+  const [demos, setDemos] = useState<Demo[]>(initialDemos)
+  const [showAdd, setShowAdd] = useState(false)
+  const [addForm, setAddForm] = useState({
+    demo_url: '',
+    platform: 'other' as 'verpex' | 'vercel' | 'netlify' | 'other',
+    status: 'published' as 'draft' | 'published' | 'archived',
+    page_count: '',
+    notes: '',
+  })
+  const [addError, setAddError] = useState<string | null>(null)
+  const [addSaving, setAddSaving] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  // Keep demos in sync when initial data changes
+  useEffect(() => setDemos(initialDemos), [initialDemos])
+
+  async function addDemo() {
+    setAddSaving(true)
+    setAddError(null)
+    try {
+      const res = await fetch(`/api/admin/prospects/${prospectId}/demos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          demo_url: addForm.demo_url,
+          platform: addForm.platform,
+          status: addForm.status,
+          page_count: addForm.page_count ? parseInt(addForm.page_count) : null,
+          notes: addForm.notes || null,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to add demo')
+      }
+      const { demo } = await res.json()
+      setDemos(prev => [demo, ...prev])
+      setShowAdd(false)
+      setAddForm({ demo_url: '', platform: 'other', status: 'published', page_count: '', notes: '' })
+      queryClient.invalidateQueries({ queryKey: ['prospects-all'] })
+    } catch (e) {
+      setAddError(e instanceof Error ? e.message : 'Failed to add demo')
+    } finally {
+      setAddSaving(false)
+    }
+  }
+
+  async function deleteDemo(demoId: string) {
+    setDeletingId(demoId)
+    try {
+      const res = await fetch(`/api/admin/prospects/${prospectId}/demos/${demoId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete')
+      setDemos(prev => prev.filter(d => d.id !== demoId))
+      setConfirmDeleteId(null)
+      queryClient.invalidateQueries({ queryKey: ['prospects-all'] })
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-3">
+        <CardTitle>Demos</CardTitle>
+        <button
+          onClick={() => setShowAdd(v => !v)}
+          className="text-xs text-[var(--teal)] hover:text-[var(--teal-dark)] flex items-center gap-1"
+        >
+          <Plus className="w-3 h-3" /> Link Demo
+        </button>
+      </div>
+
+      {/* Add form */}
+      {showAdd && (
+        <div className="mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+          <div>
+            <label className="text-xs text-slate-500 font-medium">Demo URL *</label>
+            <input
+              type="url"
+              value={addForm.demo_url}
+              onChange={e => setAddForm(f => ({ ...f, demo_url: e.target.value }))}
+              placeholder="https://..."
+              className="mt-0.5 w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs text-slate-500 font-medium">Platform</label>
+              <select
+                value={addForm.platform}
+                onChange={e => setAddForm(f => ({ ...f, platform: e.target.value as typeof addForm.platform }))}
+                className="mt-0.5 w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+              >
+                <option value="verpex">Verpex</option>
+                <option value="vercel">Vercel</option>
+                <option value="netlify">Netlify</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-slate-500 font-medium">Status</label>
+              <select
+                value={addForm.status}
+                onChange={e => setAddForm(f => ({ ...f, status: e.target.value as typeof addForm.status }))}
+                className="mt-0.5 w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+              >
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-slate-500 font-medium">Page count</label>
+            <input
+              type="number"
+              value={addForm.page_count}
+              onChange={e => setAddForm(f => ({ ...f, page_count: e.target.value }))}
+              placeholder="e.g. 5"
+              min={0}
+              className="mt-0.5 w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-slate-500 font-medium">Notes</label>
+            <textarea
+              value={addForm.notes}
+              onChange={e => setAddForm(f => ({ ...f, notes: e.target.value }))}
+              placeholder="Optional notes…"
+              rows={2}
+              className="mt-0.5 w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[var(--teal)] resize-none"
+            />
+          </div>
+          {addError && <p className="text-xs text-red-500">{addError}</p>}
+          <div className="flex gap-2">
+            <button
+              onClick={addDemo}
+              disabled={!addForm.demo_url || addSaving}
+              className="px-2.5 py-1.5 bg-[var(--teal)] text-white text-xs font-semibold rounded hover:bg-[var(--teal-dark)] disabled:opacity-40"
+            >
+              {addSaving ? '…' : 'Link Demo'}
+            </button>
+            <button
+              onClick={() => { setShowAdd(false); setAddError(null) }}
+              className="px-2.5 py-1.5 text-xs text-slate-500 border border-slate-200 rounded hover:border-slate-300"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {demos.length === 0 ? (
+        <p className="text-slate-400 text-sm">No demos linked yet.</p>
+      ) : (
+        <div className="space-y-3">
+          {demos.map(demo => (
+            <div key={demo.id} className="group border border-slate-100 rounded-lg overflow-hidden">
+              {/* Screenshot thumbnail */}
+              {demo.screenshot_url && (
+                <div className="border-b border-slate-100">
+                  <img
+                    src={demo.screenshot_url}
+                    alt="Demo screenshot"
+                    className="w-full h-28 object-cover object-top"
+                  />
+                </div>
+              )}
+              <div className="p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <a
+                      href={demo.demo_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-[var(--teal-dark)] hover:underline flex items-center gap-1 truncate"
+                    >
+                      <span className="truncate">{demo.demo_url}</span>
+                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                    </a>
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                      <span className={cn(
+                        'text-[0.65rem] px-1.5 py-0.5 rounded font-medium',
+                        DEMO_STATUS_COLORS[demo.status] ?? 'bg-slate-100 text-slate-500'
+                      )}>
+                        {demo.status}
+                      </span>
+                      {demo.platform && (
+                        <span className="text-[0.65rem] text-slate-500">{demo.platform}</span>
+                      )}
+                      {demo.version > 0 && (
+                        <span className="text-[0.65rem] text-slate-500">v{demo.version}</span>
+                      )}
+                      {demo.page_count > 0 && (
+                        <span className="text-[0.65rem] text-slate-500">{demo.page_count} pages</span>
+                      )}
+                      {demo.view_count > 0 && (
+                        <span className="text-[0.65rem] text-slate-500">{demo.view_count} views</span>
+                      )}
+                      {demo.last_viewed_at && (
+                        <span className="text-[0.65rem] text-slate-400">
+                          last viewed {new Date(demo.last_viewed_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                    {demo.notes && (
+                      <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">{demo.notes}</p>
+                    )}
+                  </div>
+                  <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {confirmDeleteId === demo.id ? (
+                      <button
+                        onClick={() => deleteDemo(demo.id)}
+                        disabled={deletingId === demo.id}
+                        className="text-xs text-red-600 font-semibold hover:text-red-800"
+                      >
+                        {deletingId === demo.id ? '…' : 'Confirm?'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(demo.id)}
+                        className="text-slate-400 hover:text-red-500"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+interface ProspectNote {
+  id: string
+  body: string
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+function formatTimestampFull(ts: string) {
+  const d = new Date(ts)
+  const now = new Date()
+  const diffMs = now.getTime() - d.getTime()
+  const diffMin = Math.floor(diffMs / 60_000)
+  const diffHr = Math.floor(diffMs / 3_600_000)
+  const diffDay = Math.floor(diffMs / 86_400_000)
+  if (diffMin < 1) return 'just now'
+  if (diffMin < 60) return `${diffMin}m ago`
+  if (diffHr < 24) return `${diffHr}h ago`
+  if (diffDay < 7) return `${diffDay}d ago`
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function ProspectNotes({ prospectId, legacyNotes }: { prospectId: string; legacyNotes: string | null }) {
+  const queryClient = useQueryClient()
+  const [newBody, setNewBody] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editBody, setEditBody] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [addError, setAddError] = useState<string | null>(null)
+
+  const notesQuery = useQuery({
+    queryKey: ['prospect-notes', prospectId],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/prospects/${prospectId}/notes`)
+      if (!res.ok) throw new Error('Failed to fetch notes')
+      return res.json() as Promise<{ notes: ProspectNote[] }>
+    },
+    enabled: !!prospectId,
+  })
+
+  const addMutation = useMutation({
+    mutationFn: async (body: string) => {
+      const res = await fetch(`/api/admin/prospects/${prospectId}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to add note')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prospect-notes', prospectId] })
+      setNewBody('')
+      setAddError(null)
+    },
+    onError: (e: Error) => setAddError(e.message),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async (noteId: string) => {
+      const res = await fetch(`/api/admin/prospects/${prospectId}/notes/${noteId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete note')
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prospect-notes', prospectId] })
+      setConfirmDeleteId(null)
+    },
+  })
+
+  async function saveEdit(noteId: string) {
+    if (!editBody.trim()) return
+    setSavingEdit(true)
+    try {
+      const res = await fetch(`/api/admin/prospects/${prospectId}/notes/${noteId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: editBody.trim() }),
+      })
+      if (!res.ok) throw new Error('Failed to update note')
+      queryClient.invalidateQueries({ queryKey: ['prospect-notes', prospectId] })
+      setEditingId(null)
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  const notes = notesQuery.data?.notes ?? []
+
+  return (
+    <Card>
+      <CardTitle>Notes</CardTitle>
+
+      {/* Add note form */}
+      <div className="mb-4 pb-4 border-b border-slate-100">
+        <textarea
+          value={newBody}
+          onChange={e => setNewBody(e.target.value)}
+          placeholder="Add a note…"
+          rows={3}
+          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[var(--teal)] resize-none"
+        />
+        {addError && <p className="text-xs text-red-500 mt-1">{addError}</p>}
+        <div className="flex justify-end mt-2">
+          <button
+            onClick={() => addMutation.mutate(newBody.trim())}
+            disabled={!newBody.trim() || addMutation.isPending}
+            className="px-3 py-1.5 bg-[var(--teal)] text-white text-xs font-medium rounded-lg hover:bg-[var(--teal-dark)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {addMutation.isPending ? 'Adding…' : 'Add Note'}
+          </button>
+        </div>
+      </div>
+
+      {/* Notes list */}
+      {notesQuery.isLoading ? (
+        <p className="text-slate-400 text-sm text-center py-4">Loading…</p>
+      ) : notes.length === 0 && !legacyNotes ? (
+        <p className="text-slate-400 text-sm text-center py-2">No notes yet.</p>
+      ) : (
+        <div className="space-y-3">
+          {notes.map(note => (
+            <div key={note.id} className="group border border-slate-100 rounded-lg p-3 bg-slate-50">
+              {editingId === note.id ? (
+                <div className="space-y-2">
+                  <textarea
+                    value={editBody}
+                    onChange={e => setEditBody(e.target.value)}
+                    rows={4}
+                    className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-[var(--teal)] resize-none"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => saveEdit(note.id)}
+                      disabled={savingEdit || !editBody.trim()}
+                      className="px-2.5 py-1 bg-[var(--teal)] text-white text-xs font-semibold rounded hover:bg-[var(--teal-dark)] disabled:opacity-40"
+                    >
+                      {savingEdit ? '…' : 'Save'}
+                    </button>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="px-2.5 py-1 text-xs text-slate-500 border border-slate-200 rounded hover:border-slate-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{note.body}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="text-xs text-slate-400 cursor-default"
+                        title={new Date(note.created_at).toLocaleString()}
+                      >
+                        {formatTimestampFull(note.created_at)}
+                      </span>
+                      {note.created_by && (
+                        <>
+                          <span className="text-slate-300 text-xs">·</span>
+                          <span className="text-xs text-slate-400">{note.created_by}</span>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => { setEditingId(note.id); setEditBody(note.body) }}
+                        className="text-xs text-slate-400 hover:text-slate-700 flex items-center gap-0.5"
+                      >
+                        <Pencil className="w-3 h-3" /> Edit
+                      </button>
+                      {confirmDeleteId === note.id ? (
+                        <button
+                          onClick={() => deleteMutation.mutate(note.id)}
+                          disabled={deleteMutation.isPending}
+                          className="text-xs text-red-600 font-semibold hover:text-red-800"
+                        >
+                          Confirm?
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeleteId(note.id)}
+                          className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-0.5"
+                        >
+                          <Trash2 className="w-3 h-3" /> Delete
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+
+          {/* Legacy notes (read-only) */}
+          {legacyNotes && (
+            <div className="border border-dashed border-slate-200 rounded-lg p-3 bg-white">
+              <p className="text-[0.65rem] font-semibold text-slate-400 uppercase tracking-wider mb-1">Legacy Notes (read-only)</p>
+              <p className="text-sm text-slate-500 whitespace-pre-wrap leading-relaxed">{legacyNotes}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
   )
 }
 
