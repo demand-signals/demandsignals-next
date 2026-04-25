@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Loader2, ChevronDown, ChevronRight, ExternalLink, CheckCircle2, Circle, Clock } from 'lucide-react'
 import { formatCents } from '@/lib/format'
 import type { ProjectRow, ProjectPhase, ProjectPhaseDeliverable } from '@/lib/invoice-types'
+import { OutstandingObligations } from './OutstandingObligations'
 
 // Extended with joined prospect data
 interface ProjectDetail extends ProjectRow {
@@ -279,6 +280,14 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
           </div>
         </div>
       </div>
+
+      {/* Outstanding Obligations (cash installments + TIK ledgers) */}
+      {project.prospects && (
+        <OutstandingObligations
+          projectId={project.id}
+          prospectId={project.prospects.id}
+        />
+      )}
 
       {/* Client block */}
       {project.prospects && (
