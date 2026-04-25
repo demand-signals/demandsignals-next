@@ -76,6 +76,7 @@ interface PublicInvoice {
 interface InvoiceResponse {
   invoice: PublicInvoice
   line_items: PublicLineItem[]
+  stripe_enabled: boolean
 }
 
 // ── Data fetch ────────────────────────────────────────────────────────
@@ -134,6 +135,8 @@ export default async function PublicInvoicePage({
   const isPaid      = invoice.status === 'paid'
   const isVoid      = invoice.status === 'void'
   const isOutstanding = !isPaid && !isVoid && invoice.total_due_cents > 0
+  const canPay = isOutstanding && data.stripe_enabled
+  const payRedirectHref = `/api/invoices/public/${number}/pay?key=${uuid}`
   const downloadUrl   = `/api/invoices/public/${number}/pdf?key=${uuid}`
 
   const lateFeeApplied = (invoice.late_fee_cents ?? 0) > 0 && !!invoice.late_fee_applied_at
@@ -486,15 +489,13 @@ export default async function PublicInvoicePage({
               PAYMENT INSTRUCTIONS
             </p>
 
-            {invoice.stripe_payment_link_url ? (
+            {canPay ? (
               <div>
                 <p style={{ fontSize: 13, color: T.dark, lineHeight: 1.6, marginBottom: 16 }}>
                   Click the button below to pay securely via card. Your invoice number will be auto-referenced.
                 </p>
                 <a
-                  href={invoice.stripe_payment_link_url}
-                  target="_blank"
-                  rel="noreferrer"
+                  href={payRedirectHref}
                   style={{
                     display: 'inline-block',
                     background: T.orangeDeep,
@@ -585,11 +586,9 @@ export default async function PublicInvoicePage({
             >
               ↓ Download PDF
             </a>
-            {isOutstanding && invoice.stripe_payment_link_url && (
+            {canPay && (
               <a
-                href={invoice.stripe_payment_link_url}
-                target="_blank"
-                rel="noreferrer"
+                href={payRedirectHref}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
