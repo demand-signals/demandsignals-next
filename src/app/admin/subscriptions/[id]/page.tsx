@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
 import ProspectContactEditor, { ProspectContact } from '@/components/admin/ProspectContactEditor'
 import { formatCents } from '@/lib/format'
+import { SubscriptionActionPanel } from './SubscriptionActionPanel'
 
 interface SubscriptionDetail {
   subscription: {
@@ -20,6 +21,8 @@ interface SubscriptionDetail {
     override_monthly_amount_cents: number | null
     canceled_at: string | null
     cancel_reason: string | null
+    cycle_cap: number | null
+    paused_until: string | null
     prospect: ProspectContact & { business_name: string }
     plan: { name: string; price_cents: number; billing_interval: string; description: string | null }
   }
@@ -244,6 +247,18 @@ export default function SubscriptionDetailPage({
           </button>
         </div>
       </div>
+
+      {/* Plan C action panel: Pause/Resume + cycle remaining + Customer Portal link */}
+      <SubscriptionActionPanel
+        subscription={{
+          id: sub.id,
+          status: sub.status,
+          stripe_subscription_id: sub.stripe_subscription_id,
+          cycle_cap: sub.cycle_cap,
+          end_date: sub.end_date,
+          paused_until: sub.paused_until,
+        }}
+      />
 
       {/* Client info */}
       {sub.prospect && (
