@@ -5,6 +5,13 @@
 //   2. Auto-generate the deposit invoice (25% by default, per pricing.deposit_cents)
 //   3. Link deposit_invoice_id back on the SOW row
 //   4. Return the deposit invoice's public URL so client can pay immediately
+//
+// NOTE (Plan B): This route runs the simple "single deposit installment"
+// lifecycle for the magic-link client-Accept flow. The admin path uses
+// /api/admin/sow/[id]/convert → src/lib/payment-plans.ts, which supports
+// multi-installment + TIK + cascade triggers + Stripe subscriptions.
+// Both paths converge on the same downstream side effects (project +
+// prospect.is_client + subscriptions + trade_credits). Keep them in sync.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'

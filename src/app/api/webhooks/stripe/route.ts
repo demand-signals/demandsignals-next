@@ -101,6 +101,14 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
           paymentReference: reference,
           note: `Stripe ${event.type} ${event.id}`,
         })
+
+        // Plan B cascade: if this invoice is linked to a payment_installment,
+        // mark the installment paid → fires any on_completion_of_payment dependents.
+        const { findInstallmentForInvoice, markInstallmentPaid } = await import('@/lib/payment-plans')
+        const installmentId = await findInstallmentForInvoice(invoiceId)
+        if (installmentId && amountCents) {
+          await markInstallmentPaid(installmentId, amountCents)
+        }
       }
       return
     }
@@ -175,6 +183,24 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
           canceled_at: new Date().toISOString(),
           cancel_reason: sub.cancellation_details?.reason ?? 'stripe_deleted',
         })
+        .eq('stripe_subscription_id', sub.id)
+      return
+    }
+
+    case 'customer.subscription.paused': {
+      const sub = event.data.object as Stripe.Subscription
+      await supabaseAdmin
+        .from('subscriptions')
+        .update({ status: 'paused' })
+        .eq('stripe_subscription_id', sub.id)
+      return
+    }
+
+    case 'customer.subscription.resumed': {
+      const sub = event.data.object as Stripe.Subscription
+      await supabaseAdmin
+        .from('subscriptions')
+        .update({ status: 'active', paused_until: null })
         .eq('stripe_subscription_id', sub.id)
       return
     }
