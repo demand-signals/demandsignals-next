@@ -21,6 +21,7 @@ import { formatCents } from '@/lib/format'
 import { CatalogPicker, type CatalogPickerItem } from '@/components/admin/catalog-picker'
 import ProspectContactEditor, { type ProspectContact } from '@/components/admin/ProspectContactEditor'
 import type { Cadence } from '@/lib/invoice-types'
+import { ConvertButton } from './ConvertButton'
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -695,6 +696,32 @@ export default function SowDetailPage({
             <ExternalLink className="w-3.5 h-3.5" /> Client view
           </a>
         )}
+
+        {/* Convert SOW to Project — always visible per Plan B spec */}
+        <ConvertButton
+          sow={{
+            id: sow.id,
+            sow_number: sow.sow_number,
+            title: sow.title,
+            status: sow.status,
+            total_cents: sow.pricing.total_cents,
+            trade_credit_cents: (sow as unknown as { trade_credit_cents?: number }).trade_credit_cents ?? 0,
+            trade_credit_description:
+              (sow as unknown as { trade_credit_description?: string | null }).trade_credit_description ?? null,
+            phases: (sow.phases ?? []).map((p) => ({ id: p.id, name: p.name })),
+            recurring_deliverables: (sow.phases ?? []).flatMap((p) =>
+              (p.deliverables ?? [])
+                .filter((d) => ['monthly', 'quarterly', 'annual'].includes(d.cadence))
+                .map((d) => ({
+                  id: d.id,
+                  name: d.name,
+                  monthly_cents:
+                    (d.unit_price_cents ?? 0) * ((d.hours ?? d.quantity ?? 1) || 1),
+                  cadence: d.cadence as 'monthly' | 'quarterly' | 'annual',
+                })),
+            ),
+          }}
+        />
       </div>
 
       {/* Branded document */}
