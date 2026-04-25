@@ -111,6 +111,14 @@ export async function ensurePaymentLink(
           quantity: 1,
         },
       ],
+      customer_creation: 'always',
+      payment_intent_data: {
+        setup_future_usage: 'off_session',
+        metadata: {
+          dsig_invoice_id: invoice.id,
+          dsig_invoice_number: invoice.invoice_number,
+        },
+      },
       metadata: {
         dsig_invoice_id: invoice.id,
         dsig_invoice_number: invoice.invoice_number,
