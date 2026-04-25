@@ -87,7 +87,20 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
     case 'payment_intent.succeeded': {
       const invoiceId = await findInvoiceForStripeEvent(event)
       if (invoiceId) {
-        await markInvoicePaidFromStripe(invoiceId, { paymentMethod: 'stripe' })
+        // Extract amount: checkout sessions use amount_total (cents),
+        // payment_intents use amount_received.
+        const obj = event.data.object as unknown as Record<string, unknown>
+        const amountCents =
+          (obj.amount_total as number | undefined) ??
+          (obj.amount_received as number | undefined) ??
+          undefined
+        const reference = (obj.id as string | undefined) ?? null
+        await markInvoicePaidFromStripe(invoiceId, {
+          paymentMethod: 'stripe',
+          amountCents,
+          paymentReference: reference,
+          note: `Stripe ${event.type} ${event.id}`,
+        })
       }
       return
     }
@@ -96,7 +109,15 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
       // Subscription cycle invoice marked paid by Stripe.
       const invoiceId = await findInvoiceForStripeEvent(event)
       if (invoiceId) {
-        await markInvoicePaidFromStripe(invoiceId, { paymentMethod: 'stripe' })
+        const obj = event.data.object as unknown as Record<string, unknown>
+        const amountCents = (obj.amount_paid as number | undefined) ?? undefined
+        const reference = (obj.id as string | undefined) ?? null
+        await markInvoicePaidFromStripe(invoiceId, {
+          paymentMethod: 'stripe',
+          amountCents,
+          paymentReference: reference,
+          note: `Stripe invoice.paid ${event.id}`,
+        })
       }
       return
     }

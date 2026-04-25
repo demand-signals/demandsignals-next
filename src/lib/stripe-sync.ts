@@ -150,15 +150,22 @@ export async function ensurePaymentLink(
 
 /**
  * Mark an invoice paid in response to a successful Stripe event.
- * Idempotent: if already paid, no-op.
+ * Idempotent: if already paid or void, no-op. Supports partial payments —
+ * if amountCents < total_due_cents, status stays 'sent'/'viewed' and a
+ * receipt is still created for the partial amount.
  */
 export async function markInvoicePaidFromStripe(
   invoiceId: string,
-  options: { paymentMethod?: string; note?: string } = {},
+  options: {
+    paymentMethod?: string
+    note?: string
+    amountCents?: number
+    paymentReference?: string | null
+  } = {},
 ): Promise<void> {
   const { data: current } = await supabaseAdmin
     .from('invoices')
-    .select('status')
+    .select('id, status, total_due_cents, prospect_id')
     .eq('id', invoiceId)
     .maybeSingle()
 
@@ -166,15 +173,101 @@ export async function markInvoicePaidFromStripe(
     return
   }
 
+  const amountCents = options.amountCents ?? current.total_due_cents
+  const isFullPayment = amountCents >= current.total_due_cents
+  const newStatus = isFullPayment ? 'paid' : current.status
+  const paymentMethod = options.paymentMethod ?? 'stripe'
+
   await supabaseAdmin
     .from('invoices')
     .update({
-      status: 'paid',
-      paid_at: new Date().toISOString(),
-      paid_method: options.paymentMethod ?? 'stripe',
-      paid_note: options.note ?? 'Paid via Stripe',
+      status: newStatus,
+      ...(isFullPayment
+        ? {
+            paid_at: new Date().toISOString(),
+            paid_method: paymentMethod,
+            paid_note: options.note ?? 'Paid via Stripe',
+          }
+        : {}),
     })
     .eq('id', invoiceId)
+
+  if (current.prospect_id) {
+    await createReceiptForInvoice({
+      invoiceId,
+      prospectId: current.prospect_id,
+      amountCents,
+      paymentMethod,
+      paymentReference: options.paymentReference ?? null,
+      notes: options.note ?? null,
+    })
+  }
+}
+
+// ── Auto-issue RCT receipt for a paid invoice ───────────────────────
+// Mirrors the receipt-creation block in /api/admin/invoices/[id]/mark-paid.
+// Idempotent: if a receipt already exists for this invoice with the same
+// amount + payment_method, skips creation.
+//
+// Best-effort: failures are logged but never thrown. The invoice is already
+// marked paid; missing a receipt is a recoverable state (admin can re-create
+// from the admin UI later).
+export async function createReceiptForInvoice(args: {
+  invoiceId: string
+  prospectId: string
+  amountCents: number
+  paymentMethod: string
+  paymentReference?: string | null
+  notes?: string | null
+}): Promise<void> {
+  const { data: existing } = await supabaseAdmin
+    .from('receipts')
+    .select('id')
+    .eq('invoice_id', args.invoiceId)
+    .eq('amount_cents', args.amountCents)
+    .eq('payment_method', args.paymentMethod)
+    .limit(1)
+    .maybeSingle()
+  if (existing) return
+
+  const tempRct = `PENDING-${crypto.randomUUID()}`
+  const { data: rctRow, error: rctErr } = await supabaseAdmin
+    .from('receipts')
+    .insert({
+      receipt_number: tempRct,
+      invoice_id: args.invoiceId,
+      prospect_id: args.prospectId,
+      amount_cents: args.amountCents,
+      currency: 'USD',
+      payment_method: args.paymentMethod,
+      payment_reference: args.paymentReference ?? null,
+      paid_at: new Date().toISOString(),
+      notes: args.notes ?? null,
+    })
+    .select('id')
+    .single()
+
+  if (rctErr || !rctRow) {
+    console.error('[createReceiptForInvoice] insert failed:', rctErr?.message)
+    return
+  }
+
+  try {
+    const { allocateDocNumber } = await import('./doc-numbering')
+    const rctNumber = await allocateDocNumber({
+      doc_type: 'RCT',
+      prospect_id: args.prospectId,
+      ref_table: 'receipts',
+      ref_id: rctRow.id,
+    })
+    await supabaseAdmin
+      .from('receipts')
+      .update({ receipt_number: rctNumber })
+      .eq('id', rctRow.id)
+  } catch (numErr) {
+    console.error('[createReceiptForInvoice] numbering failed:', numErr instanceof Error ? numErr.message : numErr)
+    // Receipt remains as PENDING-… — visible in admin and fixable manually.
+  }
 }
 
 /**
