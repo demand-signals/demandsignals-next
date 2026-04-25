@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { isStripeEnabled } from '@/lib/stripe-client'
 
 const PUBLIC_STATUSES = ['sent', 'viewed', 'paid', 'void']
 
@@ -70,8 +71,11 @@ export async function GET(
       .eq('id', invoice.id)
   }
 
+  const stripeEnabled = await isStripeEnabled()
+
   return NextResponse.json({
     invoice: { ...invoice, superseded_by_number },
     line_items: lineItems ?? [],
+    stripe_enabled: stripeEnabled,
   })
 }
