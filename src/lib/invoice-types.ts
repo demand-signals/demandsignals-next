@@ -151,6 +151,8 @@ export interface Subscription {
   end_date: string | null
   notes: string | null
   override_monthly_amount_cents: number | null
+  cycle_cap: number | null
+  paused_until: string | null
   created_at: string
   updated_at: string
 }

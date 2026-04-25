@@ -7,6 +7,7 @@
 --   • payment_schedules + payment_installments tables (Plan B foundation)
 --   • sow_documents.parent_sow_id (change orders)
 --   • invoices.payment_installment_id (webhook → installment cascade)
+--   • subscriptions.cycle_cap + paused_until (Plan C)
 --   • receipts.payment_method extended to include 'tik'
 -- ════════════════════════════════════════════════════════════════════
 
@@ -67,6 +68,12 @@ CREATE INDEX IF NOT EXISTS idx_sow_documents_parent ON sow_documents(parent_sow_
 ALTER TABLE invoices
   ADD COLUMN IF NOT EXISTS payment_installment_id UUID REFERENCES payment_installments(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS idx_invoices_payment_installment ON invoices(payment_installment_id) WHERE payment_installment_id IS NOT NULL;
+
+-- ── 025c_subscription_caps_and_pause.sql ────────────────────────────
+ALTER TABLE subscriptions
+  ADD COLUMN IF NOT EXISTS cycle_cap INT,
+  ADD COLUMN IF NOT EXISTS paused_until DATE;
+CREATE INDEX IF NOT EXISTS idx_subscriptions_paused_until ON subscriptions(paused_until) WHERE paused_until IS NOT NULL;
 
 -- ── 025e_receipts_tik_method.sql ────────────────────────────────────
 DO $$
