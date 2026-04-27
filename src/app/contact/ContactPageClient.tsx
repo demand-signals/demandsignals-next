@@ -202,9 +202,6 @@ export default function ContactPageClient() {
               >
                 {status === 'loading' ? 'Sending...' : 'Send It →'}
               </button>
-              <p style={{ textAlign: 'center', color: '#718096', fontSize: '0.85rem' }}>
-                Hunter and Landon read every message and reply personally.
-              </p>
             </form>
           )}
 
