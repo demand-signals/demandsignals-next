@@ -135,3 +135,17 @@ export const EMAIL_REPLY_TO: Partial<Record<EmailKind, string>> = {
 export const CLIENT_FACING_KINDS: ReadonlySet<EmailKind> = new Set<EmailKind>([
   'invoice',
 ])
+
+// ── Admin team SMS targets ──────────────────────────────────────────
+// Comma-separated E.164 numbers in env var. Used for inquiry SMS alerts
+// (and future high-priority notifications). Falls back to empty array
+// if unset — SMS attempts then no-op silently.
+//
+// Example: ADMIN_TEAM_PHONES="+19165422423,+15555550100"
+export function getAdminTeamPhones(): string[] {
+  const raw = process.env.ADMIN_TEAM_PHONES ?? ''
+  return raw
+    .split(',')
+    .map((n) => n.trim())
+    .filter((n) => n.length > 0)
+}

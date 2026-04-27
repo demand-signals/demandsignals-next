@@ -118,7 +118,7 @@ export default function ContactPageClient() {
                 Message Received!
               </h3>
               <p style={{ color: 'var(--slate)', fontSize: '1rem', lineHeight: 1.6 }}>
-                We respond within 1 business hour during Pacific business hours. Talk soon.
+                Thanks — we got it. Hunter or Landon will be in touch shortly. Talk soon.
               </p>
             </div>
           ) : (
@@ -203,7 +203,7 @@ export default function ContactPageClient() {
                 {status === 'loading' ? 'Sending...' : 'Send It →'}
               </button>
               <p style={{ textAlign: 'center', color: '#718096', fontSize: '0.85rem' }}>
-                We respond within 1 business hour during Pacific business hours.
+                Hunter and Landon read every message and reply personally.
               </p>
             </form>
           )}

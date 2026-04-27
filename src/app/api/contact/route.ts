@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { CONTACT_EMAIL } from '@/lib/constants'
+import { CONTACT_EMAIL, getAdminTeamPhones } from '@/lib/constants'
 import { sendEmail } from '@/lib/email'
+import { sendSms } from '@/lib/twilio-sms'
 import { apiGuard, escapeHtml, isValidEmail, sanitizeField, safeErrorResponse } from '@/lib/api-security'
 
 export async function POST(req: NextRequest) {
@@ -49,6 +50,18 @@ export async function POST(req: NextRequest) {
         { status: 502 },
       )
     }
+
+    // ── SMS notification to admin team (best-effort, never blocks response) ──
+    // Honors quote_config.sms_delivery_enabled flag + SMS_TEST_MODE allowlist.
+    // Failures are silent (the email already landed; SMS is bonus alerting).
+    const smsBody = `DSIG inquiry: ${name}${business ? ` (${business})` : ''}${
+      phone ? ` · ${phone}` : ''
+    }${service ? ` · ${service}` : ''}\n${message ? message.slice(0, 200) : '(no message)'}\n— check email for full details`
+    const adminPhones = getAdminTeamPhones()
+    Promise.allSettled(adminPhones.map((p) => sendSms(p, smsBody))).catch(() => {
+      /* fire-and-forget; sendSms already logs internal errors */
+    })
+
     return NextResponse.json({ success: true })
   } catch (err) {
     return safeErrorResponse('contact', err)
