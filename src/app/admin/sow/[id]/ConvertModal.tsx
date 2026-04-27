@@ -255,9 +255,13 @@ export function ConvertModal({ sow, onClose, onConverted }: Props) {
         background: 'rgba(0,0,0,0.5)',
         zIndex: 1000,
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'center',
-        padding: 20,
+        paddingTop: 140,
+        paddingLeft: 20,
+        paddingRight: 20,
+        paddingBottom: 20,
+        overflowY: 'auto',
       }}
     >
       <div
@@ -268,7 +272,7 @@ export function ConvertModal({ sow, onClose, onConverted }: Props) {
           padding: 32,
           maxWidth: 760,
           width: '100%',
-          maxHeight: '90vh',
+          maxHeight: 'calc(100vh - 160px)',
           overflow: 'auto',
           boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         }}
