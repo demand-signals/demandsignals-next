@@ -569,6 +569,18 @@ Key files:
 **Problem:** Attempting to write temp files to `/var/task` on Vercel throws EROFS (read-only filesystem).
 **Solution:** Always use `/tmp` for any transient file writes in API routes (e.g., Chromium temp profile, downloaded logo). `/tmp` is writable and ephemeral in the serverless context.
 
+### JSONB kill-switch reads return native types
+**Problem:** `quote_config.value` is JSONB. PostgREST returns native JS types — JSONB boolean `true` deserializes to JS boolean `true`, NOT string `'true'`. Naive `data?.value === 'true'` fails for every flag stored as a native boolean. Symptom: every kill switch silently returns `false` even though the DB shows `true`. Discovered when SMS dispatch on `/api/contact` was blocked by `isSmsEnabled()` even though `sms_delivery_enabled = true` in `quote_config`.
+**Solution:** All `quote_config.value` reads for boolean flags must accept both formats:
+```ts
+return data?.value === true || data?.value === 'true'
+```
+The `/api/admin/config` PATCH path (commit `9e0784d`) coerces incoming `'true'`/`'false'` strings to native JS booleans before upserting, so future writes are canonical JSONB booleans. Mixed-format legacy rows continue to work because readers tolerate both.
+
+### Empty initial query result during deploy lag
+**Problem:** Running diagnostic SQL right after a code change that should write rows can return zero results — even though the new code was deployed and triggered. Cause: the test action ran against an OLD Vercel deploy that hadn't picked up the new code yet, OR the query ran before the row was inserted.
+**Solution:** Always confirm the Vercel deploy SHA matches your latest commit BEFORE running a "did the new code run?" diagnostic. Easy check: `curl -s -o /dev/null -D - https://demandsignals.co | grep -i "x-vercel-id"` and compare.
+
 ---
 
 ## 13. Important Constraints
