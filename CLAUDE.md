@@ -714,31 +714,39 @@ scope unified under a single apex domain.
 | `*.staging.demandsignals.co` | Per-client project staging. `[client-code].staging.demandsignals.co`. Real production builds pre-launch. | weeks to months |
 | `assets.demandsignals.co` | R2 public bucket — CDN-backed static assets (marketing, media, logos, public project galleries) | permanent |
 | `[clientdomain].com` | Client's live site. Same Vercel project as `[client-code].staging.demandsignals.co`, promoted via domain alias + env var change. | permanent (post-launch) |
-| `demandsignals.dev` | **Intended to be retired (squat-protection only), but currently active as demo-sites fallback — see reconciliation note below.** | — |
+| `demandsignals.dev` | **Retired 2026-04-27.** Historical demos remain reachable until DNS cut; no new demos use this domain; tracking-blind. | wind-down |
+| `demandsignals.us` | **Retired 2026-04-27.** Historical demos remain reachable until DNS cut; tracking-blind. | wind-down |
 
-### Reconciliation note (added 2026-04-21)
+### Reconciliation note (updated 2026-04-27)
 
-The 2026-04-17 decision above declared `demandsignals.dev` retired. That has
-not happened in practice yet. As of 2026-04-21:
+Final decision: `[client_code].demos.demandsignals.co` is the canonical
+demo-site URL going forward. `demandsignals.dev` and `demandsignals.us` are
+being retired.
 
-- **`*.demandsignals.dev` is the active, working URL for demo sites.** The
-  `demo-sites` Vercel project serves every prospect's demo at
-  `[code].demandsignals.dev`. The Vercel wildcard entry is Valid.
-- **`*.demos.demandsignals.co` shows "Invalid Configuration" in Vercel.**
-  Middleware in `demo-sites/src/middleware.ts` was updated 2026-04-21 to
-  recognize both roots, but the `.co` DNS is not wired. Fixing it requires
-  either changing NS on `demandsignals.co` to Vercel (losing Cloudflare for
-  the whole `.co` zone), or adding a `CNAME *.demos → vercel-target` at
-  Cloudflare + switching Vercel's domain mode to external DNS. Pending
-  decision. See `D:\CLAUDE\demo-sites\docs\DNS_STATUS.md` for the live tracker.
-- **`smma.demandsignals.dev` is an exception.** Hunter assigned it directly to
-  the SMMA production Vercel project (`client-southside-mma` repo), not the
-  `demo-sites` project. The mockup for that client lives at
-  `https://smma.demandsignals.dev/mockup` on that production project. This
-  per-project domain assignment overrides the demo-sites wildcard.
+- **Canonical pattern:** `[client_code].demos.demandsignals.co` where
+  `client_code` is the 4-letter prospect code (per §20). Examples:
+  `hang.demos.demandsignals.co`, `mome.demos.demandsignals.co`,
+  `sosi.demos.demandsignals.co`. (DNS is case-insensitive; `client_code`
+  in the DB stays uppercase, the URL renders lowercase.)
+- **`demandsignals.dev`:** historical demos remain reachable until DNS is
+  cut. No new demos use this domain. Tracking on these legacy demos is
+  blind by design — accepted gap.
+- **`demandsignals.us`:** retired. Same blind-tracking acceptance.
+- **Tracking on canonical demos:** every page on
+  `[client_code].demos.demandsignals.co` beacons engagement events to
+  `https://demandsignals.co/api/track/beacon` so all visits flow into the
+  unified `page_visits` table keyed to the prospect via `client_code`.
+  (Beacon implementation lives in the demo-sites repo; see Project #1.5
+  Universal Engagement Tracking spec.)
+- **`smma.demandsignals.dev` exception** still applies — Hunter assigned
+  this domain directly to a per-client production Vercel project, not the
+  `demo-sites` project. The exception persists until the client moves to
+  their owned domain.
 
-Until the `.co` DNS is fixed and demos are migrated, `demandsignals.dev`
-stays active. Update this section when that cut over.
+Operational fix path for the `.demos.demandsignals.co` DNS (still pending
+until executed): add a `CNAME *.demos → vercel-target` at Cloudflare and
+switch Vercel's domain mode to external DNS. Tracker:
+`D:\CLAUDE\demo-sites\docs\DNS_STATUS.md`.
 
 ### Demo vs Staging (different lifecycle, different rigor)
 
