@@ -203,7 +203,30 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     })
-    if (res.ok) load()
+    if (res.ok) {
+      load()
+      return
+    }
+    // Handle 409 (un-delivered deliverables block phase completion).
+    if (res.status === 409) {
+      const data = await res.json().catch(() => ({}))
+      const names = Array.isArray(data.undelivered_names) ? data.undelivered_names.join(', ') : ''
+      const proceed = confirm(
+        `Cannot complete this phase yet — ${data.undelivered_count ?? ''} deliverable(s) are not marked delivered:\n\n${names}\n\nClick OK to mark the phase complete anyway (force override), or Cancel to mark deliverables first.`,
+      )
+      if (proceed) {
+        const r2 = await fetch(`/api/admin/projects/${id}/phases/${phaseId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status, force: true }),
+        })
+        if (r2.ok) load()
+        else alert(`Force update failed: ${(await r2.json()).error ?? r2.statusText}`)
+      }
+      return
+    }
+    const errBody = await res.json().catch(() => ({}))
+    alert(`Failed to update phase: ${errBody.error ?? res.statusText}`)
   }
 
   async function updateDeliverable(

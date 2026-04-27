@@ -20,7 +20,7 @@ export async function PATCH(
   const body = await request.json().catch(() => null)
   if (!body) return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
 
-  const { status } = body as { status: ProjectPhase['status'] }
+  const { status, force } = body as { status: ProjectPhase['status']; force?: boolean }
   if (!['pending', 'in_progress', 'completed'].includes(status)) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
   }
@@ -38,7 +38,29 @@ export async function PATCH(
   const phaseIdx = phases.findIndex((p) => p.id === phaseId)
   if (phaseIdx === -1) return NextResponse.json({ error: 'Phase not found' }, { status: 404 })
 
-  const wasCompleted = phases[phaseIdx].status === 'completed'
+  const targetPhase = phases[phaseIdx]
+  const wasCompleted = targetPhase.status === 'completed'
+
+  // ── Guard: cannot complete a phase with un-delivered deliverables ──
+  // This protects against accidental phase completion that would otherwise
+  // fire any milestone-triggered payment installments prematurely.
+  // Admin can pass force=true to override (e.g. backfilling historical data).
+  if (status === 'completed' && !wasCompleted && !force) {
+    const undelivered = (targetPhase.deliverables ?? []).filter(
+      (d) => d.status !== 'delivered',
+    )
+    if (undelivered.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Cannot complete phase: deliverables are not yet delivered',
+          undelivered_count: undelivered.length,
+          undelivered_names: undelivered.map((d) => d.name),
+          hint: 'Mark each deliverable as Delivered first, or pass force=true to override.',
+        },
+        { status: 409 },
+      )
+    }
+  }
 
   const updatedPhases = phases.map((p, i) => {
     if (i !== phaseIdx) return p
