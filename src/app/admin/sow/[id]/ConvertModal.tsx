@@ -253,11 +253,11 @@ export function ConvertModal({ sow, onClose, onConverted }: Props) {
         right: 0,
         bottom: 0,
         background: 'rgba(0,0,0,0.5)',
-        zIndex: 1000,
+        zIndex: 9999,
         display: 'flex',
         alignItems: 'flex-start',
         justifyContent: 'center',
-        paddingTop: 140,
+        paddingTop: 40,
         paddingLeft: 20,
         paddingRight: 20,
         paddingBottom: 20,
@@ -272,9 +272,10 @@ export function ConvertModal({ sow, onClose, onConverted }: Props) {
           padding: 32,
           maxWidth: 760,
           width: '100%',
-          maxHeight: 'calc(100vh - 160px)',
+          maxHeight: 'calc(100vh - 80px)',
           overflow: 'auto',
           boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          marginBottom: 40,
         }}
       >
         <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
