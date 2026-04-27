@@ -595,7 +595,7 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
                 Remove
               </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
               <div>
                 <label style={labelStyle}>Amount ($)</label>
                 <input
@@ -607,7 +607,7 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
                 />
               </div>
               <div>
-                <label style={labelStyle}>Currency</label>
+                <label style={labelStyle}>Settlement</label>
                 <select
                   value={inst.currency_type}
                   onChange={(e) =>
@@ -615,9 +615,38 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
                   }
                   style={inputStyle}
                 >
-                  <option value="cash">Cash</option>
-                  <option value="tik">TIK</option>
+                  <option value="cash">Money</option>
+                  <option value="tik">Services (TIK)</option>
                 </select>
+              </div>
+              <div>
+                {/* Expected payment method only meaningful for cash settlements */}
+                <label style={labelStyle}>
+                  {inst.currency_type === 'cash' ? 'Expected payment' : 'Expected payment'}
+                </label>
+                {inst.currency_type === 'cash' ? (
+                  <select
+                    value={inst.expected_payment_method}
+                    onChange={(e) =>
+                      patchInstallment(idx, {
+                        expected_payment_method: e.target.value as ExpectedPaymentMethod,
+                      })
+                    }
+                    style={inputStyle}
+                  >
+                    <option value="card">Card (Stripe)</option>
+                    <option value="check">Check</option>
+                    <option value="wire">Wire transfer</option>
+                    <option value="ach">ACH</option>
+                    <option value="unspecified">Unspecified</option>
+                  </select>
+                ) : (
+                  <input
+                    value="Services rendered"
+                    disabled
+                    style={{ ...inputStyle, background: '#f4f6f9', color: '#94a0b8' }}
+                  />
+                )}
               </div>
               <div>
                 <label style={labelStyle}>Trigger</label>
