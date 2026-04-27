@@ -45,8 +45,10 @@ CREATE INDEX IF NOT EXISTS idx_prospect_inquiries_email_lower
 
 ALTER TABLE prospect_inquiries ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins read inquiries" ON prospect_inquiries;
 CREATE POLICY "Admins read inquiries"
   ON prospect_inquiries FOR SELECT USING (is_admin());
+DROP POLICY IF EXISTS "Admins update inquiries" ON prospect_inquiries;
 CREATE POLICY "Admins update inquiries"
   ON prospect_inquiries FOR UPDATE USING (is_admin());
 -- INSERT: service_role only (route uses supabaseAdmin); no admin policy.
