@@ -207,21 +207,71 @@ function totalsBlock(inv: InvoiceWithLineItems): string {
 }
 
 // ── Payment card ──────────────────────────────────────────────────────
+// For outstanding cash invoices, embeds a prominent "Pay online" link.
+// PDF links are honored by every modern reader (Adobe, Preview, Chrome,
+// browser inline, mobile mail apps). The URL points at the magic-link
+// HTML page which itself redirects to Stripe via /api/invoices/public/[n]/pay.
+//
+// Why magic-link page (not direct /pay redirect): if Stripe is temporarily
+// disabled OR the invoice has been voided/paid since PDF was generated,
+// the magic-link page handles the state correctly. Direct redirect would 503.
 
-function paymentCard(): string {
+function paymentCard(inv: InvoiceWithLineItems): string {
+  const isPaid = inv.status === 'paid'
+  const isVoid = inv.status === 'void'
+  const isOutstanding = !isPaid && !isVoid && inv.total_due_cents > 0
+  const baseUrl = 'https://demandsignals.co'
+  const payUrl = `${baseUrl}/invoice/${encodeURIComponent(inv.invoice_number)}/${inv.public_uuid}`
+
+  if (!isOutstanding) {
+    // Paid/void/zero — keep the simple text card.
+    return `
+    <div style="
+      margin:20px 54px 0;
+      background:${T.VLT};
+      border-left:3px solid ${T.TEAL_S};
+      padding:14px 20px;
+      font-family:${FONT_STACK};
+    ">
+      <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.TEAL};margin-bottom:7px">PAYMENT</p>
+      <p style="font-size:12px;color:${T.BODY};line-height:1.6">
+        ${isPaid ? 'This invoice has been paid in full. Thank you.' : isVoid ? 'This invoice has been voided.' : 'No balance due.'}
+      </p>
+    </div>`
+  }
+
+  // Outstanding cash invoice — show the prominent Pay button.
   return `
   <div style="
     margin:20px 54px 0;
     background:${T.VLT};
     border-left:3px solid ${T.TEAL_S};
-    padding:14px 20px;
+    padding:16px 20px;
     font-family:${FONT_STACK};
   ">
-    <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.TEAL};margin-bottom:7px">PAYMENT</p>
-    <p style="font-size:12px;color:${T.BODY};line-height:1.6">
-      Pay by check, wire transfer, or via the secure link on your invoice email.
-      Please reference your invoice number when submitting payment.
-      Contact us at DemandSignals@gmail.com with any questions.
+    <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.TEAL};margin-bottom:9px">PAYMENT</p>
+    <p style="font-size:12px;color:${T.BODY};line-height:1.6;margin-bottom:12px">
+      <strong>Pay online instantly with any major credit/debit card.</strong>
+      Click the button below or open the link in any browser. You may also pay by check or wire transfer — please reference invoice <strong>${esc(inv.invoice_number)}</strong>.
+    </p>
+    <table cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 6px"><tr><td style="
+      background:${T.ORANGE_S};
+      border-radius:6px;
+      padding:0;
+    ">
+      <a href="${payUrl}" style="
+        display:inline-block;
+        padding:10px 22px;
+        color:${T.WHITE};
+        font-size:13px;
+        font-weight:700;
+        text-decoration:none;
+        font-family:${FONT_STACK};
+        letter-spacing:0.01em;
+      ">Pay ${esc(formatCents(inv.total_due_cents))} online &rarr;</a>
+    </td></tr></table>
+    <p style="font-size:10px;color:${T.MUTED};line-height:1.5;margin-top:8px;word-break:break-all">
+      Or copy this link: <a href="${payUrl}" style="color:${T.TEAL};text-decoration:underline">${payUrl}</a>
     </p>
   </div>`
 }
@@ -266,7 +316,7 @@ export async function renderInvoicePdf(
     ${billToBlock(invoice, p)}
     ${lineItemsTable(invoice)}
     ${totalsBlock(invoice)}
-    ${paymentCard()}
+    ${paymentCard(invoice)}
     ${notesSection(invoice)}
     <div style="flex:1"></div>
     ${interiorPageFooter()}
