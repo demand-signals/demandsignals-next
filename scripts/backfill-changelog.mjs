@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // ── Backfill AI ChangeLog posts ──────────────────────────────────────────
-// Fetches changelogs via Jina Reader + GitHub Releases API, then generates
-// MDX posts for a range of dates using Claude. Writes to src/content/blog/.
+// Fetches changelogs + news pages via Jina Reader + GitHub Releases API,
+// then generates MDX posts for a range of dates using Claude.
+// Writes to src/content/blog/.
 //
 // Usage: node scripts/backfill-changelog.mjs
 // Requires: ANTHROPIC_API_KEY in .env.local
@@ -38,19 +39,73 @@ if (!ANTHROPIC_API_KEY) {
 }
 
 // ── Config ──
-const START_DATE = '2026-04-01'
-const END_DATE = '2026-04-14'
+const START_DATE = process.env.BACKFILL_START || '2026-04-16'
+const END_DATE = process.env.BACKFILL_END || '2026-04-26'
 const BLOG_DIR = resolve(ROOT, 'src/content/blog')
 
-// Sources scraped via Jina (no dates in content — shared across all days)
+// Two-tier source list:
+//   - 'news'      → catches major product launches (model releases, paradigm shifts)
+//   - 'changelog' → catches incremental dev/API updates
 const JINA_SOURCES = [
-  { id: 'openai', name: 'OpenAI', url: 'https://platform.openai.com/docs/changelog' },
-  { id: 'anthropic', name: 'Anthropic Models', url: 'https://docs.anthropic.com/en/docs/about-claude/models' },
-  { id: 'google-gemini', name: 'Google Gemini', url: 'https://ai.google.dev/gemini-api/docs/changelog' },
-  { id: 'deepseek', name: 'DeepSeek', url: 'https://api-docs.deepseek.com/updates' },
+  // News layer (headline launches)
+  { id: 'anthropic-news', name: 'Anthropic News', url: 'https://www.anthropic.com/news', tier: 'news' },
+  { id: 'openai-news', name: 'OpenAI News', url: 'https://openai.com/news/', tier: 'news' },
+  { id: 'google-deepmind-news', name: 'Google DeepMind Blog', url: 'https://blog.google/technology/google-deepmind/', tier: 'news' },
+  { id: 'meta-ai-news', name: 'Meta AI Blog', url: 'https://ai.meta.com/blog/', tier: 'news' },
+  { id: 'xai-news', name: 'xAI News', url: 'https://x.ai/news', tier: 'news' },
+  { id: 'mistral-news', name: 'Mistral News', url: 'https://mistral.ai/news/', tier: 'news' },
+
+  // Changelog layer (incremental dev updates)
+  { id: 'openai-changelog', name: 'OpenAI API Changelog', url: 'https://platform.openai.com/docs/changelog', tier: 'changelog' },
+  { id: 'anthropic-changelog', name: 'Anthropic API Models', url: 'https://docs.anthropic.com/en/docs/about-claude/models', tier: 'changelog' },
+  { id: 'google-gemini-changelog', name: 'Google Gemini API', url: 'https://ai.google.dev/gemini-api/docs/changelog', tier: 'changelog' },
+  { id: 'deepseek-changelog', name: 'DeepSeek API', url: 'https://api-docs.deepseek.com/updates', tier: 'changelog' },
 ]
 
+// Truncation per tier — news pages are info-dense with date entries, changelog pages are verbose
+const NEWS_TRUNCATE = 15000
+const CHANGELOG_TRUNCATE = 18000
+
 // ── Helpers ──
+
+/**
+ * Strip AI-tells, tool-call syntax, and meta-commentary from generated body.
+ * These patterns scream "AI wrote this" and break the human-columnist voice.
+ */
+function sanitizeBody(body) {
+  let cleaned = body
+    // Tool-call syntax leaks
+    .replace(/<web_search>[\s\S]*?<\/web_search>/g, '')
+    .replace(/<search>[\s\S]*?<\/search>/g, '')
+    .replace(/<[a-z_]+>[\s\S]*?<\/[a-z_]+>/g, '')
+    // Bracketed editor notes
+    .replace(/\[I (need|will|would|should|cannot|can't)[^\]]*?\]/gi, '')
+    .replace(/\[(Note|Editor|TODO|searching)[^\]]*?\]/gi, '')
+    // Sentences/paragraphs that narrate the AI's process
+    .replace(/^I (need to|will|would|should|notice|cannot|can't|don't have)[^.\n]*\.\s*/gim, '')
+    .replace(/^Let me (check|examine|look at|analyze|review|search)[^.\n]*\.\s*/gim, '')
+    .replace(/^Looking at (the|each) (changelog|source|platform|update)[^.\n]*\.\s*/gim, '')
+    .replace(/^Based on (my research|the available data|the sources)[^.\n]*\.\s*/gim, '')
+    .replace(/^After (reviewing|examining|analyzing) (the|each)[^.\n]*\.\s*/gim, '')
+    .replace(/^Upon (further|closer) (analysis|review|inspection)[^.\n]*\.\s*/gim, '')
+    .replace(/^From what I can (see|tell)[^.\n]*\.\s*/gim, '')
+    .replace(/^It (appears|seems) that[^.\n]*\.\s*/gim, '')
+    // Paragraphs that start with the meta-narration patterns
+    .replace(/\n\nI (need to|will|would|should) (search|check|examine|look)[^\n]*\n/gi, '\n\n')
+    .replace(/\n\nLet me (search|check|examine|look)[^\n]*\n/gi, '\n\n')
+    // Collapse multiple blank lines created by removals
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+
+  // Strip any preamble before first ## heading
+  const firstHeadingIdx = cleaned.search(/^## /m)
+  if (firstHeadingIdx > 0) {
+    cleaned = cleaned.slice(firstHeadingIdx)
+  }
+
+  return cleaned
+}
+
 async function fetchViaJina(url) {
   console.log(`  Fetching ${url} via Jina...`)
   const res = await fetch(`https://r.jina.ai/${url}`, {
@@ -66,7 +121,6 @@ async function fetchClaudeCodeReleases() {
   console.log('  Fetching Claude Code releases via GitHub API...')
   const allReleases = []
   let page = 1
-  // Fetch enough pages to cover our date range
   while (page <= 3) {
     const res = await fetch(
       `https://api.github.com/repos/anthropics/claude-code/releases?per_page=50&page=${page}`,
@@ -76,13 +130,11 @@ async function fetchClaudeCodeReleases() {
     const releases = await res.json()
     if (releases.length === 0) break
     allReleases.push(...releases)
-    // Stop if we've passed our date range
     const lastDate = releases[releases.length - 1]?.published_at?.slice(0, 10)
     if (lastDate && lastDate < START_DATE) break
     page++
   }
 
-  // Filter to our date range and group by date
   const byDate = {}
   for (const r of allReleases) {
     const date = r.published_at?.slice(0, 10)
@@ -112,7 +164,7 @@ async function callClaude(prompt) {
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
+      max_tokens: 4500,
       messages: [{ role: 'user', content: prompt }],
     }),
   })
@@ -127,30 +179,86 @@ async function callClaude(prompt) {
 }
 
 function buildPrompt(sourceContent, yesterdayDisplay, todayDisplay, dateStr) {
-  // Extract just month and day for date matching (e.g., "April 1" from "2026-04-01")
   const d = new Date(dateStr + 'T12:00:00Z')
   const monthDay = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
 
-  return `You are writing "The AI ChangeLog" — a daily digest that makes AI platform updates understandable for regular business owners. Think "AI for Dummies" — no jargon, no buzzwords. Explain things the way you'd explain them to a smart friend who doesn't work in tech.
+  return `You are a tech journalist writing "The AI ChangeLog" — Demand Signals' daily column where one person reads every AI platform's updates and translates them for regular business owners. The voice is human, casual, slightly opinionated. A real person at a desk drinking coffee, not an AI chatbot.
 
-This post covers changes from YESTERDAY: ${yesterdayDisplay} (${dateStr})
+This post covers changes from: ${yesterdayDisplay} (${dateStr})
 Today (when this post goes live): ${todayDisplay}
 
-Below are changelog entries from each platform. CAREFULLY scan ALL sources for changes dated ${yesterdayDisplay}, "${monthDay}, 2026", "${monthDay}", or "${dateStr}". Different platforms use different date formats.
+Below are TWO TIERS of sources:
+  • NEWS sources (top section) — major product launches, model releases, paradigm shifts. These are the headlines.
+  • CHANGELOG sources (bottom section) — incremental dev/API updates. These are the bullet items.
 
-IMPORTANT INSTRUCTIONS:
-1. Search EVERY source below for entries matching yesterday's date. Dates in the Google Gemini changelog use "Month Day, Year" format (e.g., "${monthDay}, 2026"). OpenAI uses similar formats. Claude Code releases have explicit dates.
-2. If a platform had changes yesterday, ALWAYS include them — do not skip any platform that shipped updates.
-3. Start your response directly with the first ## heading. Do NOT add any preamble, introduction, or commentary before the first platform heading. No "Looking at yesterday's changes..." or "Here's what happened..." — jump straight to the content.
-4. If NOTHING changed across ALL platforms, write ONLY a short "Quiet day across the board" message.
+═══════════════════════════════════════════════════════════
+VOICE — THIS IS THE MOST IMPORTANT RULE
+═══════════════════════════════════════════════════════════
 
-Write the blog post body in markdown (NOT MDX — no imports, no JSX).
+Write like a human columnist who already finished their research. NEVER narrate the act of researching, analyzing, or thinking. The reader does not care about your process — they care about what shipped.
 
-Do NOT include a TL;DR section.
+❌ FORBIDDEN PHRASES (these scream "AI wrote this"):
+  • "I need to search for..."
+  • "Let me check the..."
+  • "I'll examine each platform..."
+  • "Looking at the changelogs..."
+  • "Based on my research..."
+  • "After reviewing the sources..."
+  • "I notice that..."
+  • "I cannot find..."
+  • "I don't have information about..."
+  • "It appears that..."
+  • "Based on the available data..."
+  • "From what I can see..."
+  • "Upon further analysis..."
+  • Any sentence starting with "I" that describes thinking/searching/analyzing
+  • Any meta-commentary about the writing process or source materials
+  • Bracketed editor notes like "[I need to verify...]" or "[searching for...]"
 
-## Format
+✓ INSTEAD, write like:
+  • "OpenAI dropped GPT-5.5 today, and..."
+  • "Quiet day at Anthropic — Claude Code shipped a small bug-fix release and that's about it."
+  • "DeepSeek's V4 preview went live at midnight Pacific."
+  • "Nothing major from Google's side, but the Gemini API got a few tweaks worth knowing about."
+  • Direct, confident, declarative sentences. Past tense for what shipped.
 
-Group changes by platform. Each platform gets an H2 heading with a brief subtitle. Under each platform, list individual changes as emoji cards in this exact format:
+Use "we" sparingly (Demand Signals as the publisher). Use "you" when addressing the reader. Don't use "I" — you're a columnist with no first-person opinions to declare.
+
+═══════════════════════════════════════════════════════════
+CRITICAL RULES
+═══════════════════════════════════════════════════════════
+
+1. **ELEVATE MAJOR LAUNCHES.** If a NEWS source announced a new model, new product, or major release on this date, give it a HEADLINE SECTION at the top of the post (## 🚨 The Big News) with a multi-paragraph explanation — NOT a single emoji card. Examples of major launches: GPT-5.5, Claude Opus 4.7, Gemini 3, Llama 4, DeepSeek V4. These deserve real prose, not bullet treatment.
+
+2. **Strict date matching — this is critical.** Only include announcements that you can clearly tie to ${yesterdayDisplay} (${dateStr}). News pages list MANY entries from MANY dates — do NOT pull a launch from a different date and slot it under this date. If GPT-5.5 launched on April 23 and you're writing the April 22 post, GPT-5.5 does NOT belong here. If unsure whether an entry matches this exact date, leave it out. When in doubt, write "quiet day."
+
+3. **Cross-reference within the same date.** If both a news source AND a changelog source mention the same launch on ${dateStr}, treat it as one elevated story — don't duplicate.
+
+4. **Don't invent. Don't pre-date. Don't post-date.** Only report what's actually dated ${monthDay}, 2026 (or ${dateStr}, or ${yesterdayDisplay}) in the source content. If a date has no clear entries, write a brief one-paragraph "quiet day" note in plain prose. Do not emit tool-call syntax, placeholder text, bracketed notes, or anything that breaks the human-columnist voice.
+
+5. **Start your response directly with the first ## heading.** No preamble. No throat-clearing. Jump straight to the content.
+
+═══════════════════════════════════════════════════════════
+FORMAT
+═══════════════════════════════════════════════════════════
+
+If there's a major launch, lead with this section:
+
+\`\`\`
+## 🚨 The Big News
+[Provider]'s [Model/Product] [Conversational headline]
+
+[2-4 sentence opener explaining what was launched and why it matters in plain English. No corporate-speak.]
+
+**What's new:**
+- Bullet 1 (key capability or improvement)
+- Bullet 2 (price, availability, who it's for)
+- Bullet 3 (what it replaces or improves over)
+
+**Why this matters:** [1-2 sentences on the practical implication for someone running a business or building software.]
+\`\`\`
+
+Then group remaining changes by platform with H2 headings + emoji cards:
 
 \`\`\`
 ## Claude Code
@@ -159,65 +267,82 @@ What's new from Anthropic's AI coding assistant
 EMOJI
 **Category · Feature Area**
 **Conversational headline describing the change**
-2-3 sentence explanation in plain English. Talk like you're texting a friend. Explain what it actually means for the person reading, not just what changed technically.
+2-3 sentence explanation in plain English. Talk like you're texting a friend.
 \`\`\`
 
-### Categories and their emojis:
-- New features: 🧠 ⚡ 🛠️ 🤖 🎨 📊 🔑 (pick one that fits the feature)
-- Improved: 🔄 📋 ⚠️ 💾 (pick one that fits)
+### Categories and emojis
+- New features: 🧠 ⚡ 🛠️ 🤖 🎨 📊 🔑
+- Improved: 🔄 📋 ⚠️ 💾
 - Fixed / Bug fixes: 🔧
 - Deprecation / Heads up: 🗓️ ⚠️
 
-### Category labels:
-- "New · [Area]" for new features (e.g., "New · Memory saver", "New · Speed", "New · Commands")
-- "Improved · [Area]" for improvements (e.g., "Improved · Navigation", "Improved · Warnings")
-- "Fixed · Bugs" for bug fixes
-- "Heads up · Deprecation" for deprecations
+### Category labels
+- "New · [Area]" (e.g., "New · Memory saver")
+- "Improved · [Area]"
+- "Fixed · Bugs"
+- "Heads up · Deprecation"
 
-### Rules:
+### Rules
 - Each change gets its own emoji card — don't combine unrelated changes
 - Group small bug fixes into one "Fixed · Bugs" card with highlights separated by " · "
-- Headlines should be conversational: "Claude now remembers what you were doing when you come back" not "Added session recap feature"
-- Explanations should answer "so what?" — why should I care about this?
-- If a change is developer-only, mention it naturally: "This one's for developers building on the API"
-- If nothing significant changed for a platform, skip it entirely
-- If NOTHING changed across ALL platforms, write a short "Quiet day across the board" message
+- Headlines should be conversational
 - Avoid: "leveraging", "capabilities", "paradigm", "ecosystem", "scalable", "cutting-edge"
 - Use: "works better", "costs less", "new feature", "fixed a bug", "now you can..."
+- If NO changes happened across ALL platforms, write ONLY a short "Quiet day across the AI landscape — no major releases or updates from the platforms we track" message. Nothing else.
 
-Do NOT include frontmatter — I'll add that separately.
-Do NOT wrap the output in code fences.
-Do NOT add any preamble text before the first ## heading.
+Do NOT include frontmatter — added separately.
+Do NOT wrap output in code fences.
+Do NOT add preamble before the first ## heading.
+Do NOT emit \`<web_search>\`, \`<search>\`, or any other tool-call syntax — output plain markdown only.
 
----
+═══════════════════════════════════════════════════════════
+SOURCES
+═══════════════════════════════════════════════════════════
 
 ${sourceContent}`
 }
 
 function buildMdx(blogContent, dateStr, displayDate, sourceCount, successCount) {
-  // Extract first bold headline as excerpt
-  const headlineMatch = blogContent.match(/\*\*[^*]*·[^*]*\*\*\n\*\*([^*]+)\*\*/)
-  const excerpt = headlineMatch
-    ? headlineMatch[1].trim().slice(0, 200)
-    : `Daily AI platform changelog digest for ${displayDate}.`
+  // Detect major launch (Big News section)
+  const hasBigNews = /^## 🚨 The Big News/m.test(blogContent)
 
-  // Count platforms and change categories
-  const platformSections = blogContent.match(/^## .+/gm) || []
-  const platformCount = platformSections.length
+  // Extract excerpt from Big News headline if present, else first emoji card
+  let excerpt
+  if (hasBigNews) {
+    const bigNewsMatch = blogContent.match(/## 🚨 The Big News\s*\n([^\n]+)/)
+    excerpt = bigNewsMatch ? bigNewsMatch[1].trim().slice(0, 200) : ''
+  }
+  if (!excerpt) {
+    const headlineMatch = blogContent.match(/\*\*[^*]*·[^*]*\*\*\n\*\*([^*]+)\*\*/)
+    excerpt = headlineMatch
+      ? headlineMatch[1].trim().slice(0, 200)
+      : `Daily AI platform changelog digest for ${displayDate}.`
+  }
+
+  // Count platforms and categories
+  const platformSections = blogContent.match(/^## (?!🚨).+/gm) || []
+  const platformCount = platformSections.length + (hasBigNews ? 1 : 0)
   const newItems = (blogContent.match(/\*\*New\s*·/g) || []).length
   const improvedItems = (blogContent.match(/\*\*Improved\s*·/g) || []).length
   const fixedItems = (blogContent.match(/\*\*Fixed\s*·/g) || []).length
   const killedItems = (blogContent.match(/\*\*(Heads up|Killed|Deprecated)\s*·/g) || []).length
-  const totalChanges = newItems + improvedItems + fixedItems + killedItems
+  const totalChanges = newItems + improvedItems + fixedItems + killedItems + (hasBigNews ? 1 : 0)
 
-  // Generate title from biggest headline or quiet-day joke
-  const title = excerpt !== `Daily AI platform changelog digest for ${displayDate}.`
-    ? excerpt.slice(0, 80)
-    : 'Quiet Day Across the AI Landscape'
+  // Title: Big News headline (if present), or biggest emoji card, or quiet-day fallback
+  let title
+  if (hasBigNews) {
+    title = excerpt.slice(0, 80)
+  } else if (excerpt !== `Daily AI platform changelog digest for ${displayDate}.`) {
+    title = excerpt.slice(0, 80)
+  } else {
+    title = 'Quiet Day Across the AI Landscape'
+  }
 
-  // Format date for infographic headline (e.g. "April 15, 2026")
   const d = new Date(dateStr + 'T12:00:00Z')
   const infographicDate = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+
+  // Featured: true if there's a major launch
+  const featured = hasBigNews
 
   const frontmatter = `---
 title: "${title.replace(/"/g, '\\"')}"
@@ -228,41 +353,42 @@ tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-u
 readTime: "3 min read"
 category: "ai-changelog"
 serviceCategories: ["ai-services"]
-featured: false
+featured: ${featured}
 infographic:
   headline: "Changelog Update for ${infographicDate}"
   type: "stats"
   stats:
     - { label: "Platforms Updated", value: "${platformCount} of ${sourceCount}" }
+    - { label: "Major Launch", value: "${hasBigNews ? 'Yes' : 'No'}" }
     - { label: "New", value: "${newItems}" }
     - { label: "Improved", value: "${improvedItems}" }
     - { label: "Fixed", value: "${fixedItems}" }
-    - { label: "Killed", value: "${killedItems}" }
     - { label: "Total Changes", value: "${totalChanges}" }
 ---`
 
-  return `${frontmatter}\n\n${blogContent}\n\n---\n\n*The AI ChangeLog is generated daily by Demand Signals. We scrape official changelogs, run them through Claude, and publish a plain-English summary so you don't have to read the docs. [Subscribe to our blog](/blog) for daily updates.*\n`
+  return `${frontmatter}\n\n${blogContent}\n\n---\n\n*The AI ChangeLog is generated daily by Demand Signals. We scrape official news + changelogs, run them through Claude, and publish a plain-English summary so you don't have to read the docs. [Subscribe to our blog](/blog) for daily updates.*\n`
 }
 
 // ── Main ──
 async function main() {
-  console.log('=== AI ChangeLog Backfill ===\n')
+  console.log('=== AI ChangeLog Backfill (with news layer) ===\n')
+  console.log(`Date range: ${START_DATE} → ${END_DATE}\n`)
 
-  // 1a. Fetch Jina sources (shared across all days)
-  console.log('Step 1a: Fetching changelogs via Jina Reader...')
+  // 1a. Fetch Jina sources
+  console.log('Step 1a: Fetching news + changelog sources via Jina Reader...')
   const jinaResults = []
   for (const source of JINA_SOURCES) {
     try {
       const content = await fetchViaJina(source.url)
       jinaResults.push({ source, content })
-      console.log(`  ✓ ${source.name} (${content.length} chars)`)
+      console.log(`  ✓ [${source.tier}] ${source.name} (${content.length} chars)`)
     } catch (err) {
-      console.log(`  ✗ ${source.name}: ${err.message}`)
+      console.log(`  ✗ [${source.tier}] ${source.name}: ${err.message}`)
       jinaResults.push({ source, content: '', error: err.message })
     }
   }
 
-  // 1b. Fetch Claude Code releases by date via GitHub API
+  // 1b. Fetch Claude Code releases by date
   console.log('\nStep 1b: Fetching Claude Code releases via GitHub API...')
   let claudeCodeByDate = {}
   try {
@@ -276,18 +402,40 @@ async function main() {
   const totalSuccess = jinaSuccessCount + (Object.keys(claudeCodeByDate).length > 0 ? 1 : 0)
   console.log(`\nSources ready: ${totalSuccess}/${totalSources}\n`)
 
-  // Build shared Jina source content (larger limit for backfill)
-  const sharedJinaContent = jinaResults
-    .filter(c => !c.error)
+  // Build shared source content — separate news vs changelog tiers visually
+  const newsContent = jinaResults
+    .filter(c => !c.error && c.source.tier === 'news')
     .map(c => {
-      const truncated = c.content.length > 20000
-        ? c.content.slice(0, 20000) + '\n\n[... truncated]'
+      const truncated = c.content.length > NEWS_TRUNCATE
+        ? c.content.slice(0, NEWS_TRUNCATE) + '\n\n[... truncated]'
         : c.content
-      return `## ${c.source.name} Changelog\nSource: ${c.source.url}\n\n${truncated}`
+      return `## ${c.source.name} [NEWS]\nSource: ${c.source.url}\n\n${truncated}`
     })
     .join('\n\n---\n\n')
 
-  // 2. Generate posts for each day
+  const changelogContent = jinaResults
+    .filter(c => !c.error && c.source.tier === 'changelog')
+    .map(c => {
+      const truncated = c.content.length > CHANGELOG_TRUNCATE
+        ? c.content.slice(0, CHANGELOG_TRUNCATE) + '\n\n[... truncated]'
+        : c.content
+      return `## ${c.source.name} [CHANGELOG]\nSource: ${c.source.url}\n\n${truncated}`
+    })
+    .join('\n\n---\n\n')
+
+  const sharedJinaContent = `═══════════════════════════════════════════════════════════
+NEWS SOURCES (major launches go here)
+═══════════════════════════════════════════════════════════
+
+${newsContent}
+
+═══════════════════════════════════════════════════════════
+CHANGELOG SOURCES (incremental dev updates)
+═══════════════════════════════════════════════════════════
+
+${changelogContent}`
+
+  // 2. Generate posts
   const start = new Date(START_DATE + 'T12:00:00Z')
   const end = new Date(END_DATE + 'T12:00:00Z')
 
@@ -298,13 +446,11 @@ async function main() {
     const slug = `ai-changelog-${dateStr}`
     const filePath = resolve(BLOG_DIR, `${slug}.mdx`)
 
-    // Skip if already exists
     if (existsSync(filePath)) {
       console.log(`  ⏭ ${slug}.mdx already exists — skipping`)
       continue
     }
 
-    // The post covers "yesterday" (d), and goes live "today" (d+1)
     const yesterday = new Date(d)
     const today = new Date(d)
     today.setDate(today.getDate() + 1)
@@ -313,7 +459,6 @@ async function main() {
     const todayDisplay = formatDate(today)
     const displayDate = formatDate(yesterday)
 
-    // Build per-day source content: shared Jina + date-specific Claude Code
     let daySourceContent = sharedJinaContent
 
     const ccReleases = claudeCodeByDate[dateStr]
@@ -321,26 +466,29 @@ async function main() {
       const ccContent = ccReleases
         .map(r => `### ${r.tag} (released ${dateStr})\n\n${r.body}`)
         .join('\n\n')
-      daySourceContent += `\n\n---\n\n## Claude Code (Anthropic) — Releases on ${dateStr}\nSource: https://github.com/anthropics/claude-code/releases\n\n${ccContent}`
+      daySourceContent += `\n\n═══════════════════════════════════════════════════════════\nCLAUDE CODE — Releases on ${dateStr}\n═══════════════════════════════════════════════════════════\nSource: https://github.com/anthropics/claude-code/releases\n\n${ccContent}`
     }
 
     console.log(`  Generating ${slug}...${ccReleases ? ` (${ccReleases.length} Claude Code releases)` : ''}`)
 
     try {
       const prompt = buildPrompt(daySourceContent, yesterdayDisplay, todayDisplay, dateStr)
-      const blogContent = await callClaude(prompt)
+      let blogContent = await callClaude(prompt)
 
       if (!blogContent || blogContent.length < 100) {
         console.log(`  ✗ ${slug}: Claude returned insufficient content`)
         continue
       }
 
+      // Safety net: strip AI-tells, tool-call syntax, and meta-commentary
+      blogContent = sanitizeBody(blogContent)
+
       const mdx = buildMdx(blogContent, dateStr, displayDate, totalSources, totalSuccess)
       writeFileSync(filePath, mdx, 'utf-8')
-      console.log(`  ✓ ${slug}.mdx (${blogContent.length} chars)`)
+      console.log(`  ✓ ${slug}.mdx (${blogContent.length} chars${/^## 🚨 The Big News/m.test(blogContent) ? ', MAJOR LAUNCH' : ''})`)
 
-      // Rate limit: 30K input tokens/min, ~30K tokens/request → ~1 req/min
-      await new Promise(r => setTimeout(r, 65000))
+      // Rate limit: 30K input tokens/min, ~50K tokens/request → ~1.5 req/min
+      await new Promise(r => setTimeout(r, 90000))
     } catch (err) {
       console.log(`  ✗ ${slug}: ${err.message}`)
     }

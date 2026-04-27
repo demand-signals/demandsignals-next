@@ -2,10 +2,14 @@
 // Shared by the daily cron route and the backfill script.
 //
 // Two modes:
-//   - live:     use Jina Reader to scrape current changelog pages (for "yesterday")
-//   - backfill: use Claude + web_search to research a specific historical date
+//   - live:     use Jina Reader to scrape current news + changelog pages
+//   - backfill: use Jina (current pages contain dated entries) for historical dates
 //
 // Both modes converge on: fetch sources → Claude summarizes → commit MDX to GitHub
+//
+// Source list lives in changelog-sources.ts and is split into two tiers:
+//   - 'news'      → catches major model launches (Opus 4.7, GPT-5.5, etc.)
+//   - 'changelog' → catches incremental dev/API updates
 
 import { getAnthropicClient } from '@/lib/agent-utils'
 import { fetchAllChangelogs } from '@/lib/changelog-sources'
@@ -13,10 +17,13 @@ import { fetchAllChangelogs } from '@/lib/changelog-sources'
 const GITHUB_REPO = 'demand-signals/demandsignals-next'
 const GITHUB_BRANCH = 'master'
 
+const NEWS_TRUNCATE = 15000
+const CHANGELOG_TRUNCATE = 18000
+
 export interface GenerateOptions {
   /** Date the post should cover, YYYY-MM-DD. Defaults to yesterday (UTC). */
   date?: string
-  /** Force backfill mode (web_search) even if date is recent. */
+  /** Force backfill mode even if date is recent. (No behavior diff anymore — both modes use Jina now.) */
   forceBackfill?: boolean
 }
 
@@ -29,6 +36,7 @@ export interface GenerateResult {
   contentLength: number
   mode: 'live' | 'backfill'
   filePath: string
+  hasMajorLaunch: boolean
 }
 
 async function commitToGitHub(filePath: string, content: string, message: string): Promise<void> {
@@ -77,8 +85,8 @@ function buildFrontmatter({
   newItems,
   improvedItems,
   fixedItems,
-  killedItems,
   totalChanges,
+  hasMajorLaunch,
 }: {
   title: string
   dateStr: string
@@ -89,8 +97,8 @@ function buildFrontmatter({
   newItems: number
   improvedItems: number
   fixedItems: number
-  killedItems: number
   totalChanges: number
+  hasMajorLaunch: boolean
 }): string {
   return `---
 title: "${title.replace(/"/g, '\\"')}"
@@ -101,153 +109,255 @@ tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-u
 readTime: "3 min read"
 category: "ai-changelog"
 serviceCategories: ["ai-services"]
-featured: false
+featured: ${hasMajorLaunch}
 infographic:
   headline: "Changelog Update for ${infographicDate}"
   type: "stats"
   stats:
     - { label: "Platforms Updated", value: "${platformCount} of ${totalSources}" }
+    - { label: "Major Launch", value: "${hasMajorLaunch ? 'Yes' : 'No'}" }
     - { label: "New", value: "${newItems}" }
     - { label: "Improved", value: "${improvedItems}" }
     - { label: "Fixed", value: "${fixedItems}" }
-    - { label: "Killed", value: "${killedItems}" }
     - { label: "Total Changes", value: "${totalChanges}" }
 ---`
 }
 
 function buildMdx(frontmatter: string, body: string): string {
-  return `${frontmatter}\n\n${body}\n\n---\n\n*The AI ChangeLog is generated daily by Demand Signals. We scrape official changelogs, run them through Claude, and publish a plain-English summary so you don't have to read the docs. [Subscribe to our blog](/blog) for daily updates.*\n`
+  return `${frontmatter}\n\n${body}\n\n---\n\n*The AI ChangeLog is generated daily by Demand Signals. We scrape official news + changelogs, run them through Claude, and publish a plain-English summary so you don't have to read the docs. [Subscribe to our blog](/blog) for daily updates.*\n`
 }
 
-function extractTitleAndExcerpt(body: string, fallbackDate: string): { title: string; excerpt: string } {
-  const headlineMatch = body.match(/\*\*[^*]*·[^*]*\*\*\n\*\*([^*]+)\*\*/)
-  const excerpt = headlineMatch
-    ? headlineMatch[1].trim().slice(0, 200)
-    : `Daily AI platform changelog digest for ${fallbackDate}.`
-  const title = headlineMatch
-    ? headlineMatch[1].trim().slice(0, 80)
-    : 'Quiet Day Across the AI Landscape'
-  return { title, excerpt }
+function extractTitleAndExcerpt(body: string, fallbackDate: string): { title: string; excerpt: string; hasMajorLaunch: boolean } {
+  const hasMajorLaunch = /^## 🚨 The Big News/m.test(body)
+
+  let excerpt = ''
+  if (hasMajorLaunch) {
+    const bigNewsMatch = body.match(/## 🚨 The Big News\s*\n([^\n]+)/)
+    excerpt = bigNewsMatch ? bigNewsMatch[1].trim().slice(0, 200) : ''
+  }
+  if (!excerpt) {
+    const headlineMatch = body.match(/\*\*[^*]*·[^*]*\*\*\n\*\*([^*]+)\*\*/)
+    excerpt = headlineMatch
+      ? headlineMatch[1].trim().slice(0, 200)
+      : `Daily AI platform changelog digest for ${fallbackDate}.`
+  }
+
+  let title: string
+  if (hasMajorLaunch) {
+    title = excerpt.slice(0, 80)
+  } else if (excerpt !== `Daily AI platform changelog digest for ${fallbackDate}.`) {
+    title = excerpt.slice(0, 80)
+  } else {
+    title = 'Quiet Day Across the AI Landscape'
+  }
+
+  return { title, excerpt, hasMajorLaunch }
 }
 
 function countChanges(body: string) {
-  const platformSections = body.match(/^## .+/gm) || []
-  const platformCount = platformSections.length
+  const hasMajorLaunch = /^## 🚨 The Big News/m.test(body)
+  const platformSections = body.match(/^## (?!🚨).+/gm) || []
+  const platformCount = platformSections.length + (hasMajorLaunch ? 1 : 0)
   const newItems = (body.match(/\*\*New\s*·/g) || []).length
   const improvedItems = (body.match(/\*\*Improved\s*·/g) || []).length
   const fixedItems = (body.match(/\*\*Fixed\s*·/g) || []).length
   const killedItems = (body.match(/\*\*(Heads up|Killed|Deprecated)\s*·/g) || []).length
-  const totalChanges = newItems + improvedItems + fixedItems + killedItems
-  return { platformCount, newItems, improvedItems, fixedItems, killedItems, totalChanges }
+  const totalChanges = newItems + improvedItems + fixedItems + killedItems + (hasMajorLaunch ? 1 : 0)
+  return { platformCount, newItems, improvedItems, fixedItems, killedItems, totalChanges, hasMajorLaunch }
 }
 
-// ── LIVE MODE: scrape current changelog pages via Jina ───────────────────
-async function generateLive(targetDate: Date): Promise<{ body: string; sourcesChecked: number; sourcesSucceeded: number; failedSources: string[] }> {
+/**
+ * Safety net: strip AI-tells, tool-call syntax, and meta-commentary.
+ * These patterns scream "AI wrote this" and break the human-columnist voice.
+ *
+ * Examples this catches:
+ *   • "I need to search for changes from April 24..."
+ *   • "Let me check the changelogs..."
+ *   • "Looking at the sources, I notice..."
+ *   • "[I need to verify this]"
+ *   • <web_search>...</web_search>
+ */
+function sanitizeBody(body: string): string {
+  let cleaned = body
+    // Tool-call syntax leaks
+    .replace(/<web_search>[\s\S]*?<\/web_search>/g, '')
+    .replace(/<search>[\s\S]*?<\/search>/g, '')
+    .replace(/<[a-z_]+>[\s\S]*?<\/[a-z_]+>/g, '')
+    // Bracketed editor notes
+    .replace(/\[I (need|will|would|should|cannot|can't)[^\]]*?\]/gi, '')
+    .replace(/\[(Note|Editor|TODO|searching)[^\]]*?\]/gi, '')
+    // Sentences/paragraphs that narrate the AI's process
+    .replace(/^I (need to|will|would|should|notice|cannot|can't|don't have)[^.\n]*\.\s*/gim, '')
+    .replace(/^Let me (check|examine|look at|analyze|review|search)[^.\n]*\.\s*/gim, '')
+    .replace(/^Looking at (the|each) (changelog|source|platform|update)[^.\n]*\.\s*/gim, '')
+    .replace(/^Based on (my research|the available data|the sources)[^.\n]*\.\s*/gim, '')
+    .replace(/^After (reviewing|examining|analyzing) (the|each)[^.\n]*\.\s*/gim, '')
+    .replace(/^Upon (further|closer) (analysis|review|inspection)[^.\n]*\.\s*/gim, '')
+    .replace(/^From what I can (see|tell)[^.\n]*\.\s*/gim, '')
+    .replace(/^It (appears|seems) that[^.\n]*\.\s*/gim, '')
+    // Inline meta-narration patterns (mid-paragraph)
+    .replace(/\n\nI (need to|will|would|should) (search|check|examine|look)[^\n]*\n/gi, '\n\n')
+    .replace(/\n\nLet me (search|check|examine|look)[^\n]*\n/gi, '\n\n')
+    // Collapse multiple blank lines created by removals
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+
+  // Strip any preamble before the first ## heading
+  const firstHeadingIdx = cleaned.search(/^## /m)
+  if (firstHeadingIdx > 0) {
+    cleaned = cleaned.slice(firstHeadingIdx)
+  }
+
+  return cleaned
+}
+
+// ── Generate via Jina (works for both live "yesterday" and backfill) ──────
+async function generateFromJina(targetDate: Date): Promise<{ body: string; sourcesChecked: number; sourcesSucceeded: number; failedSources: string[] }> {
   const changelogs = await fetchAllChangelogs()
   const successCount = changelogs.filter(c => !c.error).length
   const failedSources = changelogs.filter(c => c.error).map(c => `${c.source.name}: ${c.error}`)
 
   if (successCount === 0) {
-    throw new Error(`All changelog fetches failed: ${failedSources.join('; ')}`)
+    throw new Error(`All source fetches failed: ${failedSources.join('; ')}`)
   }
 
   const dateStr = targetDate.toISOString().split('T')[0]
   const displayDate = targetDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
   const monthDay = targetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
 
-  const sourceContent = changelogs
-    .filter(c => !c.error)
+  // Split sources by tier for prompt clarity
+  const newsSources = changelogs.filter(c => !c.error && c.source.tier === 'news')
+  const changelogSources = changelogs.filter(c => !c.error && c.source.tier === 'changelog')
+
+  const newsContent = newsSources
     .map(c => {
-      const truncated = c.content.length > 10000 ? c.content.slice(0, 10000) + '\n\n[... truncated]' : c.content
-      return `## ${c.source.name} Changelog\nSource: ${c.source.url}\n\n${truncated}`
+      const truncated = c.content.length > NEWS_TRUNCATE ? c.content.slice(0, NEWS_TRUNCATE) + '\n\n[... truncated]' : c.content
+      return `## ${c.source.name} [NEWS]\nSource: ${c.source.url}\n\n${truncated}`
     })
     .join('\n\n---\n\n')
+
+  const changelogContent = changelogSources
+    .map(c => {
+      const truncated = c.content.length > CHANGELOG_TRUNCATE ? c.content.slice(0, CHANGELOG_TRUNCATE) + '\n\n[... truncated]' : c.content
+      return `## ${c.source.name} [CHANGELOG]\nSource: ${c.source.url}\n\n${truncated}`
+    })
+    .join('\n\n---\n\n')
+
+  const sourceContent = `═══════════════════════════════════════════════════════════
+NEWS SOURCES (major launches go here)
+═══════════════════════════════════════════════════════════
+
+${newsContent}
+
+═══════════════════════════════════════════════════════════
+CHANGELOG SOURCES (incremental dev updates)
+═══════════════════════════════════════════════════════════
+
+${changelogContent}`
 
   const claude = getAnthropicClient()
   const response = await claude.messages.create({
     model: 'claude-sonnet-4-20250514',
-    max_tokens: 4000,
+    max_tokens: 4500,
     messages: [{
       role: 'user',
-      content: buildPrompt({ displayDate, dateStr, monthDay, sourceContent, mode: 'live' }),
+      content: buildPrompt({ displayDate, dateStr, monthDay, sourceContent }),
     }],
   })
 
-  const body = response.content[0].type === 'text' ? response.content[0].text : ''
-  if (!body || body.length < 100) throw new Error('Claude returned insufficient content')
+  const rawBody = response.content[0].type === 'text' ? response.content[0].text : ''
+  const body = sanitizeBody(rawBody)
+
+  if (!body || body.length < 100) {
+    throw new Error('Claude returned insufficient content after sanitization')
+  }
 
   return { body, sourcesChecked: changelogs.length, sourcesSucceeded: successCount, failedSources }
 }
 
-// ── BACKFILL MODE: use Claude + web_search for historical dates ──────────
-async function generateBackfill(targetDate: Date): Promise<{ body: string; sourcesChecked: number; sourcesSucceeded: number; failedSources: string[] }> {
-  const dateStr = targetDate.toISOString().split('T')[0]
-  const displayDate = targetDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-  const monthDay = targetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+function buildPrompt({ displayDate, dateStr, monthDay, sourceContent }: {
+  displayDate: string; dateStr: string; monthDay: string; sourceContent: string
+}): string {
+  const today = new Date()
+  const todayDisplay = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
-  const claude = getAnthropicClient()
-  const response = await claude.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 8000,
-    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 15 } as any],
-    messages: [{
-      role: 'user',
-      content: `You are writing a historical edition of "The AI ChangeLog" — Demand Signals' daily digest of AI platform changes in plain English.
+  return `You are a tech journalist writing "The AI ChangeLog" — Demand Signals' daily column where one person reads every AI platform's updates and translates them for regular business owners. The voice is human, casual, slightly opinionated. A real person at a desk drinking coffee, not an AI chatbot.
 
-This post covers: ${displayDate} (${dateStr})
+This post covers changes from: ${displayDate} (${dateStr})
+Today (when this post goes live): ${todayDisplay}
 
-This is a BACKFILL — the date has already passed. You need to RESEARCH what each platform shipped on that specific date using web_search. Search for each platform's changelog or news for that day. Platforms to check:
-- OpenAI (platform.openai.com/docs/changelog, or "OpenAI update ${monthDay} 2026")
-- Anthropic (Claude, Claude Code — docs.anthropic.com, github.com/anthropics/claude-code)
-- Google Gemini (ai.google.dev/gemini-api/docs/changelog)
-- DeepSeek (api-docs.deepseek.com)
-- Perplexity (perplexity.ai news)
-- xAI / Grok
+Below are TWO TIERS of sources:
+  • NEWS sources (top section) — major product launches, model releases, paradigm shifts. These are the headlines.
+  • CHANGELOG sources (bottom section) — incremental dev/API updates. These are the bullet items.
 
-Use web_search 8-15 times to gather real data. Search queries like:
-- "OpenAI changelog ${monthDay} 2026"
-- "Anthropic Claude release ${monthDay} 2026"
-- "Claude Code update ${dateStr}"
-- "Google Gemini API ${monthDay} 2026"
+═══════════════════════════════════════════════════════════
+VOICE — THIS IS THE MOST IMPORTANT RULE
+═══════════════════════════════════════════════════════════
 
-After gathering real data, write the post using this exact format and rules:
+Write like a human columnist who already finished their research. NEVER narrate the act of researching, analyzing, or thinking. The reader does not care about your process — they care about what shipped.
 
-${promptRulesBlock({ displayDate, dateStr, monthDay })}
+❌ FORBIDDEN PHRASES (these scream "AI wrote this"):
+  • "I need to search for..."
+  • "Let me check the..."
+  • "I'll examine each platform..."
+  • "Looking at the changelogs..."
+  • "Based on my research..."
+  • "After reviewing the sources..."
+  • "I notice that..."
+  • "I cannot find..."
+  • "I don't have information about..."
+  • "It appears that..."
+  • "Based on the available data..."
+  • "From what I can see..."
+  • "Upon further analysis..."
+  • Any sentence starting with "I" that describes thinking/searching/analyzing
+  • Any meta-commentary about the writing process or source materials
+  • Bracketed editor notes like "[I need to verify...]" or "[searching for...]"
 
-Only include platforms that actually shipped changes on ${displayDate}. If a platform had NO changes, skip it entirely. If nothing happened across all platforms, write a short "Quiet day across the board" message.`,
-    }],
-  })
+✓ INSTEAD, write like:
+  • "OpenAI dropped GPT-5.5 today, and..."
+  • "Quiet day at Anthropic — Claude Code shipped a small bug-fix release and that's about it."
+  • "DeepSeek's V4 preview went live at midnight Pacific."
+  • "Nothing major from Google's side, but the Gemini API got a few tweaks worth knowing about."
+  • Direct, confident, declarative sentences. Past tense for what shipped.
 
-  // With web_search tool, response has multiple content blocks — extract text blocks
-  const textBlocks = response.content.filter((b: any) => b.type === 'text').map((b: any) => b.text)
-  const body = textBlocks.join('\n\n').trim()
+Use "we" sparingly (Demand Signals as the publisher). Use "you" when addressing the reader. Don't use "I" — you're a columnist with no first-person opinions to declare.
 
-  if (!body || body.length < 100) {
-    throw new Error('Claude backfill returned insufficient content (may not have found data for this date)')
-  }
+═══════════════════════════════════════════════════════════
+CRITICAL RULES
+═══════════════════════════════════════════════════════════
 
-  // Strip any preamble that web_search mode might include
-  const cleanedBody = body.replace(/^[\s\S]*?(?=^## )/m, '') || body
+1. **ELEVATE MAJOR LAUNCHES.** If a NEWS source announced a new model, new product, or major release on this date, give it a HEADLINE SECTION at the top of the post (## 🚨 The Big News) with a multi-paragraph explanation — NOT a single emoji card. Examples of major launches: GPT-5.5, Claude Opus 4.7, Gemini 3, Llama 4, DeepSeek V4. These deserve real prose, not bullet treatment.
 
-  return {
-    body: cleanedBody,
-    sourcesChecked: 6,
-    sourcesSucceeded: 6,
-    failedSources: [],
-  }
-}
+2. **Strict date matching — this is critical.** Only include announcements that you can clearly tie to ${displayDate} (${dateStr}). News pages list MANY entries from MANY dates — do NOT pull a launch from a different date and slot it under this date. If GPT-5.5 launched on April 23 and you're writing the April 22 post, GPT-5.5 does NOT belong here. If unsure whether an entry matches this exact date, leave it out. When in doubt, write "quiet day."
 
-function promptRulesBlock({ displayDate, dateStr, monthDay }: { displayDate: string; dateStr: string; monthDay: string }): string {
-  return `IMPORTANT INSTRUCTIONS:
-1. Only report changes you actually verify via web_search. Don't invent features.
-2. If a platform shipped updates, ALWAYS include them.
-3. Start your response directly with the first ## heading. No preamble. No "Looking at the changes..." — jump straight to the content.
+3. **Cross-reference within the same date.** If both a news source AND a changelog source mention the same launch on ${dateStr}, treat it as one elevated story — don't duplicate.
 
-Write the blog post body in markdown (NOT MDX — no imports, no JSX). Do NOT include a TL;DR section.
+4. **Don't invent. Don't pre-date. Don't post-date.** Only report what's actually dated ${monthDay}, 2026 (or ${dateStr}, or ${displayDate}) in the source content. If a date has no clear entries, write a brief one-paragraph "quiet day" note in plain prose. Do not emit tool-call syntax, placeholder text, bracketed notes, or anything that breaks the human-columnist voice.
 
-## Format
+5. **Start your response directly with the first ## heading.** No preamble. No throat-clearing. Jump straight to the content.
 
-Group changes by platform. Each platform gets an H2 heading with a brief subtitle. Under each platform, list individual changes as emoji cards in this exact format:
+═══════════════════════════════════════════════════════════
+FORMAT
+═══════════════════════════════════════════════════════════
+
+If there's a major launch, lead with this section:
+
+\`\`\`
+## 🚨 The Big News
+[Provider]'s [Model/Product] [Conversational headline]
+
+[2-4 sentence opener explaining what was launched and why it matters in plain English. No corporate-speak.]
+
+**What's new:**
+- Bullet 1 (key capability or improvement)
+- Bullet 2 (price, availability, who it's for)
+- Bullet 3 (what it replaces or improves over)
+
+**Why this matters:** [1-2 sentences on the practical implication for someone running a business or building software.]
+\`\`\`
+
+Then group remaining changes by platform with H2 headings + emoji cards:
 
 \`\`\`
 ## Claude Code
@@ -256,50 +366,37 @@ What's new from Anthropic's AI coding assistant
 EMOJI
 **Category · Feature Area**
 **Conversational headline describing the change**
-2-3 sentence explanation in plain English. Talk like you're texting a friend. Explain what it actually means for the person reading, not just what changed technically.
+2-3 sentence explanation in plain English. Talk like you're texting a friend.
 \`\`\`
 
-### Categories and their emojis:
-- New features: 🧠 ⚡ 🛠️ 🤖 🎨 📊 🔑 (pick one that fits the feature)
-- Improved: 🔄 📋 ⚠️ 💾 (pick one that fits)
+### Categories and emojis
+- New features: 🧠 ⚡ 🛠️ 🤖 🎨 📊 🔑
+- Improved: 🔄 📋 ⚠️ 💾
 - Fixed / Bug fixes: 🔧
 - Deprecation / Heads up: 🗓️ ⚠️
 
-### Category labels:
-- "New · [Area]" for new features
-- "Improved · [Area]" for improvements
-- "Fixed · Bugs" for bug fixes
-- "Heads up · Deprecation" for deprecations
+### Category labels
+- "New · [Area]"
+- "Improved · [Area]"
+- "Fixed · Bugs"
+- "Heads up · Deprecation"
 
-### Rules:
-- Each change gets its own emoji card
+### Rules
+- Each change gets its own emoji card — don't combine unrelated changes
 - Group small bug fixes into one "Fixed · Bugs" card with highlights separated by " · "
-- Headlines conversational, not corporate
-- Explanations answer "so what?"
+- Headlines should be conversational
 - Avoid: "leveraging", "capabilities", "paradigm", "ecosystem", "scalable", "cutting-edge"
 - Use: "works better", "costs less", "new feature", "fixed a bug", "now you can..."
+- If NO changes happened across ALL platforms, write ONLY a short "Quiet day across the AI landscape — no major releases or updates from the platforms we track" message. Nothing else.
 
 Do NOT include frontmatter — added separately.
-Do NOT wrap the output in code fences.
-Do NOT add any preamble text before the first ## heading.`
-}
+Do NOT wrap output in code fences.
+Do NOT add preamble before the first ## heading.
+Do NOT emit \`<web_search>\`, \`<search>\`, or any other tool-call syntax — output plain markdown only.
 
-function buildPrompt({ displayDate, dateStr, monthDay, sourceContent, mode }: {
-  displayDate: string; dateStr: string; monthDay: string; sourceContent: string; mode: 'live' | 'backfill'
-}): string {
-  const today = new Date()
-  const todayDisplay = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-
-  return `You are writing "The AI ChangeLog" — a daily digest that makes AI platform updates understandable for regular business owners. Think "AI for Dummies" — no jargon, no buzzwords. Explain things the way you'd explain them to a smart friend who doesn't work in tech.
-
-This post covers changes from YESTERDAY: ${displayDate} (${dateStr})
-Today (when this post goes live): ${todayDisplay}
-
-Below are changelog entries from each platform. CAREFULLY scan ALL sources for changes dated ${displayDate}, "${monthDay}, 2026", "${monthDay}", or "${dateStr}". Different platforms use different date formats.
-
-${promptRulesBlock({ displayDate, dateStr, monthDay })}
-
----
+═══════════════════════════════════════════════════════════
+SOURCES
+═══════════════════════════════════════════════════════════
 
 ${sourceContent}`
 }
@@ -320,29 +417,30 @@ export async function generateChangelogPost(opts: GenerateOptions = {}): Promise
   const infographicDate = targetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
   const displayDate = targetDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
-  // Decide mode — backfill if date is more than ~36 hours old
+  // Decide mode label (both modes use Jina now — kept for telemetry)
   const now = new Date()
   const hoursOld = (now.getTime() - targetDate.getTime()) / (1000 * 60 * 60)
   const mode: 'live' | 'backfill' = opts.forceBackfill || hoursOld > 36 ? 'backfill' : 'live'
 
   // Generate body
-  const { body, sourcesChecked, sourcesSucceeded, failedSources } =
-    mode === 'backfill' ? await generateBackfill(targetDate) : await generateLive(targetDate)
+  const { body, sourcesChecked, sourcesSucceeded, failedSources } = await generateFromJina(targetDate)
 
   // Stats + frontmatter
-  const { title, excerpt } = extractTitleAndExcerpt(body, displayDate)
-  const { platformCount, newItems, improvedItems, fixedItems, killedItems, totalChanges } = countChanges(body)
+  const { title, excerpt, hasMajorLaunch } = extractTitleAndExcerpt(body, displayDate)
+  const { platformCount, newItems, improvedItems, fixedItems, totalChanges } = countChanges(body)
   const frontmatter = buildFrontmatter({
     title, dateStr, excerpt, infographicDate,
     platformCount, totalSources: sourcesChecked,
-    newItems, improvedItems, fixedItems, killedItems, totalChanges,
+    newItems, improvedItems, fixedItems, totalChanges,
+    hasMajorLaunch,
   })
   const mdx = buildMdx(frontmatter, body)
 
   // Commit
   const slug = `ai-changelog-${dateStr}`
   const filePath = `src/content/blog/${slug}.mdx`
-  const commitMsg = `blog: The AI ChangeLog — ${dateStr}${mode === 'backfill' ? ' (backfill)' : ''}\n\n${mode === 'backfill' ? 'Backfill via web_search. ' : ''}Platforms: ${sourcesSucceeded}/${sourcesChecked} sources checked.`
+  const launchTag = hasMajorLaunch ? ' [MAJOR LAUNCH]' : ''
+  const commitMsg = `blog: The AI ChangeLog — ${dateStr}${mode === 'backfill' ? ' (backfill)' : ''}${launchTag}\n\n${mode === 'backfill' ? 'Backfill via Jina news+changelog tiers. ' : ''}Platforms: ${sourcesSucceeded}/${sourcesChecked} sources checked.`
   await commitToGitHub(filePath, mdx, commitMsg)
 
   return {
@@ -354,5 +452,6 @@ export async function generateChangelogPost(opts: GenerateOptions = {}): Promise
     contentLength: body.length,
     mode,
     filePath,
+    hasMajorLaunch,
   }
 }

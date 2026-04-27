@@ -1,8 +1,8 @@
 ---
-title: "Quiet Day Across the AI Landscape"
+title: "Two dozen fixes to make Claude Code more reliable"
 date: "2026-04-22"
 author: "AI ChangeLog"
-excerpt: "Daily AI platform changelog digest for Wednesday, April 22, 2026."
+excerpt: "Two dozen fixes to make Claude Code more reliable"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -12,46 +12,37 @@ infographic:
   headline: "Changelog Update for April 22, 2026"
   type: "stats"
   stats:
-    - { label: "Platforms Updated", value: "0 of 5" }
-    - { label: "New", value: "0" }
-    - { label: "Improved", value: "0" }
-    - { label: "Fixed", value: "0" }
-    - { label: "Killed", value: "0" }
-    - { label: "Total Changes", value: "0" }
+    - { label: "Platforms Updated", value: "1 of 11" }
+    - { label: "Major Launch", value: "No" }
+    - { label: "New", value: "1" }
+    - { label: "Improved", value: "2" }
+    - { label: "Fixed", value: "1" }
+    - { label: "Total Changes", value: "4" }
 ---
 
-I need to search for specific updates from April 22, 2026 across the AI platforms. Let me search each platform systematically.
+## Claude Code
+What's new from Anthropic's AI coding assistant
 
-<web_search>
-OpenAI API changelog updates April 22 2026 platform.openai.com
-</web_search>
+🔄
+**Fixed · Bugs**
+**Two dozen fixes to make Claude Code more reliable**
+OAuth sessions no longer die mid-session, WebFetch stops hanging on large pages, and prompt input undo actually works now. A clean-up of the little annoyances that add up over time.
 
-<web_search>
-Anthropic Claude API updates April 22 2026 docs.anthropic.com
-</web_search>
+🛠️
+**New · External builds**
+**Forked subagents now work outside Anthropic builds**
+Set `CLAUDE_CODE_FORK_SUBAGENT=1` and external builds can spawn subagents just like the official version. Opens up more advanced agent workflows for teams building their own deployments.
 
-<web_search>
-Claude Code changelog April 22 2026 github.com anthropics
-</web_search>
+🔧
+**Improved · Plugin management**
+**Plugin installs got smarter about dependencies**
+Installing an already-installed plugin now grabs missing dependencies instead of giving up. The marketplace commands also auto-resolve deps from configured sources — less manual work to get plugins running.
 
-<web_search>
-Google Gemini API changelog updates April 22 2026 ai.google.dev
-</web_search>
-
-<web_search>
-DeepSeek API updates April 22 2026 api-docs.deepseek.com
-</web_search>
-
-Based on my search of the changelog sources provided, I could not find any specific updates or changes dated April 22, 2026 (or 2026-04-22) across any of the major AI platforms:
-
-- **OpenAI API**: No updates found for April 22, 2026
-- **Anthropic Claude**: No updates found for April 22, 2026  
-- **Claude Code**: No updates found for April 22, 2026
-- **Google Gemini API**: No updates found for April 22, 2026
-- **DeepSeek API**: No updates found for April 22, 2026
-
-Since there were no verified platform updates on April 22, 2026, there are no changes to report in today's AI ChangeLog. This appears to have been a quiet day across the major AI platforms with no new features, improvements, or bug fixes shipped.
+🔄
+**Improved · Session handling**
+**Better model persistence and stale session recovery**
+Model selections stick around even when projects pin different ones, and `/resume` offers to summarize old sessions before diving back in. Smoother workflows when switching between contexts.
 
 ---
 
-*The AI ChangeLog is generated daily by Demand Signals. We scrape official changelogs, run them through Claude, and publish a plain-English summary so you don't have to read the docs. [Subscribe to our blog](/blog) for daily updates.*
+*The AI ChangeLog is generated daily by Demand Signals. We scrape official news + changelogs, run them through Claude, and publish a plain-English summary so you don't have to read the docs. [Subscribe to our blog](/blog) for daily updates.*
