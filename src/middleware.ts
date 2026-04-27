@@ -24,16 +24,19 @@ const CATEGORY_SERVICE_MAP: Record<string, Set<string>> = {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-pathname', pathname)
+
   // ============================================================
   // ADMIN ROUTE PROTECTION
   // ============================================================
   // Allow auth callback and login page through without auth check
   if (pathname.startsWith('/auth/callback')) {
-    return NextResponse.next({ request })
+    return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
   if (pathname.startsWith('/admin')) {
-    let response = NextResponse.next({ request })
+    let response = NextResponse.next({ request: { headers: requestHeaders } })
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -47,7 +50,7 @@ export async function middleware(request: NextRequest) {
             cookiesToSet.forEach(({ name, value }) =>
               request.cookies.set(name, value)
             )
-            response = NextResponse.next({ request })
+            response = NextResponse.next({ request: { headers: requestHeaders } })
             cookiesToSet.forEach(({ name, value, options }) =>
               response.cookies.set(name, value, options)
             )
@@ -87,7 +90,7 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  const response = NextResponse.next()
+  const response = NextResponse.next({ request: { headers: requestHeaders } })
 
   // Skip feed/API/static paths
   if (pathname.startsWith('/feeds/') || pathname.startsWith('/api/') || pathname.startsWith('/_next/') || pathname.startsWith('/feed.') || pathname.startsWith('/faqs.md') || pathname.startsWith('/content-index.json')) {
