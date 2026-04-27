@@ -82,7 +82,16 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Body must include key: string' }, { status: 400 })
   }
   const key = body.key
-  const value = typeof body.value === 'string' ? body.value : String(body.value ?? '')
+  // quote_config.value is JSONB. Preserve native types when caller supplies
+  // them (boolean toggles, numeric thresholds). String 'true'/'false' coerce
+  // to JSONB boolean for canonical storage. All other strings stored as-is.
+  let value: unknown = body.value
+  if (typeof value === 'string') {
+    if (value === 'true') value = true
+    else if (value === 'false') value = false
+  } else if (value === null || value === undefined) {
+    value = ''
+  }
 
   // UPSERT — inserts if absent, updates if present.
   const { error } = await supabaseAdmin

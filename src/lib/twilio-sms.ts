@@ -32,7 +32,9 @@ export async function isSmsEnabled(): Promise<boolean> {
     .select('value')
     .eq('key', 'sms_delivery_enabled')
     .maybeSingle()
-  return data?.value === 'true'
+  // quote_config.value is JSONB — could be boolean true OR string "true"
+  // depending on how it was inserted. Accept both.
+  return data?.value === true || data?.value === 'true'
 }
 
 function getAllowlist(): string[] {
