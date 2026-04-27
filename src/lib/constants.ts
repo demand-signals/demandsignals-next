@@ -103,3 +103,34 @@ export const NAV_LOCATIONS = [
   { label: 'South Lake Tahoe',  href: '/locations/el-dorado-county/south-lake-tahoe' },
   { label: 'All Locations',     href: '/locations' },
 ]
+
+// ── Email senders (Resend per-purpose aliases) ──────────────────────
+// See docs/superpowers/specs/2026-04-27-resend-email-swap-design.md §3.
+// Each kind has its own from-address on demandsignals.co, routed via
+// Cloudflare Email Routing back to DemandSignals@gmail.com for replies.
+
+export const EMAIL_FROM = {
+  invoice:           'Demand Signals <invoices@demandsignals.co>',
+  contact_form:      'Demand Signals <noreply@demandsignals.co>',
+  newsletter:        'Demand Signals <news@demandsignals.co>',
+  report_request:    'Demand Signals <reports@demandsignals.co>',
+  weekly_analytics:  'Demand Signals <reports@demandsignals.co>',
+  system_alert:      'Demand Signals Alerts <alerts@demandsignals.co>',
+} as const
+
+export type EmailKind = keyof typeof EMAIL_FROM
+
+// Reply-To override per kind. Only client-facing kinds need a real human
+// reply target; admin notifications go straight to gmail (the From: itself
+// is already a routed alias).
+export const EMAIL_REPLY_TO: Partial<Record<EmailKind, string>> = {
+  invoice: 'hunter@demandsignals.co',
+}
+
+// Kinds that auto-BCC the archive address (DSIG keeps a copy of every
+// client-facing send for reference). Mixed-kind callers (like
+// report_request which sends both admin + prospect copies) pass
+// isClientFacing:true at call time when the prospect copy is being sent.
+export const CLIENT_FACING_KINDS: ReadonlySet<EmailKind> = new Set<EmailKind>([
+  'invoice',
+])
