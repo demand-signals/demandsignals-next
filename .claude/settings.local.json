@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la /d/CLAUDE/demandsignals-next/src/app/locations/[city]/)",
+      "Bash(npm run:*)",
+      "Bash(curl -s -L -o /tmp/anthropic_models.html -w \"HTTP_CODE:%{http_code}\\\\nCONTENT_TYPE:%{content_type}\\\\nURL_EFFECTIVE:%{url_effective}\\\\n\" \"https://docs.anthropic.com/en/docs/about-claude/models\")",
+      "Read(//tmp/**)",
+      "Bash(bash \"C:\\\\Users\\\\Gaming-PC\\\\.claude\\\\plugins\\\\cache\\\\claude-plugins-official\\\\superpowers\\\\5.0.7\\\\scripts\\\\start-server.sh\" --project-dir \"D:\\\\CLAUDE\\\\demandsignals-next\")",
+      "WebFetch(domain:www.anthropic.com)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git check-ignore *)",
+      "Bash(git commit *)",
+      "Bash(git worktree *)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)"
+    ]
+  }
+}

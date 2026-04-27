@@ -697,31 +697,8 @@ export default function SowDetailPage({
           </a>
         )}
 
-        {/* Convert SOW to Project — always visible per Plan B spec */}
-        <ConvertButton
-          sow={{
-            id: sow.id,
-            sow_number: sow.sow_number,
-            title: sow.title,
-            status: sow.status,
-            total_cents: sow.pricing.total_cents,
-            trade_credit_cents: (sow as unknown as { trade_credit_cents?: number }).trade_credit_cents ?? 0,
-            trade_credit_description:
-              (sow as unknown as { trade_credit_description?: string | null }).trade_credit_description ?? null,
-            phases: (sow.phases ?? []).map((p) => ({ id: p.id, name: p.name })),
-            recurring_deliverables: (sow.phases ?? []).flatMap((p) =>
-              (p.deliverables ?? [])
-                .filter((d) => ['monthly', 'quarterly', 'annual'].includes(d.cadence))
-                .map((d) => ({
-                  id: d.id,
-                  name: d.name,
-                  monthly_cents:
-                    (d.unit_price_cents ?? 0) * ((d.hours ?? d.quantity ?? 1) || 1),
-                  cadence: d.cadence as 'monthly' | 'quarterly' | 'annual',
-                })),
-            ),
-          }}
-        />
+        {/* Convert SOW to Project — links to dedicated /convert page */}
+        <ConvertButton sow={{ id: sow.id, status: sow.status }} />
       </div>
 
       {/* Branded document */}
