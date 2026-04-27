@@ -1,56 +1,57 @@
 ---
-title: "Anthropic's Amazon Partnership Sets Up Massive AI Expansion"
+title: "Resume command gets dramatically faster for large sessions"
 date: "2026-04-20"
 author: "AI ChangeLog"
-excerpt: "Anthropic's Amazon Partnership Sets Up Massive AI Expansion"
+excerpt: "Resume command gets dramatically faster for large sessions"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
 serviceCategories: ["ai-services"]
-featured: true
+featured: false
 infographic:
   headline: "Changelog Update for April 20, 2026"
   type: "stats"
   stats:
     - { label: "Platforms Updated", value: "2 of 11" }
-    - { label: "Major Launch", value: "Yes" }
-    - { label: "New", value: "0" }
+    - { label: "Major Launch", value: "No" }
+    - { label: "New", value: "1" }
     - { label: "Improved", value: "1" }
-    - { label: "Fixed", value: "2" }
-    - { label: "Total Changes", value: "4" }
+    - { label: "Fixed", value: "1" }
+    - { label: "Total Changes", value: "3" }
 ---
 
-## 🚨 The Big News
-Anthropic's Amazon Partnership Sets Up Massive AI Expansion
+## Anthropic Partnership Expansion
 
-Anthropic locked in a major infrastructure deal with Amazon on Monday, committing to up to 5 gigawatts of new compute capacity — enough to power a small city. The partnership significantly expands their existing collaboration around cloud infrastructure and training.
+Anthropic and Amazon expanded their collaboration to bring up to 5 gigawatts of new compute capacity for AI infrastructure. The partnership builds on their existing work together and marks a significant investment in scaling AI compute capabilities.
 
-**What's new:**
-- Up to 5 gigawatts of additional compute capacity through Amazon Web Services
-- Expanded infrastructure partnership beyond their existing collaboration
-- Strategic positioning for large-scale AI training and deployment
+**Why this matters:** This massive compute expansion signals serious infrastructure investment to support growing AI workloads. For developers, it should mean better API reliability and potentially faster response times as demand continues to grow.
 
-**Why this matters:** This is about scale at a level that most companies can only dream of. Five gigawatts is serious infrastructure — the kind that signals Anthropic is planning for AI systems that dwarf what we see today. If you're building on Claude, this suggests much more powerful models are coming.
+[Source →](https://www.anthropic.com/news/anthropic-amazon-compute)
 
 ## Claude Code
-Bug fixes and performance improvements for the coding assistant
+
+What's new from Anthropic's AI coding assistant
 
 🔄
 **Improved · Performance**
-**Sessions load 67% faster for large projects**
-The `/resume` command now handles big sessions much more efficiently, especially those 40MB+ monsters with lots of dead forks. No more waiting around when you want to pick up where you left out.
+**Resume command gets dramatically faster for large sessions**
+The `/resume` command now runs up to 67% faster on sessions over 40MB, with better handling of sessions containing many dead-fork entries.
+
+[Source →](https://github.com/anthropics/claude-code/releases/tag/v2.1.116)
 
 🔧
-**Fixed · Terminal Issues**
-**Better scrolling and keyboard shortcuts across editors**
-Fixed broken Ctrl+- for undo and Cmd+Left/Right navigation in terminals using the Kitty protocol. Also cleaned up scrollback duplication and rendering issues in VS Code terminals.
+**Fixed · Terminal handling**
+**Better keyboard shortcuts and display fixes**
+Fixed Ctrl+Z hanging when launched via wrapper processes, corrected Ctrl+- undo triggering in Kitty protocol terminals, and resolved scrollback duplication issues in inline mode.
 
-🔧
-**Fixed · API Reliability**
-**Resolved intermittent 400 errors during cache setup**
-Cleaned up a timing issue where parallel requests could cause cache control problems and throw API errors.
+[Source →](https://github.com/anthropics/claude-code/releases/tag/v2.1.116)
 
-Quiet day across most other platforms — DeepSeek announced their V4 model launch for later this week, but no major releases actually shipped on Monday from OpenAI, Google, Meta, xAI, or Mistral.
+🛠️
+**New · Plugin management**
+**Auto-install missing dependencies and faster MCP startup**
+The `/reload-plugins` command now auto-installs missing dependencies from added marketplaces, while MCP startup is faster when multiple stdio servers are configured.
+
+[Source →](https://github.com/anthropics/claude-code/releases/tag/v2.1.116)
 
 ---
 

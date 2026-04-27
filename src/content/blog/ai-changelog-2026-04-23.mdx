@@ -1,8 +1,8 @@
 ---
-title: "OpenAI's GPT-5.5 Goes Live"
+title: "OpenAI's GPT-5.5 lands — same speed as 5.4, smarter on everything"
 date: "2026-04-23"
 author: "AI ChangeLog"
-excerpt: "OpenAI's GPT-5.5 Goes Live"
+excerpt: "OpenAI's GPT-5.5 lands — same speed as 5.4, smarter on everything"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -12,54 +12,45 @@ infographic:
   headline: "Changelog Update for April 23, 2026"
   type: "stats"
   stats:
-    - { label: "Platforms Updated", value: "2 of 11" }
+    - { label: "Platforms Updated", value: "1 of 11" }
     - { label: "Major Launch", value: "Yes" }
-    - { label: "New", value: "2" }
-    - { label: "Improved", value: "1" }
-    - { label: "Fixed", value: "2" }
-    - { label: "Total Changes", value: "6" }
+    - { label: "New", value: "1" }
+    - { label: "Improved", value: "0" }
+    - { label: "Fixed", value: "0" }
+    - { label: "Total Changes", value: "1" }
 ---
 
 ## 🚨 The Big News
-OpenAI's GPT-5.5 Goes Live
+OpenAI's GPT-5.5 lands — same speed as 5.4, smarter on everything
 
-OpenAI dropped GPT-5.5 yesterday, marking another leap forward in AI capability and a clear signal that the race to AGI is accelerating. This isn't just an incremental update — it's what OpenAI calls their most sophisticated reasoning model yet.
+OpenAI shipped GPT-5.5 today, codenamed "Spud" internally. It's a step up from GPT-5.4 across coding, computer use, and deep research — and it's matching 5.4's per-token latency while doing it. That's the part worth pausing on. Bigger models usually mean slower serving, but OpenAI claims they kept the same speed while bumping the intelligence.
 
 **What's new:**
-- Advanced reasoning architecture with improved multi-step problem solving
-- Enhanced coding capabilities with better debugging and optimization
-- Expanded context understanding for complex document analysis
-- System card and bio bug bounty program launched for safety testing
+- Better at writing and debugging code, online research, data analysis, and document/spreadsheet creation
+- Improved at operating software and chaining tools together until a task is done
+- Same per-token latency as GPT-5.4 in real-world serving — you don't pay a speed tax for the upgrade
+- Rolling out to Plus, Pro, Business, and Enterprise users in ChatGPT and Codex starting today; API access via `gpt-5.5` and `gpt-5.5-pro` follows on April 24
+- Strongest safety guardrails OpenAI has shipped, with new Bio Bug Bounty program for security testing
 
-**Why this matters:** GPT-5.5 positions OpenAI to compete more directly with Claude's reasoning strengths while maintaining their lead in general-purpose applications. For developers, this means more reliable AI for complex tasks that previously required multiple model calls or extensive prompt engineering.
+**Why this matters:** This is OpenAI's response to Claude Opus 4.7 (which dropped a week ago) and the broader push toward AI that finishes whole tasks autonomously rather than answering one prompt at a time. If you're building agent workflows, GPT-5.5 narrows the gap with Claude on coding while keeping OpenAI's lead in computer use. For most ChatGPT users, you'll notice it as "Spud just feels like it gets it" without thinking about why.
 
-## Claude Code
-What's new from Anthropic's AI coding assistant
+[Source →](https://openai.com/index/introducing-gpt-5-5/)
 
-🔄
-**Improved · Configuration Management**
-**Settings that actually stick around**
-Your `/config` preferences now save to `~/.claude/settings.json` instead of vanishing when you restart. Theme choices, editor modes, and verbosity settings finally persist like they should. Plus, you can set custom PR URLs if your team uses something other than GitHub.
+## Related drops from OpenAI today
+
+🔑
+**New · Safety**
+**GPT-5.5 System Card published**
+The full safety evaluation document went up alongside the model launch. Covers preparedness framework results, internal and external red-teaming, and targeted testing for advanced cybersecurity and biology capabilities. Worth a skim if you care about what guardrails actually got tested.
+
+[Source →](https://openai.com/index/gpt-5-5-system-card/)
 
 🛠️
-**New · Git Integration**
-**Better PR support across platforms**
-The `--from-pr` flag now works with GitLab merge requests and Bitbucket pull requests, not just GitHub. Your `owner/repo#N` links in output will also use your actual git remote instead of assuming everything lives on github.com.
+**New · Security program**
+**GPT-5.5 Bio Bug Bounty launches**
+OpenAI opened a dedicated bounty program for finding bio-related safety issues in GPT-5.5. If you're a security researcher with bio domain expertise, this is the formal path to get paid for responsible disclosure.
 
-🔧
-**Fixed · Permissions**
-**PowerShell auto-approval**
-PowerShell commands can now be auto-approved in permission mode, matching how Bash commands already worked. No more manual clicks for every Windows script.
-
-🔧
-**Fixed · Paste Handling**
-**Windows clipboard wonkiness**
-Fixed the annoying bug where pasting content from Windows clipboards (or Xcode console) would insert extra blank lines everywhere. Multi-line pastes should now work properly in terminals using kitty keyboard protocol.
-
-🧠
-**New · Vim Visual Mode**
-**Visual selection finally works**
-Added vim visual mode (`v`) and visual-line mode (`V`) with proper selection, operators, and visual feedback. If you've been waiting for this, it's here.
+[Source →](https://openai.com/index/gpt-5-5-bio-bug-bounty/)
 
 ---
 

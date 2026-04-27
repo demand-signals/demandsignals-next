@@ -1,8 +1,8 @@
 ---
-title: "Anthropic's Claude Opus 4.7 drops with major coding improvements"
+title: "Anthropic's Claude Opus 4.7 arrives with coding power"
 date: "2026-04-16"
 author: "AI ChangeLog"
-excerpt: "Anthropic's Claude Opus 4.7 drops with major coding improvements"
+excerpt: "Anthropic's Claude Opus 4.7 arrives with coding power"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -12,63 +12,66 @@ infographic:
   headline: "Changelog Update for April 16, 2026"
   type: "stats"
   stats:
-    - { label: "Platforms Updated", value: "4 of 11" }
+    - { label: "Platforms Updated", value: "2 of 11" }
     - { label: "Major Launch", value: "Yes" }
     - { label: "New", value: "3" }
-    - { label: "Improved", value: "2" }
+    - { label: "Improved", value: "1" }
     - { label: "Fixed", value: "1" }
-    - { label: "Total Changes", value: "7" }
+    - { label: "Total Changes", value: "6" }
 ---
 
 ## 🚨 The Big News
-Anthropic's Claude Opus 4.7 drops with major coding improvements
+Anthropic's Claude Opus 4.7 arrives with coding power
 
-Anthropic just launched Claude Opus 4.7, their most capable generally available model that brings what they're calling a "step-change improvement in agentic coding" over the previous Opus 4.6. This is the kind of release that typically signals a new tier of AI capability.
+Anthropic dropped Claude Opus 4.7 today — their most capable model yet with what they're calling a "step-change improvement" in agentic coding. The new model brings meaningful upgrades across coding, agents, vision, and multi-step reasoning while maintaining the thoroughness Claude users expect.
 
 **What's new:**
-- Major boost in coding performance, agents, vision, and multi-step reasoning tasks
-- Better thoroughness and consistency for complex work 
-- Same pricing as before ($5/MTok input, $25/MTok output)
-- Available immediately on Claude.ai, API, and third-party platforms like Bedrock and Vertex AI
+- Dramatically improved agentic coding capabilities over Claude Opus 4.6
+- Enhanced performance in vision, multi-step tasks, and general reasoning
+- Better consistency and thoroughness across complex workflows
+- Available through Claude API, Amazon Bedrock, and other platforms
 
-**Why this matters:** If you're building anything that involves AI writing or reviewing code, this could be a significant upgrade. The "agentic coding" improvement suggests it's much better at planning, executing, and iterating on programming tasks autonomously.
+**Why this matters:** For anyone building AI agents or complex coding workflows, this represents a significant capability jump. The focus on agentic coding suggests Anthropic is positioning Claude for the wave of autonomous development tools hitting the market.
+
+[Source →](https://www.anthropic.com/news/claude-opus-4-7)
 
 ## Claude Code
 What's new from Anthropic's AI coding assistant
 
-🧠
-**New · Model upgrade**
-**Claude Opus 4.7 is now live with better coding smarts**
-The new model is rolling out in Claude Code with an "xhigh" effort level that sits between high and max performance. You can tune it with `/effort` or just let auto mode pick the right balance for your task.
+🚀
+**New · Model Access**
+**Claude Opus 4.7 lands with effort tuning**
+Claude Code now supports the new Opus 4.7 model with effort levels — use `/effort` to tune between speed and intelligence. Auto mode is available for Max subscribers, and there's a new `xhigh` effort level that sits between `high` and `max`.
 
-⚡
-**New · Auto mode**
-**No more `--enable-auto-mode` flag needed**
-Auto mode is now available by default for Max subscribers using Opus 4.7. The system will automatically choose the right effort level based on what you're trying to do.
+[Source →](https://github.com/anthropics/claude-code/releases/tag/v2.1.112)
 
 🛠️
-**New · Code review**
-**`/ultrareview` brings multi-agent analysis**
-Run comprehensive code reviews in the cloud with parallel agents that critique each other's findings. Use it on your current branch or point it at a specific GitHub PR.
+**New · Theme Options**
+**Auto theme matching arrives**
+Added "Auto (match terminal)" theme that automatically matches your terminal's dark/light mode. Access it through `/theme` command.
 
-🔧
-**Fixed · Permission prompts**
-**Read-only commands get smarter allowlists**
-The new `/less-permission-prompts` skill scans your history and suggests which common bash and MCP commands you can safely allowlist to reduce interruptions.
+[Source →](https://github.com/anthropics/claude-code/releases/tag/v2.1.111)
 
-## Google Gemini API
+🤖
+**New · Code Review**
+**Ultra review for comprehensive analysis**
+New `/ultrareview` skill runs comprehensive code review using parallel multi-agent analysis. Run without arguments to review your current branch, or `/ultrareview <PR#>` to fetch and review a specific GitHub PR.
 
-📊
-**Improved · Performance**
-**Various model stability improvements**
-Google's been making incremental updates across the Gemini API throughout the week, with most changes focused on reliability and performance optimizations rather than flashy new features.
-
-## DeepSeek API
+[Source →](https://github.com/anthropics/claude-code/releases/tag/v2.1.111)
 
 🔄
-**Improved · Model updates**
-**V4 models continue rolling refinements**
-DeepSeek's V4-Pro and V4-Flash models are getting regular under-the-hood improvements, though no major feature announcements landed on this specific date.
+**Improved · Permissions**
+**Smarter permission prompts**
+Added `/less-permission-prompts` skill that scans transcripts for common read-only commands and suggests allowlists. Read-only bash commands with glob patterns and `cd` chains no longer trigger permission prompts.
+
+[Source →](https://github.com/anthropics/claude-code/releases/tag/v2.1.111)
+
+🔧
+**Fixed · Display Issues**
+**Terminal tearing in iTerm2 + tmux resolved**
+Fixed random character display and input drifting issues when using iTerm2 with tmux, plus various other terminal display improvements.
+
+[Source →](https://github.com/anthropics/claude-code/releases/tag/v2.1.111)
 
 ---
 

@@ -1,8 +1,8 @@
 ---
-title: "Two dozen fixes to make Claude Code more reliable"
+title: "Model selections now stick around after restarts, plus better plugin dependency "
 date: "2026-04-22"
 author: "AI ChangeLog"
-excerpt: "Two dozen fixes to make Claude Code more reliable"
+excerpt: "Model selections now stick around after restarts, plus better plugin dependency handling"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -14,34 +14,38 @@ infographic:
   stats:
     - { label: "Platforms Updated", value: "1 of 11" }
     - { label: "Major Launch", value: "No" }
-    - { label: "New", value: "1" }
+    - { label: "New", value: "0" }
     - { label: "Improved", value: "2" }
     - { label: "Fixed", value: "1" }
-    - { label: "Total Changes", value: "4" }
+    - { label: "Total Changes", value: "3" }
 ---
 
 ## Claude Code
 What's new from Anthropic's AI coding assistant
 
 🔄
-**Fixed · Bugs**
-**Two dozen fixes to make Claude Code more reliable**
-OAuth sessions no longer die mid-session, WebFetch stops hanging on large pages, and prompt input undo actually works now. A clean-up of the little annoyances that add up over time.
+**Improved · Configuration Management**
+**Model selections now stick around after restarts, plus better plugin dependency handling**
 
-🛠️
-**New · External builds**
-**Forked subagents now work outside Anthropic builds**
-Set `CLAUDE_CODE_FORK_SUBAGENT=1` and external builds can spawn subagents just like the official version. Opens up more advanced agent workflows for teams building their own deployments.
+The `/model` command now remembers your selection even when projects pin different models, and you'll see which source (project vs managed settings) controls the startup model. Plugin installation got smarter too — it'll now install missing dependencies instead of just telling you the plugin already exists.
+
+[Source →](https://github.com/anthropics/claude-code/releases/tag/v2.1.117)
 
 🔧
-**Improved · Plugin management**
-**Plugin installs got smarter about dependencies**
-Installing an already-installed plugin now grabs missing dependencies instead of giving up. The marketplace commands also auto-resolve deps from configured sources — less manual work to get plugins running.
+**Fixed · Bugs**  
+**OAuth token refresh, HTML truncation, and context window calculations**
 
-🔄
-**Improved · Session handling**
-**Better model persistence and stale session recovery**
-Model selections stick around even when projects pin different ones, and `/resume` offers to summarize old sessions before diving back in. Smoother workflows when switching between contexts.
+Fixed OAuth sessions dying with "Please run /login" when tokens expire mid-session (now refreshes automatically), WebFetch hanging on huge HTML pages, and Opus 4.7 showing wrong context percentages due to incorrect window size calculations.
+
+[Source →](https://github.com/anthropics/claude-code/releases/tag/v2.1.117)
+
+⚡
+**Improved · Performance**
+**Faster startup and native search tools on macOS/Linux**
+
+Native builds now use embedded `bfs` and `ugrep` for file operations instead of separate tool calls, making searches much snappier. Plus faster startup when you have both local and cloud MCP servers configured.
+
+[Source →](https://github.com/anthropics/claude-code/releases/tag/v2.1.117)
 
 ---
 

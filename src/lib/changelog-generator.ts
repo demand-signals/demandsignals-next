@@ -329,13 +329,55 @@ CRITICAL RULES
 
 1. **ELEVATE MAJOR LAUNCHES.** If a NEWS source announced a new model, new product, or major release on this date, give it a HEADLINE SECTION at the top of the post (## 🚨 The Big News) with a multi-paragraph explanation — NOT a single emoji card. Examples of major launches: GPT-5.5, Claude Opus 4.7, Gemini 3, Llama 4, DeepSeek V4. These deserve real prose, not bullet treatment.
 
-2. **Strict date matching — this is critical.** Only include announcements that you can clearly tie to ${displayDate} (${dateStr}). News pages list MANY entries from MANY dates — do NOT pull a launch from a different date and slot it under this date. If GPT-5.5 launched on April 23 and you're writing the April 22 post, GPT-5.5 does NOT belong here. If unsure whether an entry matches this exact date, leave it out. When in doubt, write "quiet day."
+2. **Date discipline (works both ways).** Only include announcements that match ${displayDate} (${dateStr}). News pages list entries from many dates — don't slot a launch from a different date under this one. BUT: if you can clearly see an entry dated to this day in the source content, INCLUDE IT confidently. The goal is accuracy, not paranoia. Don't reject real dated launches by being over-conservative.
+
+   **Date formats vary across sources — recognize ALL of these as matching this day:**
+   • "${displayDate}" (full)
+   • "${monthDay}, 2026" (e.g. April 23, 2026)
+   • "${monthDay.replace(/^([A-Z][a-z]{2})[a-z]+/, '$1')}, 2026" (abbreviated, e.g. Apr 23, 2026 — OpenAI uses this format)
+   • "${dateStr}" (ISO, e.g. 2026-04-23)
+   • "${dateStr.split('-').slice(1).join('/')}/26" (e.g. 04/23/26)
+   • Same-day relative phrasing in changelog entries
+
+   **Example of what TO catch:** If OpenAI News shows three entries marked "Apr 23, 2026" all about GPT-5.5, that's a major launch on this date — feature it as Big News.
 
 3. **Cross-reference within the same date.** If both a news source AND a changelog source mention the same launch on ${dateStr}, treat it as one elevated story — don't duplicate.
 
-4. **Don't invent. Don't pre-date. Don't post-date.** Only report what's actually dated ${monthDay}, 2026 (or ${dateStr}, or ${displayDate}) in the source content. If a date has no clear entries, write a brief one-paragraph "quiet day" note in plain prose. Do not emit tool-call syntax, placeholder text, bracketed notes, or anything that breaks the human-columnist voice.
+4. **Don't invent. Don't pre-date. Don't post-date.** Only report what's actually dated ${monthDay}, 2026 (or ${dateStr}, or ${displayDate}) in the source content.
+
+5. **Source link integrity — links must match the content.** The URL in \`[Source →](url)\` MUST point to a page that describes the SPECIFIC change you wrote about. If you're writing about a Claude Code fix, link to the Claude Code release page — NOT to an unrelated Anthropic news URL just because it's nearby. Wrong-link-attached-to-content is worse than no source link at all.
+
+6. **Quiet-day output: short but varied.** When nothing shipped, write 1-3 sentences with personality. Vary the opening — don't reuse "Quiet day across the AI landscape" verbatim every time. A human columnist would write differently each time. Examples of acceptable variation:
+   • "Mondays. Even AI labs have them — nothing shipped on ${displayDate}."
+   • "Crickets across the AI world today. No model drops, no API tweaks, no announcements worth flagging."
+   • "Slow Saturday. OpenAI, Anthropic, Google, and the rest all kept quiet."
+   • "Nothing major from any of the platforms today. Sometimes that's the whole story."
+   • "${monthDay} was a wash — no releases or announcements anywhere."
+   Keep it under ~40 words. ONE short paragraph max. Don't write multi-paragraph essays about why it's quiet, don't speculate about "the calm before the storm," don't bridge to other dates. Just acknowledge the silence with personality and move on.
 
 5. **Start your response directly with the first ## heading.** No preamble. No throat-clearing. Jump straight to the content.
+
+═══════════════════════════════════════════════════════════
+FORMAT
+═══════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════
+SOURCE LINKS — REQUIRED ON EVERY ITEM
+═══════════════════════════════════════════════════════════
+
+Every emoji card AND the Big News section MUST end with a source link in this exact format:
+
+\`[Source →](https://specific-url-to-the-post)\`
+
+Use the MOST SPECIFIC URL you can find in the source markdown:
+  • Best:  link to the individual announcement post (e.g. \`https://www.anthropic.com/news/claude-opus-4-7\`)
+  • Good:  link to the GitHub release page (e.g. \`https://github.com/anthropics/claude-code/releases/tag/v2.1.117\`)
+  • OK:    link to the dated changelog entry if the URL has a fragment
+  • Last resort: the page-level URL provided at the top of each source section
+
+The Jina markdown preserves links — look for \`[text](https://...)\` patterns near the entry you're describing. Pick the link whose anchor text matches the announcement.
+
+Never link to homepages. Never invent URLs that aren't in the source content. If you genuinely can't find any specific link, use the source URL given at the top of that section ("Source: https://...").
 
 ═══════════════════════════════════════════════════════════
 FORMAT
@@ -355,6 +397,8 @@ If there's a major launch, lead with this section:
 - Bullet 3 (what it replaces or improves over)
 
 **Why this matters:** [1-2 sentences on the practical implication for someone running a business or building software.]
+
+[Source →](https://specific-announcement-url)
 \`\`\`
 
 Then group remaining changes by platform with H2 headings + emoji cards:
@@ -367,6 +411,8 @@ EMOJI
 **Category · Feature Area**
 **Conversational headline describing the change**
 2-3 sentence explanation in plain English. Talk like you're texting a friend.
+
+[Source →](https://specific-changelog-or-release-url)
 \`\`\`
 
 ### Categories and emojis

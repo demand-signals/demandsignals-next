@@ -1,8 +1,8 @@
 ---
-title: "Anthropic's Claude Design Launches"
+title: "Anthropic's Claude Design Launches with AI Visual Collaboration"
 date: "2026-04-17"
 author: "AI ChangeLog"
-excerpt: "Anthropic's Claude Design Launches"
+excerpt: "Anthropic's Claude Design Launches with AI Visual Collaboration"
 tags: ["ai-changelog", "openai", "anthropic", "google-gemini", "deepseek", "ai-updates"]
 readTime: "3 min read"
 category: "ai-changelog"
@@ -14,47 +14,52 @@ infographic:
   stats:
     - { label: "Platforms Updated", value: "2 of 11" }
     - { label: "Major Launch", value: "Yes" }
-    - { label: "New", value: "2" }
+    - { label: "New", value: "1" }
     - { label: "Improved", value: "1" }
     - { label: "Fixed", value: "1" }
-    - { label: "Total Changes", value: "5" }
+    - { label: "Total Changes", value: "4" }
 ---
 
 ## 🚨 The Big News
-Anthropic's Claude Design Launches
 
-Today, Anthropic launched Claude Design by Anthropic Labs — a new product that lets you collaborate with Claude to create polished visual work like designs, prototypes, slides, one-pagers, and more.
+Anthropic's Claude Design Launches with AI Visual Collaboration
+
+Anthropic dropped Claude Design today, marking their first major push into visual creation tools. This new Labs product turns Claude into a collaborative design partner that can create everything from polished slides to full prototypes.
 
 **What's new:**
-- Visual collaboration tool that works directly with Claude to create designs
-- Supports multiple types of visual content including presentations, prototypes, and documents
-- Part of Anthropic Labs, indicating it's an experimental/preview product
-- Available as of April 17, 2026
+- Real-time collaboration for creating designs, prototypes, slides, and one-pagers
+- Visual work generation that goes beyond text responses
+- Integration with existing Claude workflows and capabilities
+- Part of Anthropic Labs experimental product lineup
 
-**Why this matters:** This marks Anthropic's expansion beyond text-based AI into visual creation tools, potentially competing with design platforms and making professional design work more accessible to non-designers.
+**Why this matters:** Most AI tools still live in text-only worlds, but actual work involves plenty of visual communication. Claude Design could bridge that gap for teams building presentations, mockups, or visual documentation without needing separate design tools.
+
+[Source →](https://www.anthropic.com/news/claude-design-anthropic-labs)
 
 ## Claude Code
+
 What's new from Anthropic's AI coding assistant
 
+🔄
+**Improved · Performance**
+**Native binary replaces JavaScript bundling**
+Claude Code v2.1.113 swapped out its bundled JavaScript approach for native binaries that run per-platform. Should feel snappier and more responsive during heavy coding sessions.
+
+[Source →](https://github.com/anthropics/claude-code/releases/tag/v2.1.113)
+
 🛠️
-**New · Native Performance**
-**Claude Code now runs faster with native binaries**
-The CLI has been upgraded to use native platform-specific binaries instead of bundled JavaScript, which should improve performance and startup times.
+**New · Security Controls**
+**Network sandbox gets domain deny-listing**
+You can now block specific domains even when broader wildcards would allow them through the `sandbox.network.deniedDomains` setting. Gives you more granular control over what your coding environment can access.
+
+[Source →](https://github.com/anthropics/claude-code/releases/tag/v2.1.113)
 
 🔧
-**Fixed · Multiple Bugs**
-**Better stability across the board**
-Fixed issues with copying text character counts, Windows file insights crashes, prompt cursor visibility, and several Remote Control session problems.
+**Fixed · UI Polish** 
+**Better fullscreen editing and Remote Control**
+Shift+arrow keys now scroll properly when selecting past screen edges in fullscreen mode. Remote Control clients can finally query @-file autocomplete suggestions, and long URLs stay clickable when they wrap.
 
-⚠️
-**Improved · Security**
-**Enhanced sandbox protection on macOS**
-Added better protections for sensitive system directories like `/private/{etc,var,tmp,home}` and improved command filtering for wrapped commands using `env`, `sudo`, and similar tools.
-
-🧠
-**New · Network Controls**
-**Block specific domains even with wildcards**
-Added a new `sandbox.network.deniedDomains` setting that lets you block specific domains even when broader wildcard rules would normally allow them.
+[Source →](https://github.com/anthropics/claude-code/releases/tag/v2.1.113)
 
 ---
 
