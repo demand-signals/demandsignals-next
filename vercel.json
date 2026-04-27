@@ -4,6 +4,7 @@
     { "path": "/api/analytics/weekly-report", "schedule": "0 16 * * 1" },
     { "path": "/api/changelog/generate", "schedule": "0 14 * * *" },
     { "path": "/api/changelog/watchdog", "schedule": "0 17 * * *" },
+    { "path": "/api/blog/generate-daily", "schedule": "0 12 * * *" },
     { "path": "/api/cron/payment-triggers", "schedule": "0 13 * * *" }
   ],
   "redirects": [

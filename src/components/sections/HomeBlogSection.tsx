@@ -20,7 +20,7 @@ export default function HomeBlogSection() {
   return (
     <section style={{ background: 'var(--light)', padding: '80px 0 64px', overflow: 'hidden' }}>
       {/* Header */}
-      <style>{`@media(min-width:768px){.blog-featured-grid{grid-template-columns:1fr 1fr !important;min-height:280px !important}.blog-featured-content{padding:36px 40px !important}.blog-featured-info{padding:36px 32px !important;border-top:none !important;border-left:1px solid rgba(255,255,255,0.06) !important}}`}</style>
+      <style>{`@media(min-width:768px){.blog-featured-content{padding:48px 56px !important}}`}</style>
       <div style={{ padding: '0 24px', marginBottom: 32 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <span style={{
@@ -39,23 +39,34 @@ export default function HomeBlogSection() {
         </div>
       </div>
 
-      {/* Featured latest post */}
+      {/* Featured latest post — single column, full-bleed dark card */}
       {posts[0] && (() => {
         const latest = posts[0]
         const latestColor = CATEGORIES.find(c => c.key === latest.category)?.color || '#6b7280'
         const latestLabel = CATEGORIES.find(c => c.key === latest.category)?.label || ''
-        const latestStats = (latest as Record<string, unknown>).infographic as { headline?: string; stats?: Array<{ label: string; value: string }> } | undefined
         return (
           <div style={{ padding: '0 24px', marginBottom: 32 }}>
             <Link href={`/blog/${latest.slug}`} style={{ textDecoration: 'none', display: 'block', maxWidth: 1200, margin: '0 auto' }}>
-              <div className="blog-featured-grid" style={{
+              <div style={{
                 background: 'linear-gradient(135deg, #1d2330 0%, #2a3448 100%)',
                 borderRadius: 20, overflow: 'hidden',
-                display: 'grid', gridTemplateColumns: '1fr', minHeight: 0,
+                position: 'relative',
               }}>
-                {/* Left — content */}
-                <div style={{ padding: '28px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 16 }} className="blog-featured-content">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {/* Subtle grid pattern */}
+                <div style={{
+                  position: 'absolute', inset: 0, opacity: 0.025,
+                  backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                  backgroundSize: '32px 32px',
+                  pointerEvents: 'none',
+                }} />
+                <div className="blog-featured-content" style={{
+                  position: 'relative',
+                  padding: '32px 28px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 16,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <span style={{
                       background: `${latestColor}25`, color: latestColor,
                       padding: '4px 12px', borderRadius: 100, fontSize: '0.7rem',
@@ -66,58 +77,33 @@ export default function HomeBlogSection() {
                     <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem' }}>
                       {new Date(latest.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                     </span>
+                    <span style={{
+                      marginLeft: 'auto',
+                      color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem', fontWeight: 600,
+                      letterSpacing: '0.08em', textTransform: 'uppercase',
+                    }}>
+                      Latest Post
+                    </span>
                   </div>
-                  <h3 style={{ color: '#fff', fontSize: 'clamp(1.2rem, 2.5vw, 1.6rem)', fontWeight: 800, lineHeight: 1.3, margin: 0 }}>
+                  <h3 style={{
+                    color: '#fff',
+                    fontSize: 'clamp(1.4rem, 3vw, 2rem)',
+                    fontWeight: 800, lineHeight: 1.25, margin: 0,
+                    maxWidth: 880,
+                  }}>
                     {latest.title}
                   </h3>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem', lineHeight: 1.6, margin: 0,
+                  <p style={{
+                    color: 'rgba(255,255,255,0.6)',
+                    fontSize: '1rem', lineHeight: 1.65, margin: 0,
+                    maxWidth: 760,
                     display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                   }}>
                     {latest.excerpt}
                   </p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
-                    <span style={{ color: 'var(--teal)', fontSize: '0.85rem', fontWeight: 600 }}>Read article →</span>
-                    <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem' }}>{latest.readTime}</span>
-                  </div>
-                </div>
-                {/* Right — infographic preview */}
-                <div className="blog-featured-info" style={{
-                  position: 'relative', padding: '20px',
-                  display: 'flex', flexDirection: 'column', justifyContent: 'center',
-                  borderTop: '1px solid rgba(255,255,255,0.06)',
-                }}>
-                  <div style={{
-                    position: 'absolute', inset: 0, opacity: 0.03,
-                    backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-                    backgroundSize: '24px 24px',
-                  }} />
-                  <div style={{ position: 'relative' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
-                      <img src="/dsig-icon.png" alt="" width={16} height={16} style={{ borderRadius: 3 }} aria-hidden="true" />
-                      <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Latest Post</span>
-                    </div>
-                    {latestStats?.headline && (
-                      <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff', lineHeight: 1.3, marginBottom: 16 }}>
-                        {latestStats.headline}
-                      </div>
-                    )}
-                    {latestStats?.stats && latestStats.stats.length > 0 && (
-                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                        {latestStats.stats.slice(0, 4).map((stat, i) => (
-                          <div key={i} style={{
-                            background: 'rgba(255,255,255,0.06)', borderRadius: 8,
-                            padding: '12px 10px', flex: '1 1 60px', minWidth: 60, textAlign: 'center',
-                          }}>
-                            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: i % 2 === 0 ? '#68c5ad' : '#FF6B2B', lineHeight: 1 }}>
-                              {stat.value}
-                            </div>
-                            <div style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                              {stat.label}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <span style={{ color: 'var(--teal)', fontSize: '0.9rem', fontWeight: 600 }}>Read article →</span>
+                    <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.78rem' }}>{latest.readTime}</span>
                   </div>
                 </div>
               </div>
