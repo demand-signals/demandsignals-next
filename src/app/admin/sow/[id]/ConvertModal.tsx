@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import type {
   ConvertSowRequest,
   ConvertSowResult,
@@ -243,7 +244,12 @@ export function ConvertModal({ sow, onClose, onConverted }: Props) {
     }
   }
 
-  return (
+  // Portal mount: createPortal requires document.body, so defer until client-side mount.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+  if (!mounted) return null
+
+  const modalUi = (
     <div
       onClick={onClose}
       style={{
@@ -255,13 +261,9 @@ export function ConvertModal({ sow, onClose, onConverted }: Props) {
         background: 'rgba(0,0,0,0.5)',
         zIndex: 9999,
         display: 'flex',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: 40,
-        paddingLeft: 20,
-        paddingRight: 20,
-        paddingBottom: 20,
-        overflowY: 'auto',
+        padding: 20,
       }}
     >
       <div
@@ -272,10 +274,9 @@ export function ConvertModal({ sow, onClose, onConverted }: Props) {
           padding: 32,
           maxWidth: 760,
           width: '100%',
-          maxHeight: 'calc(100vh - 80px)',
+          maxHeight: '90vh',
           overflow: 'auto',
           boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-          marginBottom: 40,
         }}
       >
         <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
@@ -1022,4 +1023,6 @@ export function ConvertModal({ sow, onClose, onConverted }: Props) {
       </div>
     </div>
   )
+
+  return createPortal(modalUi, document.body)
 }
