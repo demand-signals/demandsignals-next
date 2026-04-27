@@ -19,6 +19,7 @@ export const metadata = buildMetadata({
 
 interface Props {
   params: Promise<{ token: string }>
+  searchParams: Promise<{ e?: string }>
 }
 
 // ── Category labels ──────────────────────────────────────────────────
@@ -128,10 +129,45 @@ function ItemCard({ item, showPricing }: { item: EnrichedItem; showPricing: bool
 
 // ── Page ─────────────────────────────────────────────────────────────
 
-export default async function SharedEstimatePage({ params }: Props) {
+export default async function SharedEstimatePage({ params, searchParams }: Props) {
   const { token } = await params
+  const { e: emailSendId } = await searchParams
   const session = await getSessionByShareToken(token)
   if (!session) notFound()
+
+  // ── Page tracking ─────────────────────────────────────────────────
+  // Server-side log + cookie promotion. Best-effort; never blocks render.
+  // See spec §4.7.
+  try {
+    const { logPageVisit, buildAttributionCookieParts, shouldPromoteCookie } = await import('@/lib/page-tracking')
+    const { ATTRIBUTION_COOKIE_NAME, verifyAttributionCookie } = await import('@/lib/attribution-cookie')
+    const { cookies: nextCookies } = await import('next/headers')
+    const c = await nextCookies()
+    const cookiePayload = await verifyAttributionCookie(c.get(ATTRIBUTION_COOKIE_NAME)?.value)
+
+    const visitResult = await logPageVisit({
+      page_url: `/quote/s/${token}`,
+      page_type: 'quote',
+      quote_session_id: session.id,
+      attributed_prospect_id: session.prospect_id ?? undefined,
+      email_send_id: emailSendId,
+    })
+
+    if (
+      shouldPromoteCookie(visitResult.attribution_source, visitResult.prospect_id, cookiePayload?.pid ?? null)
+    ) {
+      const parts = await buildAttributionCookieParts(visitResult.prospect_id!)
+      if (parts) {
+        try {
+          c.set(parts.name, parts.value, parts.options)
+        } catch {
+          // Read-only cookie context. Accept gap; next visit retries.
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[quote page] tracking failed:', e instanceof Error ? e.message : e)
+  }
 
   const selections = (Array.isArray(session.selected_items) ? session.selected_items : []) as SelectedItem[]
 

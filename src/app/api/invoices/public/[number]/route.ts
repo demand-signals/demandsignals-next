@@ -18,7 +18,7 @@ export async function GET(
   const { data: invoice } = await supabaseAdmin
     .from('invoices')
     .select(`
-      id, invoice_number, public_uuid, kind, status, currency,
+      id, invoice_number, public_uuid, kind, status, currency, prospect_id,
       subtotal_cents, discount_cents, total_due_cents,
       due_date, send_date, sent_at, paid_at, voided_at, void_reason,
       notes, supersedes_invoice_id, superseded_by_invoice_id,

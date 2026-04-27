@@ -33,6 +33,7 @@ interface SowPricing {
 
 interface PublicSow {
   id: string
+  prospect_id: string | null
   sow_number: string
   public_uuid: string
   status: string
@@ -310,14 +311,52 @@ function InfoCard({
 
 export default async function PublicSowPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ number: string; uuid: string }>
+  searchParams: Promise<{ e?: string }>
 }) {
   const { number, uuid } = await params
+  const { e: emailSendId } = await searchParams
   const data = await fetchSow(number, uuid)
   if (!data) notFound()
 
   const { sow } = data
+
+  // ── Page tracking ─────────────────────────────────────────────────
+  // Server-side log + cookie promotion. Best-effort; never blocks render.
+  // See spec §4.7.
+  try {
+    const { logPageVisit, buildAttributionCookieParts, shouldPromoteCookie } = await import('@/lib/page-tracking')
+    const { ATTRIBUTION_COOKIE_NAME, verifyAttributionCookie } = await import('@/lib/attribution-cookie')
+    const { cookies: nextCookies } = await import('next/headers')
+    const c = await nextCookies()
+    const cookiePayload = await verifyAttributionCookie(c.get(ATTRIBUTION_COOKIE_NAME)?.value)
+
+    const visitResult = await logPageVisit({
+      page_url: `/sow/${number}/${uuid}`,
+      page_type: 'sow',
+      sow_document_id: sow.id,
+      attributed_prospect_id: sow.prospect_id ?? undefined,
+      email_send_id: emailSendId,
+    })
+
+    if (
+      shouldPromoteCookie(visitResult.attribution_source, visitResult.prospect_id, cookiePayload?.pid ?? null)
+    ) {
+      const parts = await buildAttributionCookieParts(visitResult.prospect_id!)
+      if (parts) {
+        try {
+          c.set(parts.name, parts.value, parts.options)
+        } catch {
+          // Read-only cookie context. Accept gap; next visit retries.
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[sow page] tracking failed:', e instanceof Error ? e.message : e)
+  }
+
   const isAccepted = sow.status === 'accepted'
   const isVoid     = sow.status === 'void'
   const isOpen     = !isAccepted && !isVoid && ['sent', 'viewed'].includes(sow.status)

@@ -48,6 +48,8 @@ interface PublicProspect {
 }
 
 interface PublicInvoice {
+  id: string
+  prospect_id: string | null
   invoice_number: string
   kind: string
   status: string
@@ -124,14 +126,53 @@ function StatusPill({ status }: { status: string }) {
 
 export default async function PublicInvoicePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ number: string; uuid: string }>
+  searchParams: Promise<{ e?: string }>
 }) {
   const { number, uuid } = await params
+  const { e: emailSendId } = await searchParams
   const data = await fetchInvoice(number, uuid)
   if (!data) notFound()
 
   const { invoice, line_items } = data
+
+  // ── Page tracking ─────────────────────────────────────────────────
+  // Server-side log of this magic-link visit. Sets/promotes the dsig_attr
+  // cookie when a stronger attribution signal (UUID) lands. Best-effort —
+  // never blocks render. See spec §4.7.
+  try {
+    const { logPageVisit, buildAttributionCookieParts, shouldPromoteCookie } = await import('@/lib/page-tracking')
+    const { ATTRIBUTION_COOKIE_NAME, verifyAttributionCookie } = await import('@/lib/attribution-cookie')
+    const { cookies: nextCookies } = await import('next/headers')
+    const c = await nextCookies()
+    const cookiePayload = await verifyAttributionCookie(c.get(ATTRIBUTION_COOKIE_NAME)?.value)
+
+    const visitResult = await logPageVisit({
+      page_url: `/invoice/${number}/${uuid}`,
+      page_type: 'invoice',
+      invoice_id: invoice.id,
+      attributed_prospect_id: invoice.prospect_id ?? undefined,
+      email_send_id: emailSendId,
+    })
+
+    if (
+      shouldPromoteCookie(visitResult.attribution_source, visitResult.prospect_id, cookiePayload?.pid ?? null)
+    ) {
+      const parts = await buildAttributionCookieParts(visitResult.prospect_id!)
+      if (parts) {
+        try {
+          c.set(parts.name, parts.value, parts.options)
+        } catch {
+          // Read-only cookie context (e.g. static page render). Accept gap; next visit retries.
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[invoice page] tracking failed:', e instanceof Error ? e.message : e)
+  }
+
   const isPaid      = invoice.status === 'paid'
   const isVoid      = invoice.status === 'void'
   const isOutstanding = !isPaid && !isVoid && invoice.total_due_cents > 0

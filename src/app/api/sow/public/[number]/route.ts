@@ -16,7 +16,7 @@ export async function GET(
   const { data: sow } = await supabaseAdmin
     .from('sow_documents')
     .select(`
-      id, sow_number, public_uuid, status, title, scope_summary,
+      id, sow_number, public_uuid, status, title, scope_summary, prospect_id,
       phases, deliverables, timeline, pricing,
       trade_credit_cents, trade_credit_description,
       payment_terms, guarantees, notes,
