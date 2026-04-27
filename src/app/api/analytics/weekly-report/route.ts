@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import nodemailer from 'nodemailer'
 import { getWeeklyReport, type WeeklyReport } from '@/lib/analytics-db'
 import { CONTACT_EMAIL } from '@/lib/constants'
+import { sendEmail } from '@/lib/email'
 
 /**
  * GET /api/analytics/weekly-report
@@ -24,22 +24,19 @@ export async function GET(req: NextRequest) {
     const report = await getWeeklyReport()
     const html = buildEmailHtml(report)
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: Number(process.env.SMTP_PORT) === 465,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    })
-
-    await transporter.sendMail({
-      from: `"Demand Signals Analytics" <${process.env.SMTP_USER}>`,
+    const result = await sendEmail({
       to: CONTACT_EMAIL,
+      kind: 'weekly_analytics',
       subject: `📊 Weekly Analytics: ${report.period.from} — ${report.period.to} | ${report.totalPageviews} views, ${report.uniqueVisitors} visitors`,
       html,
     })
+
+    if (!result.success) {
+      return NextResponse.json(
+        { ok: false, error: result.error ?? 'Send failed' },
+        { status: 502 },
+      )
+    }
 
     return NextResponse.json({
       ok: true,

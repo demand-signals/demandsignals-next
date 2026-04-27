@@ -1,17 +1,7 @@
-import nodemailer from 'nodemailer'
 import { NextRequest, NextResponse } from 'next/server'
 import { CONTACT_EMAIL } from '@/lib/constants'
+import { sendEmail } from '@/lib/email'
 import { apiGuard, escapeHtml, isValidEmail, sanitizeField, safeErrorResponse } from '@/lib/api-security'
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: Number(process.env.SMTP_PORT) === 465,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-})
 
 export async function POST(req: NextRequest) {
   const guard = apiGuard(req)
@@ -51,13 +41,20 @@ export async function POST(req: NextRequest) {
       </table>
     `
 
-    await transporter.sendMail({
-      from: `"Demand Signals Reports" <${process.env.SMTP_USER}>`,
+    // Admin-bound notification — internal-only, no flag check, no archive BCC.
+    const result = await sendEmail({
       to: CONTACT_EMAIL,
+      kind: 'report_request',
       subject: `FREE REPORT REQUEST: ${sanitizeField(body.report_type, 100)} — ${sanitizeField(body.business, 100)}`,
       html,
     })
 
+    if (!result.success) {
+      return NextResponse.json(
+        { success: false, error: result.error ?? 'Send failed' },
+        { status: 502 },
+      )
+    }
     return NextResponse.json({ success: true })
   } catch (err) {
     return safeErrorResponse('report-request', err)

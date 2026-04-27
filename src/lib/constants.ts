@@ -115,6 +115,7 @@ export const EMAIL_FROM = {
   newsletter:        'Demand Signals <news@demandsignals.co>',
   report_request:    'Demand Signals <reports@demandsignals.co>',
   weekly_analytics:  'Demand Signals <reports@demandsignals.co>',
+  quote_alert:       'Demand Signals Alerts <alerts@demandsignals.co>',
   system_alert:      'Demand Signals Alerts <alerts@demandsignals.co>',
 } as const
 

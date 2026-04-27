@@ -1,35 +1,12 @@
 // ── Invoice email composition + sender ──────────────────────────────
-// Uses Nodemailer + SMTP (Gmail app password in SMTP_PASS).
-//
-// Env vars:
-//   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
-//   CONTACT_EMAIL — BCC recipient for audit trail
+// Uses the unified @/lib/email helper (Resend + SMTP fallback).
+// See spec §6.
 //
 // Kill switch: quote_config.email_delivery_enabled must be 'true'.
 
-import nodemailer from 'nodemailer'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { sendEmail } from '@/lib/email'
 import type { Invoice } from './invoice-types'
-
-let transporter: nodemailer.Transporter | null = null
-
-function smtpTransport(): nodemailer.Transporter {
-  if (transporter) return transporter
-  const host = process.env.SMTP_HOST
-  const port = parseInt(process.env.SMTP_PORT ?? '587')
-  const user = process.env.SMTP_USER
-  const pass = process.env.SMTP_PASS
-  if (!host || !user || !pass) {
-    throw new Error('SMTP_HOST/SMTP_USER/SMTP_PASS not fully configured')
-  }
-  transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-  })
-  return transporter
-}
 
 export async function isEmailEnabled(): Promise<boolean> {
   const { data } = await supabaseAdmin
@@ -43,8 +20,11 @@ export async function isEmailEnabled(): Promise<boolean> {
 export function buildInvoiceEmail(
   invoice: Invoice,
   prospect: { business_name?: string; owner_email?: string | null; owner_name?: string | null },
+  send_id?: string,
 ): { subject: string; html: string; text: string; publicUrl: string } {
-  const publicUrl = `https://demandsignals.co/invoice/${invoice.invoice_number}/${invoice.public_uuid}`
+  const baseUrl = `https://demandsignals.co/invoice/${invoice.invoice_number}/${invoice.public_uuid}`
+  // If a send_id is provided, embed it for tracking (?e=<send_id>).
+  const publicUrl = send_id ? `${baseUrl}?e=${send_id}` : baseUrl
   const isZero = invoice.total_due_cents === 0
   const totalStr = `$${(invoice.total_due_cents / 100).toFixed(2)}`
   const firstName = prospect.owner_name?.split(' ')[0] ?? 'there'
@@ -101,36 +81,35 @@ export async function sendInvoiceEmail(
     return { success: false, error: 'Email delivery disabled in config' }
   }
 
-  const { subject, html, text } = buildInvoiceEmail(invoice, prospect)
-  const from = process.env.SMTP_USER ?? 'DemandSignals@gmail.com'
-  const bcc = process.env.CONTACT_EMAIL ?? 'DemandSignals@gmail.com'
+  // Pre-generate send_id so we can embed ?e=<send_id> in the URL inside the body.
+  const send_id = crypto.randomUUID()
+  const { subject, html, text } = buildInvoiceEmail(invoice, prospect, send_id)
 
-  const attachments = pdfBuffer
-    ? [
-        {
-          filename: `Invoice-${invoice.invoice_number}.pdf`,
-          content: pdfBuffer,
-          contentType: 'application/pdf',
-        },
-      ]
-    : []
+  const result = await sendEmail({
+    to,
+    kind: 'invoice',
+    subject,
+    html,
+    text,
+    send_id,
+    link: {
+      invoice_id: invoice.id,
+      prospect_id: invoice.prospect_id ?? undefined,
+    },
+    attachments: pdfBuffer
+      ? [
+          {
+            filename: `Invoice-${invoice.invoice_number}.pdf`,
+            content: pdfBuffer,
+            contentType: 'application/pdf',
+          },
+        ]
+      : undefined,
+  })
 
-  try {
-    const info = await smtpTransport().sendMail({
-      from: `Demand Signals <${from}>`,
-      to,
-      bcc,
-      replyTo: from,
-      subject,
-      html,
-      text,
-      attachments,
-    })
-    return { success: true, message_id: info.messageId }
-  } catch (e) {
-    return {
-      success: false,
-      error: e instanceof Error ? e.message : String(e),
-    }
+  return {
+    success: result.success,
+    message_id: result.message_id,
+    error: result.error,
   }
 }

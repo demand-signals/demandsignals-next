@@ -1,29 +1,14 @@
 // Real-time admin notification for hot signals on /quote sessions.
-// Today: email via SMTP (already configured).
+// Today: email via @/lib/email (Resend + SMTP fallback).
 // Stage C: will add SMS via Twilio once A2P 10DLC Marketing campaign is approved.
 //
 // Fire-and-forget — we never want notification failure to break the user flow.
 
-import nodemailer from 'nodemailer'
 import { CONTACT_EMAIL } from './constants'
 import { supabaseAdmin } from './supabase/admin'
+import { sendEmail } from './email'
 
 const ADMIN_EMAIL = CONTACT_EMAIL || process.env.CONTACT_EMAIL || 'DemandSignals@gmail.com'
-
-function getTransporter() {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    return null
-  }
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: Number(process.env.SMTP_PORT) === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  })
-}
 
 export type QuoteAlertKind =
   | 'hot_walkaway'
@@ -112,25 +97,19 @@ function escapeHtml(s: string): string {
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://dsig.demandsignals.dev'
 
 export async function sendQuoteAlert(payload: QuoteAlertPayload): Promise<{ ok: boolean; error?: string }> {
-  const transporter = getTransporter()
-  if (!transporter) {
-    return { ok: false, error: 'SMTP not configured' }
-  }
   const shareUrl = payload.shareToken ? `${SITE_URL}/quote/s/${payload.shareToken}` : SITE_URL
   const adminUrl = `${SITE_URL}/admin/quotes/${payload.sessionId}`
-  try {
-    await transporter.sendMail({
-      from: `"DSIG Quote Alerts" <${process.env.SMTP_USER}>`,
-      to: ADMIN_EMAIL,
-      subject: subjectLine(payload),
-      html: bodyHtml(payload, shareUrl, adminUrl),
-      text: `${subjectLine(payload)}\n\n${payload.trigger}\n\nAdmin: ${adminUrl}\nShareable: ${shareUrl}`,
-    })
-    return { ok: true }
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : 'sendmail failed'
-    return { ok: false, error: msg }
-  }
+
+  const result = await sendEmail({
+    to: ADMIN_EMAIL,
+    kind: 'quote_alert',
+    subject: subjectLine(payload),
+    html: bodyHtml(payload, shareUrl, adminUrl),
+    text: `${subjectLine(payload)}\n\n${payload.trigger}\n\nAdmin: ${adminUrl}\nShareable: ${shareUrl}`,
+  })
+  return result.success
+    ? { ok: true }
+    : { ok: false, error: result.error ?? 'sendmail failed' }
 }
 
 /**

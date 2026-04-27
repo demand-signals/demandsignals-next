@@ -1,17 +1,7 @@
-import nodemailer from 'nodemailer'
 import { NextRequest, NextResponse } from 'next/server'
 import { CONTACT_EMAIL } from '@/lib/constants'
+import { sendEmail } from '@/lib/email'
 import { apiGuard, escapeHtml, isValidEmail, sanitizeField, safeErrorResponse } from '@/lib/api-security'
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: Number(process.env.SMTP_PORT) === 465,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-})
 
 export async function POST(req: NextRequest) {
   const guard = apiGuard(req)
@@ -29,9 +19,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Please enter a valid email address.' }, { status: 400 })
     }
 
-    await transporter.sendMail({
-      from: `"Demand Signals" <${process.env.SMTP_USER}>`,
+    const result = await sendEmail({
       to: CONTACT_EMAIL,
+      kind: 'newsletter',
       subject: `New Blog Subscriber: ${escapeHtml(email)}`,
       html: `
         <h2>New Newsletter Subscriber</h2>
@@ -40,6 +30,12 @@ export async function POST(req: NextRequest) {
       `,
     })
 
+    if (!result.success) {
+      return NextResponse.json(
+        { success: false, error: result.error ?? 'Send failed' },
+        { status: 502 },
+      )
+    }
     return NextResponse.json({ success: true })
   } catch (err) {
     return safeErrorResponse('subscribe', err)
