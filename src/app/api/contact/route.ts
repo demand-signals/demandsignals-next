@@ -53,14 +53,48 @@ export async function POST(req: NextRequest) {
 
     // ── SMS notification to admin team (best-effort, never blocks response) ──
     // Honors quote_config.sms_delivery_enabled flag + SMS_TEST_MODE allowlist.
-    // Failures are silent (the email already landed; SMS is bonus alerting).
+    // Failures surface in system_notifications so we can diagnose later.
     const smsBody = `DSIG inquiry: ${name}${business ? ` (${business})` : ''}${
       phone ? ` · ${phone}` : ''
     }${service ? ` · ${service}` : ''}\n${message ? message.slice(0, 200) : '(no message)'}\n— check email for full details`
     const adminPhones = getAdminTeamPhones()
-    Promise.allSettled(adminPhones.map((p) => sendSms(p, smsBody))).catch(() => {
-      /* fire-and-forget; sendSms already logs internal errors */
-    })
+
+    if (adminPhones.length === 0) {
+      // notify imported lazily to avoid pulling Supabase at module-load time on routes that don't need it
+      const { notify } = await import('@/lib/system-alerts')
+      await notify({
+        severity: 'warning',
+        source: 'contact_sms',
+        title: 'No admin phones configured for inquiry SMS',
+        body: 'ADMIN_TEAM_PHONES env var is empty or unset; no SMS alerts dispatched.',
+        context: { error_code: 'admin_phones_empty' },
+      })
+    } else {
+      // Dispatch in parallel; await results so we can log failures.
+      const results = await Promise.allSettled(adminPhones.map((p) => sendSms(p, smsBody)))
+      const failures: Array<{ phone: string; error: string }> = []
+      results.forEach((r, i) => {
+        if (r.status === 'rejected') {
+          failures.push({ phone: adminPhones[i], error: String(r.reason) })
+        } else if (!r.value.success) {
+          failures.push({ phone: adminPhones[i], error: r.value.error ?? 'unknown' })
+        }
+      })
+      if (failures.length > 0) {
+        const { notify } = await import('@/lib/system-alerts')
+        await notify({
+          severity: 'warning',
+          source: 'contact_sms',
+          title: `SMS dispatch failed for ${failures.length} of ${adminPhones.length} admin phones`,
+          body: failures.map((f) => `${f.phone}: ${f.error}`).join('\n'),
+          context: {
+            failures,
+            inquiry_from: name,
+            error_code: failures[0].error.startsWith('SMS test mode') ? 'test_mode_block' : 'sms_send_failed',
+          },
+        })
+      }
+    }
 
     return NextResponse.json({ success: true })
   } catch (err) {
