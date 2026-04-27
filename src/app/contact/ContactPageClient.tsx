@@ -118,7 +118,7 @@ export default function ContactPageClient() {
                 Message Received!
               </h3>
               <p style={{ color: 'var(--slate)', fontSize: '1rem', lineHeight: 1.6 }}>
-                Thanks — we got it. Hunter or Landon will be in touch shortly. Talk soon.
+                Thanks — we got it. We&apos;ll be in touch shortly. Talk soon.
               </p>
             </div>
           ) : (
