@@ -72,3 +72,25 @@ export async function PATCH(
 
   return NextResponse.json({ ok: true })
 }
+
+// Delete a project. Cascades child rows (time entries) explicitly. Linked
+// payment_schedules.project_id, sow_documents.id, and invoices stay intact —
+// money artifacts must survive project deletion for accounting.
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const auth = await requireAdmin(request)
+  if (auth.error) return auth.error
+  const { id } = await params
+
+  // Time entries are CASCADE on FK already, but be explicit for clarity.
+  await supabaseAdmin.from('project_time_entries').delete().eq('project_id', id)
+
+  // Detach payment schedules (don't delete them — they belong to the SOW).
+  await supabaseAdmin.from('payment_schedules').update({ project_id: null }).eq('project_id', id)
+
+  const { error } = await supabaseAdmin.from('projects').delete().eq('id', id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Loader2, FolderKanban } from 'lucide-react'
+import { Loader2, FolderKanban, Plus } from 'lucide-react'
 import { formatCents } from '@/lib/format'
+import { NewProjectModal } from './NewProjectModal'
 
 interface ProjectRow {
   id: string
@@ -31,6 +32,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState<ProjectRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [showNew, setShowNew] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -47,7 +49,15 @@ export default function AdminProjectsPage() {
           <FolderKanban className="w-6 h-6 text-[var(--teal)]" />
           Projects
         </h1>
+        <button
+          onClick={() => setShowNew(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--teal)] text-white text-sm font-semibold hover:bg-[var(--teal-dark)]"
+        >
+          <Plus className="w-4 h-4" /> New Project
+        </button>
       </div>
+
+      {showNew && <NewProjectModal onClose={() => setShowNew(false)} />}
 
       {loading ? (
         <Loader2 className="w-6 h-6 animate-spin text-teal-500" />

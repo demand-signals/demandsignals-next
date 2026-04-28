@@ -43,3 +43,49 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({ projects })
 }
+
+// Create a project standalone (not via SOW accept). Useful for retro-loading
+// existing engagements or starting a project before any SOW exists.
+const ALLOWED_TYPES = new Set(['website', 'mobile_app', 'webapp', 'content', 'seo', 'ads', 'consulting', 'other'])
+const ALLOWED_STATUSES = new Set(['planning', 'in_progress', 'on_hold', 'completed', 'cancelled'])
+
+export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request)
+  if (auth.error) return auth.error
+
+  const body = await request.json().catch(() => null)
+  if (!body || typeof body !== 'object') {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  const name = typeof body.name === 'string' ? body.name.trim() : ''
+  const prospect_id = typeof body.prospect_id === 'string' ? body.prospect_id : null
+  if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 })
+  if (!prospect_id) return NextResponse.json({ error: 'prospect_id is required' }, { status: 400 })
+
+  const type = typeof body.type === 'string' && ALLOWED_TYPES.has(body.type) ? body.type : 'website'
+  const status = typeof body.status === 'string' && ALLOWED_STATUSES.has(body.status) ? body.status : 'planning'
+
+  const insert: Record<string, unknown> = {
+    name,
+    prospect_id,
+    type,
+    status,
+    start_date:    typeof body.start_date === 'string' && body.start_date ? body.start_date : null,
+    target_date:   typeof body.target_date === 'string' && body.target_date ? body.target_date : null,
+    monthly_value: typeof body.monthly_value === 'number' ? body.monthly_value : null,
+    notes:         typeof body.notes === 'string' ? body.notes : null,
+    sow_document_id: typeof body.sow_document_id === 'string' && body.sow_document_id ? body.sow_document_id : null,
+    deal_id:       typeof body.deal_id === 'string' && body.deal_id ? body.deal_id : null,
+    phases:        Array.isArray(body.phases) ? body.phases : [],
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('projects')
+    .insert(insert)
+    .select('id')
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ id: data.id }, { status: 201 })
+}

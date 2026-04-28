@@ -2,7 +2,8 @@
 
 import { useEffect, useState, use, useCallback } from 'react'
 import Link from 'next/link'
-import { Loader2, ChevronDown, ChevronRight, ExternalLink, CheckCircle2, Circle, Clock } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Loader2, ChevronDown, ChevronRight, ExternalLink, CheckCircle2, Circle, Clock, Trash2 } from 'lucide-react'
 import { formatCents } from '@/lib/format'
 import type { ProjectRow, ProjectPhase, ProjectPhaseDeliverable } from '@/lib/invoice-types'
 import { OutstandingObligations } from './OutstandingObligations'
@@ -210,10 +211,25 @@ function PhaseCard({
 
 export default function AdminProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const router = useRouter()
   const [project, setProject] = useState<ProjectDetail | null>(null)
   const [financials, setFinancials] = useState<ProjectFinancials | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  async function handleDelete() {
+    setDeleting(true)
+    const res = await fetch(`/api/admin/projects/${id}`, { method: 'DELETE' })
+    setDeleting(false)
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      alert(j.error ?? 'Delete failed')
+      return
+    }
+    router.push('/admin/projects')
+  }
 
   const load = useCallback(() => {
     setLoading(true)
@@ -300,13 +316,41 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
             <p className="text-sm text-slate-500 mt-1">{project.notes}</p>
           )}
         </div>
-        <span
-          className={`px-3 py-1 rounded-full text-sm font-medium ${
-            PROJECT_STATUS_COLORS[project.status] ?? 'bg-slate-100 text-slate-600'
-          }`}
-        >
-          {project.status.replace('_', ' ')}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={`px-3 py-1 rounded-full text-sm font-medium ${
+              PROJECT_STATUS_COLORS[project.status] ?? 'bg-slate-100 text-slate-600'
+            }`}
+          >
+            {project.status.replace('_', ' ')}
+          </span>
+          {confirmDelete ? (
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="px-3 py-1 text-xs rounded-lg bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 inline-flex items-center gap-1"
+              >
+                {deleting && <Loader2 className="w-3 h-3 animate-spin" />}
+                Confirm delete
+              </button>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="px-3 py-1 text-xs rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50"
+              title="Delete project"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Meta cards */}
