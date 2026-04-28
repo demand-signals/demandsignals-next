@@ -80,7 +80,7 @@ export function SowAcceptClient({
     <div className="max-w-md mx-auto">
       {/* Signature field */}
       <div className="mb-4 text-left">
-        <label className="block text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#94a0b8' }}>
+        <label className="block text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(255,255,255,0.85)' }}>
           Type your full name to sign
         </label>
         <input
@@ -97,8 +97,8 @@ export function SowAcceptClient({
       </div>
 
       {/* Date display */}
-      <p className="text-xs mb-6 text-left" style={{ color: '#94a0b8' }}>
-        Date: <span className="text-white">{today}</span>
+      <p className="text-xs mb-6 text-left" style={{ color: 'rgba(255,255,255,0.85)' }}>
+        Date: <span className="text-white font-semibold">{today}</span>
       </p>
 
       {/* Error */}
@@ -132,7 +132,7 @@ export function SowAcceptClient({
       </div>
 
       {/* Compliance microcopy */}
-      <p className="mt-6 text-xs leading-relaxed" style={{ color: 'rgba(148,160,184,0.7)' }}>
+      <p className="mt-6 text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.78)' }}>
         By accepting, you authorize Demand Signals to invoice per the terms above.
         Your signature above constitutes electronic consent under the E-SIGN Act.
       </p>

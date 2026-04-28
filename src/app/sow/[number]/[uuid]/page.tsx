@@ -484,15 +484,8 @@ export default async function PublicSowPage({
 
       {/* ── 2. Scope section ─────────────────────────────────────── */}
       {sow.scope_summary && (
-        <section className="max-w-[860px] mx-auto px-6 pt-20 pb-2">
-          {/* Gradient accent bar */}
-          <div
-            className="w-full mb-10 rounded-full"
-            style={{ height: 4, background: 'linear-gradient(90deg, #FF6B2B, #68c5ad)' }}
-          />
-          <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#94a0b8' }}>SCOPE</p>
-          <div className="mb-6" style={{ width: 36, height: 3, background: '#FF6B2B' }} />
-          <p className="text-sm leading-relaxed mb-12 max-w-2xl whitespace-pre-wrap" style={{ color: 'var(--slate)' }}>
+        <section className="max-w-[860px] mx-auto px-6 pt-16 pb-2">
+          <p className="text-base leading-relaxed mb-12 max-w-2xl whitespace-pre-wrap" style={{ color: 'var(--slate)' }}>
             {sow.scope_summary}
           </p>
         </section>
@@ -538,8 +531,8 @@ export default async function PublicSowPage({
           </p>
         )}
 
-        {/* Breakdown card */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 max-w-md mt-8 mb-4">
+        {/* Breakdown card — full section width to match phases / scope */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 mt-8 mb-4">
           <table className="w-full border-collapse">
             <tbody>
               {usePhases && totals.oneTime > 0 && (
@@ -615,7 +608,7 @@ export default async function PublicSowPage({
       </section>
 
       {/* ── 5. Accept section ───────────────────────────────────── */}
-      <section style={{ background: 'var(--dark)', backgroundImage: 'radial-gradient(circle at 0% 100%, rgba(104,197,173,0.15), transparent 50%)' }}>
+      <section style={{ background: 'var(--teal-dark, #4fa894)', backgroundImage: 'radial-gradient(circle at 0% 100%, rgba(255,255,255,0.18), transparent 55%), radial-gradient(circle at 100% 0%, rgba(0,0,0,0.18), transparent 50%)' }}>
         <div className="max-w-[860px] mx-auto px-6 py-20 text-center">
           {isAccepted && sow.accepted_signature ? (
             <>
@@ -648,7 +641,7 @@ export default async function PublicSowPage({
               >
                 Accept this Statement of Work
               </h2>
-              <p className="text-sm mb-10 max-w-lg mx-auto" style={{ color: '#94a0b8' }}>
+              <p className="text-sm mb-10 max-w-lg mx-auto" style={{ color: 'rgba(255,255,255,0.85)' }}>
                 By accepting, you authorize Demand Signals to invoice per the terms above.
                 Your typed name constitutes electronic consent.
               </p>
