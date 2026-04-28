@@ -122,6 +122,7 @@ export const EMAIL_FROM = {
   invoice:           'Demand Signals <invoices@demandsignals.co>',
   sow:               'Demand Signals <invoices@demandsignals.co>',
   receipt:           'Demand Signals <invoices@demandsignals.co>',
+  credit_memo:       'Demand Signals <invoices@demandsignals.co>',
   contact_form:      'Demand Signals <noreply@demandsignals.co>',
   newsletter:        'Demand Signals <news@demandsignals.co>',
   report_request:    'Demand Signals <reports@demandsignals.co>',
@@ -136,9 +137,10 @@ export type EmailKind = keyof typeof EMAIL_FROM
 // reply target; admin notifications go straight to gmail (the From: itself
 // is already a routed alias).
 export const EMAIL_REPLY_TO: Partial<Record<EmailKind, string>> = {
-  invoice: 'hunter@demandsignals.co',
-  sow:     'hunter@demandsignals.co',
-  receipt: 'hunter@demandsignals.co',
+  invoice:     'hunter@demandsignals.co',
+  sow:         'hunter@demandsignals.co',
+  receipt:     'hunter@demandsignals.co',
+  credit_memo: 'hunter@demandsignals.co',
 }
 
 // Kinds that auto-BCC the archive address (DSIG keeps a copy of every
@@ -149,6 +151,7 @@ export const CLIENT_FACING_KINDS: ReadonlySet<EmailKind> = new Set<EmailKind>([
   'invoice',
   'sow',
   'receipt',
+  'credit_memo',
 ])
 
 // ── Admin team SMS targets ──────────────────────────────────────────

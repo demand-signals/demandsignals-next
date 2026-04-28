@@ -348,6 +348,61 @@ export async function createReceiptForInvoice(args: {
 }
 
 /**
+ * Refund a Stripe payment. Issues a Stripe Refund against the original
+ * payment_intent (preferred) or charge id stored on the invoice.
+ *
+ * Returns the Stripe refund object on success. Throws on Stripe error so
+ * callers can decide whether to fall back to a manual refund.
+ *
+ * Idempotency: pass `idempotencyKey` (recommended: dsig_refund_<credit_memo_id>)
+ * so retries don't double-refund.
+ */
+export async function createStripeRefund(args: {
+  invoiceId: string
+  amountCents: number
+  reason?: 'duplicate' | 'fraudulent' | 'requested_by_customer'
+  idempotencyKey?: string
+  metadata?: Record<string, string>
+}): Promise<Stripe.Refund> {
+  const { invoiceId, amountCents, reason, idempotencyKey, metadata } = args
+
+  // Resolve the original payment id. The receipt row carries the
+  // payment_intent id in payment_reference for stripe-paid invoices.
+  const { data: receipt } = await supabaseAdmin
+    .from('receipts')
+    .select('payment_reference, payment_method')
+    .eq('invoice_id', invoiceId)
+    .eq('payment_method', 'stripe')
+    .order('paid_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!receipt?.payment_reference) {
+    throw new Error(
+      'Cannot Stripe-refund: no stripe receipt with a payment_intent reference found for this invoice',
+    )
+  }
+
+  const paymentIntentId = receipt.payment_reference
+  if (!paymentIntentId.startsWith('pi_')) {
+    throw new Error(
+      `Receipt payment_reference is not a Stripe payment_intent (got "${paymentIntentId.slice(0, 6)}…")`,
+    )
+  }
+
+  const refund = await stripe().refunds.create(
+    {
+      payment_intent: paymentIntentId,
+      amount: amountCents,
+      reason: reason ?? 'requested_by_customer',
+      metadata: metadata ?? {},
+    },
+    idempotencyKey ? { idempotencyKey } : undefined,
+  )
+  return refund
+}
+
+/**
  * Resolve a Stripe event to our invoice ID via metadata or cached IDs.
  * Returns null if no match.
  */

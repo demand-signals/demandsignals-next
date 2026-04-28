@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Upload, Bot, LogOut,
   Target, MapPin, FileText, BarChart3, Layers, LineChart,
   Newspaper, Receipt, CreditCard, Repeat, ScrollText, Settings,
-  FolderKanban, FileCheck, Coins, UserCheck, MessageSquare, Zap,
+  FolderKanban, FileCheck, FileMinus, Coins, UserCheck, MessageSquare, Zap,
   Clock, UserCog, Shield, Eye, ExternalLink, Bell,
   ChevronRight, ChevronDown,
 } from 'lucide-react'
@@ -67,6 +67,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/admin/invoices', label: 'Invoices', icon: Receipt },
       { href: '/admin/receipts', label: 'Receipts', icon: FileCheck },
+      { href: '/admin/credit-memos', label: 'Credit Memos', icon: FileMinus },
       { href: '/admin/subscriptions', label: 'Subscriptions', icon: Repeat },
       { href: '/admin/trade-credits', label: 'Trade Credits', icon: Coins, soon: true },
       { href: '/admin/finance-reports', label: 'Reports', icon: BarChart3, soon: true },

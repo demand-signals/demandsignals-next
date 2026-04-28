@@ -42,6 +42,7 @@ export interface SendEmailArgs {
     invoice_id?: string
     sow_document_id?: string
     receipt_id?: string
+    credit_memo_id?: string
     prospect_id?: string
   }
 }
@@ -120,6 +121,7 @@ export async function sendEmail(args: SendEmailArgs): Promise<SendEmailResult> {
       invoice_id: args.link?.invoice_id ?? null,
       sow_document_id: args.link?.sow_document_id ?? null,
       receipt_id: args.link?.receipt_id ?? null,
+      credit_memo_id: args.link?.credit_memo_id ?? null,
       prospect_id: args.link?.prospect_id ?? null,
     })
 

@@ -14,6 +14,7 @@ export interface RecordSendArgs {
   invoice_id?: string | null
   sow_document_id?: string | null
   receipt_id?: string | null
+  credit_memo_id?: string | null
   prospect_id?: string | null
 }
 
@@ -32,6 +33,7 @@ export async function recordSend(args: RecordSendArgs): Promise<void> {
       invoice_id: args.invoice_id ?? null,
       sow_document_id: args.sow_document_id ?? null,
       receipt_id: args.receipt_id ?? null,
+      credit_memo_id: args.credit_memo_id ?? null,
       prospect_id: args.prospect_id ?? null,
       event_data: {},
     })
@@ -67,7 +69,7 @@ export async function recordWebhookEvent(args: RecordWebhookEventArgs): Promise<
   // Fetch the originating 'sent' row to copy linkage columns.
   const { data: origin } = await supabaseAdmin
     .from('email_engagement')
-    .select('send_id, kind, to_address, subject, invoice_id, sow_document_id, receipt_id, prospect_id')
+    .select('send_id, kind, to_address, subject, invoice_id, sow_document_id, receipt_id, credit_memo_id, prospect_id')
     .eq('resend_message_id', args.resend_message_id)
     .eq('event_type', 'sent')
     .maybeSingle()
@@ -90,6 +92,7 @@ export async function recordWebhookEvent(args: RecordWebhookEventArgs): Promise<
       invoice_id: origin?.invoice_id ?? null,
       sow_document_id: origin?.sow_document_id ?? null,
       receipt_id: origin?.receipt_id ?? null,
+      credit_memo_id: origin?.credit_memo_id ?? null,
       prospect_id: origin?.prospect_id ?? null,
       event_data: args.event_data,
       occurred_at: args.occurred_at,

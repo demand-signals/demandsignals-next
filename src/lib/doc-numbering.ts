@@ -1,7 +1,7 @@
 // ── doc-numbering.ts ────────────────────────────────────────────────
 // Platform-wide document number allocation.
 // Format: TYPE-CLIENT-MMDDYY{SUFFIX}
-//   TYPE   — EST | SOW | INV | RCT
+//   TYPE   — EST | SOW | INV | RCT | CRM
 //   CLIENT — 4-letter code on prospects.client_code
 //   MMDDYY — America/Los_Angeles date
 //   SUFFIX — sequential letter per (type, client, date): A, B, ..., Z, AA, AB, ...
@@ -14,9 +14,9 @@
 
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
-export type DocType = 'EST' | 'SOW' | 'INV' | 'RCT'
+export type DocType = 'EST' | 'SOW' | 'INV' | 'RCT' | 'CRM'
 
-export type DocRefTable = 'quote_sessions' | 'sow_documents' | 'invoices' | 'receipts'
+export type DocRefTable = 'quote_sessions' | 'sow_documents' | 'invoices' | 'receipts' | 'credit_memos'
 
 /**
  * Auto-suggest a 4-letter client code from a business name.

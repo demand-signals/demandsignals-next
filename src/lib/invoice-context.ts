@@ -14,8 +14,13 @@ export interface InvoicePaymentSummary {
   paid_cash_cents: number
   paid_tik_cents: number
   paid_total_cents: number
+  /** Sum of credit memos against this invoice (refund + dispute + goodwill). Excludes write_off. */
+  credited_cents: number
+  /** Net paid after credits applied. Used as the basis for outstanding. */
+  net_paid_cents: number
   outstanding_cents: number
   receipt_count: number
+  credit_memo_count: number
   is_partially_paid: boolean
   is_fully_paid: boolean
 }
@@ -51,10 +56,16 @@ export async function getInvoicePaymentSummary(
   invoiceId: string,
   totalDueCents: number,
 ): Promise<InvoicePaymentSummary> {
-  const { data: receipts } = await supabaseAdmin
-    .from('receipts')
-    .select('amount_cents, payment_method')
-    .eq('invoice_id', invoiceId)
+  const [{ data: receipts }, { data: memos }] = await Promise.all([
+    supabaseAdmin
+      .from('receipts')
+      .select('amount_cents, payment_method')
+      .eq('invoice_id', invoiceId),
+    supabaseAdmin
+      .from('credit_memos')
+      .select('amount_cents, kind')
+      .eq('invoice_id', invoiceId),
+  ])
 
   let paid_cash_cents = 0
   let paid_tik_cents = 0
@@ -63,16 +74,31 @@ export async function getInvoicePaymentSummary(
     else paid_cash_cents += r.amount_cents
   }
   const paid_total_cents = paid_cash_cents + paid_tik_cents
-  const outstanding_cents = Math.max(0, totalDueCents - paid_total_cents)
+
+  // Credit memos that reduce the customer's net paid balance (cash returned
+  // or applied as goodwill credit). write_off reduces outstanding via a
+  // different path (it cancels unpaid balance, not paid balance) and is
+  // excluded here.
+  let credited_cents = 0
+  for (const m of memos ?? []) {
+    if (m.kind === 'refund' || m.kind === 'dispute' || m.kind === 'goodwill') {
+      credited_cents += m.amount_cents
+    }
+  }
+  const net_paid_cents = Math.max(0, paid_total_cents - credited_cents)
+  const outstanding_cents = Math.max(0, totalDueCents - net_paid_cents)
 
   return {
     paid_cash_cents,
     paid_tik_cents,
     paid_total_cents,
+    credited_cents,
+    net_paid_cents,
     outstanding_cents,
     receipt_count: receipts?.length ?? 0,
-    is_partially_paid: paid_total_cents > 0 && outstanding_cents > 0,
-    is_fully_paid: paid_total_cents >= totalDueCents,
+    credit_memo_count: memos?.length ?? 0,
+    is_partially_paid: net_paid_cents > 0 && outstanding_cents > 0,
+    is_fully_paid: net_paid_cents >= totalDueCents,
   }
 }
 
