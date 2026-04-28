@@ -23,36 +23,70 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 
 let client: Stripe | null = null
 
-// Stripe-issued secret-key prefixes. Anything else is rejected up front
-// (e.g. mk_, ak_, pasted Mailchimp/Anthropic credentials, truncated values)
-// so the fallback chain has a chance to find a real key instead of the
-// SDK silently caching a garbage value and erroring on first API call.
-const VALID_SECRET_KEY_PATTERN = /^(sk|rk)_(live|test)_/
+// Stripe-issued secret-key prefixes. Stripe uses several:
+//   sk_live_ / sk_test_  — Standard secret key (legacy, broad scope)
+//   rk_live_ / rk_test_  — Restricted key (granular permissions)
+//   mk_                  — Machine key (newer Standard secret format,
+//                          may carry a long opaque tail without a
+//                          live/test segment in the prefix)
+// Pasted credentials from other vendors (e.g. ak_, pat_, AKIA…, ghp_)
+// are rejected up front so the fallback chain has a chance to find a
+// real key instead of the SDK silently caching a garbage value and
+// erroring on first API call.
+const VALID_SECRET_KEY_PATTERN = /^(sk_(live|test)_|rk_(live|test)_|mk_)/
 
 function isValidStripeSecretKey(v: string | undefined | null): boolean {
   return typeof v === 'string' && VALID_SECRET_KEY_PATTERN.test(v.trim())
 }
 
 function getSecretKey(): string {
-  // Try each candidate in priority order. Any value that doesn't match a
-  // Stripe secret-key prefix is skipped so a misconfigured slot doesn't
-  // shadow a working one further down the chain.
-  const candidates: Array<[string, string | undefined]> = [
+  return resolveStripeSecret().key
+}
+
+/**
+ * Walk the candidate env-var chain, return the first that matches a Stripe
+ * secret-key prefix. Slots are searched in priority order:
+ *   1. Explicit named slots: STRIPE_SECRET_KEY, STRIPE_CLAUDE_API_KEY, STRIPE_API_KEY
+ *   2. Any DSIG_STRIPE_KEY_* slot (rotation-friendly: drop a new dated key
+ *      like DSIG_STRIPE_KEY_042626 in Vercel, no code edit needed).
+ *      Multiple matches sort by name DESC so the newest dated key wins.
+ *
+ * Garbage slots (set but not a Stripe prefix) are skipped with a console
+ * warning that names the slot — surfaces in Vercel logs and on the admin
+ * Settings page via getStripeKeyDiagnostics.
+ */
+function resolveStripeSecret(): {
+  key: string
+  active_slot: string | null
+  rejected: Array<{ slot: string; prefix: string }>
+} {
+  const explicit: Array<[string, string | undefined]> = [
     ['STRIPE_SECRET_KEY', process.env.STRIPE_SECRET_KEY],
     ['STRIPE_CLAUDE_API_KEY', process.env.STRIPE_CLAUDE_API_KEY],
     ['STRIPE_API_KEY', process.env.STRIPE_API_KEY],
   ]
+  // Discover rotation-friendly slots — DSIG_STRIPE_KEY_<anything>.
+  const rotation: Array<[string, string | undefined]> = Object.keys(process.env)
+    .filter((k) => /^DSIG_STRIPE_KEY_/.test(k))
+    .sort((a, b) => b.localeCompare(a))
+    .map((k) => [k, process.env[k]] as [string, string | undefined])
+
+  const candidates = [...explicit, ...rotation]
+  const rejected: Array<{ slot: string; prefix: string }> = []
   for (const [name, value] of candidates) {
     if (!value) continue
-    if (isValidStripeSecretKey(value)) return value.trim()
+    if (isValidStripeSecretKey(value)) {
+      return { key: value.trim(), active_slot: name, rejected }
+    }
+    rejected.push({ slot: name, prefix: value.slice(0, 4) })
     // Loud signal in serverless logs — helps diagnose 'Invalid API Key'
     // errors at the call site rather than the SDK boundary.
     console.warn(
       `[stripe-client] ${name} is set but does not look like a Stripe secret key ` +
-      `(expected sk_live_/sk_test_/rk_live_/rk_test_ prefix; got ${value.slice(0, 4)}…). Skipping.`,
+      `(expected sk_live_/sk_test_/rk_live_/rk_test_/mk_ prefix; got ${value.slice(0, 4)}…). Skipping.`,
     )
   }
-  return ''
+  return { key: '', active_slot: null, rejected }
 }
 
 function isValidWebhookSecret(v: string | undefined | null): boolean {
@@ -140,33 +174,12 @@ export function getStripeKeyDiagnostics(): {
   active_webhook_slot: string | null
   rejected_webhook_slots: Array<{ slot: string; prefix: string }>
 } {
-  const secretCandidates: Array<[string, string | undefined]> = [
-    ['STRIPE_SECRET_KEY', process.env.STRIPE_SECRET_KEY],
-    ['STRIPE_CLAUDE_API_KEY', process.env.STRIPE_CLAUDE_API_KEY],
-    ['STRIPE_API_KEY', process.env.STRIPE_API_KEY],
-  ]
+  const secret = resolveStripeSecret()
+
   const whCandidates: Array<[string, string | undefined]> = [
     ['STRIPE_SNAPSHOT_SIGNING_SECRET', process.env.STRIPE_SNAPSHOT_SIGNING_SECRET],
     ['STRIPE_WEBHOOK_SECRET', process.env.STRIPE_WEBHOOK_SECRET],
   ]
-
-  let active_secret_slot: string | null = null
-  let active_secret_prefix: string | null = null
-  const rejected_secret_slots: Array<{ slot: string; prefix: string }> = []
-  for (const [name, value] of secretCandidates) {
-    if (!value) continue
-    const trimmed = value.trim()
-    if (isValidStripeSecretKey(trimmed)) {
-      if (!active_secret_slot) {
-        active_secret_slot = name
-        // First 7 chars covers sk_live / rk_live etc without leaking the unique tail.
-        active_secret_prefix = trimmed.slice(0, 7)
-      }
-    } else {
-      rejected_secret_slots.push({ slot: name, prefix: trimmed.slice(0, 4) })
-    }
-  }
-
   let active_webhook_slot: string | null = null
   const rejected_webhook_slots: Array<{ slot: string; prefix: string }> = []
   for (const [name, value] of whCandidates) {
@@ -180,9 +193,10 @@ export function getStripeKeyDiagnostics(): {
   }
 
   return {
-    active_secret_slot,
-    active_secret_prefix,
-    rejected_secret_slots,
+    active_secret_slot: secret.active_slot,
+    // First few chars: covers mk_, sk_live, rk_live, etc without leaking the tail.
+    active_secret_prefix: secret.key ? secret.key.slice(0, 7) : null,
+    rejected_secret_slots: secret.rejected,
     active_webhook_slot,
     rejected_webhook_slots,
   }
