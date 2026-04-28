@@ -438,6 +438,8 @@ Both templates auto-generate JSON-LD schema (Service, BreadcrumbList, FAQPage).
 - [x] **Stripe Plan B** (payment plans + SOW conversion): migrations 025a/b/d/e add `payment_schedules` + `payment_installments` tables, `sow_documents.parent_sow_id`, `invoices.payment_installment_id`, extends `receipts.payment_method` enum to include 'tik'. New `src/lib/payment-plan-types.ts` + `src/lib/payment-plans.ts` orchestrator: `convertSowToProject` runs full lifecycle (project + prospect.is_client + payment plan + TIK + Stripe subs), `firePaymentInstallment` (cash → invoice + Payment Link, TIK → ledger), `markInstallmentPaid` (handles partials, locks schedule on first paid), `cascadeOnPayment` (fires `on_completion_of_payment` dependents). Trigger types: `on_acceptance`, `time`, `milestone`, `on_completion_of_payment`. Currency types: `cash` + `tik`. Backfill mode (`already_paid` flag per row) for historical clients. New endpoints: `POST /api/admin/sow/[id]/convert`, `POST /api/admin/sow/[id]/change-order` (mini-SOW with parent_sow_id), `POST /api/admin/trade-credits/[id]/drawdown` (overage handling + auto RCT receipt with `payment_method='tik'`), `GET /api/admin/projects/[id]/obligations`, `GET/PATCH /api/admin/payment-schedules/[id]`. New cron `GET /api/cron/payment-triggers` (daily 13:00 UTC, fires time-triggered installments). Phase-complete endpoint extended to fire milestone-triggered installments. Webhook extended to call `markInstallmentPaid` → cascade. Public `/api/sow/public/[number]/accept` left on simple deposit-only path with divergence note. New admin pages: `/admin/payment-schedules/[id]`, project Outstanding Obligations panel. Always-visible Convert button on SOW detail page (`ConvertButton.tsx` + `ConvertModal.tsx` with payment-plan builder, presets, sum-check, TIK section, subscription rows).
 - [x] **Stripe Plan C** (subscriptions + caps + pause): migration 025c adds `subscriptions.cycle_cap` + `paused_until`. New `src/lib/stripe-subscriptions.ts` helpers: `createStripeSubscription` (sets `trial_end` for future starts, `cancel_at` for capped terms, `setup_future_usage` via `payment_settings.save_default_payment_method='on_subscription'`), `pauseStripeSubscription`, `resumeStripeSubscription`, `createCustomerPortalSession`, `computeEndDate`. `convertSowToProject` wires real Stripe subscription creation per spec row (with `already_activated` backfill skipping Stripe call). New endpoints: `POST /api/admin/subscriptions/[id]/pause` (Stripe `pause_collection` + push end_date by duration_days), `POST /api/admin/subscriptions/[id]/resume`, `POST /api/admin/subscriptions/[id]/customer-portal` (Stripe Customer Portal session URL, used to send "Add Payment Method" magic link to client for future-start subscriptions). Webhook handles `customer.subscription.paused` + `customer.subscription.resumed`. Subscription detail page gains `SubscriptionActionPanel` (Pause/Resume + cycle remaining + portal link generator).
 - [x] **Resend SDK swap + email/page tracking** (Project #1 of 3 in messaging sequence): All 6 nodemailer call sites (invoice-email, contact, subscribe, report-request, weekly-report, quote-notify) migrated to a single `sendEmail()` helper at `src/lib/email.ts` backed by Resend with SMTP fallback. Per-purpose `from` aliases on `demandsignals.co` (invoices@, noreply@, news@, reports@, alerts@). Three new tables: `system_notifications` (subsystem failure log + alert pipeline with 60s throttle), `email_engagement` (every send + Resend webhook events delivered/opened/clicked/bounced/complained, idempotent via UNIQUE constraint), `page_visits` (every magic-link page view with three-layer attribution: UUID > signed JWT cookie > IP+UA). Resend webhook handler at `/api/webhooks/resend` verifies Svix signatures. Magic-link pages (invoice/sow/quote) log visits via `logPageVisit()` and promote `dsig_attr` cookie when UUID resolves a prospect. New libs: `system-alerts.ts`, `email-engagement.ts`, `attribution-cookie.ts` (jose HS256 JWT), `page-tracking.ts`, `email.ts`. Migrations 026/027/028. Required env vars: `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `ATTRIBUTION_COOKIE_SECRET`. Optional: `ALERT_EMAIL`, `ARCHIVE_BCC` (both default to `DemandSignals@gmail.com`). Spec: `docs/superpowers/specs/2026-04-27-resend-email-swap-design.md`. Plan: `docs/superpowers/plans/2026-04-27-resend-email-tracking-plan.md`.
+- [x] **Existing-client match during research** (added 2026-04-29): Returning prospect at `/quote` now silently links to existing prospects row — no duplicate created. Migration 034 adds `quote_sessions.matched_prospect_id` + `matched_phone_last_four`. New `src/lib/quote-existing-match.ts` runs read-only 3-tier match (phone E.164 → website host → name+city) after Google Places research. AI asks last-4 confirmation question with strict no-account-state directive. `syncProspectFromSession` honors `matched_prospect_id` before fuzzy fallback. Verification script at `scripts/verify-quote-existing-client.mjs`. Spec: `docs/superpowers/specs/2026-04-29-quote-existing-client-match-design.md`.
+- [x] **Quote → booked meeting (real Google Calendar + Meet + SMS)** (added 2026-04-29): Replaces the fake "team will call" closing of `/quote` with real Calendar events. Migration 035 adds `integrations` + `bookings` tables. Three new AI tools: `capture_attendee_email`, `offer_meeting_slots`, `book_meeting`. Booking lifecycle includes prospect confirmation SMS, admin notification SMS, 24h + 1h reminder cron, admin cancel SMS. Right-pane CTA flips to MeetingConfirmedPanel after booking. Admin prospect record gets BookingCard + LatestQuotePanel + Quotes (EST) sub-section. Activity log cleaned up — verb-only rows ("Started new quote", "Phone verified", "Email captured", "Booked meeting"), `item_changed` noise dropped. Continue-to-SOW broken column fixed. New env vars: `GOOGLE_CALENDAR_CLIENT_ID`, `GOOGLE_CALENDAR_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI`, `BOOKING_SLOT_SECRET`. See §23. Spec: `docs/superpowers/specs/2026-04-29-quote-to-booked-meeting-design.md`. Plan: `docs/superpowers/plans/2026-04-29-quote-to-booked-meeting-plan.md`.
 
 ---
 
@@ -490,6 +492,10 @@ Key files:
 - [ ] **Project time tracking** — new table `project_time_entries` (project_id, phase_id, deliverable_id, hours, description, logged_at, logged_by). UI on `/admin/projects/[id]`. Aggregate hours roll up per phase and project.
 - [ ] **Scheduled rating sync for clients** — weekly/daily cron re-runs research specifically on `prospects.is_client = true` review channels. New cron: `scripts/sync-client-ratings.mjs` + Vercel cron entry.
 - [ ] **PDF design v2 fine-tuning** — iterate as real prospects respond; design spec at DSIG_PDF_STANDARDS_v2.md is authoritative.
+- [ ] **Public `/book` page** — replaces the current Google Appointment Schedules link (`https://calendar.google.com/calendar/u/0/appointments/...`). Foundation laid in §23 booking system: `bookings.source='public_book'` is a valid value, `bookSlot()` is the single entry point. What remains: a non-AI form UI for slot selection, CAPTCHA + rate limit (unauth surface), small intake form to populate `bookings.context_for_summary`. Estimated half-day on top of the booking foundation.
+- [ ] **Calendar webhook for prospect-side declines** — when a prospect declines via the Google invite email, today the platform doesn't know (soft drift between Google's record and ours). Add a Calendar push notification webhook that syncs `bookings.status` when the event flips on Google's side.
+- [ ] **Multi-host scheduling** — `bookings.host_email` already supports it. Wire to a `team_members` table when the team grows beyond Hunter solo.
+- [ ] **Quote AI booking smoke verification** — exercise the full flow end-to-end with a real prospect and confirm: AI asks email, AI offers two slots, book_meeting fires, calendar event lands, prospect invite arrives, SMS confirmations send (if phone resolved), reminders fire 24h + 1h ahead, admin BookingCard + LatestQuotePanel surface correctly. (As of 2026-04-29 the code is shipped, env vars are configured, OAuth is connected — remaining: live test.)
 
 ### High Priority — Site
 1. **301 redirects from PHP site** — old .co URLs are Google-indexed; need redirects now that DNS is cutting over
@@ -581,6 +587,15 @@ The `/api/admin/config` PATCH path (commit `9e0784d`) coerces incoming `'true'`/
 **Problem:** Running diagnostic SQL right after a code change that should write rows can return zero results — even though the new code was deployed and triggered. Cause: the test action ran against an OLD Vercel deploy that hadn't picked up the new code yet, OR the query ran before the row was inserted.
 **Solution:** Always confirm the Vercel deploy SHA matches your latest commit BEFORE running a "did the new code run?" diagnostic. Easy check: `curl -s -o /dev/null -D - https://demandsignals.co | grep -i "x-vercel-id"` and compare.
 
+### GOOGLE_CLIENT_ID collision with Supabase Auth
+**Problem:** Adding a second Google OAuth integration (Calendar) and reusing the existing `GOOGLE_CLIENT_ID` env var works in dev but fails in production with `Error 400: redirect_uri_mismatch` — even when the redirect URI is correctly registered on the GCP credentials page. Cause: `GOOGLE_CLIENT_ID` is already consumed by **Supabase Auth** for the `/admin-login` Google sign-in flow. Supabase's Google provider is configured with a DIFFERENT OAuth client (`219907120133-uu2u...`) that has Supabase's callback URL registered. When new code reads the same `GOOGLE_CLIENT_ID` env var, it sends Supabase's client_id paired with our own redirect_uri — mismatch.
+**Solution:** Use distinct env var names per integration. Calendar integration uses `GOOGLE_CALENDAR_CLIENT_ID` + `GOOGLE_CALENDAR_CLIENT_SECRET` pointing at the `DSIG Main` OAuth client (which has `https://demandsignals.co/api/integrations/google/callback` registered). Existing `GOOGLE_CLIENT_ID` stays pointed at Supabase Auth's client. See `src/lib/google-oauth.ts` clientId() / clientSecret() functions.
+**Time wasted before catching this: hours.** The diagnostic that finally pinned it was `/api/integrations/google/debug` returning the literal `client_id` and `redirect_uri` strings being sent to Google — this immediately surfaced the wrong client_id was being attached. Lesson: when env vars and config look right, build a debug endpoint that returns the LITERAL VALUES the code is putting on the wire. Don't keep asking the user to re-verify what they already verified.
+
+### Always check CODE before blaming credentials
+**Problem:** Repeated wasted-hours debugging cycles where the assistant defaults to "let me have you re-verify the credential" instead of inspecting the code that consumes the credential. The user has flagged this multiple times explicitly.
+**Solution:** When something fails AFTER the user confirmed config is correct: assume the code is wrong. Read the code path end-to-end. Build a debug endpoint that returns literal runtime values if needed. Stop asking for repeat config verification. The user is not going to be wrong about something they've already verified twice.
+
 ---
 
 ## 13. Important Constraints
@@ -633,6 +648,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<supabase anon key>
 SUPABASE_SERVICE_ROLE_KEY=<supabase service role key>
 SUPABASE_WEBHOOK_SECRET=<webhook secret for scorer agent>
 POSTGRES_URL=<vercel postgres connection string for analytics>
+
+# Booking integration (Google Calendar) — added 2026-04-29
+# IMPORTANT: GOOGLE_CLIENT_ID is consumed by Supabase Auth for /admin-login.
+# Calendar integration MUST use distinct GOOGLE_CALENDAR_* vars to avoid
+# collision (see §12 lesson "GOOGLE_CLIENT_ID collision with Supabase Auth").
+GOOGLE_CALENDAR_CLIENT_ID=<DSIG Main OAuth client ID — 995295804425-tm28...>
+GOOGLE_CALENDAR_CLIENT_SECRET=<DSIG Main OAuth client secret>
+GOOGLE_OAUTH_REDIRECT_URI=https://demandsignals.co/api/integrations/google/callback
+BOOKING_SLOT_SECRET=<32-byte hex for HMAC-signing slot ids>
 ```
 
 ---
@@ -1002,3 +1026,68 @@ Magic-link pages that clients see when they receive a document. All branded to m
 - `src/app/sow/[number]/[uuid]/page.tsx`
 - `src/app/invoice/[number]/[uuid]/page.tsx`
 - `src/app/quote/s/[token]/page.tsx`
+
+---
+
+## 23. Booking System (Quote → Real Calendar Meeting)
+
+**Added 2026-04-29.** Replaces the fake "team will call you" closing of `/quote` with real Google Calendar events + Meet links + prospect invite emails + SMS confirmations and reminders.
+
+**Architecture:**
+
+OAuth web-app flow against `DSIG Main` GCP client connects `demandsignals@gmail.com` once via `/admin/integrations/google`. Refresh token persisted in `integrations` table. Three new AI tools drive the booking flow: `capture_attendee_email`, `offer_meeting_slots`, `book_meeting`. Bookings persist in `bookings` table — canonical record for every meeting. Same primitives will power a future public `/book` page.
+
+**Tables (migration 035):**
+
+| Table | Purpose |
+|---|---|
+| `integrations` | OAuth refresh tokens (provider, account_email). `provider='google_calendar'` today. UNIQUE(provider, account_email). |
+| `bookings` | Canonical meeting record. `source` ∈ {quote, public_book, admin_manual}. Holds `google_event_id`, `google_meet_link`, `attendee_phone` (E.164 if available), `reminder_24h_sent_at`, `reminder_1h_sent_at`, `status`. |
+
+`quote_sessions` extended with `booking_id` (FK), `attendee_email`, `offered_slot_ids` (jsonb). `quote_config` seeds `booking_reminders_enabled=true`.
+
+**OAuth client distinction (CRITICAL):**
+
+Two separate Google OAuth clients exist:
+- `DSIG Main` (`995295804425-tm28...`) — **Calendar integration**, uses `GOOGLE_CALENDAR_CLIENT_ID` + `GOOGLE_CALENDAR_CLIENT_SECRET`. Authorized redirect URI: `https://demandsignals.co/api/integrations/google/callback`.
+- Different OAuth client (`219907120133-uu2u...`) — **Supabase Auth admin login**, uses `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`. Authorized redirect URI is Supabase's callback.
+
+DO NOT collapse to one set of env vars. See §12 lesson "GOOGLE_CLIENT_ID collision with Supabase Auth".
+
+**Key files:**
+
+| File | Purpose |
+|---|---|
+| `src/lib/slot-signing.ts` | HMAC-sign + verify slot ids (prevents prompt-injection from fabricating arbitrary booking timestamps). Requires `BOOKING_SLOT_SECRET`. |
+| `src/lib/google-oauth.ts` | OAuth dance + access-token refresh. Reads `GOOGLE_CALENDAR_CLIENT_ID` (falls back to `GOOGLE_CLIENT_ID` for backward compat). |
+| `src/lib/google-calendar.ts` | Calendar API v3 wrapper: `getAvailableSlots` (freebusy + 14-day walk, business-hours filter), `createMeetingEvent` (with Meet link), `cancelMeetingEvent`, `rescheduleMeetingEvent`. Raw fetch — no client lib. |
+| `src/lib/bookings.ts` | Public API: `listAvailableSlots`, `bookSlot`, `cancelBooking`, `rescheduleBooking`. Resolves attendee_phone, fires confirmation SMS, writes canonical "Booked meeting" activity row. |
+| `src/lib/booking-sms.ts` | 5 SMS dispatchers: prospect confirmation, admin notification, 24h reminder, 1h reminder, admin cancellation. Honors `sms_delivery_enabled` + `booking_reminders_enabled` kill switches. |
+| `src/lib/quote-tools.ts` | New tool handlers: `capture_attendee_email`, `offer_meeting_slots`, `book_meeting`. |
+| `src/lib/quote-ai.ts` | Tool defs + system-prompt "BOOKING A MEETING — REAL CALENDAR FLOW" directive that forbids legacy "team will call" closings without book_meeting=ok=true. |
+| `src/app/api/integrations/google/{start,callback,test,disconnect,debug}/route.ts` | OAuth flow + admin-gated diagnostics. |
+| `src/app/admin/integrations/google/page.tsx` | Connect / Test / Disconnect UI. |
+| `src/app/api/admin/integrations/google/status/route.ts` | Connection state for the admin page. |
+| `src/app/api/admin/bookings/[id]/{cancel,reschedule}/route.ts` + `available-slots/route.ts` | Admin booking ops. |
+| `src/app/api/cron/booking-reminders/route.ts` | Vercel cron, every 5 min, fires 24h + 1h reminders with per-row dedup. |
+| `src/components/admin/{BookingCard,RescheduleModal,LatestQuotePanel}.tsx` | Prospect-record surfacing. |
+| `src/components/quote/MeetingConfirmedPanel.tsx` | Right-pane CTA replacement when booking exists. |
+| `scripts/verify-booking-roundtrip.mjs` | E2E verification: refresh-token → create event → insert row → cancel → cleanup. |
+
+**Activity log cleanup (concurrent change):** `quote-prospect-sync.ts` now writes activity rows ONLY for: `research_confirmed` ("Started new quote"), `phone_verified`, `email_captured`, `walkaway_flagged`. `item_changed` and `conversion_action='book_call'` no longer write activity rows. The canonical "Booked meeting" row is written by `bookSlot()` directly with the real time + meet link.
+
+**Continue-to-SOW fix (concurrent change):** `/api/admin/quotes/[id]/continue-to-sow` was returning "Quote session not found" because its SELECT included `quote_sessions.scope_summary` (column doesn't exist — lives on `prospects`). Fixed: drop bad column, pull scope_summary from prospect record.
+
+**Critical operational notes:**
+
+- The `/admin/integrations/google` Connect flow requires the admin to be signed into `demandsignals@gmail.com` in their browser. Sign in to the right Google account before clicking Connect.
+- The first connection requires `prompt=consent` to get a refresh token. Subsequent reconnects also force consent (in case the refresh token was revoked).
+- If a refresh token is rejected (admin revoked access externally), `getValidAccessToken()` marks the integration row `revoked_at` and the admin page shows a Reconnect banner.
+- `BOOKING_SLOT_SECRET` rotation: rotate by setting a new value, redeploying. In-flight slot ids signed with the old secret will return `invalid_slot` — slots are short-lived (offered then booked within minutes), so the rotation impact window is tiny.
+- Vercel cron entry: `{ "path": "/api/cron/booking-reminders", "schedule": "*/5 * * * *" }` in `vercel.json`. Auth via `Authorization: Bearer ${CRON_SECRET}`.
+
+**Out of scope (deferred, see spec):**
+
+- Public `/book` page UI (foundation laid; `bookings.source='public_book'` + `bookSlot()` API both ready).
+- Calendar webhook to sync prospect-side declines (today: admin notices on next dashboard load).
+- Multi-host scheduling (today: every booking on `demandsignals@gmail.com`; `bookings.host_email` makes this a one-line change).
