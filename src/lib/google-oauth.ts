@@ -19,19 +19,18 @@ const SCOPES = [
   'profile',
 ]
 
-// Calendar integration uses GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET.
-// These env vars must point at the DSIG Main OAuth client, which has
-// https://demandsignals.co/api/integrations/google/callback registered as
-// an authorized redirect URI. Supabase Auth (admin login) uses separate
-// config stored in the Supabase dashboard — no shared env vars.
+// Calendar integration uses the DSIG Main OAuth client.
+// The dated suffix on the env var name signals which secret rotation is
+// active — change the date suffix on rotation, deploy, then delete the
+// old secret in GCP. This matches the DSIG_STRIPE_KEY_* convention.
 function clientId(): string {
-  const v = process.env.GOOGLE_CLIENT_ID
-  if (!v) throw new Error('GOOGLE_CLIENT_ID not configured')
+  const v = process.env.GOOGLE_DSIG_MAIN_ID_042826
+  if (!v) throw new Error('GOOGLE_DSIG_MAIN_ID_042826 not configured')
   return v
 }
 function clientSecret(): string {
-  const v = process.env.GOOGLE_CLIENT_SECRET
-  if (!v) throw new Error('GOOGLE_CLIENT_SECRET not configured')
+  const v = process.env.GOOGLE_DSIG_MAIN_SECRET_042826
+  if (!v) throw new Error('GOOGLE_DSIG_MAIN_SECRET_042826 not configured')
   return v
 }
 function redirectUri(): string {
