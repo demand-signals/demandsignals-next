@@ -341,6 +341,20 @@ export async function createReceiptForInvoice(args: {
           console.error('[createReceiptForInvoice] receipt SMS threw:', e instanceof Error ? e.message : e)
         }
       }
+
+      // Admin SMS — fan-out to ADMIN_TEAM_PHONES on every receipt creation.
+      // Independent of client SMS path so prospect-with-no-phone still pages
+      // the team.
+      try {
+        const { notifyAdminsBySms } = await import('./admin-sms')
+        const businessName = prospect.business_name ?? 'a client'
+        await notifyAdminsBySms({
+          source: 'receipt_created',
+          body: `DSIG: ${amountStr} payment received from ${businessName}. Receipt ${receiptNumber} (invoice ${invoice.invoice_number}).`,
+        })
+      } catch (e) {
+        console.error('[createReceiptForInvoice] admin SMS threw:', e instanceof Error ? e.message : e)
+      }
     }
   } catch (notifyErr) {
     console.error('[createReceiptForInvoice] notify pipeline threw:', notifyErr instanceof Error ? notifyErr.message : notifyErr)

@@ -42,6 +42,33 @@ export async function GET(
         viewed_at: new Date().toISOString(),
       })
       .eq('id', sow.id)
+
+    // Admin alert: client opened the SOW. Best-effort, deduped by
+    // view_sms_sent_at so refreshes never re-fire. Wrapped in try so
+    // any SMS error never breaks the customer's page render.
+    try {
+      const { data: dedupe } = await supabaseAdmin
+        .from('sow_documents')
+        .select('view_sms_sent_at, prospect:prospects(business_name)')
+        .eq('id', sow.id)
+        .maybeSingle()
+      if (!dedupe?.view_sms_sent_at) {
+        const { notifyAdminsBySms } = await import('@/lib/admin-sms')
+        const businessName = (dedupe?.prospect as { business_name?: string } | null)?.business_name ?? 'a prospect'
+        const result = await notifyAdminsBySms({
+          source: 'sow_view',
+          body: `DSIG: ${businessName} just opened SOW ${sow.sow_number}.`,
+        })
+        if (result.dispatched) {
+          await supabaseAdmin
+            .from('sow_documents')
+            .update({ view_sms_sent_at: new Date().toISOString() })
+            .eq('id', sow.id)
+        }
+      }
+    } catch (e) {
+      console.error('[sow public GET] view-SMS pipeline threw:', e instanceof Error ? e.message : e)
+    }
   }
 
   // For accepted SOWs, look up actual delivery state of the deposit invoice

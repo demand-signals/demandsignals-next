@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
         .maybeSingle(),
       supabaseAdmin
         .from('prospects')
-        .select('business_name, owner_name, owner_email, business_email, client_code')
+        .select('business_name, owner_name, owner_email, business_email, owner_phone, business_phone, client_code')
         .eq('id', memo.prospect_id)
         .maybeSingle(),
     ])
@@ -166,6 +166,49 @@ export async function POST(request: NextRequest) {
         )
         emailSent = r.success
         if (!r.success) emailError = r.error ?? 'unknown send failure'
+      }
+
+      // Client SMS — short notification with credit memo + invoice it applies to.
+      // Best-effort: kill-switch off, no phone, or send error never blocks return.
+      const clientPhone = prospect.owner_phone ?? prospect.business_phone ?? null
+      if (clientPhone) {
+        try {
+          const { sendSms, isSmsEnabled } = await import('@/lib/twilio-sms')
+          if (await isSmsEnabled()) {
+            const businessName = prospect.business_name ?? 'your business'
+            const amountStr = `$${(memo.amount_cents / 100).toFixed(2)}`
+            const kindLabel: Record<string, string> = {
+              refund: 'refund',
+              goodwill: 'goodwill credit',
+              dispute: 'dispute credit',
+              write_off: 'write-off',
+            }
+            const kindStr = kindLabel[memo.kind] ?? memo.kind
+            const body =
+              `${businessName}: ${kindStr} of ${amountStr} issued (memo ${memo.credit_memo_number}, ` +
+              `invoice ${invoice.invoice_number}). Email with details on the way.`
+            const r = await sendSms(clientPhone, body)
+            if (!r.success) console.error('[credit-memos POST] client SMS failed:', r.error)
+          }
+        } catch (e) {
+          console.error('[credit-memos POST] client SMS threw:', e instanceof Error ? e.message : e)
+        }
+      }
+    }
+
+    // Admin SMS fan-out — independent of client SMS path so it pages the
+    // team even when the prospect has no phone on file.
+    if (prospect && invoice) {
+      try {
+        const { notifyAdminsBySms } = await import('@/lib/admin-sms')
+        const businessName = prospect.business_name ?? 'a client'
+        const amountStr = `$${(memo.amount_cents / 100).toFixed(2)}`
+        await notifyAdminsBySms({
+          source: 'credit_memo',
+          body: `DSIG: ${memo.kind} ${memo.credit_memo_number} for ${amountStr} issued to ${businessName} (invoice ${invoice.invoice_number}).`,
+        })
+      } catch (e) {
+        console.error('[credit-memos POST] admin SMS threw:', e instanceof Error ? e.message : e)
       }
     }
   } catch (e) {

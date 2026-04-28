@@ -115,6 +115,33 @@ export async function GET(
         public_viewed_count: (invoice.public_viewed_count ?? 0) + 1,
       })
       .eq('id', invoice.id)
+
+    // Admin alert on first view. Deduped by view_sms_sent_at so refreshes
+    // don't re-fire. Best-effort, never blocks render.
+    try {
+      const { data: dedupe } = await supabaseAdmin
+        .from('invoices')
+        .select('view_sms_sent_at, prospect:prospects(business_name)')
+        .eq('id', invoice.id)
+        .maybeSingle()
+      if (!dedupe?.view_sms_sent_at) {
+        const { notifyAdminsBySms } = await import('@/lib/admin-sms')
+        const businessName = (dedupe?.prospect as { business_name?: string } | null)?.business_name ?? 'a client'
+        const amountStr = `$${(invoice.total_due_cents / 100).toFixed(2)}`
+        const result = await notifyAdminsBySms({
+          source: 'invoice_view',
+          body: `DSIG: ${businessName} just opened invoice ${invoice.invoice_number} (${amountStr}).`,
+        })
+        if (result.dispatched) {
+          await supabaseAdmin
+            .from('invoices')
+            .update({ view_sms_sent_at: new Date().toISOString() })
+            .eq('id', invoice.id)
+        }
+      }
+    } catch (e) {
+      console.error('[invoices public GET] view-SMS pipeline threw:', e instanceof Error ? e.message : e)
+    }
   } else {
     // Increment view counter only.
     await supabaseAdmin

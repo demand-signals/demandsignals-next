@@ -125,6 +125,23 @@ export async function POST(
     success: true,
   })
 
+  // Admin alert on issuance — fan-out to ADMIN_TEAM_PHONES. Best-effort.
+  // Only fires for non-zero invoices (zero_balance is auto-paid; admin
+  // doesn't need to be paged on a $0 issuance).
+  if (!isZero) {
+    try {
+      const { notifyAdminsBySms } = await import('@/lib/admin-sms')
+      const businessName = invoice.prospect?.business_name ?? 'a client'
+      const amountStr = `$${(invoice.total_due_cents / 100).toFixed(2)}`
+      await notifyAdminsBySms({
+        source: 'invoice_send',
+        body: `DSIG: invoice ${invoice.invoice_number} (${amountStr}) issued to ${businessName}.`,
+      })
+    } catch (e) {
+      console.error('[invoice send] admin SMS pipeline threw:', e instanceof Error ? e.message : e)
+    }
+  }
+
   const publicUrl = `https://demandsignals.co/invoice/${invoice.invoice_number}/${invoice.public_uuid}`
 
   return NextResponse.json({
