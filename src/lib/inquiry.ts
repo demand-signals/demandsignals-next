@@ -14,7 +14,7 @@
 import { headers, cookies } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
-import { sendSms } from '@/lib/twilio-sms'
+import { sendSms, isSmsEnabled } from '@/lib/twilio-sms'
 import { notify } from '@/lib/system-alerts'
 import { logPageVisit, buildAttributionCookieParts } from '@/lib/page-tracking'
 import { verifyAttributionCookie, ATTRIBUTION_COOKIE_NAME } from '@/lib/attribution-cookie'
@@ -163,6 +163,14 @@ export async function recordInquiry(args: RecordInquiryArgs): Promise<RecordInqu
   })()
 
   const smsPromise = (async () => {
+    // Kill-switch check first — if SMS delivery is disabled in config, skip
+    // the entire fan-out silently. This is the operator's intent, not a
+    // failure to alert on. Otherwise every inquiry would log N "SMS delivery
+    // disabled" warnings (one per admin phone) until SMS is enabled.
+    if (!(await isSmsEnabled())) {
+      return { dispatched: false, failures: 0 }
+    }
+
     const phones = getAdminTeamPhones()
     if (phones.length === 0) {
       await notify({
