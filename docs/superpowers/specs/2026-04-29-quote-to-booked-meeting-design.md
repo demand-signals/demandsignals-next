@@ -25,7 +25,7 @@ This design fixes the entire chain in one consolidated build, on a foundation ge
 
 - No Google Workspace migration (you confirmed: would lose the Google Voice number, do not pursue).
 - No multi-host booking. Every meeting is on `demandsignals@gmail.com`. When you eventually add hosts, the `bookings.host_email` column makes that a one-line change.
-- No SMS confirmation in this build (Twilio fan-out for booking SMS is a follow-up — the structured `bookings` row will make adding it trivial later).
+- SMS confirmations + reminders ARE in scope (Twilio + `sendSms` + `ADMIN_TEAM_PHONES` already wired; trivial to add).
 - No public `/book` page in this build, but every primitive is designed to be reused. Out-of-scope: the public page UI itself.
 - No replacement of `trigger_handoff`. The handoff path stays for non-bookable hot signals (urgency questions, $10K+ unbooked sessions). Booking is a *separate* tool that fires AFTER the AI offers the two slots and the prospect picks one.
 
@@ -117,6 +117,12 @@ CREATE TABLE bookings (
   google_event_id text NOT NULL,             -- Calendar API event id
   google_meet_link text,                     -- conferenceData.entryPoints[].uri
   google_meet_id text,                       -- e.g. abc-defg-hij
+  -- Phone for SMS confirmations + reminders (E.164). Captured opportunistically
+  -- from prospects.owner_phone or quote_sessions phone — never blocks booking.
+  attendee_phone text,
+  -- Reminder dispatch dedup (mirrors view_sms_sent_at pattern from migration 033)
+  reminder_24h_sent_at timestamptz,
+  reminder_1h_sent_at timestamptz,
   -- Lifecycle
   status text NOT NULL DEFAULT 'confirmed',  -- 'confirmed' | 'cancelled' | 'completed' | 'no_show'
   cancelled_at timestamptz,
@@ -260,6 +266,101 @@ export async function rescheduleBooking(opts: {
   new_start_at: string
   new_end_at: string
 }): Promise<void>
+```
+
+### 4b. Module — `src/lib/booking-sms.ts`
+
+Owns all four booking SMS dispatches. Mirrors the `invoice-email.ts` /
+`credit-memo-email.ts` pattern. Each function honors the existing
+`isSmsEnabled()` kill switch + a new `booking_reminders_enabled` flag for
+the reminder dispatches.
+
+```ts
+export async function sendBookingConfirmationToProspect(booking_id): Promise<{ ok: boolean; reason?: string }>
+// Looks up booking. If attendee_phone null → returns { ok:false, reason:'no_phone' }.
+// Otherwise sendSms with: "DSIG: you're booked for {time PT}. Meet: {link} — reply to reschedule."
+// Idempotent — caller (bookSlot) calls once at creation time.
+
+export async function sendBookingNotificationToAdmin(booking_id): Promise<{ ok: boolean }>
+// Sends to ADMIN_TEAM_PHONES (existing env var). Body:
+//   "🎯 Booked: {business_name} — {time PT} — meet.google.com/{id}"
+// Always dispatches when SMS is enabled regardless of attendee_phone.
+
+export async function sendBookingReminder24h(booking_id): Promise<{ ok: boolean; reason?: string }>
+// Skips if reminder_24h_sent_at is non-null OR booking_reminders_enabled is false.
+// On success, sets reminder_24h_sent_at via supabaseAdmin update.
+// Body: "DSIG reminder: strategy call tomorrow at {time PT}. Meet: {link}"
+
+export async function sendBookingReminder1h(booking_id): Promise<{ ok: boolean; reason?: string }>
+// Same dedup pattern, sets reminder_1h_sent_at.
+// Body: "DSIG: your call starts in 1 hour. Meet: {link}"
+
+export async function sendBookingCancellationToAdmin(booking_id): Promise<{ ok: boolean }>
+// Fires when bookings.status flips to cancelled.
+// Body: "❌ Cancelled: {business_name} — was {time PT} — by {cancelled_by}"
+```
+
+Phone resolution at booking time (inside `bookSlot()` in `bookings.ts`):
+
+```ts
+async function resolveAttendeePhone(opts: {
+  prospect_id?: string
+  quote_session_id?: string
+}): Promise<string | null> {
+  // 1. Try prospects.owner_phone (existing client returnees)
+  if (opts.prospect_id) {
+    const { data } = await supabaseAdmin
+      .from('prospects').select('owner_phone, business_phone')
+      .eq('id', opts.prospect_id).single()
+    const phone = data?.owner_phone ?? data?.business_phone
+    if (phone) return toE164(phone)
+  }
+  // 2. Fall back to this session's verified phone
+  if (opts.quote_session_id) {
+    const { data } = await supabaseAdmin
+      .from('quote_sessions').select('phone_encrypted, phone_verified')
+      .eq('id', opts.quote_session_id).single()
+    if (data?.phone_verified && data.phone_encrypted) {
+      try { return decryptPhone(data.phone_encrypted) } catch { return null }
+    }
+  }
+  return null
+}
+```
+
+### 4c. Cron — `/api/cron/booking-reminders`
+
+Vercel cron, runs every 5 minutes. Queries:
+
+```sql
+-- 24h reminders due (sent at exactly start_at - 24h, ±5min window)
+SELECT id FROM bookings
+WHERE status = 'confirmed'
+  AND attendee_phone IS NOT NULL
+  AND reminder_24h_sent_at IS NULL
+  AND start_at BETWEEN now() + interval '23 hours 55 minutes' AND now() + interval '24 hours 5 minutes';
+
+-- 1h reminders due
+SELECT id FROM bookings
+WHERE status = 'confirmed'
+  AND attendee_phone IS NOT NULL
+  AND reminder_1h_sent_at IS NULL
+  AND start_at BETWEEN now() + interval '55 minutes' AND now() + interval '1 hour 5 minutes';
+```
+
+For each row, calls `sendBookingReminder24h` / `sendBookingReminder1h`. Each
+helper sets the `*_sent_at` column on success — guaranteeing exactly-once
+delivery even if the cron fires twice in the window. Standard
+`Authorization: Bearer ${CRON_SECRET}` header check (matches existing crons
+at `/api/cron/payment-triggers`).
+
+`vercel.json` cron entry:
+
+```json
+{
+  "path": "/api/cron/booking-reminders",
+  "schedule": "*/5 * * * *"
+}
 ```
 
 ### 5. Quote AI tools — additions to `src/lib/quote-ai.ts` + `src/lib/quote-tools.ts`
@@ -457,8 +558,11 @@ Verification script `scripts/verify-booking-roundtrip.mjs` (post-deploy):
 | `supabase/migrations/035_bookings_and_integrations.sql` | NEW — integrations + bookings tables |
 | `src/lib/google-oauth.ts` | NEW — OAuth dance + token refresh |
 | `src/lib/google-calendar.ts` | NEW — Calendar API wrapper |
-| `src/lib/bookings.ts` | NEW — public bookSlot/cancel/reschedule API |
+| `src/lib/bookings.ts` | NEW — public bookSlot/cancel/reschedule API; resolves attendee_phone, dispatches confirmation SMS |
+| `src/lib/booking-sms.ts` | NEW — 5 SMS senders (prospect confirm, admin notify, 24h reminder, 1h reminder, admin cancel) |
 | `src/lib/slot-signing.ts` | NEW — HMAC-sign and verify slot ids |
+| `src/app/api/cron/booking-reminders/route.ts` | NEW — Vercel cron (every 5 min), dispatches 24h + 1h reminders |
+| `vercel.json` | Add booking-reminders cron entry |
 | `src/lib/quote-tools.ts` | Add capture_attendee_email, offer_meeting_slots, book_meeting handlers |
 | `src/lib/quote-ai.ts` | Add tool defs + system-prompt directive for booking flow |
 | `src/lib/quote-prospect-sync.ts` | Drop item_changed activity write; refine other subjects/bodies |
@@ -481,7 +585,7 @@ Verification script `scripts/verify-booking-roundtrip.mjs` (post-deploy):
 | `src/app/api/admin/quotes/[id]/continue-to-sow/route.ts` | Drop bad column from SELECT |
 | `scripts/verify-booking-roundtrip.mjs` | NEW |
 
-Estimated work: 1.5–2 days.
+Estimated work: ~2 days.
 
 ## Required env vars (new)
 
@@ -502,7 +606,6 @@ BOOKING_SLOT_SECRET=<new random 32-byte hex — for HMAC-signing slot ids>
 
 - Public `/book` page replacing the Google Appointment Schedules link. Foundation laid; UI is a separate spec.
 - Prospect-facing reschedule/cancel UI. Today, prospects use the standard Google invite "decline" link in the email; admin handles in-platform reschedules. Add prospect-facing reschedule when `/book` page ships.
-- SMS confirmation of booked meetings via Twilio. Trivial follow-up once the `bookings` row exists.
 - Calendar webhook to sync external changes (prospect declines via Google, admin moves event in Calendar UI). Adds drift detection. Skip until v2.
 - Multi-host booking ("book with Hunter or Tiffany"). `bookings.host_email` makes this a one-line addition when the team grows.
 - Outlook / Apple Calendar support. Out of scope; we control demandsignals@gmail.com.
