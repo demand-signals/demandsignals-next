@@ -31,16 +31,41 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing Svix headers' }, { status: 400 })
   }
 
+  // Replay window: reject events older than 5 minutes. Svix recommends
+  // a tolerance window to bound replay-attack effectiveness even if the
+  // signing secret were ever leaked.
+  const tsSeconds = Number(msgTimestamp)
+  if (!Number.isFinite(tsSeconds)) {
+    return NextResponse.json({ error: 'Invalid svix-timestamp' }, { status: 400 })
+  }
+  const ageSeconds = Math.abs(Date.now() / 1000 - tsSeconds)
+  if (ageSeconds > 300) {
+    return NextResponse.json(
+      { error: 'svix-timestamp outside acceptable freshness window (5min)' },
+      { status: 400 },
+    )
+  }
+
   const rawBody = await request.text()
 
   // Verify signature using Web Crypto (no extra dep needed).
   const expected = await computeSvixSignature(secret, msgId, msgTimestamp, rawBody)
   // svix-signature can contain multiple space-separated "v1,<sig>" pairs;
-  // any match counts as valid (allows secret rotation).
+  // any match counts as valid (allows secret rotation). Use a constant-time
+  // compare so timing differences across attempts don't leak which byte
+  // matched.
   const presented = msgSignature.split(' ').map((s) => s.trim()).filter(Boolean)
   const ok = presented.some((p) => {
     const [, sig] = p.split(',')
-    return sig === expected
+    if (!sig || sig.length !== expected.length) return false
+    // crypto-safe compare — Buffer parity already enforced above.
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { timingSafeEqual } = require('node:crypto') as typeof import('node:crypto')
+      return timingSafeEqual(Buffer.from(sig), Buffer.from(expected))
+    } catch {
+      return false
+    }
   })
   if (!ok) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
