@@ -253,15 +253,40 @@ export async function syncProspectFromSession(
       .eq('id', sessionId)
   }
 
-  // Log activity to the prospects activity log
-  await supabaseAdmin.from('activities').insert({
-    prospect_id: prospectId!,
-    type: trigger === 'conversion_action' ? 'stage_change' : 'update',
-    channel: 'quote_estimator',
-    subject: triggerLabel(trigger),
-    body: activityBody(trigger, session, scopeSummary),
-    created_by: 'quote_estimator',
-  })
+  // Activity log: only write rows for events humans care about.
+  // item_changed is dropped entirely — configurator deltas are visible in
+  // quote_events; no point spamming the prospect activity stream.
+  // conversion_action='book_call' is also dropped because bookSlot() in
+  // src/lib/bookings.ts writes the canonical "Booked meeting" row with the
+  // real meeting time + meet link.
+  const triggersThatLogActivity: SyncTrigger[] = [
+    'research_confirmed',
+    'phone_verified',
+    'email_captured',
+    'walkaway_flagged',
+  ]
+  if (triggersThatLogActivity.includes(trigger)) {
+    const subject = triggerLabel(trigger)
+    // Dedupe: skip if the same subject already exists for this prospect within 24h.
+    const { data: existing } = await supabaseAdmin
+      .from('activities')
+      .select('id')
+      .eq('prospect_id', prospectId!)
+      .eq('subject', subject)
+      .gte('created_at', new Date(Date.now() - 24 * 3_600_000).toISOString())
+      .limit(1)
+      .maybeSingle()
+    if (!existing) {
+      await supabaseAdmin.from('activities').insert({
+        prospect_id: prospectId!,
+        type: 'update',
+        channel: 'quote_estimator',
+        subject,
+        body: activityBody(trigger, session, scopeSummary),
+        created_by: 'quote_estimator',
+      })
+    }
+  }
 
   // Allocate an EST number the first time this session is linked to a prospect.
   // Guarded: only if the session doesn't already have a doc_number and the prospect
@@ -300,26 +325,30 @@ export async function syncProspectFromSession(
 
 function triggerLabel(trigger: SyncTrigger): string {
   switch (trigger) {
-    case 'research_confirmed': return 'Prospect confirmed research match'
-    case 'phone_verified': return 'Phone verified on quote estimator'
-    case 'email_captured': return 'Email captured via Email Me The Plan'
-    case 'item_changed': return 'Quote scope updated'
-    case 'walkaway_flagged': return '⚠️ Hot walkaway risk — AI flagged'
-    case 'conversion_action': return 'Conversion action on quote estimator'
+    case 'research_confirmed': return 'Started new quote'
+    case 'phone_verified': return 'Phone verified'
+    case 'email_captured': return 'Email captured'
+    case 'walkaway_flagged': return 'Walkaway risk flagged'
+    case 'item_changed': return ''            // unused — no activity row written
+    case 'conversion_action': return ''       // unused — bookSlot writes the row
   }
 }
 
-function activityBody(trigger: SyncTrigger, session: { id: string; share_token: string; business_name: string | null; estimate_low: number | null; estimate_high: number | null }, scopeSummary: string | null): string {
+function activityBody(
+  trigger: SyncTrigger,
+  session: { id: string; share_token: string; business_name: string | null; estimate_low: number | null; estimate_high: number | null; email: string | null },
+  scopeSummary: string | null,
+): string {
   const lines: string[] = []
-  lines.push(`Session: /quote/s/${session.share_token}`)
   if (session.business_name) lines.push(`Business: ${session.business_name}`)
+  if (trigger === 'email_captured' && session.email) lines.push(`Email: ${session.email}`)
+  if (scopeSummary) lines.push(`Scope: ${scopeSummary}`)
   if (session.estimate_low != null && session.estimate_high != null) {
     lines.push(`Estimate: $${Math.round(session.estimate_low / 100)}-$${Math.round(session.estimate_high / 100)}`)
   }
-  if (scopeSummary) lines.push(`Scope: ${scopeSummary}`)
+  lines.push(`Session: /quote/s/${session.share_token}`)
   if (trigger === 'walkaway_flagged') {
-    lines.push('')
-    lines.push('🚨 Consider a proactive follow-up today. AI detected exit signals.')
+    lines.unshift('🚨 AI detected exit signals — consider proactive follow-up.')
   }
   return lines.join('\n')
 }
