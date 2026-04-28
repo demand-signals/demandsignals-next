@@ -252,6 +252,7 @@ export async function createReceiptForInvoice(args: {
     return
   }
 
+  let receiptNumber = tempRct
   try {
     const { allocateDocNumber } = await import('./doc-numbering')
     const rctNumber = await allocateDocNumber({
@@ -260,13 +261,89 @@ export async function createReceiptForInvoice(args: {
       ref_table: 'receipts',
       ref_id: rctRow.id,
     })
-    await supabaseAdmin
+    const { error: renameErr } = await supabaseAdmin
       .from('receipts')
       .update({ receipt_number: rctNumber })
       .eq('id', rctRow.id)
+    if (renameErr) {
+      console.error('[createReceiptForInvoice] rename failed:', renameErr.message)
+    } else {
+      receiptNumber = rctNumber
+    }
   } catch (numErr) {
     console.error('[createReceiptForInvoice] numbering failed:', numErr instanceof Error ? numErr.message : numErr)
     // Receipt remains as PENDING-… — visible in admin and fixable manually.
+  }
+
+  // ── Notify the customer that payment was received ──
+  // Best-effort. Honors email_delivery_enabled + sms_delivery_enabled
+  // kill switches. Failures here never break the webhook handler that
+  // called us (the receipt + invoice-paid state are already committed).
+  try {
+    const { data: invoice } = await supabaseAdmin
+      .from('invoices')
+      .select('id, invoice_number, prospect:prospects(business_name, owner_name, owner_email, business_email, owner_phone, business_phone)')
+      .eq('id', args.invoiceId)
+      .maybeSingle()
+
+    if (invoice && invoice.prospect) {
+      const prospect = invoice.prospect as unknown as {
+        business_name?: string
+        owner_name?: string | null
+        owner_email?: string | null
+        business_email?: string | null
+        owner_phone?: string | null
+        business_phone?: string | null
+      }
+      const recipientEmail = prospect.owner_email ?? prospect.business_email ?? null
+      const recipientPhone = prospect.owner_phone ?? prospect.business_phone ?? null
+      const amountStr = `$${(args.amountCents / 100).toFixed(2)}`
+
+      // Email — receipt confirmation
+      if (recipientEmail) {
+        try {
+          const { sendReceiptEmail } = await import('./receipt-email')
+          const r = await sendReceiptEmail(
+            {
+              id: rctRow.id,
+              receipt_number: receiptNumber,
+              invoice_id: args.invoiceId,
+              amount_cents: args.amountCents,
+              currency: 'USD',
+              payment_method: args.paymentMethod,
+              payment_reference: args.paymentReference ?? null,
+              paid_at: new Date().toISOString(),
+              prospect_id: args.prospectId,
+            },
+            invoice.invoice_number,
+            recipientEmail,
+            { business_name: prospect.business_name, owner_name: prospect.owner_name },
+          )
+          if (!r.success) console.error('[createReceiptForInvoice] receipt email failed:', r.error)
+        } catch (e) {
+          console.error('[createReceiptForInvoice] receipt email threw:', e instanceof Error ? e.message : e)
+        }
+      }
+
+      // SMS — short payment confirmation
+      if (recipientPhone) {
+        try {
+          const { sendSms, isSmsEnabled } = await import('./twilio-sms')
+          if (await isSmsEnabled()) {
+            const businessName = prospect.business_name ?? 'your business'
+            const message =
+              `${businessName}: Payment of ${amountStr} received for invoice ${invoice.invoice_number}. ` +
+              `Receipt ${receiptNumber}. Thank you — Demand Signals.`
+            const r = await sendSms(recipientPhone, message)
+            if (!r.success) console.error('[createReceiptForInvoice] receipt SMS failed:', r.error)
+          }
+        } catch (e) {
+          console.error('[createReceiptForInvoice] receipt SMS threw:', e instanceof Error ? e.message : e)
+        }
+      }
+    }
+  } catch (notifyErr) {
+    console.error('[createReceiptForInvoice] notify pipeline threw:', notifyErr instanceof Error ? notifyErr.message : notifyErr)
   }
 }
 

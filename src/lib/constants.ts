@@ -121,6 +121,7 @@ export const NAV_LOCATIONS = [
 export const EMAIL_FROM = {
   invoice:           'Demand Signals <invoices@demandsignals.co>',
   sow:               'Demand Signals <invoices@demandsignals.co>',
+  receipt:           'Demand Signals <invoices@demandsignals.co>',
   contact_form:      'Demand Signals <noreply@demandsignals.co>',
   newsletter:        'Demand Signals <news@demandsignals.co>',
   report_request:    'Demand Signals <reports@demandsignals.co>',
@@ -137,6 +138,7 @@ export type EmailKind = keyof typeof EMAIL_FROM
 export const EMAIL_REPLY_TO: Partial<Record<EmailKind, string>> = {
   invoice: 'hunter@demandsignals.co',
   sow:     'hunter@demandsignals.co',
+  receipt: 'hunter@demandsignals.co',
 }
 
 // Kinds that auto-BCC the archive address (DSIG keeps a copy of every
@@ -146,6 +148,7 @@ export const EMAIL_REPLY_TO: Partial<Record<EmailKind, string>> = {
 export const CLIENT_FACING_KINDS: ReadonlySet<EmailKind> = new Set<EmailKind>([
   'invoice',
   'sow',
+  'receipt',
 ])
 
 // ── Admin team SMS targets ──────────────────────────────────────────

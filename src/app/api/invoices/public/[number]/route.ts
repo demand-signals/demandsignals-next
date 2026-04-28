@@ -19,9 +19,7 @@ export async function GET(
   const key = request.nextUrl.searchParams.get('key')
   if (!key) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const { data: invoice } = await supabaseAdmin
-    .from('invoices')
-    .select(`
+  const SELECT = `
       id, invoice_number, public_uuid, kind, status, currency, prospect_id,
       subtotal_cents, discount_cents, total_due_cents,
       due_date, send_date, sent_at, paid_at, voided_at, void_reason,
@@ -31,10 +29,53 @@ export async function GET(
       trade_credit_cents, trade_credit_description,
       payment_terms,
       prospect:prospects(business_name, owner_name, owner_email, address, city, state, zip)
-    `)
+    `
+
+  let { data: invoice } = await supabaseAdmin
+    .from('invoices')
+    .select(SELECT)
     .eq('invoice_number', number)
     .eq('public_uuid', key)
     .maybeSingle()
+
+  // Fallback: if the invoice_number lookup misses, try by public_uuid alone.
+  // This rescues rows where the rename to INV-CLIENT-MMDDYY{A} silently
+  // failed (left as PENDING-{uuid} in DB) but the number was already
+  // allocated in document_numbers + handed to the customer in the magic
+  // link. We verify the audit log says this row was meant to have the
+  // requested number, then auto-rename and serve.
+  if (!invoice) {
+    const { data: byUuid } = await supabaseAdmin
+      .from('invoices')
+      .select(SELECT)
+      .eq('public_uuid', key)
+      .maybeSingle()
+    if (byUuid) {
+      const wantsRescue =
+        byUuid.invoice_number !== number &&
+        byUuid.invoice_number?.startsWith('PENDING-')
+      if (wantsRescue) {
+        // Confirm the audit log expects this row → number mapping.
+        const { data: audit } = await supabaseAdmin
+          .from('document_numbers')
+          .select('document_number')
+          .eq('ref_table', 'invoices')
+          .eq('ref_id', byUuid.id)
+          .eq('document_number', number)
+          .maybeSingle()
+        if (audit) {
+          // Audit confirms: rename and serve.
+          await supabaseAdmin
+            .from('invoices')
+            .update({ invoice_number: number })
+            .eq('id', byUuid.id)
+          byUuid.invoice_number = number
+          invoice = byUuid
+          console.warn(`[invoices/public] Rescued orphaned PENDING- row ${byUuid.id} → ${number}`)
+        }
+      }
+    }
+  }
 
   if (!invoice) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 

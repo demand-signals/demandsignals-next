@@ -70,20 +70,20 @@ export async function POST(
   const depositCents = pricing.deposit_cents ?? Math.round(pricing.total_cents * 0.25)
 
   // Pull the "New Client Appreciation" value stack from services_catalog.
-  // These auto-populate as 100%-discounted lines on the deposit invoice,
-  // giving the client visible proof of $X,XXX in included value on day one.
+  // These are bonuses included with the engagement — they MUST NOT appear
+  // as line items (line items are the legal record of what's billed).
+  // We surface them in notes + on the invoice page as a separate callout
+  // so the client sees the value without bloating the invoice total.
   const valueStackItems = await getValueStackItems()
   const valueStackSubtotalCents = valueStackItems.reduce(
     (sum, item) => sum + item.display_price_cents,
     0,
   )
 
-  // Invoice totals:
-  //   displayed subtotal = deposit + value_stack (what the prospect sees as
-  //     total value of what they're receiving)
-  //   displayed discount = -value_stack (the courtesy discount)
-  //   total due          = deposit (actual money owed)
-  const displayedSubtotalCents = depositCents + valueStackSubtotalCents
+  // Invoice totals: only the deposit is billed. Subtotal = total = deposit.
+  // No phantom discount, no inflated subtotal. The invoice document tells
+  // the truth: "you owe the deposit, period."
+  const displayedSubtotalCents = depositCents
 
   // Insert deposit invoice with a temp placeholder number, then allocate
   // a proper INV-CLIENT-MMDDYY{SUFFIX} number once we have the row id.
@@ -99,14 +99,22 @@ export async function POST(
       sent_at: acceptedAt,
       sent_via_channel: 'manual',
       subtotal_cents: displayedSubtotalCents,
-      discount_cents: valueStackSubtotalCents,
+      discount_cents: 0,
       total_due_cents: depositCents,
       currency: 'USD',
       auto_generated: true,
       auto_trigger: 'sow_deposit',
       auto_sent: true,
       category_hint: 'service_revenue',
-      notes: `Deposit invoice for SOW ${sow.sow_number} — ${sow.title}. Remaining balance: $${((pricing.total_cents - depositCents) / 100).toFixed(2)}`,
+      notes: [
+        `Deposit invoice for SOW ${sow.sow_number} — ${sow.title}.`,
+        `Remaining balance: $${((pricing.total_cents - depositCents) / 100).toFixed(2)}`,
+        valueStackItems.length > 0
+          ? `\nIncluded with your engagement (no additional charge):\n${valueStackItems
+              .map((i) => `  • ${i.name} (a $${(i.display_price_cents / 100).toFixed(0)} value)`)
+              .join('\n')}`
+          : '',
+      ].filter(Boolean).join(' '),
     })
     .select('*')
     .single()
@@ -184,10 +192,11 @@ export async function POST(
     }
   }
 
-  // Build line items:
-  //   0: Deposit line (real charge)
-  //   1..N: Value stack items at full price (for visible perceived value)
-  //   N+1: "New Client Appreciation" 100% discount line offsetting value stack
+  // Build line items: ONLY the deposit. Value-stack bonuses are surfaced
+  // in invoice.notes — they're courtesy adds, not billable items, and
+  // putting them on the invoice as line items inflated subtotals + made
+  // the customer-facing total disagree with the actual amount Stripe
+  // charged ($3,251 displayed vs $1 actually billed).
   const lineItems: Array<Record<string, unknown>> = [
     {
       invoice_id: depositInvoice.id,
@@ -201,40 +210,6 @@ export async function POST(
       sort_order: 0,
     },
   ]
-
-  valueStackItems.forEach((item, idx) => {
-    lineItems.push({
-      invoice_id: depositInvoice.id,
-      description: item.name + (item.description ? ` — ${item.description}` : ''),
-      quantity: 1,
-      unit_price_cents: item.display_price_cents,
-      subtotal_cents: item.display_price_cents,
-      discount_pct: 0,
-      discount_cents: 0,
-      line_total_cents: item.display_price_cents,
-      sort_order: idx + 1,
-    })
-  })
-
-  if (valueStackSubtotalCents > 0) {
-    // Model the appreciation discount as a 100%-discounted line: unit_price
-    // and discount both equal the stack subtotal, line_total = 0. Keeps the
-    // schema's check constraints happy (unit_price_cents >= 0,
-    // discount_cents >= 0) while still surfacing the bundle as a single
-    // visible "New Client Appreciation" row that nets to zero.
-    lineItems.push({
-      invoice_id: depositInvoice.id,
-      description: 'New Client Appreciation — included with your engagement',
-      quantity: 1,
-      unit_price_cents: valueStackSubtotalCents,
-      subtotal_cents: valueStackSubtotalCents,
-      discount_pct: 100,
-      discount_cents: valueStackSubtotalCents,
-      discount_label: 'New Client Appreciation',
-      line_total_cents: 0,
-      sort_order: valueStackItems.length + 1,
-    })
-  }
 
   const { error: liErr } = await supabaseAdmin.from('invoice_line_items').insert(lineItems)
   if (liErr) {
