@@ -71,9 +71,42 @@ export async function PATCH(
     }
   })
 
+  // ── Auto-advance project status from phase progression ──
+  // planning → in_progress when any phase moves to in_progress or completed
+  // in_progress → completed when ALL phases are completed
+  const anyActive = updatedPhases.some((p) => p.status === 'in_progress' || p.status === 'completed')
+  const allCompleted = updatedPhases.length > 0 && updatedPhases.every((p) => p.status === 'completed')
+
+  const projectUpdate: Record<string, unknown> = {
+    phases: updatedPhases,
+    updated_at: new Date().toISOString(),
+  }
+
+  // Pull current project status to decide whether to advance.
+  const { data: currentProj } = await supabaseAdmin
+    .from('projects')
+    .select('status, completed_at, start_date')
+    .eq('id', id)
+    .maybeSingle()
+
+  const currentStatus = currentProj?.status ?? 'planning'
+  if (allCompleted && currentStatus !== 'completed') {
+    projectUpdate.status = 'completed'
+    projectUpdate.completed_at = new Date().toISOString()
+  } else if (!allCompleted && anyActive && currentStatus === 'planning') {
+    projectUpdate.status = 'in_progress'
+    if (!currentProj?.start_date) {
+      projectUpdate.start_date = new Date().toISOString().slice(0, 10)
+    }
+  } else if (!anyActive && currentStatus === 'completed') {
+    // Reverting (e.g. force-uncomplete): drop back to in_progress.
+    projectUpdate.status = 'in_progress'
+    projectUpdate.completed_at = null
+  }
+
   const { error: updateErr } = await supabaseAdmin
     .from('projects')
-    .update({ phases: updatedPhases, updated_at: new Date().toISOString() })
+    .update(projectUpdate)
     .eq('id', id)
 
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })

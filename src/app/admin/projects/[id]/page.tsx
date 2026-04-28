@@ -6,6 +6,7 @@ import { Loader2, ChevronDown, ChevronRight, ExternalLink, CheckCircle2, Circle,
 import { formatCents } from '@/lib/format'
 import type { ProjectRow, ProjectPhase, ProjectPhaseDeliverable } from '@/lib/invoice-types'
 import { OutstandingObligations } from './OutstandingObligations'
+import { TimeEntriesPanel } from './TimeEntriesPanel'
 
 // Extended with joined prospect data
 interface ProjectDetail extends ProjectRow {
@@ -18,6 +19,36 @@ interface ProjectDetail extends ProjectRow {
     is_client: boolean
   } | null
   sow_number?: string | null
+}
+
+interface ProjectFinancials {
+  invoices: Array<{
+    id: string
+    invoice_number: string
+    status: string
+    total_due_cents: number
+    paid_at: string | null
+    send_date: string | null
+    kind: string
+  }>
+  receipts: Array<{
+    id: string
+    receipt_number: string
+    invoice_id: string
+    amount_cents: number
+    payment_method: string
+    paid_at: string
+  }>
+  subscriptions: Array<{
+    id: string
+    status: string
+    monthly_value_cents: number
+    next_invoice_date: string | null
+    plan_name: string | null
+  }>
+  active_monthly_cents: number
+  total_invoiced_cents: number
+  total_paid_cents: number
 }
 
 const PHASE_STATUS_LABELS: Record<string, string> = {
@@ -180,6 +211,7 @@ function PhaseCard({
 export default function AdminProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [project, setProject] = useState<ProjectDetail | null>(null)
+  const [financials, setFinancials] = useState<ProjectFinancials | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -189,7 +221,10 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
       .then((r) => r.json())
       .then((d) => {
         if (d.error) setError(d.error)
-        else setProject(d.project)
+        else {
+          setProject(d.project)
+          setFinancials(d.financials ?? null)
+        }
       })
       .catch(() => setError('Failed to load project'))
       .finally(() => setLoading(false))
@@ -279,10 +314,17 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
         <div className="bg-white border border-slate-200 rounded-xl p-4">
           <div className="text-xs text-slate-500 mb-1">Monthly Value</div>
           <div className="font-semibold text-slate-800">
-            {project.monthly_value != null
-              ? formatCents(Math.round(project.monthly_value * 100)) + '/mo'
-              : '—'}
+            {financials && financials.active_monthly_cents > 0
+              ? formatCents(financials.active_monthly_cents) + '/mo'
+              : project.monthly_value != null
+                ? formatCents(Math.round(project.monthly_value * 100)) + '/mo'
+                : '—'}
           </div>
+          {financials && financials.subscriptions.length > 0 && (
+            <div className="text-[10px] text-slate-400 mt-1">
+              {financials.subscriptions.filter((s) => s.status === 'active').length} active sub{financials.subscriptions.filter((s) => s.status === 'active').length === 1 ? '' : 's'}
+            </div>
+          )}
         </div>
         <div className="bg-white border border-slate-200 rounded-xl p-4">
           <div className="text-xs text-slate-500 mb-1">Start Date</div>
@@ -372,6 +414,119 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
         </div>
       )}
 
+      {/* Financials — invoices, receipts, subscriptions */}
+      {financials && (financials.invoices.length > 0 || financials.subscriptions.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Invoices */}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                Invoices ({financials.invoices.length})
+              </div>
+              <div className="text-xs text-slate-500">
+                <span className="font-semibold text-slate-700">{formatCents(financials.total_paid_cents)}</span>
+                <span className="text-slate-400"> / {formatCents(financials.total_invoiced_cents)} paid</span>
+              </div>
+            </div>
+            {financials.invoices.length === 0 ? (
+              <div className="px-4 py-3 text-xs text-slate-400 italic">No invoices issued yet.</div>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {financials.invoices.map((inv) => (
+                  <li key={inv.id} className="px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50">
+                    <Link href={`/admin/invoices/${inv.id}`} className="text-sm font-medium text-teal-600 hover:underline shrink-0">
+                      {inv.invoice_number}
+                    </Link>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                        inv.status === 'paid'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : inv.status === 'void'
+                          ? 'bg-slate-100 text-slate-500'
+                          : inv.status === 'sent' || inv.status === 'viewed'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-amber-100 text-amber-700'
+                      }`}
+                    >
+                      {inv.status.toUpperCase()}
+                    </span>
+                    <div className="flex-1 min-w-0 text-xs text-slate-500 truncate">
+                      {inv.send_date ? new Date(inv.send_date).toLocaleDateString() : 'draft'}
+                    </div>
+                    <div className="text-sm font-semibold text-slate-700 shrink-0 tabular-nums">
+                      {formatCents(inv.total_due_cents)}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Receipts + Subscriptions stack */}
+          <div className="space-y-4">
+            {financials.receipts.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Receipts ({financials.receipts.length})
+                </div>
+                <ul className="divide-y divide-slate-100">
+                  {financials.receipts.map((rc) => (
+                    <li key={rc.id} className="px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50">
+                      <Link href={`/admin/receipts/${rc.id}`} className="text-sm font-medium text-teal-600 hover:underline shrink-0">
+                        {rc.receipt_number}
+                      </Link>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-slate-100 text-slate-600 capitalize">
+                        {rc.payment_method}
+                      </span>
+                      <div className="flex-1 min-w-0 text-xs text-slate-500 truncate">
+                        {new Date(rc.paid_at).toLocaleDateString()}
+                      </div>
+                      <div className="text-sm font-semibold text-emerald-700 shrink-0 tabular-nums">
+                        {formatCents(rc.amount_cents)}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {financials.subscriptions.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    Subscriptions ({financials.subscriptions.length})
+                  </div>
+                  {financials.active_monthly_cents > 0 && (
+                    <div className="text-xs font-semibold text-slate-700 tabular-nums">
+                      {formatCents(financials.active_monthly_cents)}/mo active
+                    </div>
+                  )}
+                </div>
+                <ul className="divide-y divide-slate-100">
+                  {financials.subscriptions.map((s) => (
+                    <li key={s.id} className="px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50">
+                      <Link href={`/admin/subscriptions/${s.id}`} className="text-sm font-medium text-teal-600 hover:underline truncate flex-1 min-w-0">
+                        {s.plan_name ?? 'Subscription'}
+                      </Link>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                          s.status === 'active' ? 'bg-emerald-100 text-emerald-700' : s.status === 'paused' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'
+                        }`}
+                      >
+                        {s.status.toUpperCase()}
+                      </span>
+                      <div className="text-sm font-semibold text-slate-700 shrink-0 tabular-nums">
+                        {formatCents(s.monthly_value_cents)}<span className="text-[10px] text-slate-400">/mo</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Phases */}
       <div>
         <h2 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
@@ -393,6 +548,9 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
           </div>
         )}
       </div>
+
+      {/* Time Entries */}
+      <TimeEntriesPanel projectId={project.id} phases={phases} />
     </div>
   )
 }

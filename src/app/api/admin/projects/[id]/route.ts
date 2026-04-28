@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getProjectFinancials } from '@/lib/project-financials'
 
 export async function GET(
   request: NextRequest,
@@ -31,9 +32,16 @@ export async function GET(
 
   // Flatten sow_number for convenience
   const { sow_documents, ...rest } = project as any
-  return NextResponse.json({
-    project: { ...rest, sow_number: sow_documents?.sow_number ?? null },
+  const projectOut = { ...rest, sow_number: sow_documents?.sow_number ?? null }
+
+  // Aggregate invoices, receipts, subscriptions, monthly rollup.
+  const financials = await getProjectFinancials({
+    projectId: id,
+    prospectId: rest.prospect_id,
+    sowDocumentId: rest.sow_document_id,
   })
+
+  return NextResponse.json({ project: projectOut, financials })
 }
 
 export async function PATCH(

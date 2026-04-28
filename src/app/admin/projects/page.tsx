@@ -13,6 +13,11 @@ interface ProjectRow {
   monthly_value: number | null
   created_at: string
   prospects: { business_name: string; is_client: boolean } | null
+  invoice_count: number
+  paid_invoice_count: number
+  total_invoiced_cents: number
+  total_paid_cents: number
+  active_monthly_cents: number
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -58,9 +63,9 @@ export default function AdminProjectsPage() {
                 <th className="text-left px-4 py-3">Project</th>
                 <th className="text-left px-4 py-3">Client</th>
                 <th className="text-left px-4 py-3">Status</th>
-                <th className="text-left px-4 py-3">Start Date</th>
-                <th className="text-right px-4 py-3">Monthly Value</th>
-                <th className="text-left px-4 py-3">Created</th>
+                <th className="text-right px-4 py-3">Invoiced / Paid</th>
+                <th className="text-right px-4 py-3">Monthly</th>
+                <th className="text-left px-4 py-3">Started</th>
               </tr>
             </thead>
             <tbody>
@@ -88,14 +93,24 @@ export default function AdminProjectsPage() {
                       {p.status.replace('_', ' ')}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-slate-500 text-xs">
-                    {p.start_date ? new Date(p.start_date).toLocaleDateString() : '—'}
+                  <td className="px-4 py-3 text-right text-slate-700">
+                    <div className="text-sm">{formatCents(p.total_invoiced_cents)}</div>
+                    <div className="text-[11px] text-slate-500">
+                      {formatCents(p.total_paid_cents)} paid
+                      {p.invoice_count > 0 && (
+                        <span className="ml-1 text-slate-400">
+                          ({p.paid_invoice_count}/{p.invoice_count})
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-right text-slate-700">
-                    {p.monthly_value != null ? formatCents(Math.round(p.monthly_value * 100)) + '/mo' : '—'}
+                    {p.active_monthly_cents > 0
+                      ? <span>{formatCents(p.active_monthly_cents)}<span className="text-[11px] text-slate-400">/mo</span></span>
+                      : <span className="text-slate-400">—</span>}
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-500">
-                    {new Date(p.created_at).toLocaleDateString()}
+                    {p.start_date ? new Date(p.start_date).toLocaleDateString() : '—'}
                   </td>
                 </tr>
               ))}
