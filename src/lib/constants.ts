@@ -3,6 +3,15 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://demandsigna
 export const CONTACT_EMAIL = 'DemandSignals@gmail.com'
 export const CONTACT_PHONE = '(916) 542-2423'
 export const CONTACT_PHONE_TEL = '+19165422423'
+
+// Physical mailing address — used on invoices, SOWs, receipts, and contact page.
+export const BUSINESS_ADDRESS = {
+  street: '5170 Golden Foothills Pkwy',
+  city: 'El Dorado Hills',
+  state: 'CA',
+  zip: '95762',
+} as const
+export const BUSINESS_ADDRESS_LINE = `${BUSINESS_ADDRESS.street}, ${BUSINESS_ADDRESS.city}, ${BUSINESS_ADDRESS.state} ${BUSINESS_ADDRESS.zip}`
 export const BOOKING_URL =
   'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true'
 export const LOGO_URL =

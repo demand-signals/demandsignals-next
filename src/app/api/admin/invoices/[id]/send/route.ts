@@ -3,10 +3,14 @@
 // Does NOT auto-email/SMS — use /send-sms and /send-email routes for that,
 // or the dispatch flag on this endpoint.
 
+export const runtime = 'nodejs'
+export const maxDuration = 30
+
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { renderInvoicePdf } from '@/lib/invoice-pdf/render'
+import { renderInvoicePdf } from '@/lib/pdf/invoice'
+import { getInvoicePaymentSummary, getInvoiceProjectMeta } from '@/lib/invoice-context'
 import { uploadPrivate, deletePrivate } from '@/lib/r2-storage'
 import type { InvoiceWithLineItems } from '@/lib/invoice-types'
 
@@ -20,7 +24,7 @@ export async function POST(
 
   const { data: invoice, error: fetchErr } = await supabaseAdmin
     .from('invoices')
-    .select('*, prospect:prospects(business_name, owner_email, owner_phone)')
+    .select('*, prospect:prospects(business_name, owner_name, owner_email, owner_phone, address, city, state, zip)')
     .eq('id', id)
     .maybeSingle()
 
@@ -45,14 +49,32 @@ export async function POST(
     line_items: lineItems,
     bill_to: {
       business_name: invoice.prospect?.business_name ?? 'Client',
-      contact_name: null,
+      contact_name: invoice.prospect?.owner_name ?? null,
       email: invoice.prospect?.owner_email ?? null,
     },
   }
 
+  // Resolve payment summary + project meta in parallel.
+  const [paymentSummary, project] = await Promise.all([
+    getInvoicePaymentSummary(invoice.id, invoice.total_due_cents),
+    getInvoiceProjectMeta(invoice.id),
+  ])
+
   let pdfBuffer: Buffer
   try {
-    pdfBuffer = await renderInvoicePdf(renderInput)
+    pdfBuffer = await renderInvoicePdf(renderInput, {
+      prospect: {
+        business_name: invoice.prospect?.business_name ?? 'Client',
+        owner_name:    invoice.prospect?.owner_name ?? null,
+        owner_email:   invoice.prospect?.owner_email ?? null,
+        address:       invoice.prospect?.address ?? null,
+        city:          invoice.prospect?.city ?? null,
+        state:         invoice.prospect?.state ?? null,
+        zip:           invoice.prospect?.zip ?? null,
+      },
+      project,
+      paymentSummary,
+    })
   } catch (e) {
     return NextResponse.json(
       { error: `PDF render failed: ${e instanceof Error ? e.message : e}` },

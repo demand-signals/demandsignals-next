@@ -10,6 +10,7 @@ import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { getPrivateSignedUrl } from '@/lib/r2-storage'
 import { renderInvoicePdf } from '@/lib/pdf/invoice'
+import { getInvoicePaymentSummary, getInvoiceProjectMeta } from '@/lib/invoice-context'
 import type { InvoiceWithLineItems } from '@/lib/invoice-types'
 
 export async function GET(
@@ -22,7 +23,7 @@ export async function GET(
 
   const { data: invoice } = await supabaseAdmin
     .from('invoices')
-    .select('*, prospect:prospects(business_name, owner_email, owner_phone)')
+    .select('*, prospect:prospects(business_name, owner_name, owner_email, owner_phone, address, city, state, zip)')
     .eq('id', id)
     .maybeSingle()
 
@@ -51,13 +52,31 @@ export async function GET(
     line_items: lineItems,
     bill_to: {
       business_name: p.business_name ?? 'Client',
-      contact_name: null,
+      contact_name: p.owner_name ?? null,
       email: p.owner_email ?? null,
     },
   }
 
+  // Resolve payment summary (from receipts) + project meta in parallel.
+  const [paymentSummary, project] = await Promise.all([
+    getInvoicePaymentSummary(invoice.id, invoice.total_due_cents),
+    getInvoiceProjectMeta(invoice.id),
+  ])
+
   try {
-    const pdfBuffer = await renderInvoicePdf(renderInput)
+    const pdfBuffer = await renderInvoicePdf(renderInput, {
+      prospect: {
+        business_name: p.business_name ?? 'Client',
+        owner_name:    p.owner_name ?? null,
+        owner_email:   p.owner_email ?? null,
+        address:       p.address ?? null,
+        city:          p.city ?? null,
+        state:         p.state ?? null,
+        zip:           p.zip ?? null,
+      },
+      project,
+      paymentSummary,
+    })
     return new Response(new Uint8Array(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',

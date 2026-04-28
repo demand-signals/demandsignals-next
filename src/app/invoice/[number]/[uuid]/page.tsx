@@ -4,6 +4,7 @@
 
 import { notFound } from 'next/navigation'
 import { formatCents } from '@/lib/format'
+import { BUSINESS_ADDRESS } from '@/lib/constants'
 
 // ── Brand tokens (mirrored from src/lib/pdf/_shared.ts) ───────────────
 const T = {
@@ -75,10 +76,34 @@ interface PublicInvoice {
   prospect: PublicProspect | null
 }
 
+interface PublicPaymentSummary {
+  paid_cash_cents: number
+  paid_tik_cents: number
+  paid_total_cents: number
+  outstanding_cents: number
+  receipt_count: number
+  is_partially_paid: boolean
+  is_fully_paid: boolean
+}
+
+interface PublicProjectMeta {
+  name: string | null
+  sow_number: string | null
+  schedule_outstanding?: {
+    cash_remaining_cents: number
+    tik_remaining_cents: number
+    cash_paid_cents: number
+    tik_paid_cents: number
+    is_multi_installment: boolean
+  } | null
+}
+
 interface InvoiceResponse {
   invoice: PublicInvoice
   line_items: PublicLineItem[]
   stripe_enabled: boolean
+  payment_summary: PublicPaymentSummary
+  project: PublicProjectMeta
 }
 
 // ── Data fetch ────────────────────────────────────────────────────────
@@ -136,7 +161,7 @@ export default async function PublicInvoicePage({
   const data = await fetchInvoice(number, uuid)
   if (!data) notFound()
 
-  const { invoice, line_items } = data
+  const { invoice, line_items, payment_summary: paySummary, project } = data
 
   // ── Page tracking ─────────────────────────────────────────────────
   // Server-side log of this magic-link visit. Sets/promotes the dsig_attr
@@ -253,11 +278,21 @@ export default async function PublicInvoicePage({
                   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
                   letterSpacing: '-0.01em',
                   lineHeight: 1,
-                  marginBottom: 10,
+                  marginBottom: project?.name ? 6 : 10,
                 }}
               >
                 {invoice.invoice_number}
               </p>
+              {project?.name && (
+                <p style={{ fontSize: 13, color: T.dark, fontWeight: 600, marginBottom: 2 }}>
+                  {project.name}
+                </p>
+              )}
+              {project?.sow_number && (
+                <p style={{ fontSize: 11, color: T.slateSoft, marginBottom: 10 }}>
+                  For {project.sow_number}
+                </p>
+              )}
               <StatusPill status={invoice.status} />
             </div>
           </div>
@@ -346,6 +381,17 @@ export default async function PublicInvoicePage({
                 paddingLeft: 32,
               }}
             >
+              <div>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.slateSoft, marginBottom: 4 }}>
+                  FROM
+                </p>
+                <p style={{ fontSize: 13, fontWeight: 600, color: T.dark, marginBottom: 2 }}>Demand Signals</p>
+                <p style={{ fontSize: 12, color: T.slate, lineHeight: 1.5 }}>
+                  {BUSINESS_ADDRESS.street}<br />
+                  {BUSINESS_ADDRESS.city}, {BUSINESS_ADDRESS.state} {BUSINESS_ADDRESS.zip}<br />
+                  (916) 542-2423
+                </p>
+              </div>
               {(invoice.send_date || invoice.sent_at) && (
                 <div>
                   <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.slateSoft, marginBottom: 3 }}>
@@ -488,13 +534,41 @@ export default async function PublicInvoicePage({
                   )}
                   {/* Total due — big */}
                   <tr>
-                    <td style={{ paddingTop: 14, borderTop: `2px solid ${T.dark}`, fontSize: 15, fontWeight: 700, color: T.dark }}>
+                    <td style={{ paddingTop: 14, paddingBottom: paySummary?.paid_total_cents ? 8 : 0, borderTop: `2px solid ${T.dark}`, fontSize: 15, fontWeight: 700, color: T.dark }}>
                       Total due
                     </td>
-                    <td style={{ paddingTop: 14, borderTop: `2px solid ${T.dark}`, textAlign: 'right', fontSize: 36, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: T.dark, letterSpacing: '-0.02em', lineHeight: 1 }}>
+                    <td style={{ paddingTop: 14, paddingBottom: paySummary?.paid_total_cents ? 8 : 0, borderTop: `2px solid ${T.dark}`, textAlign: 'right', fontSize: paySummary?.paid_total_cents ? 22 : 36, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: T.dark, letterSpacing: '-0.02em', lineHeight: 1 }}>
                       {formatCents(grandTotal)}
                     </td>
                   </tr>
+
+                  {/* Payment rows — only when receipts exist */}
+                  {paySummary && paySummary.paid_cash_cents > 0 && (
+                    <tr>
+                      <td style={{ padding: '5px 0', fontSize: 12, color: T.tealDark }}>Paid (cash)</td>
+                      <td style={{ padding: '5px 0', textAlign: 'right', fontSize: 12, fontVariantNumeric: 'tabular-nums', color: T.tealDark }}>
+                        −{formatCents(paySummary.paid_cash_cents)}
+                      </td>
+                    </tr>
+                  )}
+                  {paySummary && paySummary.paid_tik_cents > 0 && (
+                    <tr>
+                      <td style={{ padding: '5px 0', fontSize: 12, color: T.tealDark }}>Paid (trade-in-kind)</td>
+                      <td style={{ padding: '5px 0', textAlign: 'right', fontSize: 12, fontVariantNumeric: 'tabular-nums', color: T.tealDark }}>
+                        −{formatCents(paySummary.paid_tik_cents)}
+                      </td>
+                    </tr>
+                  )}
+                  {paySummary && paySummary.paid_total_cents > 0 && (
+                    <tr>
+                      <td style={{ paddingTop: 10, borderTop: `1px solid ${T.rule}`, fontSize: 14, fontWeight: 700, color: paySummary.outstanding_cents > 0 ? T.orange : T.tealDark }}>
+                        Balance {paySummary.outstanding_cents > 0 ? 'due' : 'remaining'}
+                      </td>
+                      <td style={{ paddingTop: 10, borderTop: `1px solid ${T.rule}`, textAlign: 'right', fontSize: 22, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: paySummary.outstanding_cents > 0 ? T.orange : T.tealDark, letterSpacing: '-0.01em' }}>
+                        {formatCents(paySummary.outstanding_cents)}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
 
@@ -506,6 +580,43 @@ export default async function PublicInvoicePage({
               )}
             </div>
           </div>
+
+          {/* ── 4b. Project-level balance (multi-installment plans) ── */}
+          {project?.schedule_outstanding && project.schedule_outstanding.is_multi_installment && (
+            <div
+              style={{
+                margin: '20px 48px 0',
+                background: '#fbfcfd',
+                border: `1px solid ${T.rule}`,
+                borderRadius: 10,
+                padding: '14px 18px',
+              }}
+            >
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.slateSoft, marginBottom: 10 }}>
+                {project.name ?? 'Project'} — overall balance
+              </p>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: FONT }}>
+                <tbody>
+                  {(project.schedule_outstanding.cash_remaining_cents > 0 || project.schedule_outstanding.cash_paid_cents > 0) && (
+                    <tr>
+                      <td style={{ padding: '4px 0', fontSize: 12, color: T.slate }}>Cash balance</td>
+                      <td style={{ padding: '4px 0', textAlign: 'right', fontSize: 12, fontVariantNumeric: 'tabular-nums', color: T.dark }}>
+                        {formatCents(project.schedule_outstanding.cash_paid_cents)} paid · <strong style={{ color: project.schedule_outstanding.cash_remaining_cents > 0 ? T.orange : T.tealDark }}>{formatCents(project.schedule_outstanding.cash_remaining_cents)}</strong> remaining
+                      </td>
+                    </tr>
+                  )}
+                  {(project.schedule_outstanding.tik_remaining_cents > 0 || project.schedule_outstanding.tik_paid_cents > 0) && (
+                    <tr>
+                      <td style={{ padding: '4px 0', fontSize: 12, color: T.slate }}>Trade-in-kind balance</td>
+                      <td style={{ padding: '4px 0', textAlign: 'right', fontSize: 12, fontVariantNumeric: 'tabular-nums', color: T.dark }}>
+                        {formatCents(project.schedule_outstanding.tik_paid_cents)} drawn · <strong style={{ color: project.schedule_outstanding.tik_remaining_cents > 0 ? T.orange : T.tealDark }}>{formatCents(project.schedule_outstanding.tik_remaining_cents)}</strong> remaining
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* ── 5. Payment card ──────────────────────────────────── */}
           <div

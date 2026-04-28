@@ -5,6 +5,7 @@
 
 import { formatCents } from '@/lib/format'
 import type { InvoiceWithLineItems } from '@/lib/invoice-types'
+import { BUSINESS_ADDRESS } from '@/lib/constants'
 import { htmlToPdfBuffer } from './render'
 import {
   T, FONT_STACK,
@@ -24,6 +25,18 @@ export interface InvoiceProspect {
   zip?: string | null
 }
 
+export interface InvoiceProjectMeta {
+  name?: string | null
+  sow_number?: string | null
+  schedule_outstanding?: {
+    cash_remaining_cents: number
+    tik_remaining_cents: number
+    cash_paid_cents: number
+    tik_paid_cents: number
+    is_multi_installment: boolean
+  } | null
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────
 
 function formatDate(iso: string | null | undefined): string {
@@ -37,7 +50,7 @@ function formatDate(iso: string | null | undefined): string {
 // The interior header already holds logo + section label. Below it we show
 // the large invoice number and dates.
 
-function invoiceMeta(inv: InvoiceWithLineItems): string {
+function invoiceMeta(inv: InvoiceWithLineItems, project?: InvoiceProjectMeta): string {
   return `
   <div style="
     display:flex;
@@ -49,14 +62,16 @@ function invoiceMeta(inv: InvoiceWithLineItems): string {
     <!-- Sender info (compact — logo already in header) -->
     <div>
       <p style="font-size:12px;color:${T.BODY};line-height:1.8;font-family:${FONT_STACK}">
-        Demand Signals<br>
+        <strong style="color:${T.SLATE}">Demand Signals</strong><br>
+        ${esc(BUSINESS_ADDRESS.street)}<br>
+        ${esc(BUSINESS_ADDRESS.city)}, ${esc(BUSINESS_ADDRESS.state)} ${esc(BUSINESS_ADDRESS.zip)}<br>
         DemandSignals@gmail.com<br>
         (916) 542-2423<br>
         demandsignals.co
       </p>
     </div>
 
-    <!-- Invoice number -->
+    <!-- Invoice number + project -->
     <div style="text-align:right">
       <p style="
         font-size:32px;
@@ -67,6 +82,8 @@ function invoiceMeta(inv: InvoiceWithLineItems): string {
         font-variant-numeric:tabular-nums;
         font-family:${FONT_STACK};
       ">${esc(inv.invoice_number)}</p>
+      ${project?.name ? `<p style="font-size:12px;color:${T.SLATE};margin-top:8px;font-weight:600;font-family:${FONT_STACK}">${esc(project.name)}</p>` : ''}
+      ${project?.sow_number ? `<p style="font-size:11px;color:${T.GRAY};font-family:${FONT_STACK}">For ${esc(project.sow_number)}</p>` : ''}
       ${inv.send_date ? `<p style="font-size:12px;color:${T.BODY};margin-top:6px;font-family:${FONT_STACK}">Issued ${formatDate(inv.send_date)}</p>` : ''}
       ${inv.due_date  ? `<p style="font-size:12px;color:${T.BODY};font-family:${FONT_STACK}">Due ${formatDate(inv.due_date)}</p>` : ''}
     </div>
@@ -151,7 +168,17 @@ function lineItemsTable(inv: InvoiceWithLineItems): string {
 
 // ── Totals block ──────────────────────────────────────────────────────
 
-function totalsBlock(inv: InvoiceWithLineItems): string {
+interface PaymentSummary {
+  paid_cash_cents: number
+  paid_tik_cents: number
+  paid_total_cents: number
+  outstanding_cents: number
+  is_partially_paid?: boolean
+  is_fully_paid?: boolean
+  receipt_count?: number
+}
+
+function totalsBlock(inv: InvoiceWithLineItems, paySummary?: PaymentSummary): string {
   const lateFeeApplied = inv.late_fee_cents > 0 && !!inv.late_fee_applied_at
   const grandTotal = inv.total_due_cents + (lateFeeApplied ? inv.late_fee_cents : 0)
   const tikCents   = inv.trade_credit_cents ?? 0
@@ -188,13 +215,33 @@ function totalsBlock(inv: InvoiceWithLineItems): string {
   }
 
   rows.push(`<tr>
-    <td style="padding:12px 0 0;border-top:2px solid ${T.SLATE};font-size:15px;font-weight:700;color:${T.SLATE}">Total due</td>
-    <td style="padding:12px 0 0;border-top:2px solid ${T.SLATE};text-align:right;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;color:${T.SLATE};letter-spacing:-0.02em">${formatCents(grandTotal)}</td>
+    <td style="padding:12px 0 6px;border-top:2px solid ${T.SLATE};font-size:15px;font-weight:700;color:${T.SLATE}">Total due</td>
+    <td style="padding:12px 0 6px;border-top:2px solid ${T.SLATE};text-align:right;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;color:${T.SLATE};letter-spacing:-0.02em">${formatCents(grandTotal)}</td>
   </tr>`)
+
+  // ── Payments + outstanding (only when receipts exist) ──
+  if (paySummary && paySummary.paid_total_cents > 0) {
+    if (paySummary.paid_cash_cents > 0) {
+      rows.push(`<tr>
+        <td style="padding:5px 0;font-size:11px;color:${T.TEAL}">Paid (cash)</td>
+        <td style="padding:5px 0;text-align:right;font-size:11px;font-variant-numeric:tabular-nums;color:${T.TEAL}">−${formatCents(paySummary.paid_cash_cents)}</td>
+      </tr>`)
+    }
+    if (paySummary.paid_tik_cents > 0) {
+      rows.push(`<tr>
+        <td style="padding:5px 0;font-size:11px;color:${T.TEAL}">Paid (trade-in-kind)</td>
+        <td style="padding:5px 0;text-align:right;font-size:11px;font-variant-numeric:tabular-nums;color:${T.TEAL}">−${formatCents(paySummary.paid_tik_cents)}</td>
+      </tr>`)
+    }
+    rows.push(`<tr>
+      <td style="padding:8px 0 0;border-top:1px solid ${T.BORDER};font-size:13px;font-weight:700;color:${paySummary.outstanding_cents > 0 ? T.ORANGE_S : T.TEAL}">Balance ${paySummary.outstanding_cents > 0 ? 'due' : 'remaining'}</td>
+      <td style="padding:8px 0 0;border-top:1px solid ${T.BORDER};text-align:right;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:${paySummary.outstanding_cents > 0 ? T.ORANGE_S : T.TEAL}">${formatCents(paySummary.outstanding_cents)}</td>
+    </tr>`)
+  }
 
   return `
   <div style="display:flex;justify-content:flex-end;padding:20px 54px 0;font-family:${FONT_STACK}">
-    <div style="width:300px">
+    <div style="width:340px">
       <table style="width:100%;border-collapse:collapse">
         <tbody>${rows.join('')}</tbody>
       </table>
@@ -216,7 +263,7 @@ function totalsBlock(inv: InvoiceWithLineItems): string {
 // disabled OR the invoice has been voided/paid since PDF was generated,
 // the magic-link page handles the state correctly. Direct redirect would 503.
 
-function paymentCard(inv: InvoiceWithLineItems): string {
+function paymentCard(inv: InvoiceWithLineItems, paySummary?: PaymentSummary): string {
   const isPaid = inv.status === 'paid'
   const isVoid = inv.status === 'void'
   const isOutstanding = !isPaid && !isVoid && inv.total_due_cents > 0
@@ -224,7 +271,20 @@ function paymentCard(inv: InvoiceWithLineItems): string {
   const payUrl = `${baseUrl}/invoice/${encodeURIComponent(inv.invoice_number)}/${inv.public_uuid}`
 
   if (!isOutstanding) {
-    // Paid/void/zero — keep the simple text card.
+    // Paid/void/zero — describe accurately.
+    let message: string
+    if (isVoid) {
+      message = 'This invoice has been voided.'
+    } else if (isPaid && paySummary && paySummary.paid_total_cents > 0) {
+      const parts: string[] = []
+      if (paySummary.paid_cash_cents > 0) parts.push(`${formatCents(paySummary.paid_cash_cents)} cash`)
+      if (paySummary.paid_tik_cents > 0) parts.push(`${formatCents(paySummary.paid_tik_cents)} trade-in-kind`)
+      message = `Paid in full — ${parts.join(' + ')}. Thank you.`
+    } else if (isPaid) {
+      message = 'This invoice has been paid in full. Thank you.'
+    } else {
+      message = 'No balance due.'
+    }
     return `
     <div style="
       margin:20px 54px 0;
@@ -234,13 +294,19 @@ function paymentCard(inv: InvoiceWithLineItems): string {
       font-family:${FONT_STACK};
     ">
       <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.TEAL};margin-bottom:7px">PAYMENT</p>
-      <p style="font-size:12px;color:${T.BODY};line-height:1.6">
-        ${isPaid ? 'This invoice has been paid in full. Thank you.' : isVoid ? 'This invoice has been voided.' : 'No balance due.'}
-      </p>
+      <p style="font-size:12px;color:${T.BODY};line-height:1.6">${message}</p>
     </div>`
   }
 
   // Outstanding cash invoice — show the prominent Pay button.
+  // When partial payments exist, the button charges the OUTSTANDING amount,
+  // not the original total.
+  const outstanding = paySummary?.outstanding_cents ?? inv.total_due_cents
+  const partialNote = paySummary && paySummary.is_partially_paid
+    ? `<p style="font-size:11px;color:${T.GRAY};margin-bottom:10px;line-height:1.55">
+        ${paySummary.paid_cash_cents > 0 ? `${formatCents(paySummary.paid_cash_cents)} already paid in cash. ` : ''}${paySummary.paid_tik_cents > 0 ? `${formatCents(paySummary.paid_tik_cents)} applied as trade-in-kind. ` : ''}Remaining balance shown below.
+      </p>`
+    : ''
   return `
   <div style="
     margin:20px 54px 0;
@@ -250,6 +316,7 @@ function paymentCard(inv: InvoiceWithLineItems): string {
     font-family:${FONT_STACK};
   ">
     <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.TEAL};margin-bottom:9px">PAYMENT</p>
+    ${partialNote}
     <p style="font-size:12px;color:${T.BODY};line-height:1.6;margin-bottom:12px">
       <strong>Pay online instantly with any major credit/debit card.</strong>
       Click the button below or open the link in any browser. You may also pay by check or wire transfer — please reference invoice <strong>${esc(inv.invoice_number)}</strong>.
@@ -268,11 +335,37 @@ function paymentCard(inv: InvoiceWithLineItems): string {
         text-decoration:none;
         font-family:${FONT_STACK};
         letter-spacing:0.01em;
-      ">Pay ${esc(formatCents(inv.total_due_cents))} online &rarr;</a>
+      ">Pay ${esc(formatCents(outstanding))} online &rarr;</a>
     </td></tr></table>
     <p style="font-size:10px;color:${T.MUTED};line-height:1.5;margin-top:8px;word-break:break-all">
       Or copy this link: <a href="${payUrl}" style="color:${T.TEAL};text-decoration:underline">${payUrl}</a>
     </p>
+  </div>`
+}
+
+// ── Project balance (when invoice belongs to a multi-installment plan) ─
+
+function projectBalanceBlock(project?: InvoiceProjectMeta): string {
+  const so = project?.schedule_outstanding
+  if (!so || !so.is_multi_installment) return ''
+  const cashLine = so.cash_remaining_cents > 0 || so.cash_paid_cents > 0
+    ? `<tr>
+        <td style="padding:4px 0;font-size:11px;color:${T.BODY}">Cash balance</td>
+        <td style="padding:4px 0;text-align:right;font-size:11px;font-variant-numeric:tabular-nums;color:${T.SLATE}">${formatCents(so.cash_paid_cents)} paid · <strong style="color:${so.cash_remaining_cents > 0 ? T.ORANGE_S : T.TEAL}">${formatCents(so.cash_remaining_cents)}</strong> remaining</td>
+      </tr>`
+    : ''
+  const tikLine = so.tik_remaining_cents > 0 || so.tik_paid_cents > 0
+    ? `<tr>
+        <td style="padding:4px 0;font-size:11px;color:${T.BODY}">Trade-in-kind balance</td>
+        <td style="padding:4px 0;text-align:right;font-size:11px;font-variant-numeric:tabular-nums;color:${T.SLATE}">${formatCents(so.tik_paid_cents)} drawn · <strong style="color:${so.tik_remaining_cents > 0 ? T.ORANGE_S : T.TEAL}">${formatCents(so.tik_remaining_cents)}</strong> remaining</td>
+      </tr>`
+    : ''
+  if (!cashLine && !tikLine) return ''
+  const projectLabel = project?.name ?? 'project'
+  return `
+  <div style="margin:16px 54px 0;background:#fbfcfd;border:1px solid ${T.BORDER};border-radius:6px;padding:12px 16px;font-family:${FONT_STACK}">
+    <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:8px">${esc(projectLabel)} — overall balance</p>
+    <table style="width:100%;border-collapse:collapse"><tbody>${cashLine}${tikLine}</tbody></table>
   </div>`
 }
 
@@ -295,15 +388,32 @@ function notesSection(inv: InvoiceWithLineItems): string {
 
 // ── Main export ───────────────────────────────────────────────────────
 
+export interface RenderInvoiceOptions {
+  prospect?: InvoiceProspect
+  project?: InvoiceProjectMeta
+  paymentSummary?: PaymentSummary
+}
+
 /**
  * Render a premium invoice PDF and return the raw Buffer.
  * Single-page interior layout with v2 spec header + footer.
+ *
+ * Accepts optional payment summary (from receipts) and project meta
+ * (project name + originating SOW). When supplied, the totals block
+ * shows split TIK + cash paid rows and a real outstanding balance,
+ * and the meta header surfaces the project name.
  */
 export async function renderInvoicePdf(
   invoice: InvoiceWithLineItems,
-  prospect?: InvoiceProspect,
+  options?: RenderInvoiceOptions | InvoiceProspect,
 ): Promise<Buffer> {
-  const p: InvoiceProspect = prospect ?? {
+  // Back-compat: legacy callers pass the prospect as the second arg.
+  const opts: RenderInvoiceOptions =
+    options && 'business_name' in options
+      ? { prospect: options as InvoiceProspect }
+      : ((options as RenderInvoiceOptions) ?? {})
+
+  const p: InvoiceProspect = opts.prospect ?? {
     business_name: invoice.bill_to.business_name,
     owner_name:    invoice.bill_to.contact_name,
     owner_email:   invoice.bill_to.email,
@@ -312,11 +422,12 @@ export async function renderInvoicePdf(
   const body = `
   <div style="width:100%;min-height:100vh;background:${T.WHITE};display:flex;flex-direction:column;font-family:${FONT_STACK};">
     ${interiorPageHeader('Invoice')}
-    ${invoiceMeta(invoice)}
+    ${invoiceMeta(invoice, opts.project)}
     ${billToBlock(invoice, p)}
     ${lineItemsTable(invoice)}
-    ${totalsBlock(invoice)}
-    ${paymentCard(invoice)}
+    ${totalsBlock(invoice, opts.paymentSummary)}
+    ${projectBalanceBlock(opts.project)}
+    ${paymentCard(invoice, opts.paymentSummary)}
     ${notesSection(invoice)}
     <div style="flex:1"></div>
     ${interiorPageFooter()}
