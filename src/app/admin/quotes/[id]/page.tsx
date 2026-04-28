@@ -3,6 +3,7 @@
 import { useEffect, useState, use, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Loader2, ExternalLink, Flag, CreditCard, ScrollText, ArrowRight, Trash2, Pencil } from 'lucide-react'
 import RetainerPanel from '@/components/admin/RetainerPanel'
 import { EditQuotePanel } from './EditQuotePanel'
@@ -223,69 +224,76 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
 
   const { session, messages, events } = detail
 
+  // Status badge color (mirrors invoice/sow toolbar pattern)
+  const statusBadge = (() => {
+    switch (session.status) {
+      case 'converted': return 'bg-emerald-100 text-emerald-700'
+      case 'active':    return 'bg-blue-100 text-blue-700'
+      case 'abandoned': return 'bg-slate-100 text-slate-600'
+      case 'expired':   return 'bg-amber-100 text-amber-700'
+      case 'blocked':   return 'bg-red-100 text-red-700'
+      default:          return 'bg-slate-100 text-slate-600'
+    }
+  })()
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <Link href="/admin/quotes" className="text-sm text-[var(--teal)]">
-            ← All quotes
-          </Link>
-          <h1 className="text-2xl font-bold text-slate-900 mt-2">
-            {session.business_name ?? '(anonymous session)'}
-          </h1>
-          {session.doc_number ? (
-            <div className="inline-flex items-center gap-1.5 mt-1">
-              <span className="font-mono text-sm font-semibold text-[var(--teal)] bg-teal-50 border border-teal-200 px-2 py-0.5 rounded">
-                {session.doc_number}
-              </span>
-            </div>
-          ) : (
-            <div className="text-xs text-slate-400 mt-1 italic">
-              EST number pending (prospect not linked or no client code set)
-            </div>
-          )}
-          {session.business_location && (
-            <div className="text-sm text-slate-500 mt-1">{session.business_location}</div>
-          )}
-        </div>
-        <div className="flex gap-2 flex-wrap justify-end">
+    <div className="pb-24">
+      {/* Sticky toolbar — mirrors invoice/sow/receipt detail pages */}
+      <div
+        className="sticky top-0 z-30 flex items-center gap-2 flex-wrap px-6 py-3 border-b border-slate-200 bg-white/95 backdrop-blur-sm"
+        style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
+      >
+        <Link href="/admin/quotes" className="text-sm text-teal-600 mr-2">
+          ← All quotes
+        </Link>
+        {session.doc_number && (
+          <span className="text-xs font-mono text-slate-400 mr-2">{session.doc_number}</span>
+        )}
+        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold mr-2 ${statusBadge}`}>
+          {session.status}
+        </span>
+        {linkedSow && (
+          <span className="text-xs text-slate-400">→ {linkedSow.sow_number}</span>
+        )}
+
+        <div className="ml-auto flex items-center gap-2 flex-wrap">
           <a
             href={`/quote/s/${session.share_token}`}
             target="_blank"
             rel="noopener"
-            className="inline-flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-md text-sm"
+            className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-md text-xs font-semibold transition-colors"
           >
-            <ExternalLink className="w-4 h-4" />
-            Shareable URL
+            <ExternalLink className="w-3.5 h-3.5" />
+            Share URL
           </a>
           {detail.prospect && (
             <Link
               href={`/admin/invoices/new?prospect_id=${detail.prospect.id}`}
-              className="inline-flex items-center gap-1 px-3 py-2 bg-teal-100 hover:bg-teal-200 rounded-md text-sm text-teal-900"
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-teal-100 hover:bg-teal-200 rounded-md text-xs font-semibold text-teal-900 transition-colors"
             >
-              <CreditCard className="w-4 h-4" />
-              Create Invoice
+              <CreditCard className="w-3.5 h-3.5" />
+              New Invoice
             </Link>
           )}
           {detail.prospect && (
             linkedSow ? (
               <Link
                 href={`/admin/sow/${linkedSow.id}`}
-                className="inline-flex items-center gap-1 px-3 py-2 bg-indigo-100 hover:bg-indigo-200 rounded-md text-sm text-indigo-900"
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 rounded-md text-xs font-semibold text-indigo-900 transition-colors"
               >
-                <ScrollText className="w-4 h-4" />
+                <ScrollText className="w-3.5 h-3.5" />
                 {linkedSow.sow_number} →
               </Link>
             ) : (
               <button
                 onClick={handleContinueToSow}
                 disabled={continueLoading}
-                className="inline-flex items-center gap-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm disabled:opacity-60"
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs font-semibold disabled:opacity-60"
               >
                 {continueLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 )}
                 Continue to SOW
               </button>
@@ -296,22 +304,22 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
           )}
           <button
             onClick={() => setShowEdit(true)}
-            className="inline-flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-sm transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs font-semibold transition-colors"
             title="Edit quote details"
           >
-            <Pencil className="w-4 h-4" />
+            <Pencil className="w-3.5 h-3.5" />
             Edit
           </button>
           <button
             onClick={handleDeleteQuote}
             disabled={deleteLoading}
-            className="inline-flex items-center gap-1 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-md text-sm disabled:opacity-60 transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-md text-xs font-semibold disabled:opacity-60 transition-colors"
             title="Delete this quote session"
           >
             {deleteLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-3.5 h-3.5" />
             )}
             Delete
           </button>
@@ -328,6 +336,179 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
           }}
         />
       )}
+
+      {/* Branded document card — long-format proposal chrome (mirrors SOW page) */}
+      <div
+        className="max-w-3xl mx-auto mt-8 mb-6 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+        style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}
+      >
+        {/* Cover-style dark header (mirrors SOW cover) */}
+        <div
+          className="relative px-10 py-10 overflow-hidden"
+          style={{
+            background: '#3D4566',
+            color: '#ffffff',
+            backgroundImage:
+              'radial-gradient(circle at 92% 12%, rgba(82,201,160,0.22) 0%, rgba(82,201,160,0) 38%), radial-gradient(circle at 8% 88%, rgba(242,100,25,0.18) 0%, rgba(242,100,25,0) 42%)',
+          }}
+        >
+          {/* Top gradient strip */}
+          <div
+            className="absolute top-0 left-0 right-0 h-[5px]"
+            style={{ background: 'linear-gradient(90deg, #F26419 0%, #52C9A0 100%)' }}
+          />
+
+          {/* Logo + EST badge */}
+          <div className="flex items-start justify-between mb-8 relative z-10">
+            <div>
+              <Image
+                src="https://demandsignals.us/assets/logos/dsig_logo_v2b.png"
+                alt="Demand Signals"
+                width={160}
+                height={50}
+                className="h-10 w-auto object-contain"
+                unoptimized
+              />
+              <div className="text-xs mt-1.5 opacity-80">demandsignals.co</div>
+            </div>
+            <div className="text-right">
+              {session.doc_number ? (
+                <div className="font-mono text-xs opacity-90 inline-block px-2 py-0.5 rounded bg-white/10 border border-white/20">
+                  {session.doc_number}
+                </div>
+              ) : (
+                <div className="text-[10px] italic opacity-60">EST number pending</div>
+              )}
+            </div>
+          </div>
+
+          {/* Cover body */}
+          <div className="relative z-10 space-y-3">
+            <p
+              className="text-xs uppercase font-bold tracking-[0.2em]"
+              style={{ color: '#F26419' }}
+            >
+              Budgetary Estimate
+            </p>
+            <h1 className="text-3xl font-bold" style={{ letterSpacing: '-0.01em' }}>
+              {session.business_name ?? '(anonymous session)'}
+            </h1>
+            <div className="h-[2px] w-16" style={{ background: '#F26419' }} />
+            {session.business_location && (
+              <p className="text-sm opacity-85">{session.business_location}</p>
+            )}
+            {session.business_type && (
+              <p className="text-xs uppercase tracking-wide opacity-70">{session.business_type}</p>
+            )}
+          </div>
+
+          {/* Bottom meta band — Estimate range + Created */}
+          <div
+            className="absolute bottom-0 left-0 right-0 grid grid-cols-3 text-[10px] uppercase tracking-wider px-10 py-3 border-t border-white/10"
+            style={{ background: 'rgba(0,0,0,0.18)' }}
+          >
+            <div>
+              <div className="opacity-60">One-time estimate</div>
+              <div className="font-semibold mt-0.5 normal-case">
+                {formatRange(session.estimate_low, session.estimate_high)}
+              </div>
+            </div>
+            <div>
+              <div className="opacity-60">Monthly recurring</div>
+              <div className="font-semibold mt-0.5 normal-case">
+                {session.monthly_high
+                  ? `${formatRange(session.monthly_low, session.monthly_high)}/mo`
+                  : '—'}
+              </div>
+            </div>
+            <div>
+              <div className="opacity-60">Created</div>
+              <div className="font-semibold mt-0.5 normal-case">
+                {new Date(session.created_at).toLocaleDateString('en-US', {
+                  month: 'long', day: 'numeric', year: 'numeric',
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Interior strip header (mirrors SOW Project Brief band) */}
+        <div
+          className="flex items-center justify-between px-10 py-3"
+          style={{ background: '#fafbfc', borderBottom: '1px solid #e2e8f0' }}
+        >
+          <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#3D4566' }}>
+            Quote Summary
+          </div>
+          <div className="text-xs" style={{ color: '#5d6780' }}>
+            Detail {session.accuracy_pct}% · {session.timeline_weeks_low}–{session.timeline_weeks_high} weeks
+          </div>
+        </div>
+
+        {/* Interior body — selected items + retainer summary */}
+        <div className="px-10 py-8 space-y-6" style={{ color: '#1d2330' }}>
+          {/* Selected items */}
+          <section>
+            <div
+              className="text-xs uppercase tracking-wide font-semibold mb-3 pb-1.5"
+              style={{ color: '#5d6780', borderBottom: '1px solid #e2e8f0' }}
+            >
+              Selected items
+            </div>
+            {session.selected_items.length === 0 ? (
+              <p className="text-sm italic" style={{ color: '#5d6780' }}>No items selected.</p>
+            ) : (
+              <ul className="text-sm space-y-1.5">
+                {session.selected_items.map((item) => (
+                  <li key={item.id} className="flex justify-between border-b border-slate-50 py-1.5">
+                    <span className="font-mono text-xs">{item.id}</span>
+                    <span style={{ color: '#5d6780' }}>× {item.quantity}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* Retainer plan inline */}
+          {detail.retainerPlan && (
+            <section>
+              <div
+                className="text-xs uppercase tracking-wide font-semibold mb-3 pb-1.5"
+                style={{ color: '#5d6780', borderBottom: '1px solid #e2e8f0' }}
+              >
+                Retainer
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <div>
+                  <div className="font-semibold">{detail.retainerPlan.name}</div>
+                  <div className="text-xs uppercase tracking-wide" style={{ color: '#5d6780' }}>
+                    {detail.retainerPlan.tier}
+                  </div>
+                </div>
+                {session.retainer_monthly_cents != null && session.retainer_monthly_cents > 0 && (
+                  <div
+                    className="font-mono font-semibold tabular-nums"
+                    style={{ color: '#22c55e' }}
+                  >
+                    {formatCents(session.retainer_monthly_cents)}/mo
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Footer brand line */}
+          <div
+            className="text-xs pt-4 mt-4"
+            style={{ color: '#5d6780', borderTop: '1px solid #e2e8f0' }}
+          >
+            Demand Signals · DemandSignals@gmail.com · (916) 542-2423 · demandsignals.co
+          </div>
+        </div>
+      </div>
+
+      {/* ───── Operator workbench (wide, below the document card) ───── */}
+      <div className="px-6 space-y-6">
 
       {/* Linked prospect card — appears when a prospect record has been created/enriched.
           Makes the CRM→quote relationship visible at a glance. */}
@@ -586,6 +767,8 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
             </div>
           ))}
         </div>
+      </div>
+
       </div>
     </div>
   )
