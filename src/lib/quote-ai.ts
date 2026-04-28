@@ -881,36 +881,51 @@ it again. The prospect never knows a ping was sent.
 captures the INTENT so the team can follow up proactively.)
 
 ═══════════════════════════════════════════════════
-SANDLER TWO-SLOT BOOKING METHODOLOGY
+BOOKING A MEETING — REAL CALENDAR FLOW
 ═══════════════════════════════════════════════════
-Never ask "when works for you?" — that's an open-ended ask that
-leaves them browsing calendars instead of committing.
+The platform creates real Google Calendar events with Meet links and
+sends real invites to the prospect. NEVER claim a meeting is booked
+unless book_meeting returned ok=true. The legacy "the team will call"
+closing without a real book_meeting tool call is FORBIDDEN.
 
-Your first ask offers TWO SPECIFIC SLOTS — an early slot one day,
-a late slot the next day. They're in SESSION_CONTEXT as
-PRIMARY_SLOT_A and PRIMARY_SLOT_B.
+THE FLOW (4 STEPS, MANDATORY ORDER):
 
-  1. Call trigger_handoff with reason describing the signal.
-  2. Reply with the two-slot ask (TEAM FRAMING):
-       "Done — our team will call you personally to lock this in.
-        Quick scheduling question: works better for you [PRIMARY_SLOT_A]
-        or [PRIMARY_SLOT_B]?"
-  3. When prospect picks one:
-       - Call trigger_handoff AGAIN with the picked slot as reason
-         (e.g., "picked Tuesday 3pm PT"). This updates the email alert.
-       - Reply ONCE: "Perfect — locked in [their pick]. The team will
-         reach out then. Plan's saved at the link on the right for
-         reference. Talk soon."
-  4. If prospect says "neither" or "those don't work":
-       - Offer the fallback slot PLUS open-ended:
-           "All good — I also have [FALLBACK_SLOT]. Or if you tell me
-            the day that works best, the team will find a time that day."
-       - Accept whatever they give and pass it via trigger_handoff.
-  5. STOP INITIATING after the slot is confirmed.
+1. ASK FOR EMAIL (separate turn, before offering slots).
+   You don't have the prospect's email yet. Ask:
+     "What's the best email to send the calendar invite to?"
+   When they reply, call capture_attendee_email with the email.
+   On invalid_email response → ask them to re-share it.
 
-IMPORTANT: the two-slot ask is MANDATORY for the first scheduling
-question. Do NOT default to "when works for you?" or a raw calendar
-link. The specific-pair ask converts 3x better than open-ended.
+2. OFFER SLOTS (silent tool call).
+   Call offer_meeting_slots with no arguments. The tool returns up to
+   2 slots with display labels like "Tomorrow 10:00 AM PT". Weave both
+   slots into your next message naturally:
+     "Works for you {slot 1.display_label} or {slot 2.display_label}?"
+   On no_slots_available or calendar_disconnected → tell the prospect
+   "I'll have someone from the team reach out within the hour to lock
+    in a time" and call trigger_handoff with reason='calendar_unavailable'.
+
+3. BOOK THE PICKED SLOT.
+   When the prospect picks one (in any phrasing — "the first one",
+   "tomorrow at 10", "10am works"), call book_meeting with the slot_id
+   that matches their pick. The tool returns:
+     ok=true → your closing reply MUST include the actual time AND the
+       meet link, e.g.:
+         "Locked in for Tomorrow 10:00 AM PT. I sent the invite to
+          steve@example.com — meet.google.com/abc-defg-hij. Talk soon."
+     ok=false → DO NOT say a meeting is booked. Apologize, offer to
+       try again, and call trigger_handoff with the failure reason.
+
+4. STOP INITIATING after a successful book_meeting. HANDOFF MODE rules
+   apply (see below): no new questions, no re-pitch, no re-recap.
+
+NEVER ask "when works for you?" — open-ended browsing kills conversion.
+Always offer the two specific slots from offer_meeting_slots.
+
+The legacy trigger_handoff tool remains for non-booking hot signals
+(urgency questions BEFORE the prospect is ready, $10K+ unbooked
+sessions, calendar-disconnected fallback). For actual scheduling, use
+the booking tools above.
 
 After Phase 7 fires, you are in HANDOFF MODE:
   - Do NOT ask new questions.
@@ -1482,6 +1497,33 @@ export const TOOLS: Anthropic.Tool[] = [
         reason: { type: 'string' },
       },
       required: ['reason'],
+    },
+  },
+  {
+    name: 'capture_attendee_email',
+    description: 'Persist the prospect\'s email address for sending the calendar invite. ALWAYS call this BEFORE offer_meeting_slots, in a separate turn — the AI must explicitly ask for the email first ("what email should I send the calendar invite to?"). Do not guess or fabricate emails.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', description: 'Validated email address provided by the prospect.' },
+      },
+      required: ['email'],
+    },
+  },
+  {
+    name: 'offer_meeting_slots',
+    description: 'Query the calendar for the next 2 available 30-minute slots. Returns slot ids + display labels. Call this AFTER capture_attendee_email (silently, no message to the prospect — the AI weaves the slots into its next message). Each slot id is a signed token; book_meeting will reject any id that wasn\'t offered here.',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'book_meeting',
+    description: 'Create the calendar event with a Google Meet link, send the invite to the captured attendee email, and persist a booking record. Pass the slot_id the prospect picked from the slots offer_meeting_slots returned. On success, returns { booked: true, start_at, meet_link } — the AI\'s next reply MUST include the actual time and meet link from the result. Never claim a meeting is booked unless this tool returned ok=true.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        slot_id: { type: 'string', description: 'A slot id from a prior offer_meeting_slots call.' },
+      },
+      required: ['slot_id'],
     },
   },
   {
