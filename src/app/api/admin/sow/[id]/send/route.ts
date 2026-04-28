@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { renderSowPdf } from '@/lib/pdf/sow'
+import { sendSowEmail } from '@/lib/sow-email'
 import { uploadPrivate, deletePrivate } from '@/lib/r2-storage'
 import type { SowDocument } from '@/lib/invoice-types'
 
@@ -21,7 +22,7 @@ export async function POST(
 
   const { data: sow, error } = await supabaseAdmin
     .from('sow_documents')
-    .select('*, prospect:prospects(business_name, owner_email, owner_phone)')
+    .select('*, prospect:prospects(business_name, owner_name, owner_email, business_email, owner_phone)')
     .eq('id', id)
     .maybeSingle()
 
@@ -73,9 +74,36 @@ export async function POST(
 
   const publicUrl = `https://demandsignals.co/sow/${sow.sow_number}/${sow.public_uuid}`
 
+  // Email delivery (best-effort — does not block the send response).
+  // Falls back through owner_email → business_email. If neither is set, the
+  // send still succeeds (admin can hand the magic link over manually).
+  const recipient =
+    sow.prospect?.owner_email ?? sow.prospect?.business_email ?? null
+  let emailResult: { success: boolean; message_id?: string; error?: string } | null = null
+  if (recipient) {
+    emailResult = await sendSowEmail(
+      sow as SowDocument,
+      recipient,
+      {
+        business_name: sow.prospect?.business_name ?? undefined,
+        owner_email: sow.prospect?.owner_email ?? null,
+        owner_name: sow.prospect?.owner_name ?? null,
+      },
+      pdfBuffer,
+    )
+  }
+
   return NextResponse.json({
     public_url: publicUrl,
     pdf_admin_url: `/api/admin/sow/${id}/pdf`,
     status: 'sent',
+    email: recipient
+      ? {
+          to: recipient,
+          success: emailResult?.success ?? false,
+          message_id: emailResult?.message_id ?? null,
+          error: emailResult?.error ?? null,
+        }
+      : { to: null, success: false, error: 'No prospect email on file' },
   })
 }
