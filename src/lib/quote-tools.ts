@@ -299,6 +299,105 @@ export async function executeTool(session_id: string, tool: ToolUse): Promise<To
         }
       }
 
+      case 'capture_attendee_email': {
+        const email = typeof tool.input.email === 'string' ? tool.input.email.trim() : ''
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          return {
+            tool_use_id: tool.id,
+            content: JSON.stringify({ ok: false, reason: 'invalid_email' }),
+          }
+        }
+        await supabaseAdmin
+          .from('quote_sessions')
+          .update({ attendee_email: email })
+          .eq('id', session_id)
+        await logEvent(session_id, 'attendee_email_captured', { email_domain: email.split('@')[1] })
+        return { tool_use_id: tool.id, content: JSON.stringify({ ok: true }) }
+      }
+
+      case 'offer_meeting_slots': {
+        try {
+          const { listAvailableSlots } = await import('@/lib/bookings')
+          const slots = await listAvailableSlots({ count: 2 })
+          if (slots.length === 0) {
+            return {
+              tool_use_id: tool.id,
+              content: JSON.stringify({ ok: false, reason: 'no_slots_available' }),
+            }
+          }
+          await supabaseAdmin
+            .from('quote_sessions')
+            .update({ offered_slot_ids: slots.map((s) => s.id) })
+            .eq('id', session_id)
+          await logEvent(session_id, 'meeting_slots_offered', { count: slots.length })
+          return {
+            tool_use_id: tool.id,
+            content: JSON.stringify({
+              ok: true,
+              slots: slots.map((s) => ({ id: s.id, display_label: s.display_label })),
+            }),
+          }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e)
+          if (msg === 'calendar_disconnected') {
+            return {
+              tool_use_id: tool.id,
+              content: JSON.stringify({ ok: false, reason: 'calendar_disconnected' }),
+            }
+          }
+          return {
+            tool_use_id: tool.id,
+            content: JSON.stringify({ ok: false, reason: 'unknown', detail: msg }),
+          }
+        }
+      }
+
+      case 'book_meeting': {
+        const slot_id = typeof tool.input.slot_id === 'string' ? tool.input.slot_id : ''
+        if (!slot_id) {
+          return { tool_use_id: tool.id, content: JSON.stringify({ ok: false, reason: 'missing_slot_id' }) }
+        }
+        const { data: sess } = await supabaseAdmin
+          .from('quote_sessions')
+          .select('attendee_email, prospect_id, business_name, offered_slot_ids')
+          .eq('id', session_id)
+          .single()
+        if (!sess?.attendee_email) {
+          return { tool_use_id: tool.id, content: JSON.stringify({ ok: false, reason: 'no_attendee_email' }) }
+        }
+        const offeredIds = Array.isArray(sess.offered_slot_ids) ? (sess.offered_slot_ids as string[]) : []
+        if (!offeredIds.includes(slot_id)) {
+          return { tool_use_id: tool.id, content: JSON.stringify({ ok: false, reason: 'slot_not_offered' }) }
+        }
+
+        const { bookSlot } = await import('@/lib/bookings')
+        const result = await bookSlot({
+          slot_id,
+          attendee_email: sess.attendee_email,
+          source: 'quote',
+          quote_session_id: session_id,
+          prospect_id: sess.prospect_id ?? undefined,
+          context_for_summary: `Demand Signals — ${sess.business_name ?? 'strategy call'}`,
+          context_for_description: `Strategy call with ${sess.attendee_email} from /quote conversation. Session: ${session_id}.`,
+        })
+        if (!result.ok) {
+          return { tool_use_id: tool.id, content: JSON.stringify({ ok: false, reason: result.reason }) }
+        }
+        await logEvent(session_id, 'meeting_booked', {
+          booking_id: result.booking_id,
+          start_at: result.start_at,
+        })
+        return {
+          tool_use_id: tool.id,
+          content: JSON.stringify({
+            ok: true,
+            booked: true,
+            start_at: result.start_at,
+            meet_link: result.meet_link,
+          }),
+        }
+      }
+
       case 'confirm_research_match': {
         const confirmed = tool.input.confirmed === true
         await supabaseAdmin
