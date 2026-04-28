@@ -57,13 +57,20 @@ export async function verifyAttributionCookie(
 
 /**
  * Cookie attributes for setting via response headers. Spread into cookies().set() args.
+ *
+ * Domain scope: exact apex `demandsignals.co` (no leading dot). Per CLAUDE.md
+ * §18, sharing this cookie with `*.demos.demandsignals.co` /
+ * `*.staging.demandsignals.co` per-client subdomains would let a malicious
+ * client demo read its visitors' attribution payloads (which contain the
+ * DSIG prospect_id). Scope to apex only — DSIG marketing pages set + read it,
+ * client-project subdomains never see it.
  */
 export const ATTRIBUTION_COOKIE_OPTIONS = {
   name: COOKIE_NAME,
   httpOnly: true,
   secure: true,
   sameSite: 'lax' as const,
-  domain: '.demandsignals.co',  // covers all subdomains per RFC 6265
+  domain: 'demandsignals.co',  // exact apex; subdomains do NOT inherit
   path: '/',
   maxAge: COOKIE_MAX_AGE_SECONDS,
 }
