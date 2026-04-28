@@ -176,16 +176,21 @@ export async function POST(
   })
 
   if (valueStackSubtotalCents > 0) {
+    // Model the appreciation discount as a 100%-discounted line: unit_price
+    // and discount both equal the stack subtotal, line_total = 0. Keeps the
+    // schema's check constraints happy (unit_price_cents >= 0,
+    // discount_cents >= 0) while still surfacing the bundle as a single
+    // visible "New Client Appreciation" row that nets to zero.
     lineItems.push({
       invoice_id: depositInvoice.id,
       description: 'New Client Appreciation — included with your engagement',
       quantity: 1,
-      unit_price_cents: -valueStackSubtotalCents,
-      subtotal_cents: -valueStackSubtotalCents,
-      discount_pct: 0,
-      discount_cents: 0,
+      unit_price_cents: valueStackSubtotalCents,
+      subtotal_cents: valueStackSubtotalCents,
+      discount_pct: 100,
+      discount_cents: valueStackSubtotalCents,
       discount_label: 'New Client Appreciation',
-      line_total_cents: -valueStackSubtotalCents,
+      line_total_cents: 0,
       sort_order: valueStackItems.length + 1,
     })
   }
