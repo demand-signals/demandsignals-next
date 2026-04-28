@@ -11,13 +11,23 @@ export function getAnthropicClient(): Anthropic {
 }
 
 // ─── Cron Auth ───
+// Constant-time Bearer-token verification. Replaces a previous `===` compare
+// that was timing-leaky on the secret tail. Pass the raw Authorization
+// header value (or null when absent).
 export function verifyCronSecret(authHeader: string | null): boolean {
   const secret = process.env.CRON_SECRET
   if (!secret) {
     console.warn('[SECURITY] CRON_SECRET is not set — denying request')
     return false
   }
-  return authHeader === `Bearer ${secret}`
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return false
+  const presented = authHeader.slice(7).trim()
+  if (presented.length !== secret.length) return false
+  // Lazy-import node:crypto so the helper stays edge-safe for callers that
+  // don't actually invoke it from an edge runtime.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { timingSafeEqual } = require('node:crypto') as typeof import('node:crypto')
+  return timingSafeEqual(Buffer.from(presented), Buffer.from(secret))
 }
 
 // ─── Activity Logging ───

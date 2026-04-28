@@ -9,16 +9,18 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { verifyBearerSecret } from '@/lib/bearer-auth'
 import type { Subscription, SubscriptionPlan } from '@/lib/invoice-types'
 
 export async function GET(request: NextRequest) {
-  // Auth: CRON_SECRET header.
-  const expected = process.env.CRON_SECRET
-  if (!expected) {
+  // Auth: CRON_SECRET via Authorization: Bearer or X-Cron-Secret header.
+  // Previously the check was `auth.includes(expected)` — that accepted any
+  // string that *contained* the secret as a substring, AND was timing-leaky.
+  // verifyBearerSecret is constant-time exact match.
+  if (!process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 500 })
   }
-  const auth = request.headers.get('authorization') ?? request.headers.get('x-cron-secret')
-  if (!auth || !auth.includes(expected)) {
+  if (!verifyBearerSecret(request, process.env.CRON_SECRET, { allowXCronSecret: true })) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

@@ -7,14 +7,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { firePaymentInstallment } from '@/lib/payment-plans'
+import { verifyBearerSecret } from '@/lib/bearer-auth'
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization') ?? ''
-  const expectedToken = process.env.CRON_SECRET
-  if (!expectedToken) {
+  if (!process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 503 })
   }
-  if (authHeader !== `Bearer ${expectedToken}`) {
+  if (!verifyBearerSecret(request, process.env.CRON_SECRET)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

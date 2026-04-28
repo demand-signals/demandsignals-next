@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { initSchema } from '@/lib/analytics-db'
 import { requireAdmin } from '@/lib/admin-auth'
+import { verifyBearerSecret } from '@/lib/bearer-auth'
 
 /**
  * GET /api/analytics/init
@@ -10,10 +11,9 @@ import { requireAdmin } from '@/lib/admin-auth'
  * Run once after adding Vercel Postgres to the project.
  */
 export async function GET(req: NextRequest) {
-  // Try cron secret first (for automated calls)
-  const authHeader = req.headers.get('authorization')
+  // Try cron secret first (for automated calls).
   const cronSecret = process.env.VERCEL_ANALYTICS_CRON_SECRET || process.env.CRON_SECRET
-  const hasCronAuth = cronSecret && authHeader === `Bearer ${cronSecret}`
+  const hasCronAuth = verifyBearerSecret(req, cronSecret)
 
   if (!hasCronAuth) {
     // Fall back to admin auth (for browser access while logged in)

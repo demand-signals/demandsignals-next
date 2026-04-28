@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getWeeklyReport, type WeeklyReport } from '@/lib/analytics-db'
 import { CONTACT_EMAIL } from '@/lib/constants'
 import { sendEmail } from '@/lib/email'
+import { verifyBearerSecret } from '@/lib/bearer-auth'
 
 /**
  * GET /api/analytics/weekly-report
@@ -12,11 +13,10 @@ import { sendEmail } from '@/lib/email'
  */
 export async function GET(req: NextRequest) {
   // Verify cron secret — Vercel cron sends CRON_SECRET automatically,
-  // but we also accept VERCEL_ANALYTICS_CRON_SECRET for manual triggers
-  const authHeader = req.headers.get('authorization')
+  // but we also accept VERCEL_ANALYTICS_CRON_SECRET for manual triggers.
+  // Either env var is acceptable; we try them in order.
   const cronSecret = process.env.VERCEL_ANALYTICS_CRON_SECRET || process.env.CRON_SECRET
-
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!verifyBearerSecret(req, cronSecret)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

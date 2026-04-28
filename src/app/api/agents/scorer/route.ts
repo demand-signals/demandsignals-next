@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { calculateProspectScore } from '@/lib/scoring'
+import { verifyBearerSecret } from '@/lib/bearer-auth'
 
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  const internalSecret = process.env.SUPABASE_WEBHOOK_SECRET
-  if (authHeader !== `Bearer ${internalSecret}`) {
+  if (!verifyBearerSecret(request, process.env.SUPABASE_WEBHOOK_SECRET)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
