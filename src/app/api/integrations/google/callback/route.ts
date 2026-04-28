@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const tokens = await exchangeCodeForTokens(code)
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString()
 
-    await supabaseAdmin
+    const { error: upsertErr } = await supabaseAdmin
       .from('integrations')
       .upsert({
         provider: 'google_calendar',
@@ -39,14 +39,22 @@ export async function GET(request: NextRequest) {
         access_token_expires_at: expiresAt,
         refresh_token: tokens.refresh_token,
         metadata: { name: tokens.account_name, picture: tokens.account_picture },
-        connected_by: auth.user.id,
+        connected_by: auth.admin?.id ?? null,
         revoked_at: null,
       }, { onConflict: 'provider,account_email' })
+
+    if (upsertErr) {
+      console.error('[oauth_callback] upsert failed:', upsertErr)
+      return NextResponse.redirect(
+        `${adminUrl}?error=${encodeURIComponent('upsert_failed: ' + upsertErr.message)}`,
+      )
+    }
 
     const res = NextResponse.redirect(`${adminUrl}?connected=1`)
     res.cookies.delete('google_oauth_state')
     return res
   } catch (e) {
+    console.error('[oauth_callback] exception:', e)
     const msg = e instanceof Error ? e.message : 'unknown'
     return NextResponse.redirect(`${adminUrl}?error=${encodeURIComponent(msg)}`)
   }
