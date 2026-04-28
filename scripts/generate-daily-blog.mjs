@@ -260,10 +260,40 @@ Pick ONE topic. Then return a JSON object with this EXACT structure (and nothing
 
 REQUIREMENTS:
 - 2-3 internal_links from the DSIG catalog (don't invent URLs not in the catalog)
-- 3-5 external_sources from authoritative sites (Anthropic, OpenAI, Google blog, official docs, named research firms)
+- 3-5 external_sources — see external source rules below
 - 4-6 faq_seeds — questions a real prospect would ask
 - 4-6 infographic_stats — real numbers from your research, not made up
 - raw_research_notes should give the writer enough to write 1500-2500 words without further research
+
+═══════════════════════════════════════════════════════════
+EXTERNAL SOURCE RULES — CRITICAL
+═══════════════════════════════════════════════════════════
+
+We are an agency. Every external link sends our readers to a potential competitor. Pick sources carefully.
+
+✓ PREFER (authoritative + non-competitive):
+  • AI vendor primary sources: anthropic.com, openai.com, ai.google.dev, ai.meta.com, x.ai, mistral.ai, deepmind.google
+  • Big-tech corporate blogs: blog.google, microsoft.com/blog, aws.amazon.com/blogs, developer.apple.com
+  • Academic research: arxiv.org, *.edu (Princeton, Stanford, MIT, CMU, Harvard, Georgia Tech, etc.)
+  • Industry research firms: gartner.com, forrester.com, mckinsey.com, bcg.com, idc.com, pewresearch.org, statista.com
+  • Government / standards bodies: ftc.gov, nist.gov, w3.org, schema.org, sec.gov
+  • Major news / trade pubs: reuters.com, bloomberg.com, wsj.com, ft.com, theverge.com, techcrunch.com, wired.com, arstechnica.com, axios.com, venturebeat.com
+  • Open-source / dev community: github.com, stackoverflow.com, dev.to
+  • Google's own SEO docs: developers.google.com, support.google.com, search.googleblog.com
+
+❌ AVOID — DO NOT LINK to any of these (competitors of DSIG):
+  • Marketing agencies of any size — even "thought leadership" agency blogs
+  • SEO/GEO/AEO agencies — anyone selling SEO services
+  • Web dev / WordPress / React / design agencies
+  • AI agencies / "AI implementation" consultancies
+  • Content marketing platforms that also sell agency services (Conductor, Hubspot blog when it's pure agency content, Semrush blog content services, etc.)
+  • Any site whose nav shows "Hire us" / "Services" / "Get a free audit" / "Book a call"
+  • Specifically blacklisted: starmorph.com, conductor.com, bluemagnet.co.za, marketingcode.com, seositestool.com, neilpatel.com, backlinko.com, brafton.com, contentmarketinginstitute.com (if behind agency), searchenginejournal.com (often pushes their consulting), searchenginewatch.com
+  • Search Engine Land / Search Engine Roundtable — case by case, prefer to skip if alternative exists
+
+When in doubt, ask: "Would I send a paying customer to this site?" If no, don't cite it.
+
+If you can't find 3-5 authoritative non-competitor sources, RETURN FEWER. 3 great non-competitor sources beats 5 sources that include 2 agency blogs.
 
 Return ONLY the JSON object. No preamble. No markdown fences.`
 

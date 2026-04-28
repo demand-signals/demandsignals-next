@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import remarkGfm from 'remark-gfm'
+import rehypeExternalLinks from 'rehype-external-links'
 import { getAllPosts, getPostBySlug, getPostsByContentCategory, CONTENT_CATEGORY_LABELS, CONTENT_CATEGORY_COLORS, type ContentCategory } from '@/lib/blog'
 import { BlogInfographic } from '@/components/blog/BlogInfographic'
 import { ParticleCanvas } from '@/components/sections/HeroCanvas'
@@ -177,7 +178,17 @@ export default async function BlogPostPage({ params }: Props) {
             </div>
           )}
           <div className="prose">
-            <MDXRemote source={post.content} options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }} />
+            <MDXRemote
+              source={post.content}
+              options={{
+                mdxOptions: {
+                  remarkPlugins: [remarkGfm],
+                  rehypePlugins: [
+                    [rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }],
+                  ],
+                },
+              }}
+            />
           </div>
         </div>
       </section>
