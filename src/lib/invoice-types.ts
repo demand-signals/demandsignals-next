@@ -275,6 +275,11 @@ export interface SowDocument {
   deposit_invoice_id: string | null
   trade_credit_cents?: number
   trade_credit_description?: string | null
+  // Per-SOW cover overrides — when null, PDF renderer uses defaults
+  // ('Statement of Work' eyebrow, 'Prepared by Demand Signals — Digital
+  // Growth & Strategy' tagline). Migration 031 added these columns.
+  cover_eyebrow?: string | null
+  cover_tagline?: string | null
   created_by: string | null
   created_at: string
   updated_at: string

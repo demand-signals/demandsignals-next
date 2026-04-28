@@ -141,8 +141,8 @@ function coverPage(sow: SowDocument, prospect: SowProspect): string {
       <!-- Client business name (if available) -->
       ${prospect?.business_name ? `<div style="font-family:Georgia, serif; font-style:italic; font-size:44px; font-weight:400; color:${T.WHITE}; line-height:1.1; text-align:left; margin-bottom:40px;">For ${esc(prospect.business_name)}</div>` : ''}
 
-      <!-- Eyebrow: Statement of Work -->
-      ${eyebrow('Statement of Work', T.ORANGE_S)}
+      <!-- Eyebrow: Statement of Work (or per-SOW override) -->
+      ${eyebrow(sow.cover_eyebrow || 'Statement of Work', T.ORANGE_S)}
 
       <!-- Title block: alternating white + teal lines -->
       <h1 style="
@@ -160,13 +160,13 @@ function coverPage(sow: SowDocument, prospect: SowProspect): string {
       <!-- Orange divider under title -->
       <div style="width:60pt;height:2pt;background:${T.ORANGE_S};margin:16px 0 14px 0;"></div>
 
-      <!-- Tagline -->
+      <!-- Tagline (or per-SOW override) -->
       <p style="
         font-size:11px;
         color:${T.CCCC};
         font-weight:400;
         margin:0;
-      ">Prepared by Demand Signals — Digital Growth &amp; Strategy</p>
+      ">${esc(sow.cover_tagline || 'Prepared by Demand Signals — Digital Growth & Strategy')}</p>
     </div>
 
     <!-- BOTTOM ZONE: Meta band + footer strip (shared chrome) -->
