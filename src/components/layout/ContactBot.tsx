@@ -1,10 +1,18 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { BOOKING_URL } from '@/lib/constants'
 
 export function ContactBot() {
   const [open, setOpen] = useState(false)
+  const pathname = usePathname()
+
+  // Hide on customer-facing magic-link document pages and admin.
+  if (pathname?.startsWith('/admin')) return null
+  if (pathname?.startsWith('/sow/')) return null
+  if (pathname?.startsWith('/invoice/')) return null
+  if (pathname?.startsWith('/quote/s/')) return null
 
   return (
     <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 500 }}>

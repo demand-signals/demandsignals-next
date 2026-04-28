@@ -402,15 +402,8 @@ export default async function PublicSowPage({
           backgroundImage: 'radial-gradient(circle at 110% -10%, rgba(104,197,173,0.30), transparent 50%)',
         }}
       >
-        {/* Top bar */}
-        <div className="max-w-[920px] mx-auto px-6 pt-10 pb-0 flex items-center justify-between">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="https://demandsignals.us/assets/logos/dsig_logo_v2b.png"
-            alt="Demand Signals"
-            className="h-9 object-contain"
-            style={{}}
-          />
+        {/* Top bar — status pill only; logo removed (already in marketing nav) */}
+        <div className="max-w-[920px] mx-auto px-6 pt-10 pb-0 flex items-center justify-end">
           {isAccepted ? (
             <span className="inline-block px-4 py-1 rounded-full text-xs font-bold text-white" style={{ background: '#22c55e' }}>
               ACCEPTED ✓
@@ -459,7 +452,7 @@ export default async function PublicSowPage({
           {/* Orange rule */}
           <div className="mb-6" style={{ width: 64, height: 3, background: '#FF6B2B' }} />
           {sow.prospect?.business_name && (
-            <p className="text-sm italic" style={{ color: '#94a0b8' }}>
+            <p className="text-sm italic" style={{ color: '#cbd5e1' }}>
               Prepared for <span className="font-bold not-italic text-white">{sow.prospect.business_name}</span>
             </p>
           )}
@@ -470,18 +463,18 @@ export default async function PublicSowPage({
           <div className="max-w-[920px] mx-auto px-6">
             <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-white/10">
               <div className="flex-1 py-6 sm:pr-8">
-                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#94a0b8' }}>ISSUE DATE</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#cbd5e1' }}>ISSUE DATE</p>
                 <p className="text-base font-bold text-white">{issueDate}</p>
               </div>
               <div className="flex-1 py-6 sm:px-8">
-                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#94a0b8' }}>INVESTMENT</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#cbd5e1' }}>INVESTMENT</p>
                 <p className="text-lg font-bold text-white" style={{ letterSpacing: '-0.02em' }}>{bigNumber}</p>
                 {tikCents > 0 && (
                   <p className="text-xs mt-0.5" style={{ color: 'var(--teal)' }}>cash (after TIK credit)</p>
                 )}
               </div>
               <div className="flex-1 py-6 sm:pl-8">
-                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#94a0b8' }}>VALID UNTIL</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#cbd5e1' }}>VALID UNTIL</p>
                 <p className="text-base font-bold text-white">{validUntilDate}</p>
               </div>
             </div>
@@ -689,26 +682,27 @@ export default async function PublicSowPage({
             Let&rsquo;s get to work — together
           </h3>
 
-          {/* Contact 3-col */}
+          {/* Contact 3-col — explicit inline color so the marketing nav's
+              CSS can't shadow the value text into invisibility. */}
           <div
             className="flex flex-col sm:flex-row pt-8 max-w-md mx-auto divide-y sm:divide-y-0 sm:divide-x divide-white/10"
             style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}
           >
             <div className="flex-1 text-center py-4 sm:py-0 sm:px-6">
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#94a0b8' }}>EMAIL</p>
-              <a href="mailto:DemandSignals@gmail.com" className="text-sm text-white hover:underline">DemandSignals@gmail.com</a>
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#cbd5e1' }}>EMAIL</p>
+              <a href="mailto:DemandSignals@gmail.com" className="text-sm font-semibold hover:underline" style={{ color: '#ffffff' }}>DemandSignals@gmail.com</a>
             </div>
             <div className="flex-1 text-center py-4 sm:py-0 sm:px-6">
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#94a0b8' }}>PHONE</p>
-              <a href="tel:+19165422423" className="text-sm text-white hover:underline">(916) 542-2423</a>
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#cbd5e1' }}>PHONE</p>
+              <a href="tel:+19165422423" className="text-sm font-semibold hover:underline" style={{ color: '#ffffff' }}>(916) 542-2423</a>
             </div>
             <div className="flex-1 text-center py-4 sm:py-0 sm:px-6">
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#94a0b8' }}>WEB</p>
-              <a href="https://demandsignals.co" target="_blank" rel="noreferrer" className="text-sm text-white hover:underline">demandsignals.co</a>
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#cbd5e1' }}>WEB</p>
+              <a href="https://demandsignals.co" target="_blank" rel="noreferrer" className="text-sm font-semibold hover:underline" style={{ color: '#ffffff' }}>demandsignals.co</a>
             </div>
           </div>
 
-          <p className="mt-12 text-xs" style={{ color: '#94a0b8', opacity: 0.6 }}>
+          <p className="mt-12 text-xs" style={{ color: '#cbd5e1', opacity: 0.7 }}>
             &copy; 2026 Demand Signals. Confidential.
           </p>
         </div>

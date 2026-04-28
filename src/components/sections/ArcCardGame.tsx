@@ -171,6 +171,11 @@ export function ArcCardGame() {
 
   if (pathname === '/spacegame') return null
   if (pathname?.startsWith('/admin')) return null
+  // Hide on customer-facing magic-link document pages — these are
+  // transactional surfaces, the easter egg is a distraction.
+  if (pathname?.startsWith('/sow/')) return null
+  if (pathname?.startsWith('/invoice/')) return null
+  if (pathname?.startsWith('/quote/s/')) return null
 
   return (
     <section style={{
