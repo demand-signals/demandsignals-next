@@ -685,4 +685,9 @@ export default async function PublicSowPage({
 
 export const metadata = {
   robots: 'noindex, nofollow',
+  // Strip the path (which contains the UUID secret) from any outgoing Referer.
+  // Without this, clicking ANY same-origin link from this page would leak the
+  // UUID into the destination's request log. Site-wide policy is
+  // strict-origin-when-cross-origin which is too lax for magic-link pages.
+  referrer: 'no-referrer',
 }

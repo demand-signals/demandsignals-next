@@ -826,4 +826,10 @@ export default async function PublicInvoicePage({
 
 export const metadata = {
   robots: 'noindex, nofollow',
+  // Strip the path (which contains the UUID secret) from any outgoing Referer
+  // header. Site-wide policy is strict-origin-when-cross-origin, but THAT
+  // still leaks the path on same-origin navigation (e.g. clicking a link from
+  // this page to /contact would put the UUID in /contact's request log).
+  // 'no-referrer' on this page strips the header entirely.
+  referrer: 'no-referrer',
 }

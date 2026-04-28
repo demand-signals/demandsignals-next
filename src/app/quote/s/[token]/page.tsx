@@ -10,12 +10,17 @@ import { formatCents, formatRange } from '@/lib/format'
 import { buildMetadata } from '@/lib/metadata'
 import { ShareActions } from './ShareActions'
 
-export const metadata = buildMetadata({
-  title: 'Your Budgetary Estimate — Demand Signals',
-  description: 'A premium budgetary estimate from Demand Signals — your demand generation roadmap, priced and ready to refine.',
-  path: '/quote/s',
-  noIndex: true,
-})
+export const metadata = {
+  ...buildMetadata({
+    title: 'Your Budgetary Estimate — Demand Signals',
+    description: 'A premium budgetary estimate from Demand Signals — your demand generation roadmap, priced and ready to refine.',
+    path: '/quote/s',
+    noIndex: true,
+  }),
+  // Strip Referer entirely — the path includes a session share_token that
+  // shouldn't leak to other pages on same-origin navigation.
+  referrer: 'no-referrer' as const,
+}
 
 interface Props {
   params: Promise<{ token: string }>
