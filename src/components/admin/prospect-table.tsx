@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Search, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Plus, Trash2, Loader2 } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { STAGES, STAGE_LABELS, INDUSTRIES } from '@/types/database'
 import { ProspectScoreBadge } from './prospect-score-badge'
@@ -187,6 +187,22 @@ export function ProspectTable() {
 
   const queryClient = useQueryClient()
   const [showAdd, setShowAdd] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/admin/prospects/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'Delete failed')
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prospects'] })
+      setConfirmDelete(null)
+    },
+    onError: (e: Error) => {
+      alert(e.message)
+      setConfirmDelete(null)
+    },
+  })
 
   // Debounced search value
   const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('search') ?? '')
@@ -288,26 +304,27 @@ export function ProspectTable() {
                 <th className="text-left px-4 py-3 text-slate-500 font-medium">Score</th>
                 <th className="text-left px-4 py-3 text-slate-500 font-medium">Stage</th>
                 <th className="text-left px-4 py-3 text-slate-500 font-medium">Demos</th>
+                <th className="text-right px-4 py-3 text-slate-500 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
+                  <td colSpan={9} className="px-4 py-8 text-center text-slate-400">
                     Loading…
                   </td>
                 </tr>
               )}
               {isError && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-red-500">
+                  <td colSpan={9} className="px-4 py-8 text-center text-red-500">
                     Failed to load prospects.
                   </td>
                 </tr>
               )}
               {!isLoading && !isError && prospects.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
+                  <td colSpan={9} className="px-4 py-8 text-center text-slate-400">
                     No prospects found.
                   </td>
                 </tr>
@@ -358,6 +375,36 @@ export function ProspectTable() {
                   </td>
                   <td className="px-4 py-3 text-slate-500">
                     {p.demos?.length ?? 0}
+                  </td>
+                  <td
+                    className="px-4 py-3 text-right"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {confirmDelete === p.id ? (
+                      <div className="inline-flex items-center gap-1.5">
+                        <button
+                          onClick={() => deleteMutation.mutate(p.id)}
+                          disabled={deleteMutation.isPending}
+                          className="text-xs px-2 py-1 rounded bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+                        >
+                          {deleteMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Confirm'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(null)}
+                          className="text-xs px-2 py-1 rounded bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDelete(p.id)}
+                        className="inline-flex items-center justify-center w-7 h-7 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        title="Delete prospect"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

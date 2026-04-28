@@ -19,6 +19,7 @@ const patchSchema = z.object({
     .nullable()
     .optional(),
   channels: z.record(z.string(), z.any()).optional(),
+  is_client: z.boolean().optional(),
 })
 
 export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
@@ -34,6 +35,23 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
   const updates: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(parsed)) if (v !== undefined) updates[k] = v === '' ? null : v
   if (Object.keys(updates).length === 0) return NextResponse.json({ ok: true })
+
+  // Side-effect: keep became_client_at in sync with is_client toggles.
+  if ('is_client' in updates) {
+    if (updates.is_client === true) {
+      // Only set the timestamp if not already a client (preserve original anniversary).
+      const { data: existing } = await supabaseAdmin
+        .from('prospects')
+        .select('is_client, became_client_at')
+        .eq('id', id)
+        .maybeSingle()
+      if (!existing?.is_client && !existing?.became_client_at) {
+        updates.became_client_at = new Date().toISOString()
+      }
+    } else if (updates.is_client === false) {
+      updates.became_client_at = null
+    }
+  }
 
   // client_code collision check — reject before hitting the unique index
   if (updates.client_code != null) {
@@ -55,6 +73,30 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
   }
 
   const { error } = await supabaseAdmin.from('prospects').update(updates).eq('id', id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
+
+// Delete a prospect and all CRM child rows. Document tables (sow_documents,
+// invoices, receipts) hold ON DELETE SET NULL FKs to prospects.id and stay
+// intact — the documents remain searchable by client_code/notes even after
+// the prospect is gone. Use with care; this is destructive.
+export async function DELETE(
+  request: NextRequest,
+  ctx: { params: Promise<{ id: string }> },
+) {
+  const auth = await requireAdmin(request)
+  if ('error' in auth) return auth.error
+  const { id } = await ctx.params
+
+  // CRM child rows — explicit cleanup (CASCADE not set everywhere).
+  await supabaseAdmin.from('activities').delete().eq('prospect_id', id)
+  await supabaseAdmin.from('demos').delete().eq('prospect_id', id)
+  await supabaseAdmin.from('deals').delete().eq('prospect_id', id)
+  await supabaseAdmin.from('prospect_notes').delete().eq('prospect_id', id)
+  await supabaseAdmin.from('prospect_inquiries').delete().eq('prospect_id', id)
+
+  const { error } = await supabaseAdmin.from('prospects').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
