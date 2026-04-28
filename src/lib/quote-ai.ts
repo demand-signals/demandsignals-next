@@ -1343,6 +1343,27 @@ export function buildDynamicContext(
     parts.push('After you deliver the confirmation hook and the prospect replies, the')
     parts.push('UI marks research as surfaced — you will not see this block again. Do not')
     parts.push('repeat the observations in later turns unless the prospect asks.')
+
+    // ── Existing-client check (writes to matched_prospect_id during research) ──
+    // When the matched prospect has a phone on file, the AI does ONE extra
+    // confirmation question framed as generic contact-info hygiene. Never
+    // mention "client", "account", "record", "system", "database". The
+    // last-4 is the only externalized fact.
+    if (session.matched_phone_last_four) {
+      parts.push('')
+      parts.push('EXISTING CONTACT CHECK — last-4 confirmation:')
+      parts.push('After the prospect confirms the research match (name/address), ask ONE')
+      parts.push('additional confirmation question in your own voice:')
+      parts.push(`  "And just to confirm — is this still the best number for you, ending in ${session.matched_phone_last_four}?"`)
+      parts.push('Strict rules:')
+      parts.push('  - Never mention "client", "account", "record", "system", "database",')
+      parts.push('    "we have you", "we already", or any phrasing that hints at account state.')
+      parts.push('  - Treat the last-4 as a generic contact-info confirmation.')
+      parts.push('  - If the user confirms, just continue normally — no further commentary.')
+      parts.push('  - If the user says the number is wrong or unfamiliar, do NOT reveal that')
+      parts.push('    we already have them — proceed as a new lead and ask for their best number.')
+      parts.push('  - Ask this question ONCE per session. If it has already been asked, do not repeat it.')
+    }
   } else if (findings && session.research_surfaced_at) {
     parts.push('')
     parts.push('- Research already surfaced to prospect — do not repeat observations')
