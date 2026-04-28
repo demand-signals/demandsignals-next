@@ -613,20 +613,30 @@ export default async function PublicSowPage({
           {isAccepted && sow.accepted_signature ? (
             <>
               <div
-                className="inline-flex items-center gap-3 px-6 py-3 rounded-full text-white font-bold text-base mb-6"
-                style={{ background: 'rgba(34,197,94,0.2)', border: '1px solid rgba(34,197,94,0.4)' }}
+                className="inline-flex items-center gap-3 px-6 py-3 rounded-full font-bold text-base mb-6"
+                style={{
+                  background: '#1d2330',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255,255,255,0.6)',
+                  boxShadow: '0 4px 18px rgba(0,0,0,0.25)',
+                }}
               >
-                <span className="text-green-400 text-xl">✓</span>
+                <span style={{ color: '#22c55e' }} className="text-xl">✓</span>
                 Accepted on{' '}
                 {sow.accepted_at && new Date(sow.accepted_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                {' '}by <span className="text-green-300 ml-1">{sow.accepted_signature}</span>
+                {' '}by <span style={{ color: '#86efac' }} className="ml-1">{sow.accepted_signature}</span>
               </div>
-              <p className="text-sm mb-8" style={{ color: '#94a0b8' }}>
+              <p className="text-sm mb-8 font-medium" style={{ color: 'rgba(255,255,255,0.95)' }}>
                 This Statement of Work has been signed. A deposit invoice has been sent.
               </p>
               <a
                 href={downloadUrl}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold text-white border border-white/20 hover:bg-white/10 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold transition-colors"
+                style={{
+                  color: '#ffffff',
+                  background: 'rgba(0,0,0,0.25)',
+                  border: '1px solid rgba(255,255,255,0.6)',
+                }}
               >
                 ↓ Download PDF
               </a>
