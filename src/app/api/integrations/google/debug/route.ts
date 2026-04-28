@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     effective_redirect_uri: effectiveRedirectUri,
     redirect_uri_on_the_wire: redirectUriOnTheWire,
     full_auth_url: fullAuthUrl,
+    GOOGLE_CALENDAR_CLIENT_ID_first_30: (process.env.GOOGLE_CALENDAR_CLIENT_ID ?? '').slice(0, 30),
     GOOGLE_CLIENT_ID_first_30: (process.env.GOOGLE_CLIENT_ID ?? '').slice(0, 30),
   })
 }
