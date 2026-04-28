@@ -103,6 +103,25 @@ export default function ProspectDetailPage() {
     },
   })
 
+  const clientToggleMutation = useMutation({
+    mutationFn: async (next: boolean) => {
+      const res = await fetch(`/api/admin/prospects/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_client: next }),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j.error ?? 'Toggle failed')
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prospects-all'] })
+      queryClient.invalidateQueries({ queryKey: ['prospect', id] })
+    },
+    onError: (e: Error) => alert(e.message),
+  })
+
   // Research deep-dive
   const researchMutation = useMutation({
     mutationFn: async () => {
@@ -399,6 +418,23 @@ export default function ProspectDetailPage() {
                 <Search className="w-3.5 h-3.5" />
               )}
               {researchMutation.isPending ? 'Researching…' : researchMutation.isSuccess ? `Done (${researchMutation.data?.score})` : 'Research'}
+            </button>
+
+            {/* Promote / Demote client */}
+            <button
+              onClick={() => clientToggleMutation.mutate(!(prospect as any).is_client)}
+              disabled={clientToggleMutation.isPending}
+              className={cn(
+                'inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border backdrop-blur-sm text-sm font-semibold transition-colors disabled:opacity-50',
+                (prospect as any).is_client
+                  ? 'border-amber-300 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20'
+                  : 'border-emerald-300 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20',
+              )}
+              title={(prospect as any).is_client ? 'Demote back to prospect' : 'Promote to client'}
+            >
+              {clientToggleMutation.isPending
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : (prospect as any).is_client ? 'Demote' : 'Promote'}
             </button>
 
             {/* Edit */}

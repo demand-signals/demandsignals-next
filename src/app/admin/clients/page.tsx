@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { Loader2, UserCheck, Search } from 'lucide-react'
+import { Loader2, UserCheck, Search, Plus, UserMinus, Trash2 } from 'lucide-react'
 import { formatCents } from '@/lib/format'
+import { NewClientModal } from './NewClientModal'
 
 interface ClientRow {
   id: string
@@ -29,13 +30,49 @@ export default function ManageClientsPage() {
   const [clients, setClients] = useState<ClientRow[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('')
+  const [showNew, setShowNew] = useState(false)
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true)
     fetch('/api/admin/clients')
       .then((r) => r.json())
       .then((d) => setClients(d.clients ?? []))
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => { load() }, [load])
+
+  async function handleDemote(id: string) {
+    if (!confirm('Demote this client back to prospect? Subscriptions and projects stay intact; only the client flag is removed.')) return
+    setBusyId(id)
+    const res = await fetch(`/api/admin/prospects/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_client: false }),
+    })
+    setBusyId(null)
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      alert(j.error ?? 'Demote failed')
+      return
+    }
+    load()
+  }
+
+  async function handleDelete(id: string) {
+    setBusyId(id)
+    const res = await fetch(`/api/admin/prospects/${id}`, { method: 'DELETE' })
+    setBusyId(null)
+    setConfirmDelete(null)
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      alert(j.error ?? 'Delete failed')
+      return
+    }
+    load()
+  }
 
   const filtered = clients.filter((c) => {
     if (!filter) return true
@@ -58,7 +95,20 @@ export default function ManageClientsPage() {
           <UserCheck className="w-6 h-6 text-[var(--teal)]" />
           Manage Clients
         </h1>
+        <button
+          onClick={() => setShowNew(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--teal)] text-white text-sm font-semibold hover:bg-[var(--teal-dark)]"
+        >
+          <Plus className="w-4 h-4" /> New Client
+        </button>
       </div>
+
+      {showNew && (
+        <NewClientModal
+          onClose={() => setShowNew(false)}
+          onCreated={() => { setShowNew(false); load() }}
+        />
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -103,6 +153,7 @@ export default function ManageClientsPage() {
                 <th className="text-right px-4 py-3">Subs</th>
                 <th className="text-right px-4 py-3">MRR</th>
                 <th className="text-left px-4 py-3">Since</th>
+                <th className="text-right px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -163,6 +214,43 @@ export default function ManageClientsPage() {
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-500">
                     {c.became_client_at ? new Date(c.became_client_at).toLocaleDateString() : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {confirmDelete === c.id ? (
+                      <div className="inline-flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleDelete(c.id)}
+                          disabled={busyId === c.id}
+                          className="text-xs px-2 py-1 rounded bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+                        >
+                          {busyId === c.id ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Confirm'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(null)}
+                          className="text-xs px-2 py-1 rounded bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-1">
+                        <button
+                          onClick={() => handleDemote(c.id)}
+                          disabled={busyId === c.id}
+                          className="inline-flex items-center justify-center w-7 h-7 rounded text-slate-400 hover:text-amber-500 hover:bg-amber-50 disabled:opacity-50"
+                          title="Demote back to prospect"
+                        >
+                          {busyId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserMinus className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(c.id)}
+                          className="inline-flex items-center justify-center w-7 h-7 rounded text-slate-400 hover:text-red-500 hover:bg-red-50"
+                          title="Delete client (and underlying prospect)"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
