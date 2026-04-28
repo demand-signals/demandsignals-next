@@ -50,6 +50,9 @@ export interface QuoteSessionRow {
   doc_number: string | null
   matched_prospect_id: string | null
   matched_phone_last_four: string | null
+  booking_id: string | null
+  attendee_email: string | null
+  offered_slot_ids: unknown
   created_at: string
   updated_at: string
 }
