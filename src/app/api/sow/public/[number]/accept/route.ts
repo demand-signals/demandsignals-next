@@ -6,12 +6,22 @@
 //   3. Link deposit_invoice_id back on the SOW row
 //   4. Return the deposit invoice's public URL so client can pay immediately
 //
+// IMPORTANT: nodejs runtime + 60s maxDuration. The default 10s timeout
+// killed the function before it could reach the email + SMS dispatch
+// at the end (Chromium PDF render alone is 3–8s on cold start, plus
+// the lifecycle work — projects, subscriptions, trade credits — that
+// runs before notifications). DB writes were committing fine; the
+// late-stage notification block silently never ran.
+//
 // NOTE (Plan B): This route runs the simple "single deposit installment"
 // lifecycle for the magic-link client-Accept flow. The admin path uses
 // /api/admin/sow/[id]/convert → src/lib/payment-plans.ts, which supports
 // multi-installment + TIK + cascade triggers + Stripe subscriptions.
 // Both paths converge on the same downstream side effects (project +
 // prospect.is_client + subscriptions + trade_credits). Keep them in sync.
+
+export const runtime = 'nodejs'
+export const maxDuration = 60
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'

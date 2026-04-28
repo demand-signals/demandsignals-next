@@ -12,6 +12,11 @@
 //   STRIPE_API_KEY          (for Stripe SDK)
 //   STRIPE_WEBHOOK_SECRET   (for signature verification; until set, returns 503)
 
+// Webhook fans out to receipt email + SMS via createReceiptForInvoice.
+// Default 10s would be tight if Resend or Twilio are slow on a given event.
+export const runtime = 'nodejs'
+export const maxDuration = 30
+
 import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
 import {
