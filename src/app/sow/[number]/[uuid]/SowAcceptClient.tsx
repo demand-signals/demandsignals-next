@@ -120,7 +120,12 @@ export function SowAcceptClient({
         </button>
         <a
           href={downloadUrl}
-          className="w-full sm:w-auto px-6 py-3.5 rounded-full text-sm font-semibold text-white text-center border border-white/20 hover:bg-white/10 transition-colors"
+          className="w-full sm:w-auto px-6 py-3.5 rounded-full text-sm font-semibold text-center transition-colors"
+          style={{
+            color: '#ffffff',
+            background: 'rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.55)',
+          }}
         >
           ↓ Download PDF
         </a>
