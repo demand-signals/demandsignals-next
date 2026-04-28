@@ -2,20 +2,35 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
-// Allowed origins for CSRF protection on state-changing requests
-const ALLOWED_ORIGINS = [
+// Allowed origins for CSRF protection on state-changing admin requests.
+// Compared by parsed URL.origin (exact <scheme>://<host>[:<port>]) — NOT
+// string startsWith, which would let attacker-controlled hosts that
+// literally begin with an allowed value through.
+const ALLOWED_ORIGINS = new Set<string>([
   'https://demandsignals.co',
   'https://www.demandsignals.co',
   'https://dsig.demandsignals.dev',
   'http://localhost:3000',
   'http://localhost:3001',
-]
+])
 
 export async function requireAdmin(request: NextRequest) {
-  // CSRF: validate origin on state-changing requests (POST/PATCH/DELETE)
+  // CSRF: validate origin on state-changing requests (POST/PATCH/DELETE/PUT).
+  // Modern browsers send Origin on all cross-origin state-changing requests
+  // per fetch spec. A missing Origin on a mutation is either server-to-server
+  // (no current admin caller does that) or a CSRF bypass attempt — deny.
   if (request.method !== 'GET') {
     const origin = request.headers.get('origin')
-    if (origin && !ALLOWED_ORIGINS.some(o => origin.startsWith(o))) {
+    if (!origin) {
+      return { error: NextResponse.json({ error: 'Forbidden — origin required' }, { status: 403 }) }
+    }
+    let normalized: string
+    try {
+      normalized = new URL(origin).origin
+    } catch {
+      return { error: NextResponse.json({ error: 'Forbidden — invalid origin' }, { status: 403 }) }
+    }
+    if (!ALLOWED_ORIGINS.has(normalized)) {
       return { error: NextResponse.json({ error: 'Forbidden — invalid origin' }, { status: 403 }) }
     }
   }

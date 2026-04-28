@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { insertPageview } from '@/lib/analytics-db'
+import { isValidOrigin } from '@/lib/api-security'
 
 /**
  * POST /api/analytics/collect
@@ -7,8 +8,17 @@ import { insertPageview } from '@/lib/analytics-db'
  * Receives pageview beacons from the client-side tracker.
  * Enriches with server-side geo data from Vercel's headers.
  * Stores in Postgres. No cookies, no PII retained.
+ *
+ * Guards: origin allowlist (DSIG own domains + localhost). Without this,
+ * anyone can flood the table with synthetic pageviews — DB bloat, skewed
+ * analytics, eventual storage cost. Origin check is browser-honest because
+ * legitimate beacons originate from our own pages, where the browser
+ * always sends Origin on cross-origin POST.
  */
 export async function POST(req: NextRequest) {
+  if (!isValidOrigin(req)) {
+    return NextResponse.json({ ok: false }, { status: 403 })
+  }
   try {
     const body = await req.json()
 

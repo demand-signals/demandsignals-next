@@ -27,6 +27,21 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT_WINDOW = 60_000 // 1 minute
 const RATE_LIMIT_MAX = 5 // 5 requests per minute per IP
 
+// ⚠️ KNOWN LIMITATION — IN-MEMORY ONLY.
+// This Map lives in the Lambda instance's memory. On Vercel, requests fan
+// across many cold + warm instances, so a determined attacker hitting
+// different instances effectively resets their counter. Acceptable as a
+// best-effort speed-bump against trivial flooding from a single client,
+// but NOT a real defense against motivated abuse.
+//
+// True defense requires a shared store (Vercel KV, Upstash Redis, or a
+// Supabase-backed counter table with a partial index). When you add one,
+// replace the Map below with the shared backend; the function signatures
+// can stay the same.
+//
+// See also: SMS-pump abuse via /api/sms/verify/send is gated by the
+// quote_events table (DB-backed, persistent), so the most expensive
+// vector is already protected — DON'T treat this Map as the SMS gate.
 export function isRateLimited(req: NextRequest): boolean {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     || req.headers.get('x-real-ip')
@@ -54,18 +69,34 @@ setInterval(() => {
 }, 60_000)
 
 // ── CSRF / Origin validation ─────────────────────────────────────────────────
-const ALLOWED_ORIGINS = [
+//
+// Compare by parsed URL origin, NOT string startsWith. Previously this used
+// `origin.startsWith(allowed)` which could match attacker-controlled values
+// like `http://localhost:3000.evil.com` (legal subdomain that literally
+// begins with the allowed string). new URL().origin returns just
+// `<scheme>://<host>[:<port>]` so equality is exact.
+const ALLOWED_ORIGINS = new Set<string>([
   'https://demandsignals.co',
   'https://www.demandsignals.co',
   'https://dsig.demandsignals.dev',
   'http://localhost:3000',
   'http://localhost:3001',
-]
+])
 
 export function isValidOrigin(req: NextRequest): boolean {
   const origin = req.headers.get('origin')
-  if (!origin) return true // non-browser requests (Postman, curl) don't send Origin
-  return ALLOWED_ORIGINS.some(o => origin.startsWith(o))
+  // Browsers ALWAYS send Origin on cross-origin POST/PATCH/DELETE per fetch
+  // spec. A missing Origin on a state-changing request indicates either
+  // server-to-server (rare for our public endpoints — those have their own
+  // Bearer auth) or a malicious bypass attempt. Deny.
+  if (!origin) return false
+  let normalized: string
+  try {
+    normalized = new URL(origin).origin
+  } catch {
+    return false
+  }
+  return ALLOWED_ORIGINS.has(normalized)
 }
 
 // ── Content-Type validation ──────────────────────────────────────────────────
