@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getStripeKeyDiagnostics } from '@/lib/stripe-client'
 
 // Keys we surface on the settings UI + expected value type.
 const KNOWN_FLAGS = [
@@ -35,15 +36,18 @@ export async function GET(request: NextRequest) {
 
   // Return env-var readiness signals (not the values — just "is this set?").
   // Helps admins diagnose "SMS flag is on but nothing is sending — oh, TWILIO_AUTH_TOKEN isn't set."
+  // Stripe readiness uses prefix validation (sk_/rk_ for secret, whsec_ for webhook)
+  // so a 'set but garbage' value like mk_… reports as not-configured + which slot
+  // is rejected, rather than a green check that lies.
+  const stripeDiag = getStripeKeyDiagnostics()
   const env = {
-    stripe_secret_configured: Boolean(
-      process.env.STRIPE_SECRET_KEY ??
-        process.env.STRIPE_CLAUDE_API_KEY ??
-        process.env.STRIPE_API_KEY,
-    ),
-    stripe_webhook_secret_configured: Boolean(
-      process.env.STRIPE_SNAPSHOT_SIGNING_SECRET ?? process.env.STRIPE_WEBHOOK_SECRET,
-    ),
+    stripe_secret_configured: Boolean(stripeDiag.active_secret_slot),
+    stripe_secret_active_slot: stripeDiag.active_secret_slot,
+    stripe_secret_active_prefix: stripeDiag.active_secret_prefix,
+    stripe_secret_rejected_slots: stripeDiag.rejected_secret_slots,
+    stripe_webhook_secret_configured: Boolean(stripeDiag.active_webhook_slot),
+    stripe_webhook_active_slot: stripeDiag.active_webhook_slot,
+    stripe_webhook_rejected_slots: stripeDiag.rejected_webhook_slots,
     stripe_publishable_configured: Boolean(process.env.STRIPE_PUBLISHABLE_KEY),
     twilio_configured: Boolean(
       process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN,
