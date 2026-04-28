@@ -382,28 +382,29 @@ export async function POST(
 
   // ── Render + persist deposit invoice PDF, then email it to the client ──
   // Best-effort: any failure here is logged but does not break the accept
-  // flow. The accepted-state UI copy ('A deposit invoice has been sent.')
-  // depends on this actually firing — the response payload now reports
-  // delivery state so the UI can adapt.
+  // flow. Each substep is independently caught so a failure in one (e.g.
+  // PDF render) doesn't skip the next (e.g. email without attachment).
   let invoiceEmailResult: {
     sent: boolean
     to: string | null
     error: string | null
-  } = { sent: false, to: null, error: null }
+    stage: string | null
+  } = { sent: false, to: null, error: null, stage: null }
 
+  const recipientEmail =
+    sow.prospect?.owner_email ?? sow.prospect?.business_email ?? null
+  console.log(`[accept] recipient_email=${recipientEmail ?? 'null'} sow=${sow.sow_number}`)
+
+  // Hydrate line items + render input (independent of email send).
+  let renderInput: InvoiceWithLineItems | null = null
   try {
-    const recipient =
-      sow.prospect?.owner_email ?? sow.prospect?.business_email ?? null
-
-    // Hydrate the just-inserted invoice with line items + bill_to so the
-    // PDF renderer has everything it needs.
     const { data: lineItems } = await supabaseAdmin
       .from('invoice_line_items')
       .select('*')
       .eq('invoice_id', depositInvoice.id)
       .order('sort_order', { ascending: true })
 
-    const renderInput: InvoiceWithLineItems = {
+    renderInput = {
       ...(depositInvoice as Invoice),
       line_items: lineItems ?? [],
       bill_to: {
@@ -412,45 +413,74 @@ export async function POST(
         email: sow.prospect?.owner_email ?? null,
       },
     }
+  } catch (e) {
+    console.error('[accept] line item hydrate failed:', e instanceof Error ? e.message : e)
+  }
 
-    const [paymentSummary, projectMeta] = await Promise.all([
-      getInvoicePaymentSummary(depositInvoice.id, depositInvoice.total_due_cents),
-      getInvoiceProjectMeta(depositInvoice.id),
-    ])
-
-    const pdfBuffer = await renderInvoicePdf(renderInput, {
-      prospect: {
-        business_name: sow.prospect?.business_name ?? 'Client',
-        owner_name:    sow.prospect?.owner_name ?? null,
-        owner_email:   sow.prospect?.owner_email ?? null,
-        address:       sow.prospect?.address ?? null,
-        city:          sow.prospect?.city ?? null,
-        state:         sow.prospect?.state ?? null,
-        zip:           sow.prospect?.zip ?? null,
-      },
-      project: projectMeta,
-      paymentSummary,
-    })
-
-    // Persist the rendered PDF to R2 so the magic-link page can serve it.
-    const pdfKey = `invoices/${depositInvoice.invoice_number}_v${depositInvoice.pdf_version ?? 1}.pdf`
+  // PDF render — failures here MUST NOT block the email send. Email goes
+  // out without an attachment if Chromium falls over.
+  let pdfBuffer: Buffer | undefined
+  if (renderInput) {
     try {
-      await uploadPrivate(pdfKey, pdfBuffer, 'application/pdf')
-      await supabaseAdmin
-        .from('invoices')
-        .update({
-          pdf_storage_path: pdfKey,
-          pdf_rendered_at: new Date().toISOString(),
-        })
-        .eq('id', depositInvoice.id)
-    } catch (uploadErr) {
-      console.error('[accept] Deposit invoice R2 upload failed:', uploadErr instanceof Error ? uploadErr.message : uploadErr)
+      const [paymentSummary, projectMeta] = await Promise.all([
+        getInvoicePaymentSummary(depositInvoice.id, depositInvoice.total_due_cents),
+        getInvoiceProjectMeta(depositInvoice.id),
+      ])
+      pdfBuffer = await renderInvoicePdf(renderInput, {
+        prospect: {
+          business_name: sow.prospect?.business_name ?? 'Client',
+          owner_name:    sow.prospect?.owner_name ?? null,
+          owner_email:   sow.prospect?.owner_email ?? null,
+          address:       sow.prospect?.address ?? null,
+          city:          sow.prospect?.city ?? null,
+          state:         sow.prospect?.state ?? null,
+          zip:           sow.prospect?.zip ?? null,
+        },
+        project: projectMeta,
+        paymentSummary,
+      })
+      // Persist the rendered PDF to R2 so the magic-link page can serve it.
+      const pdfKey = `invoices/${depositInvoice.invoice_number}_v${depositInvoice.pdf_version ?? 1}.pdf`
+      try {
+        await uploadPrivate(pdfKey, pdfBuffer, 'application/pdf')
+        await supabaseAdmin
+          .from('invoices')
+          .update({
+            pdf_storage_path: pdfKey,
+            pdf_rendered_at: new Date().toISOString(),
+          })
+          .eq('id', depositInvoice.id)
+        console.log(`[accept] PDF uploaded to R2: ${pdfKey}`)
+      } catch (uploadErr) {
+        console.error('[accept] Deposit invoice R2 upload failed:', uploadErr instanceof Error ? uploadErr.message : uploadErr)
+      }
+    } catch (renderErr) {
+      console.error('[accept] PDF render failed (continuing without attachment):', renderErr instanceof Error ? renderErr.message : renderErr)
     }
+  }
 
-    if (recipient) {
+  // Email send — independent of PDF success. Sends with attachment when
+  // available, without when the renderer threw above.
+  if (!recipientEmail) {
+    invoiceEmailResult = {
+      sent: false,
+      to: null,
+      error: 'No prospect email on file (owner_email + business_email both null)',
+      stage: 'no_recipient',
+    }
+    console.warn('[accept] Skipping deposit invoice email — no recipient')
+  } else if (!renderInput) {
+    invoiceEmailResult = {
+      sent: false,
+      to: recipientEmail,
+      error: 'Could not hydrate invoice for email send',
+      stage: 'hydrate_failed',
+    }
+  } else {
+    try {
       const result = await sendInvoiceEmail(
         renderInput,
-        recipient,
+        recipientEmail,
         {
           business_name: sow.prospect?.business_name ?? undefined,
           owner_email:   sow.prospect?.owner_email ?? null,
@@ -460,47 +490,58 @@ export async function POST(
       )
       invoiceEmailResult = {
         sent: result.success,
-        to: recipient,
+        to: recipientEmail,
         error: result.success ? null : (result.error ?? 'unknown send failure'),
+        stage: result.success ? 'sent' : 'send_failed',
       }
-      if (!result.success) {
-        console.error('[accept] Deposit invoice email send failed:', result.error)
-      }
-    } else {
+      console.log(`[accept] Email send → success=${result.success} error=${result.error ?? 'none'} message_id=${result.message_id ?? 'none'}`)
+    } catch (emailErr) {
       invoiceEmailResult = {
         sent: false,
-        to: null,
-        error: 'No prospect email on file (owner_email + business_email both null)',
+        to: recipientEmail,
+        error: emailErr instanceof Error ? emailErr.message : 'unknown deposit email error',
+        stage: 'send_threw',
       }
-      console.warn('[accept] Skipping deposit invoice email — no recipient')
+      console.error('[accept] sendInvoiceEmail threw:', invoiceEmailResult.error)
     }
-  } catch (emailErr) {
-    invoiceEmailResult.error =
-      emailErr instanceof Error ? emailErr.message : 'unknown deposit email error'
-    console.error('[accept] Deposit invoice email pipeline threw:', invoiceEmailResult.error)
   }
 
-  // ── SMS the magic-link to the prospect (best-effort, parallel) ──
+  // ── SMS the magic-link to the prospect (best-effort) ──
   // Sends a short text with the deposit invoice URL so the client can pay
   // from their phone without hunting through email. Honors the
-  // sms_delivery_enabled kill switch; logs delivery state on the response
-  // so the post-accept UI can be honest about what fired.
+  // sms_delivery_enabled kill switch; logs every branch so it's clear in
+  // Vercel function logs why a given SOW accept did or didn't text.
   let invoiceSmsResult: {
     sent: boolean
     to: string | null
     error: string | null
-  } = { sent: false, to: null, error: null }
+    stage: string | null
+  } = { sent: false, to: null, error: null, stage: null }
 
   try {
     const smsRecipient =
       sow.prospect?.owner_phone ?? sow.prospect?.business_phone ?? null
+    console.log(`[accept] recipient_phone=${smsRecipient ?? 'null'} sow=${sow.sow_number}`)
+
+    const smsEnabled = await isSmsEnabled()
+    console.log(`[accept] sms_delivery_enabled=${smsEnabled}`)
 
     if (!smsRecipient) {
-      invoiceSmsResult.error = 'No prospect phone on file (owner_phone + business_phone both null)'
+      invoiceSmsResult = {
+        sent: false,
+        to: null,
+        error: 'No prospect phone on file (owner_phone + business_phone both null)',
+        stage: 'no_recipient',
+      }
       console.warn('[accept] Skipping deposit invoice SMS — no recipient phone')
-    } else if (!(await isSmsEnabled())) {
-      invoiceSmsResult.error = 'SMS delivery disabled in config'
-      // Don't log — kill switch is operator intent, not a failure.
+    } else if (!smsEnabled) {
+      invoiceSmsResult = {
+        sent: false,
+        to: smsRecipient,
+        error: 'SMS delivery disabled in config (sms_delivery_enabled=false)',
+        stage: 'kill_switch_off',
+      }
+      // Logged above — kill switch is operator intent, not a failure to alert on.
     } else {
       const businessName = sow.prospect?.business_name ?? 'your business'
       const depositStr = `$${(depositCents / 100).toFixed(2)}`
@@ -513,14 +554,17 @@ export async function POST(
         sent: result.success,
         to: smsRecipient,
         error: result.success ? null : (result.error ?? 'unknown sms failure'),
+        stage: result.success ? 'sent' : 'send_failed',
       }
-      if (!result.success) {
-        console.error('[accept] Deposit invoice SMS send failed:', result.error)
-      }
+      console.log(`[accept] SMS send → success=${result.success} error=${result.error ?? 'none'} message_id=${result.message_id ?? 'none'}`)
     }
   } catch (smsErr) {
-    invoiceSmsResult.error =
-      smsErr instanceof Error ? smsErr.message : 'unknown deposit sms error'
+    invoiceSmsResult = {
+      sent: false,
+      to: invoiceSmsResult.to,
+      error: smsErr instanceof Error ? smsErr.message : 'unknown deposit sms error',
+      stage: 'send_threw',
+    }
     console.error('[accept] Deposit invoice SMS pipeline threw:', invoiceSmsResult.error)
   }
 
