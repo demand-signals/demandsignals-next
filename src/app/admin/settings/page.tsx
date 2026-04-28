@@ -10,18 +10,26 @@ import { Loader2, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
 
 interface ConfigRow {
   key: string
-  value: string
+  // JSONB — could be boolean, string, number, null. Don't lock to string.
+  value: unknown
 }
 
 interface EnvReadiness {
   stripe_secret_configured: boolean
+  stripe_secret_active_slot?: string | null
+  stripe_secret_active_prefix?: string | null
+  stripe_secret_rejected_slots?: Array<{ slot: string; prefix: string }>
   stripe_webhook_secret_configured: boolean
+  stripe_webhook_active_slot?: string | null
+  stripe_webhook_rejected_slots?: Array<{ slot: string; prefix: string }>
   stripe_publishable_configured: boolean
   twilio_configured: boolean
   twilio_866_configured: boolean
   sms_test_mode: boolean
   sms_test_allowlist_count: number
   smtp_configured: boolean
+  resend_configured: boolean
+  email_provider_configured: boolean
   pdf_service_configured: boolean
   r2_configured: boolean
   cron_secret_configured: boolean
@@ -58,8 +66,8 @@ const FLAG_METADATA: Record<
   email_delivery_enabled: {
     label: 'Email Delivery',
     description:
-      'Enables the Email send button on invoice detail. Uses Gmail SMTP with PDF attachment.',
-    requires: ['smtp_configured'],
+      'Enables the Email send button on invoice detail. Sends via Resend (primary) with SMTP fallback.',
+    requires: ['email_provider_configured'],
   },
   subscription_cycle_cron_enabled: {
     label: 'Subscription Cycle Cron',
@@ -85,7 +93,7 @@ const FLAG_METADATA: Record<
   },
 }
 
-const ENV_LABELS: Record<keyof EnvReadiness, string> = {
+const ENV_LABELS: Partial<Record<keyof EnvReadiness, string>> = {
   stripe_secret_configured: 'Stripe secret key',
   stripe_webhook_secret_configured: 'Stripe webhook signing secret',
   stripe_publishable_configured: 'Stripe publishable key',
@@ -93,7 +101,9 @@ const ENV_LABELS: Record<keyof EnvReadiness, string> = {
   twilio_866_configured: 'Twilio 866# sender',
   sms_test_mode: 'SMS test mode (allowlist-only)',
   sms_test_allowlist_count: 'SMS test allowlist numbers',
-  smtp_configured: 'SMTP (host + user + pass)',
+  resend_configured: 'Resend API key',
+  smtp_configured: 'SMTP fallback (host + user + pass)',
+  email_provider_configured: 'Email provider (Resend or SMTP)',
   pdf_service_configured: 'PDF service URL + secret',
   r2_configured: 'R2 storage credentials',
   cron_secret_configured: 'Cron secret',
@@ -103,6 +113,7 @@ export default function SettingsPage() {
   const [data, setData] = useState<ConfigResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [flipping, setFlipping] = useState<string | null>(null)
+  const [flipError, setFlipError] = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
@@ -116,20 +127,35 @@ export default function SettingsPage() {
     load()
   }, [])
 
-  async function flipFlag(key: string, currentValue: string) {
-    setFlipping(key)
-    const newValue = currentValue === 'true' ? 'false' : 'true'
-    await fetch('/api/admin/config', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, value: newValue }),
-    })
-    setFlipping(null)
-    load()
+  // Coerce whatever quote_config.value is into a strict on/off boolean.
+  // JSONB can be native true / native false / string "true" / string "false"
+  // / null / empty string — all four show up in the wild because rows have
+  // been written by different code paths over time.
+  function flagOn(key: string): boolean {
+    const v = data?.config.find((c) => c.key === key)?.value
+    return v === true || v === 'true'
   }
 
-  function flagValue(key: string): string {
-    return data?.config.find((c) => c.key === key)?.value ?? 'false'
+  async function flipFlag(key: string) {
+    setFlipping(key)
+    setFlipError(null)
+    const next = !flagOn(key)
+    try {
+      const res = await fetch('/api/admin/config', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value: next }),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j.error ?? `PATCH ${res.status} ${res.statusText}`)
+      }
+    } catch (e) {
+      setFlipError(e instanceof Error ? e.message : 'Toggle failed')
+    } finally {
+      setFlipping(null)
+      load()
+    }
   }
 
   function envReady(key: string, required: string[]): boolean {
@@ -159,6 +185,12 @@ export default function SettingsPage() {
         </p>
       </div>
 
+      {flipError && (
+        <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <strong>Toggle failed:</strong> {flipError}
+        </div>
+      )}
+
       <section>
         <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-3">
           Feature Flags
@@ -177,8 +209,7 @@ export default function SettingsPage() {
             <tbody>
               {data.known_flags.map((key) => {
                 const meta = FLAG_METADATA[key]
-                const val = flagValue(key)
-                const on = val === 'true'
+                const on = flagOn(key)
                 const required = meta?.requires ?? []
                 const ready = envReady(key, required)
                 return (
@@ -210,7 +241,7 @@ export default function SettingsPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button
-                        onClick={() => flipFlag(key, val)}
+                        onClick={() => flipFlag(key)}
                         disabled={flipping === key}
                         className={`text-xs font-semibold rounded px-3 py-1 ${
                           on
@@ -287,7 +318,13 @@ export default function SettingsPage() {
               {data.config.map((c) => (
                 <tr key={c.key} className="border-t border-slate-100">
                   <td className="px-4 py-2 font-mono text-xs">{c.key}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-slate-600">{c.value}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-slate-600">{
+                    c.value === null || c.value === undefined
+                      ? <span className="text-slate-300 italic">null</span>
+                      : typeof c.value === 'string'
+                        ? c.value
+                        : JSON.stringify(c.value)
+                  }</td>
                 </tr>
               ))}
             </tbody>

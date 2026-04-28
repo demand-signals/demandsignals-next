@@ -58,8 +58,17 @@ export async function GET(request: NextRequest) {
       .split(',')
       .map((n) => n.trim())
       .filter((n) => n.length > 0).length,
+    // SMTP fallback wiring (only used if Resend fails). Truly optional now.
     smtp_configured: Boolean(
       process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS,
+    ),
+    // Resend is the primary email provider. Either Resend OR SMTP is enough
+    // to actually send mail; this composite signal is what the Settings UI
+    // should use for email-readiness, not the SMTP-only check above.
+    resend_configured: Boolean(process.env.RESEND_API_KEY),
+    email_provider_configured: Boolean(
+      process.env.RESEND_API_KEY ||
+      (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
     ),
     pdf_service_configured: Boolean(
       process.env.PDF_SERVICE_URL && process.env.PDF_SERVICE_SECRET,
