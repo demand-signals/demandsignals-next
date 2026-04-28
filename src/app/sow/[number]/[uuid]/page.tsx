@@ -667,46 +667,10 @@ export default async function PublicSowPage({
         </div>
       </section>
 
-      {/* ── 6. Footer / Van Gogh closer ─────────────────────────── */}
-      <footer style={{ background: 'var(--dark)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        <div className="max-w-[860px] mx-auto px-6 py-16 text-center">
-          <p
-            className="text-lg italic mb-2 max-w-lg mx-auto leading-relaxed"
-            style={{ color: 'var(--teal)' }}
-          >
-            &ldquo;Great things are done by a series of small things brought together.&rdquo;
-          </p>
-          <p className="text-xs mb-12" style={{ color: '#94a0b8' }}>— Vincent Van Gogh</p>
-
-          <h3 className="text-2xl font-bold text-white mb-12" style={{ letterSpacing: '-0.02em' }}>
-            Let&rsquo;s get to work — together
-          </h3>
-
-          {/* Contact 3-col — explicit inline color so the marketing nav's
-              CSS can't shadow the value text into invisibility. */}
-          <div
-            className="flex flex-col sm:flex-row pt-8 max-w-md mx-auto divide-y sm:divide-y-0 sm:divide-x divide-white/10"
-            style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}
-          >
-            <div className="flex-1 text-center py-4 sm:py-0 sm:px-6">
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#cbd5e1' }}>EMAIL</p>
-              <a href="mailto:DemandSignals@gmail.com" className="text-sm font-semibold hover:underline" style={{ color: '#ffffff' }}>DemandSignals@gmail.com</a>
-            </div>
-            <div className="flex-1 text-center py-4 sm:py-0 sm:px-6">
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#cbd5e1' }}>PHONE</p>
-              <a href="tel:+19165422423" className="text-sm font-semibold hover:underline" style={{ color: '#ffffff' }}>(916) 542-2423</a>
-            </div>
-            <div className="flex-1 text-center py-4 sm:py-0 sm:px-6">
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: '#cbd5e1' }}>WEB</p>
-              <a href="https://demandsignals.co" target="_blank" rel="noreferrer" className="text-sm font-semibold hover:underline" style={{ color: '#ffffff' }}>demandsignals.co</a>
-            </div>
-          </div>
-
-          <p className="mt-12 text-xs" style={{ color: '#cbd5e1', opacity: 0.7 }}>
-            &copy; 2026 Demand Signals. Confidential.
-          </p>
-        </div>
-      </footer>
+      {/* Footer Van Gogh closer removed — the marketing site's standard
+          Footer already renders below via the root layout, and the SOW's
+          dark hero already shows brand contact + magic-link context. The
+          duplicate closer was redundant. */}
     </div>
   )
 }
