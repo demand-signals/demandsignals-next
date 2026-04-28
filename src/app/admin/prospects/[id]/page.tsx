@@ -13,6 +13,8 @@ import {
 } from '@/lib/prospect-channels'
 import Link from 'next/link'
 import { ProspectScoreBadge, TierBadge } from '@/components/admin/prospect-score-badge'
+import { BookingCard } from '@/components/admin/BookingCard'
+import { LatestQuotePanel } from '@/components/admin/LatestQuotePanel'
 // suggestClientCode removed — now using the server-side suggest endpoint
 import { ProspectEditModal } from '@/components/admin/prospect-edit-modal'
 import { ActivityTimeline } from '@/components/admin/activity-timeline'
@@ -213,6 +215,32 @@ export default function ProspectDetailPage() {
   const prospect = prospectsQuery.data?.data.find(p => p.id === id)
   const activities = activitiesQuery.data?.data ?? []
 
+  // Latest booking + latest quote for prospect-record surfacing.
+  const [latestBooking, setLatestBooking] = useState<{
+    id: string; start_at: string; end_at: string; attendee_email: string;
+    attendee_phone: string | null; google_meet_link: string | null; status: string
+  } | null>(null)
+  const [latestQuote, setLatestQuote] = useState<Parameters<typeof LatestQuotePanel>[0]['quote'] | null>(null)
+
+  useEffect(() => {
+    if (!prospect?.id) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const [b, q] = await Promise.all([
+          fetch(`/api/admin/prospects/${prospect.id}/latest-booking`).then((r) => r.json()).catch(() => ({ booking: null })),
+          fetch(`/api/admin/prospects/${prospect.id}/latest-quote`).then((r) => r.json()).catch(() => ({ quote: null })),
+        ])
+        if (cancelled) return
+        setLatestBooking(b.booking ?? null)
+        setLatestQuote(q.quote ?? null)
+      } catch {
+        if (!cancelled) { setLatestBooking(null); setLatestQuote(null) }
+      }
+    })()
+    return () => { cancelled = true }
+  }, [prospect?.id])
+
   // Sync clientCodeInput when prospect loads/changes
   useEffect(() => {
     if (prospect) setClientCodeInput((prospect as any).client_code ?? '')
@@ -337,6 +365,22 @@ export default function ProspectDetailPage() {
 
   return (
     <div className="space-y-6 max-w-7xl">
+      {/* Booking card — prominent at top when an upcoming confirmed booking exists */}
+      {latestBooking && latestBooking.status === 'confirmed' && new Date(latestBooking.start_at) > new Date() && (
+        <BookingCard
+          booking={latestBooking}
+          onChange={() => {
+            // Refetch booking on change (cancel / reschedule)
+            if (prospect?.id) {
+              fetch(`/api/admin/prospects/${prospect.id}/latest-booking`)
+                .then((r) => r.json())
+                .then((d) => setLatestBooking(d.booking ?? null))
+                .catch(() => setLatestBooking(null))
+            }
+          }}
+        />
+      )}
+
       {/* Header */}
       <div className="space-y-3">
         <button
@@ -1335,6 +1379,13 @@ export default function ProspectDetailPage() {
         </div>
       </div>
 
+      {/* Latest Quote summary — surfaces conversation context above documents */}
+      {latestQuote && (
+        <div className="mb-4">
+          <LatestQuotePanel quote={latestQuote} />
+        </div>
+      )}
+
       {/* Documents (invoices + SOWs for this prospect) */}
       <ProspectDocuments prospectId={prospect.id} />
 
@@ -1825,22 +1876,34 @@ function ProspectDocuments({ prospectId }: { prospectId: string }) {
       created_at: string
     }>
   >([])
+  const [quotes, setQuotes] = useState<
+    Array<{
+      id: string
+      doc_number: string | null
+      status: string
+      estimate_low: number | null
+      estimate_high: number | null
+      created_at: string
+    }>
+  >([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
       fetch(`/api/admin/invoices?prospect_id=${prospectId}&limit=50`).then((r) => r.json()),
       fetch(`/api/admin/sow?prospect_id=${prospectId}`).then((r) => r.json()),
+      fetch(`/api/admin/prospects/${prospectId}/quotes`).then((r) => r.json()),
     ])
-      .then(([invData, sowData]) => {
+      .then(([invData, sowData, qData]) => {
         setInvoices(invData.invoices ?? [])
         setSows(sowData.sows ?? [])
+        setQuotes(qData.quotes ?? [])
       })
       .finally(() => setLoading(false))
   }, [prospectId])
 
   if (loading) return null
-  if (invoices.length === 0 && sows.length === 0) {
+  if (invoices.length === 0 && sows.length === 0 && quotes.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-5 mt-6">
         <h2 className="font-semibold text-slate-900 mb-2">Documents</h2>
@@ -1889,6 +1952,32 @@ function ProspectDocuments({ prospectId }: { prospectId: string }) {
           </Link>
         </div>
       </div>
+
+      {quotes.length > 0 && (
+        <div>
+          <div className="text-xs font-semibold text-slate-500 uppercase mb-1">Quotes (EST)</div>
+          <div className="space-y-1">
+            {quotes.map((q) => (
+              <Link
+                key={q.id}
+                href={`/admin/quotes/${q.id}`}
+                className="flex items-center justify-between text-sm hover:bg-slate-50 -mx-2 px-2 py-1 rounded"
+              >
+                <span className="font-mono text-xs text-slate-600">{q.doc_number ?? '—'}</span>
+                <span className="flex-1 mx-3 text-xs text-slate-500">{q.status}</span>
+                <span>
+                  {q.estimate_low != null && q.estimate_high != null
+                    ? `$${Math.round(q.estimate_low / 100)}-$${Math.round(q.estimate_high / 100)}`
+                    : '—'}
+                </span>
+                <span className="ml-3 text-[10px] text-slate-400">
+                  {new Date(q.created_at).toLocaleDateString()}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {sows.length > 0 && (
         <div>
