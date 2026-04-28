@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Phone, Send, Loader2, Lock, Unlock, Sparkles, X } from 'lucide-react'
 import RetainerStep from '@/components/quote/RetainerStep'
+import { MeetingConfirmedPanel } from '@/components/quote/MeetingConfirmedPanel'
 
 // ============================================================
 // Types
@@ -26,6 +27,10 @@ interface SessionPublic {
   missed_leads_monthly: number | null
   avg_customer_value: number | null
   handoff_offered: boolean
+  booking_id?: string | null
+  attendee_email?: string | null
+  booking_start_at?: string | null
+  booking_meet_link?: string | null
 }
 
 interface SelectedItem {
@@ -955,24 +960,36 @@ function Configurator({
             />
           )}
 
-          {/* CTAs — shown after retainer step is complete */}
+          {/* CTAs — shown after retainer step is complete.
+              When the AI has booked a real meeting, replace the CTAs
+              with a MeetingConfirmedPanel showing time + meet link. */}
           {retainerComplete && (
-            <div className="grid grid-cols-2 gap-2 pt-2">
-              <a
-                href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true"
-                target="_blank"
-                rel="noopener"
-                className="col-span-2 bg-[var(--teal)] text-white rounded-lg py-2.5 text-sm font-semibold text-center"
-              >
-                Book a Strategy Call
-              </a>
-              <button
-                onClick={() => alert('Research CTA coming soon')}
-                className="col-span-2 border border-slate-200 text-slate-700 rounded-lg py-2 text-sm font-medium"
-              >
-                Start With a Free Research Report
-              </button>
-            </div>
+            session?.booking_id && session?.booking_start_at ? (
+              <div className="pt-2">
+                <MeetingConfirmedPanel
+                  startAt={session.booking_start_at}
+                  meetLink={session.booking_meet_link ?? null}
+                  attendeeEmail={session.attendee_email ?? null}
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <a
+                  href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true"
+                  target="_blank"
+                  rel="noopener"
+                  className="col-span-2 bg-[var(--teal)] text-white rounded-lg py-2.5 text-sm font-semibold text-center"
+                >
+                  Book a Strategy Call
+                </a>
+                <button
+                  onClick={() => alert('Research CTA coming soon')}
+                  className="col-span-2 border border-slate-200 text-slate-700 rounded-lg py-2 text-sm font-medium"
+                >
+                  Start With a Free Research Report
+                </button>
+              </div>
+            )
           )}
         </div>
       )}
