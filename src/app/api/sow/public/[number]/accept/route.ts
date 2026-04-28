@@ -115,6 +115,13 @@ export async function POST(
 
   // Allocate new-format invoice number. Fall back to legacy RPC if prospect
   // has no client_code (best-effort — don't break the accept flow).
+  //
+  // CRITICAL: the local depositInvoice.invoice_number must reflect what's
+  // actually persisted on the row. Previously the local var was bumped to
+  // the new number AFTER the update() without checking for error, so a
+  // silent update failure left the DB at PENDING-{uuid} while the API
+  // returned the intended INV-CLIENT-MMDDYY{A} as the magic-link target —
+  // producing a 404 on the customer's pay page.
   if (sow.prospect_id) {
     try {
       const invNumber = await allocateDocNumber({
@@ -123,23 +130,52 @@ export async function POST(
         ref_table: 'invoices',
         ref_id: depositInvoice.id,
       })
-      await supabaseAdmin
+      const { error: renameErr } = await supabaseAdmin
         .from('invoices')
         .update({ invoice_number: invNumber })
         .eq('id', depositInvoice.id)
-      depositInvoice.invoice_number = invNumber
+      if (renameErr) {
+        // The number was allocated in document_numbers but the rename failed.
+        // Leave the row at PENDING (admin can fix manually) and log loudly so
+        // we don't silently hand a customer a URL that 404s.
+        console.error('[accept] Invoice rename failed after allocateDocNumber:', renameErr.message)
+      } else {
+        depositInvoice.invoice_number = invNumber
+      }
     } catch (numErr) {
       // Prospect may not yet have a client_code. Fall back to legacy number.
       console.warn('[accept] New-format numbering failed, falling back:', numErr instanceof Error ? numErr.message : numErr)
       const { data: legacyNum } = await supabaseAdmin.rpc('generate_invoice_number')
       if (legacyNum) {
-        await supabaseAdmin
+        const { error: renameErr } = await supabaseAdmin
           .from('invoices')
           .update({ invoice_number: legacyNum })
           .eq('id', depositInvoice.id)
-        depositInvoice.invoice_number = legacyNum
+        if (renameErr) {
+          console.error('[accept] Legacy invoice rename failed:', renameErr.message)
+        } else {
+          depositInvoice.invoice_number = legacyNum
+        }
       }
       // If legacy also fails, the PENDING number stays — visible in admin, fixable manually.
+    }
+  }
+
+  // Re-verify the row's current invoice_number from the DB before we hand
+  // the magic link to the customer. If for any reason the row was renamed
+  // by a concurrent process, our local copy may already be stale; if a
+  // rename failed, the DB authoritative state may still be PENDING. Either
+  // way, returning what's actually persisted prevents the customer-facing
+  // 404 we just diagnosed.
+  {
+    const { data: fresh } = await supabaseAdmin
+      .from('invoices')
+      .select('invoice_number, public_uuid')
+      .eq('id', depositInvoice.id)
+      .single()
+    if (fresh?.invoice_number) {
+      depositInvoice.invoice_number = fresh.invoice_number
+      depositInvoice.public_uuid = fresh.public_uuid
     }
   }
 
