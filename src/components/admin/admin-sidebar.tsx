@@ -8,7 +8,7 @@ import {
   Target, MapPin, FileText, BarChart3, Layers, LineChart,
   Newspaper, Receipt, CreditCard, Repeat, ScrollText, Settings,
   FolderKanban, FileCheck, FileMinus, Coins, UserCheck, MessageSquare, Zap,
-  Clock, UserCog, Shield, Eye, ExternalLink, Bell,
+  Clock, UserCog, Shield, Eye, ExternalLink, Bell, Plug,
   ChevronRight, ChevronDown,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -113,6 +113,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'ADMIN',
     items: [
       { href: '/admin/messages', label: 'System Messages', icon: Bell },
+      { href: '/admin/integrations/google', label: 'Integrations', icon: Plug },
       { href: '/admin/users', label: 'Users', icon: UserCog, soon: true },
       { href: '/admin/settings', label: 'Settings', icon: Settings },
       { href: '/admin/security', label: 'Security', icon: Shield, soon: true },
