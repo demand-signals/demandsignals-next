@@ -27,7 +27,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   // ── Load the quote session ────────────────────────────────────────────
   const { data: session, error: sessErr } = await supabaseAdmin
     .from('quote_sessions')
-    .select('id, business_name, prospect_id, estimate_low, scope_summary, selected_items')
+    .select('id, business_name, prospect_id, estimate_low, selected_items')
     .eq('id', sessionId)
     .single()
 
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   // ── Load the prospect (need prospect_id confirmed, client_code for numbering) ──
   const { data: prospect, error: prospErr } = await supabaseAdmin
     .from('prospects')
-    .select('id, business_name, client_code')
+    .select('id, business_name, client_code, scope_summary')
     .eq('id', session.prospect_id)
     .single()
 
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       quote_session_id: sessionId,
       status: 'draft',
       title,
-      scope_summary: session.scope_summary ?? null,
+      scope_summary: prospect.scope_summary ?? null,
       phases,
       deliverables: [],
       timeline: [],
