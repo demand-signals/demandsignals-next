@@ -49,8 +49,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: 'CLIENTS',
     items: [
-      { href: '/admin/clients', label: 'Manage Clients', icon: UserCheck, soon: true },
-      { href: '/admin/communications', label: 'Communications', icon: MessageSquare, soon: true },
+      { href: '/admin/clients', label: 'Manage Clients', icon: UserCheck },
+      { href: '/admin/communications', label: 'Communications', icon: MessageSquare },
       { href: '/admin/automations', label: 'Automations', icon: Zap, soon: true },
     ],
   },
