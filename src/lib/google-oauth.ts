@@ -19,18 +19,19 @@ const SCOPES = [
   'profile',
 ]
 
-// Calendar integration uses its own OAuth client (DSIG Main), separate from
-// the admin-login Google sign-in flow which uses Supabase Auth's client.
-// Falls back to GOOGLE_CLIENT_ID/SECRET only if the calendar-specific vars
-// are missing — for backward compat during deploy.
+// Calendar integration uses GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET.
+// These env vars must point at the DSIG Main OAuth client, which has
+// https://demandsignals.co/api/integrations/google/callback registered as
+// an authorized redirect URI. Supabase Auth (admin login) uses separate
+// config stored in the Supabase dashboard — no shared env vars.
 function clientId(): string {
-  const v = process.env.GOOGLE_CALENDAR_CLIENT_ID ?? process.env.GOOGLE_CLIENT_ID
-  if (!v) throw new Error('GOOGLE_CALENDAR_CLIENT_ID not configured')
+  const v = process.env.GOOGLE_CLIENT_ID
+  if (!v) throw new Error('GOOGLE_CLIENT_ID not configured')
   return v
 }
 function clientSecret(): string {
-  const v = process.env.GOOGLE_CALENDAR_CLIENT_SECRET ?? process.env.GOOGLE_CLIENT_SECRET
-  if (!v) throw new Error('GOOGLE_CALENDAR_CLIENT_SECRET not configured')
+  const v = process.env.GOOGLE_CLIENT_SECRET
+  if (!v) throw new Error('GOOGLE_CLIENT_SECRET not configured')
   return v
 }
 function redirectUri(): string {

@@ -587,10 +587,11 @@ The `/api/admin/config` PATCH path (commit `9e0784d`) coerces incoming `'true'`/
 **Problem:** Running diagnostic SQL right after a code change that should write rows can return zero results — even though the new code was deployed and triggered. Cause: the test action ran against an OLD Vercel deploy that hadn't picked up the new code yet, OR the query ran before the row was inserted.
 **Solution:** Always confirm the Vercel deploy SHA matches your latest commit BEFORE running a "did the new code run?" diagnostic. Easy check: `curl -s -o /dev/null -D - https://demandsignals.co | grep -i "x-vercel-id"` and compare.
 
-### GOOGLE_CLIENT_ID collision with Supabase Auth
-**Problem:** Adding a second Google OAuth integration (Calendar) and reusing the existing `GOOGLE_CLIENT_ID` env var works in dev but fails in production with `Error 400: redirect_uri_mismatch` — even when the redirect URI is correctly registered on the GCP credentials page. Cause: `GOOGLE_CLIENT_ID` is already consumed by **Supabase Auth** for the `/admin-login` Google sign-in flow. Supabase's Google provider is configured with a DIFFERENT OAuth client (`219907120133-uu2u...`) that has Supabase's callback URL registered. When new code reads the same `GOOGLE_CLIENT_ID` env var, it sends Supabase's client_id paired with our own redirect_uri — mismatch.
-**Solution:** Use distinct env var names per integration. Calendar integration uses `GOOGLE_CALENDAR_CLIENT_ID` + `GOOGLE_CALENDAR_CLIENT_SECRET` pointing at the `DSIG Main` OAuth client (which has `https://demandsignals.co/api/integrations/google/callback` registered). Existing `GOOGLE_CLIENT_ID` stays pointed at Supabase Auth's client. See `src/lib/google-oauth.ts` clientId() / clientSecret() functions.
-**Time wasted before catching this: hours.** The diagnostic that finally pinned it was `/api/integrations/google/debug` returning the literal `client_id` and `redirect_uri` strings being sent to Google — this immediately surfaced the wrong client_id was being attached. Lesson: when env vars and config look right, build a debug endpoint that returns the LITERAL VALUES the code is putting on the wire. Don't keep asking the user to re-verify what they already verified.
+### GOOGLE_CLIENT_ID was pointing at the wrong OAuth client (NOT a Supabase collision)
+**Problem:** The Calendar OAuth flow was failing with `Error 400: redirect_uri_mismatch` even though the redirect URI was correctly registered in GCP. Cause: `GOOGLE_CLIENT_ID` in Vercel held a DIFFERENT OAuth client's ID (`219907120133-uu2u...`) — not the `DSIG Main` client (`995295804425-tm28...`) where the redirect URI was registered. The wrong-client ID was sending Google our redirect URI paired with another client's ID.
+**Solution:** `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in Vercel must point at the `DSIG Main` OAuth client, which has `https://demandsignals.co/api/integrations/google/callback` as an authorized redirect URI. Supabase Auth (the `/admin-login` flow) uses its OWN config stored in the Supabase dashboard — it does NOT read these env vars, so there is no actual collision.
+**Faster diagnostic next time:** when env vars and GCP config both look right, hit a temporary admin-gated debug endpoint that returns the literal `client_id` and `redirect_uri` strings the code is sending. Don't re-ask the user to verify what they already verified.
+**Lesson:** before assuming a collision/aliasing problem exists, read what's actually in Vercel env vars and what code reads them. Listing env vars via the Vercel API + grepping the codebase is a 30-second check that prevents inventing fake architectural problems.
 
 ### Always check CODE before blaming credentials
 **Problem:** Repeated wasted-hours debugging cycles where the assistant defaults to "let me have you re-verify the credential" instead of inspecting the code that consumes the credential. The user has flagged this multiple times explicitly.
@@ -650,11 +651,14 @@ SUPABASE_WEBHOOK_SECRET=<webhook secret for scorer agent>
 POSTGRES_URL=<vercel postgres connection string for analytics>
 
 # Booking integration (Google Calendar) — added 2026-04-29
-# IMPORTANT: GOOGLE_CLIENT_ID is consumed by Supabase Auth for /admin-login.
-# Calendar integration MUST use distinct GOOGLE_CALENDAR_* vars to avoid
-# collision (see §12 lesson "GOOGLE_CLIENT_ID collision with Supabase Auth").
-GOOGLE_CALENDAR_CLIENT_ID=<DSIG Main OAuth client ID — 995295804425-tm28...>
-GOOGLE_CALENDAR_CLIENT_SECRET=<DSIG Main OAuth client secret>
+# GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET must point at the DSIG Main
+# OAuth client (Web application, GCP project demand-signals-489406).
+# DSIG Main has https://demandsignals.co/api/integrations/google/callback
+# registered as an authorized redirect URI. Supabase Auth (admin login)
+# uses separate config in the Supabase dashboard — it does NOT read
+# these env vars.
+GOOGLE_CLIENT_ID=<DSIG Main OAuth client ID — 995295804425-tm28...>
+GOOGLE_CLIENT_SECRET=<DSIG Main OAuth client secret>
 GOOGLE_OAUTH_REDIRECT_URI=https://demandsignals.co/api/integrations/google/callback
 BOOKING_SLOT_SECRET=<32-byte hex for HMAC-signing slot ids>
 ```
@@ -1046,20 +1050,18 @@ OAuth web-app flow against `DSIG Main` GCP client connects `demandsignals@gmail.
 
 `quote_sessions` extended with `booking_id` (FK), `attendee_email`, `offered_slot_ids` (jsonb). `quote_config` seeds `booking_reminders_enabled=true`.
 
-**OAuth client distinction (CRITICAL):**
+**OAuth client config:**
 
-Two separate Google OAuth clients exist:
-- `DSIG Main` (`995295804425-tm28...`) — **Calendar integration**, uses `GOOGLE_CALENDAR_CLIENT_ID` + `GOOGLE_CALENDAR_CLIENT_SECRET`. Authorized redirect URI: `https://demandsignals.co/api/integrations/google/callback`.
-- Different OAuth client (`219907120133-uu2u...`) — **Supabase Auth admin login**, uses `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`. Authorized redirect URI is Supabase's callback.
+Calendar integration uses the `DSIG Main` OAuth client (Web application, GCP project `demand-signals-489406`, client ID prefix `995295804425-tm28`). The authorized redirect URI registered on this client is `https://demandsignals.co/api/integrations/google/callback` — the value MUST match exactly what Vercel's `GOOGLE_OAUTH_REDIRECT_URI` env var holds.
 
-DO NOT collapse to one set of env vars. See §12 lesson "GOOGLE_CLIENT_ID collision with Supabase Auth".
+Supabase Auth (the `/admin-login` Google sign-in) configures its OAuth client INSIDE the Supabase dashboard (Authentication → Providers → Google), not via Vercel env vars. There is no env-var collision between Calendar and Supabase Auth.
 
 **Key files:**
 
 | File | Purpose |
 |---|---|
 | `src/lib/slot-signing.ts` | HMAC-sign + verify slot ids (prevents prompt-injection from fabricating arbitrary booking timestamps). Requires `BOOKING_SLOT_SECRET`. |
-| `src/lib/google-oauth.ts` | OAuth dance + access-token refresh. Reads `GOOGLE_CALENDAR_CLIENT_ID` (falls back to `GOOGLE_CLIENT_ID` for backward compat). |
+| `src/lib/google-oauth.ts` | OAuth dance + access-token refresh. Reads `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` (must point at DSIG Main). |
 | `src/lib/google-calendar.ts` | Calendar API v3 wrapper: `getAvailableSlots` (freebusy + 14-day walk, business-hours filter), `createMeetingEvent` (with Meet link), `cancelMeetingEvent`, `rescheduleMeetingEvent`. Raw fetch — no client lib. |
 | `src/lib/bookings.ts` | Public API: `listAvailableSlots`, `bookSlot`, `cancelBooking`, `rescheduleBooking`. Resolves attendee_phone, fires confirmation SMS, writes canonical "Booked meeting" activity row. |
 | `src/lib/booking-sms.ts` | 5 SMS dispatchers: prospect confirmation, admin notification, 24h reminder, 1h reminder, admin cancellation. Honors `sms_delivery_enabled` + `booking_reminders_enabled` kill switches. |
