@@ -379,6 +379,18 @@ Only deliver this pivot ONCE. If they already dodged the ask, don't repeat.`,
     .eq('id', session.id)
     .single()
 
+  // Fetch booking details if a booking has been created for this session.
+  // Powers the right-pane MeetingConfirmedPanel CTA flip.
+  let booking: { start_at: string; google_meet_link: string | null } | null = null
+  if (freshSession?.booking_id) {
+    const { data } = await supabaseAdmin
+      .from('bookings')
+      .select('start_at, google_meet_link')
+      .eq('id', freshSession.booking_id)
+      .single()
+    booking = data ?? null
+  }
+
   return NextResponse.json({
     message: assistantText,
     tools: appliedToolNotes,
@@ -398,6 +410,10 @@ Only deliver this pivot ONCE. If they already dodged the ask, don't repeat.`,
           build_path: freshSession.build_path,
           missed_leads_monthly: freshSession.missed_leads_monthly,
           avg_customer_value: freshSession.avg_customer_value,
+          booking_id: freshSession.booking_id ?? null,
+          attendee_email: freshSession.attendee_email ?? null,
+          booking_start_at: booking?.start_at ?? null,
+          booking_meet_link: booking?.google_meet_link ?? null,
         }
       : null,
     summarize: freshSession ? shouldSummarize(freshSession.total_tokens_used ?? 0) : false,
