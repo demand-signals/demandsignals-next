@@ -48,6 +48,8 @@ export interface QuoteSessionRow {
   research_confirmed: number | null
   existing_site_url: string | null
   doc_number: string | null
+  matched_prospect_id: string | null
+  matched_phone_last_four: string | null
   created_at: string
   updated_at: string
 }

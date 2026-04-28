@@ -154,6 +154,13 @@ export async function syncProspectFromSession(
   // ── Resolve or create prospect ──
   let prospectId: string | null = session.prospect_id
 
+  // Research-time existing-client match wins over the fuzzy fallback chain.
+  // Set by runResearch → persistExistingMatch when the Google Places result
+  // hits a known prospect by phone, website host, or name+city.
+  if (!prospectId && session.matched_prospect_id) {
+    prospectId = session.matched_prospect_id
+  }
+
   if (!prospectId) {
     prospectId = await findExistingProspect(session, findings)
   }
