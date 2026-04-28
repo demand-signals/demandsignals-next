@@ -491,10 +491,7 @@ export default async function PublicSowPage({
             style={{ height: 4, background: 'linear-gradient(90deg, #FF6B2B, #68c5ad)' }}
           />
           <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#94a0b8' }}>SCOPE</p>
-          <div className="mb-3" style={{ width: 36, height: 3, background: '#FF6B2B' }} />
-          <h2 className="text-2xl font-bold mb-8" style={{ color: 'var(--dark)', letterSpacing: '-0.02em' }}>
-            {sow.title}
-          </h2>
+          <div className="mb-6" style={{ width: 36, height: 3, background: '#FF6B2B' }} />
           <p className="text-sm leading-relaxed mb-12 max-w-2xl whitespace-pre-wrap" style={{ color: 'var(--slate)' }}>
             {sow.scope_summary}
           </p>
