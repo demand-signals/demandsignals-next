@@ -20,7 +20,7 @@ export async function POST(
 
   const { data: invoice, error } = await supabaseAdmin
     .from('invoices')
-    .select('*, prospect:prospects(business_name, owner_email)')
+    .select('*, prospect:prospects(business_name, owner_email, business_email)')
     .eq('id', id)
     .maybeSingle()
 
@@ -33,10 +33,19 @@ export async function POST(
     )
   }
 
-  const email = overrideEmail ?? invoice.prospect?.owner_email
+  // Fallback chain: explicit override → invoice bill_to.email → prospect.owner_email → prospect.business_email
+  const billToEmail = (invoice.bill_to as { email?: string | null } | null)?.email ?? null
+  const email =
+    overrideEmail ??
+    billToEmail ??
+    invoice.prospect?.owner_email ??
+    invoice.prospect?.business_email
   if (!email) {
     return NextResponse.json(
-      { error: 'No email address — prospect has none and no override provided' },
+      {
+        error:
+          'No email address found on invoice bill_to, prospect.owner_email, or prospect.business_email — pass an override in the request body',
+      },
       { status: 400 },
     )
   }

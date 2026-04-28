@@ -1,10 +1,13 @@
 // ── GET /api/invoices/public/[number]?key=<uuid> ────────────────────
 // Public invoice JSON. UUID gated — always 404 on mismatch.
+// When an active admin session is present, drafts are also visible
+// (lets admin preview the magic-link page before sending).
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { isStripeEnabled } from '@/lib/stripe-client'
 import { getInvoicePaymentSummary, getInvoiceProjectMeta } from '@/lib/invoice-context'
+import { requireAdmin } from '@/lib/admin-auth'
 
 const PUBLIC_STATUSES = ['sent', 'viewed', 'paid', 'void']
 
@@ -34,8 +37,15 @@ export async function GET(
     .maybeSingle()
 
   if (!invoice) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  // Status gate — drafts and other non-public statuses are hidden from
+  // customers. Admins (active session) can preview them.
   if (!PUBLIC_STATUSES.includes(invoice.status)) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    const auth = await requireAdmin(request)
+    if ('error' in auth) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+    // Admin session present — fall through and serve the draft.
   }
 
   const { data: lineItems } = await supabaseAdmin

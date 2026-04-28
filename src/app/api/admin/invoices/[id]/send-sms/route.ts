@@ -19,7 +19,7 @@ export async function POST(
 
   const { data: invoice, error } = await supabaseAdmin
     .from('invoices')
-    .select('*, prospect:prospects(business_name, owner_phone)')
+    .select('*, prospect:prospects(business_name, owner_phone, business_phone)')
     .eq('id', id)
     .maybeSingle()
 
@@ -32,10 +32,17 @@ export async function POST(
     )
   }
 
-  const phone = overridePhone ?? invoice.prospect?.owner_phone
+  // Fallback chain: explicit override → owner_phone → business_phone
+  const phone =
+    overridePhone ??
+    invoice.prospect?.owner_phone ??
+    invoice.prospect?.business_phone
   if (!phone) {
     return NextResponse.json(
-      { error: 'No phone number — prospect has none and no override provided' },
+      {
+        error:
+          'No phone number found on prospect.owner_phone or prospect.business_phone — pass an override in the request body',
+      },
       { status: 400 },
     )
   }
