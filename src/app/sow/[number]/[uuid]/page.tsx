@@ -59,6 +59,10 @@ interface PublicSow {
 
 interface SowResponse {
   sow: PublicSow
+  deposit_invoice_email?: {
+    sent: boolean
+    latest_event: string | null
+  } | null
 }
 
 // ── Cadence helpers ──────────────────────────────────────────────────
@@ -321,7 +325,7 @@ export default async function PublicSowPage({
   const data = await fetchSow(number, uuid)
   if (!data) notFound()
 
-  const { sow } = data
+  const { sow, deposit_invoice_email } = data
 
   // ── Page tracking ─────────────────────────────────────────────────
   // Server-side log + cookie promotion. Best-effort; never blocks render.
@@ -627,7 +631,11 @@ export default async function PublicSowPage({
                 {' '}by <span style={{ color: '#86efac' }} className="ml-1">{sow.accepted_signature}</span>
               </div>
               <p className="text-sm mb-8 font-medium" style={{ color: 'rgba(255,255,255,0.95)' }}>
-                This Statement of Work has been signed. A deposit invoice has been sent.
+                {deposit_invoice_email?.sent
+                  ? 'This Statement of Work has been signed. A deposit invoice has been sent.'
+                  : deposit_invoice_email?.latest_event === 'bounced' || deposit_invoice_email?.latest_event === 'complained' || deposit_invoice_email?.latest_event === 'failed'
+                  ? 'This Statement of Work has been signed. The deposit invoice email could not be delivered — we will follow up directly.'
+                  : 'This Statement of Work has been signed. Your deposit invoice is ready below.'}
               </p>
               <a
                 href={downloadUrl}

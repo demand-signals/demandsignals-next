@@ -17,7 +17,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { allocateDocNumber } from '@/lib/doc-numbering'
 import { getValueStackItems } from '@/lib/services-catalog'
-import type { SowPricing, SowPhase } from '@/lib/invoice-types'
+import { sendInvoiceEmail } from '@/lib/invoice-email'
+import { sendSms, isSmsEnabled } from '@/lib/twilio-sms'
+import { renderInvoicePdf } from '@/lib/pdf/invoice'
+import { uploadPrivate } from '@/lib/r2-storage'
+import { getInvoicePaymentSummary, getInvoiceProjectMeta } from '@/lib/invoice-context'
+import type { SowPricing, SowPhase, Invoice, InvoiceWithLineItems } from '@/lib/invoice-types'
 
 export async function POST(
   request: NextRequest,
@@ -400,6 +405,150 @@ export async function POST(
     console.error('[accept] Client lifecycle side-effect failed:', lifecycleErr?.message ?? lifecycleErr)
   }
 
+  // ── Render + persist deposit invoice PDF, then email it to the client ──
+  // Best-effort: any failure here is logged but does not break the accept
+  // flow. The accepted-state UI copy ('A deposit invoice has been sent.')
+  // depends on this actually firing — the response payload now reports
+  // delivery state so the UI can adapt.
+  let invoiceEmailResult: {
+    sent: boolean
+    to: string | null
+    error: string | null
+  } = { sent: false, to: null, error: null }
+
+  try {
+    const recipient =
+      sow.prospect?.owner_email ?? sow.prospect?.business_email ?? null
+
+    // Hydrate the just-inserted invoice with line items + bill_to so the
+    // PDF renderer has everything it needs.
+    const { data: lineItems } = await supabaseAdmin
+      .from('invoice_line_items')
+      .select('*')
+      .eq('invoice_id', depositInvoice.id)
+      .order('sort_order', { ascending: true })
+
+    const renderInput: InvoiceWithLineItems = {
+      ...(depositInvoice as Invoice),
+      line_items: lineItems ?? [],
+      bill_to: {
+        business_name: sow.prospect?.business_name ?? 'Client',
+        contact_name: sow.prospect?.owner_name ?? null,
+        email: sow.prospect?.owner_email ?? null,
+      },
+    }
+
+    const [paymentSummary, projectMeta] = await Promise.all([
+      getInvoicePaymentSummary(depositInvoice.id, depositInvoice.total_due_cents),
+      getInvoiceProjectMeta(depositInvoice.id),
+    ])
+
+    const pdfBuffer = await renderInvoicePdf(renderInput, {
+      prospect: {
+        business_name: sow.prospect?.business_name ?? 'Client',
+        owner_name:    sow.prospect?.owner_name ?? null,
+        owner_email:   sow.prospect?.owner_email ?? null,
+        address:       sow.prospect?.address ?? null,
+        city:          sow.prospect?.city ?? null,
+        state:         sow.prospect?.state ?? null,
+        zip:           sow.prospect?.zip ?? null,
+      },
+      project: projectMeta,
+      paymentSummary,
+    })
+
+    // Persist the rendered PDF to R2 so the magic-link page can serve it.
+    const pdfKey = `invoices/${depositInvoice.invoice_number}_v${depositInvoice.pdf_version ?? 1}.pdf`
+    try {
+      await uploadPrivate(pdfKey, pdfBuffer, 'application/pdf')
+      await supabaseAdmin
+        .from('invoices')
+        .update({
+          pdf_storage_path: pdfKey,
+          pdf_rendered_at: new Date().toISOString(),
+        })
+        .eq('id', depositInvoice.id)
+    } catch (uploadErr) {
+      console.error('[accept] Deposit invoice R2 upload failed:', uploadErr instanceof Error ? uploadErr.message : uploadErr)
+    }
+
+    if (recipient) {
+      const result = await sendInvoiceEmail(
+        renderInput,
+        recipient,
+        {
+          business_name: sow.prospect?.business_name ?? undefined,
+          owner_email:   sow.prospect?.owner_email ?? null,
+          owner_name:    sow.prospect?.owner_name ?? null,
+        },
+        pdfBuffer,
+      )
+      invoiceEmailResult = {
+        sent: result.success,
+        to: recipient,
+        error: result.success ? null : (result.error ?? 'unknown send failure'),
+      }
+      if (!result.success) {
+        console.error('[accept] Deposit invoice email send failed:', result.error)
+      }
+    } else {
+      invoiceEmailResult = {
+        sent: false,
+        to: null,
+        error: 'No prospect email on file (owner_email + business_email both null)',
+      }
+      console.warn('[accept] Skipping deposit invoice email — no recipient')
+    }
+  } catch (emailErr) {
+    invoiceEmailResult.error =
+      emailErr instanceof Error ? emailErr.message : 'unknown deposit email error'
+    console.error('[accept] Deposit invoice email pipeline threw:', invoiceEmailResult.error)
+  }
+
+  // ── SMS the magic-link to the prospect (best-effort, parallel) ──
+  // Sends a short text with the deposit invoice URL so the client can pay
+  // from their phone without hunting through email. Honors the
+  // sms_delivery_enabled kill switch; logs delivery state on the response
+  // so the post-accept UI can be honest about what fired.
+  let invoiceSmsResult: {
+    sent: boolean
+    to: string | null
+    error: string | null
+  } = { sent: false, to: null, error: null }
+
+  try {
+    const smsRecipient =
+      sow.prospect?.owner_phone ?? sow.prospect?.business_phone ?? null
+
+    if (!smsRecipient) {
+      invoiceSmsResult.error = 'No prospect phone on file (owner_phone + business_phone both null)'
+      console.warn('[accept] Skipping deposit invoice SMS — no recipient phone')
+    } else if (!(await isSmsEnabled())) {
+      invoiceSmsResult.error = 'SMS delivery disabled in config'
+      // Don't log — kill switch is operator intent, not a failure.
+    } else {
+      const businessName = sow.prospect?.business_name ?? 'your business'
+      const depositStr = `$${(depositCents / 100).toFixed(2)}`
+      const url = `https://demandsignals.co/invoice/${depositInvoice.invoice_number}/${depositInvoice.public_uuid}`
+      const message =
+        `${businessName}: thanks for signing your SOW with Demand Signals. ` +
+        `Your deposit invoice ${depositInvoice.invoice_number} (${depositStr}) — ${url}`
+      const result = await sendSms(smsRecipient, message)
+      invoiceSmsResult = {
+        sent: result.success,
+        to: smsRecipient,
+        error: result.success ? null : (result.error ?? 'unknown sms failure'),
+      }
+      if (!result.success) {
+        console.error('[accept] Deposit invoice SMS send failed:', result.error)
+      }
+    }
+  } catch (smsErr) {
+    invoiceSmsResult.error =
+      smsErr instanceof Error ? smsErr.message : 'unknown deposit sms error'
+    console.error('[accept] Deposit invoice SMS pipeline threw:', invoiceSmsResult.error)
+  }
+
   const depositPublicUrl = `https://demandsignals.co/invoice/${depositInvoice.invoice_number}/${depositInvoice.public_uuid}`
 
   return NextResponse.json({
@@ -409,6 +558,8 @@ export async function POST(
       amount_cents: depositCents,
       public_url: depositPublicUrl,
       pay_url: `https://demandsignals.co/invoice/${depositInvoice.invoice_number}/${depositInvoice.public_uuid}#pay`,
+      email: invoiceEmailResult,
+      sms: invoiceSmsResult,
     },
   })
 }
