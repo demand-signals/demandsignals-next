@@ -34,7 +34,7 @@ const SERVICES = [
     icon: '🤖',
     href: '/websites-apps/vibe-coded',
     title: 'Vibe Coded Web Apps',
-    description: 'AI-built web applications shipped fast using Cursor, Claude Code, Lovable, and Base44. Prototype to production in days — not months.',
+    description: 'AI-built web applications shipped fast using Cursor, Claude Code, and Lovable. Prototype to production in days — not months.',
     features: ['Cursor + Claude Code', 'Rapid iteration', 'Real databases', 'Production-ready'],
   },
   {

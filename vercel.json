@@ -90,7 +90,6 @@
     { "source": "/services/detail/demand-generation-gbp",       "destination": "/demand-generation/gbp-admin",               "permanent": true },
     { "source": "/services/detail/demand-generation-geo-content","destination": "/demand-generation/geo-aeo-llm-optimization","permanent": true },
     { "source": "/services/detail/demand-generation-systems",   "destination": "/demand-generation/systems",                 "permanent": true },
-    { "source": "/services/detail/websites-apps-base44",        "destination": "/websites-apps/vibe-coded",                  "permanent": true },
     { "source": "/services/detail/websites-apps-design",        "destination": "/websites-apps/design",                      "permanent": true },
     { "source": "/services/detail/websites-apps-react",         "destination": "/websites-apps/react-next-webapps",          "permanent": true },
     { "source": "/services/detail/ai-powered-revenue-conversational", "destination": "/ai-services/ai-automation-strategies","permanent": true },
@@ -124,7 +123,6 @@
     { "source": "/ai-services/content-social-repurposing",      "destination": "/content-social/ai-content-repurposing",     "permanent": true },
     { "source": "/ai-services/content-social-ai-content",       "destination": "/content-social/ai-content-generation",      "permanent": true },
     { "source": "/ai-services/content-social",                  "destination": "/content-social",                            "permanent": true },
-    { "source": "/ai-services/websites-apps-base44",            "destination": "/websites-apps/vibe-coded",                  "permanent": true },
 
     { "source": "/ai-services/ai-workforce-infrastructure",     "destination": "/ai-services/ai-agent-infrastructure",      "permanent": true },
 

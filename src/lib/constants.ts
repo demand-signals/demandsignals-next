@@ -42,7 +42,7 @@ export const NAV_WEBSITES_APPS: NavItem[] = [
   { icon: '🏢', label: 'WordPress Sites',         desc: 'Custom themes, WooCommerce, AI content pipelines',   href: '/websites-apps/wordpress-development' },
   { icon: '⚡', label: 'React / Next.js Apps',    desc: 'Full-stack apps with AI features & edge deployment', href: '/websites-apps/react-next-webapps'    },
   { icon: '📱', label: 'iOS & Android Apps',      desc: 'React Native cross-platform, App Store ready',       href: '/websites-apps/mobile-apps'           },
-  { icon: '🤖', label: 'Vibe Coded Web Apps',     desc: 'Ship in days with Cursor, Claude Code & Base44',     href: '/websites-apps/vibe-coded'            },
+  { icon: '🤖', label: 'Vibe Coded Web Apps',     desc: 'Ship in days with Cursor, Claude Code & Lovable',    href: '/websites-apps/vibe-coded'            },
   { icon: '🎨', label: 'UI/UX Design',            desc: 'Figma systems, AI prototyping, dev-ready handoff',   href: '/websites-apps/design'                },
   { icon: '🖥️', label: 'Agent & App Hosting',     desc: 'Vercel, Cloudflare & managed infrastructure',        href: '/websites-apps/hosting'               },
 ]
