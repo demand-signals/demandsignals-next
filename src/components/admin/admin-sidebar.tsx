@@ -59,7 +59,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/admin/projects/dashboard', label: 'Project Dashboard', icon: LineChart, soon: true },
       { href: '/admin/projects', label: 'Manage Projects', icon: FolderKanban },
-      { href: '/admin/timekeeping', label: 'Timekeeping', icon: Clock, soon: true },
+      { href: '/admin/timekeeping', label: 'Timekeeping', icon: Clock },
     ],
   },
   {
@@ -69,7 +69,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/admin/receipts', label: 'Receipts', icon: FileCheck },
       { href: '/admin/credit-memos', label: 'Credit Memos', icon: FileMinus },
       { href: '/admin/subscriptions', label: 'Subscriptions', icon: Repeat },
-      { href: '/admin/trade-credits', label: 'Trade Credits', icon: Coins, soon: true },
+      { href: '/admin/trade-credits', label: 'Trade Credits', icon: Coins },
       { href: '/admin/finance-reports', label: 'Reports', icon: BarChart3, soon: true },
     ],
   },
