@@ -12,6 +12,7 @@
 
 import { isPlacesConfigured, searchPlaces, getPlaceDetails, matchConfidence, type PlaceSearchResult, type PlaceDetails } from './quote-places'
 import { supabaseAdmin } from './supabase/admin'
+import { findExistingProspectFromResearch } from './quote-existing-match'
 
 export interface SiteScan {
   url: string
@@ -600,6 +601,7 @@ export async function runResearch(sessionId: string): Promise<ResearchFindings> 
   }
 
   await persistFindings(sessionId, findings)
+  await persistExistingMatch(sessionId, findings)
   return findings
 }
 
@@ -623,4 +625,33 @@ async function persistFindings(sessionId: string, findings: ResearchFindings): P
       errors: findings.raw_errors,
     },
   })
+}
+
+async function persistExistingMatch(sessionId: string, findings: ResearchFindings): Promise<void> {
+  // Best-effort. Failures here MUST NOT break research completion —
+  // the lookup is a hint, not the critical path. Errors are logged
+  // and swallowed.
+  try {
+    const match = await findExistingProspectFromResearch(findings)
+    if (!match) return
+
+    await supabaseAdmin
+      .from('quote_sessions')
+      .update({
+        matched_prospect_id: match.prospect_id,
+        matched_phone_last_four: match.owner_phone_last_four,
+      })
+      .eq('id', sessionId)
+
+    await supabaseAdmin.from('quote_events').insert({
+      session_id: sessionId,
+      event_type: 'existing_client_matched',
+      event_data: {
+        prospect_id: match.prospect_id,
+        has_phone: match.owner_phone_last_four !== null,
+      },
+    })
+  } catch (err) {
+    console.error('[persistExistingMatch] error:', err instanceof Error ? err.message : err)
+  }
 }
