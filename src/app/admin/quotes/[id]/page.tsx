@@ -3,8 +3,9 @@
 import { useEffect, useState, use, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Loader2, ExternalLink, Flag, CreditCard, ScrollText, ArrowRight, Trash2 } from 'lucide-react'
+import { Loader2, ExternalLink, Flag, CreditCard, ScrollText, ArrowRight, Trash2, Pencil } from 'lucide-react'
 import RetainerPanel from '@/components/admin/RetainerPanel'
+import { EditQuotePanel } from './EditQuotePanel'
 
 interface QuoteDetail {
   session: {
@@ -114,6 +115,7 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
   const [linkedSow, setLinkedSow] = useState<{ id: string; sow_number: string } | null | undefined>(undefined)
   const [continueLoading, setContinueLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
 
   const refetchQuote = useCallback(async () => {
     try {
@@ -293,6 +295,14 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
             <CourtesyDropdown sessionId={session.id} />
           )}
           <button
+            onClick={() => setShowEdit(true)}
+            className="inline-flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-sm transition-colors"
+            title="Edit quote details"
+          >
+            <Pencil className="w-4 h-4" />
+            Edit
+          </button>
+          <button
             onClick={handleDeleteQuote}
             disabled={deleteLoading}
             className="inline-flex items-center gap-1 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-md text-sm disabled:opacity-60 transition-colors"
@@ -307,6 +317,17 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
           </button>
         </div>
       </div>
+
+      {showEdit && (
+        <EditQuotePanel
+          session={session}
+          onClose={() => setShowEdit(false)}
+          onSaved={() => {
+            setShowEdit(false)
+            refetchQuote()
+          }}
+        />
+      )}
 
       {/* Linked prospect card — appears when a prospect record has been created/enriched.
           Makes the CRM→quote relationship visible at a glance. */}

@@ -4,6 +4,62 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 
 interface Params { params: Promise<{ id: string }> }
 
+// Allowlisted fields admins can edit on a quote_session (most other columns
+// are populated by the AI flow or hold encrypted PII). Range fields are
+// stored as integer dollars (not cents) per the table schema.
+const EDITABLE_FIELDS = new Set<string>([
+  'business_name',
+  'business_type',
+  'business_location',
+  'estimate_low',
+  'estimate_high',
+  'monthly_low',
+  'monthly_high',
+  'status',
+  'conversion_action',
+  'scope_summary',
+  'selected_plan_id',
+  'retainer_monthly_cents',
+  'valid_until',
+])
+
+const ALLOWED_STATUS = new Set(['active', 'abandoned', 'converted', 'expired', 'blocked'])
+
+export async function PATCH(request: NextRequest, { params }: Params) {
+  const auth = await requireAdmin(request)
+  if ('error' in auth) return auth.error
+
+  const { id } = await params
+  const body = await request.json().catch(() => null)
+  if (!body || typeof body !== 'object') {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  const updates: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(body)) {
+    if (!EDITABLE_FIELDS.has(k)) continue
+    updates[k] = v === '' ? null : v
+  }
+
+  if (updates.status != null && !ALLOWED_STATUS.has(updates.status as string)) {
+    return NextResponse.json({ error: `status must be one of ${[...ALLOWED_STATUS].join(', ')}` }, { status: 400 })
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: 'No editable fields supplied' }, { status: 400 })
+  }
+
+  updates.updated_at = new Date().toISOString()
+
+  const { error } = await supabaseAdmin
+    .from('quote_sessions')
+    .update(updates)
+    .eq('id', id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
+
 export async function DELETE(request: NextRequest, { params }: Params) {
   const auth = await requireAdmin(request)
   if ('error' in auth) return auth.error
