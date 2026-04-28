@@ -81,6 +81,8 @@ interface SowData {
   accepted_at: string | null
   accepted_signature: string | null
   deposit_invoice_id: string | null
+  cover_eyebrow?: string | null
+  cover_tagline?: string | null
   prospect: ProspectContact & { business_name: string } | null
   deposit_invoice: { invoice_number: string; total_due_cents: number; status: string } | null
 }
@@ -265,6 +267,8 @@ export default function SowDetailPage({
   const [tradeCents, setTradeCents] = useState(0)
   const [tradeAmountInput, setTradeAmountInput] = useState('0.00')
   const [tradeDescription, setTradeDescription] = useState('')
+  const [coverEyebrow, setCoverEyebrow] = useState('')
+  const [coverTagline, setCoverTagline] = useState('')
   const [dirty, setDirty] = useState(false)
 
   // Catalog picker state — "both" pricing_type items show a cadence modal before adding
@@ -318,11 +322,13 @@ export default function SowDetailPage({
     setPaymentTerms(s.payment_terms ?? '')
     setGuarantees(s.guarantees ?? '')
     setNotes(s.notes ?? '')
-    setSendDate(s.send_date ?? '')
+    setSendDate(s.send_date ?? new Date().toISOString().slice(0, 10))
     const tc = (s as SowData & { trade_credit_cents?: number; trade_credit_description?: string | null }).trade_credit_cents ?? 0
     setTradeCents(tc)
     setTradeAmountInput((tc / 100).toFixed(2))
     setTradeDescription((s as SowData & { trade_credit_description?: string | null }).trade_credit_description ?? '')
+    setCoverEyebrow((s as SowData & { cover_eyebrow?: string | null }).cover_eyebrow ?? '')
+    setCoverTagline((s as SowData & { cover_tagline?: string | null }).cover_tagline ?? '')
     setDirty(false)
   }
 
@@ -400,6 +406,8 @@ export default function SowDetailPage({
         send_date: sendDate || null,
         trade_credit_cents: tradeCents,
         trade_credit_description: tradeDescription || null,
+        cover_eyebrow: coverEyebrow.trim() || null,
+        cover_tagline: coverTagline.trim() || null,
       }
       if (forceEdit) body.force_edit = true
 
@@ -701,46 +709,131 @@ export default function SowDetailPage({
         <ConvertButton sow={{ id: sow.id, status: sow.status }} />
       </div>
 
-      {/* Branded document */}
+      {/* Branded document — cover mirrors the PDF cover (dark slate + decorative circles) */}
       <div
-        className="max-w-3xl mx-auto my-8 bg-white rounded-xl shadow-sm border border-slate-200"
+        className="max-w-3xl mx-auto my-8 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
         style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}
       >
-        {/* Document header */}
+        {/* PDF-mirror dark cover page */}
         <div
-          className="flex items-start justify-between px-10 py-8"
-          style={{ borderBottom: '3px solid #68c5ad' }}
+          className="relative px-10 py-12 overflow-hidden"
+          style={{
+            background: '#3D4566',
+            color: '#ffffff',
+            minHeight: 380,
+            backgroundImage:
+              'radial-gradient(circle at 92% 12%, rgba(82,201,160,0.22) 0%, rgba(82,201,160,0) 38%), radial-gradient(circle at 8% 88%, rgba(242,100,25,0.18) 0%, rgba(242,100,25,0) 42%)',
+          }}
         >
-          <div>
-            <Image
-              src="https://demandsignals.us/assets/logos/dsig_logo_v2b.png"
-              alt="Demand Signals"
-              width={160}
-              height={50}
-              className="h-12 w-auto object-contain"
-              unoptimized
-            />
-            <div className="text-xs mt-1" style={{ color: '#5d6780' }}>
-              Demand Signals · demandsignals.co
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold" style={{ color: '#1d2330' }}>
-              Statement of Work
-            </div>
-            <div className="font-mono text-sm mt-1" style={{ color: '#5d6780' }}>
-              {sow.sow_number}
-            </div>
-            <div className="mt-1">
-              <FieldInput
-                type="date"
-                value={sendDate}
-                onChange={(v) => { setSendDate(v); markDirty() }}
-                className="text-sm text-right"
-                placeholder="Issued date"
+          {/* Top strip: thin gradient bar */}
+          <div
+            className="absolute top-0 left-0 right-0 h-[5px]"
+            style={{ background: 'linear-gradient(90deg, #F26419 0%, #52C9A0 100%)' }}
+          />
+
+          {/* Logo + brand */}
+          <div className="flex items-start justify-between mb-10 relative z-10">
+            <div>
+              <Image
+                src="https://demandsignals.us/assets/logos/dsig_logo_v2b.png"
+                alt="Demand Signals"
+                width={160}
+                height={50}
+                className="h-10 w-auto object-contain"
+                unoptimized
               />
+              <div className="text-xs mt-1.5 opacity-80">demandsignals.co</div>
+            </div>
+            <div className="text-right">
+              <div className="font-mono text-xs opacity-80">{sow.sow_number}</div>
+              <div className="mt-1">
+                <input
+                  type="date"
+                  value={sendDate}
+                  onChange={(e) => { setSendDate(e.target.value); markDirty() }}
+                  className="bg-transparent border border-white/30 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:border-white/70"
+                  style={{ colorScheme: 'dark' }}
+                />
+              </div>
             </div>
           </div>
+
+          {/* Cover body — eyebrow + title + divider + tagline */}
+          <div className="relative z-10 space-y-4">
+            {p?.business_name && (
+              <div
+                className="italic"
+                style={{ fontFamily: 'Georgia, serif', fontSize: 28, lineHeight: 1.1 }}
+              >
+                For {p.business_name}
+              </div>
+            )}
+
+            {/* Editable eyebrow (default: "Statement of Work") */}
+            <input
+              value={coverEyebrow}
+              onChange={(e) => { setCoverEyebrow(e.target.value); markDirty() }}
+              placeholder="Statement of Work"
+              className="bg-transparent border border-white/20 hover:border-white/50 focus:border-white/80 rounded px-2 py-1 text-xs uppercase tracking-[0.18em] font-bold w-full max-w-xs focus:outline-none placeholder:text-white/60"
+              style={{ color: '#F26419' }}
+            />
+
+            {/* Editable title (large, like PDF) */}
+            <input
+              value={title}
+              onChange={(e) => { setTitle(e.target.value); markDirty() }}
+              placeholder="Project title"
+              className="bg-transparent border border-white/20 hover:border-white/50 focus:border-white/80 rounded px-2 py-1 text-3xl font-bold w-full focus:outline-none placeholder:text-white/40"
+              style={{ color: '#ffffff', letterSpacing: '-0.01em' }}
+            />
+
+            {/* Orange divider — same as PDF */}
+            <div className="h-[2px] w-16" style={{ background: '#F26419' }} />
+
+            {/* Editable tagline (default: "Prepared by Demand Signals — Digital Growth & Strategy") */}
+            <input
+              value={coverTagline}
+              onChange={(e) => { setCoverTagline(e.target.value); markDirty() }}
+              placeholder="Prepared by Demand Signals — Digital Growth & Strategy"
+              className="bg-transparent border border-white/20 hover:border-white/50 focus:border-white/80 rounded px-2 py-1 text-xs w-full focus:outline-none placeholder:text-white/60"
+              style={{ color: 'rgba(255,255,255,0.85)' }}
+            />
+          </div>
+
+          {/* Bottom meta band — mirrors PDF darkCoverMetaBand */}
+          <div
+            className="absolute bottom-0 left-0 right-0 grid grid-cols-3 text-[10px] uppercase tracking-wider px-10 py-3 border-t border-white/10"
+            style={{ background: 'rgba(0,0,0,0.18)' }}
+          >
+            <div>
+              <div className="opacity-60">Prepared for</div>
+              <div className="font-semibold mt-0.5">{p?.business_name ?? '—'}</div>
+            </div>
+            <div>
+              <div className="opacity-60">Prepared by</div>
+              <div className="font-semibold mt-0.5">Demand Signals</div>
+            </div>
+            <div>
+              <div className="opacity-60">Issued</div>
+              <div className="font-semibold mt-0.5">
+                {sendDate ? new Date(sendDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Interior page header — mirrors interiorPageHeader in PDF */}
+        <div
+          className="flex items-center justify-between px-10 py-3"
+          style={{
+            background: '#fafbfc',
+            borderBottom: '1px solid #e2e8f0',
+          }}
+        >
+          <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#3D4566' }}>
+            Project Brief
+          </div>
+          <div className="font-mono text-xs" style={{ color: '#5d6780' }}>{sow.sow_number}</div>
         </div>
 
         <div className="px-10 py-8 space-y-8" style={{ color: '#1d2330' }}>
@@ -761,32 +854,20 @@ export default function SowDetailPage({
             </div>
           )}
 
-          {/* Title + Scope */}
+          {/* Scope (title now lives on the cover above) */}
           <section>
             <div
               className="text-xs uppercase tracking-wide font-semibold pb-1.5 mb-3"
               style={{ color: '#5d6780', borderBottom: '1px solid #e2e8f0' }}
             >
-              Project overview
+              Scope summary
             </div>
-            <div className="mb-3">
-              <div className="text-xs text-slate-500 mb-1">Title</div>
-              <FieldInput
-                value={title}
-                onChange={(v) => { setTitle(v); markDirty() }}
-                className="text-lg font-bold"
-                placeholder="Project title"
-              />
-            </div>
-            <div>
-              <div className="text-xs text-slate-500 mb-1">Scope summary</div>
-              <FieldTextarea
-                value={scopeSummary}
-                onChange={(v) => { setScopeSummary(v); markDirty() }}
-                placeholder="Describe the scope of work..."
-                rows={3}
-              />
-            </div>
+            <FieldTextarea
+              value={scopeSummary}
+              onChange={(v) => { setScopeSummary(v); markDirty() }}
+              placeholder="Describe the scope of work..."
+              rows={3}
+            />
           </section>
 
           {/* Phases */}
@@ -1374,6 +1455,104 @@ export default function SowDetailPage({
             style={{ color: '#5d6780', borderTop: '1px solid #e2e8f0' }}
           >
             Demand Signals · DemandSignals@gmail.com · (916) 542-2423 · demandsignals.co
+          </div>
+        </div>
+
+        {/* PDF-mirror back cover (read-only — content is global, not per-SOW) */}
+        <div
+          className="relative px-10 py-12 text-center overflow-hidden"
+          style={{
+            background: '#3D4566',
+            color: '#ffffff',
+            minHeight: 360,
+            backgroundImage:
+              'radial-gradient(circle at 8% 12%, rgba(82,201,160,0.22) 0%, rgba(82,201,160,0) 38%), radial-gradient(circle at 92% 88%, rgba(242,100,25,0.18) 0%, rgba(242,100,25,0) 42%)',
+          }}
+        >
+          {/* Top strip */}
+          <div
+            className="absolute top-0 left-0 right-0 h-[5px]"
+            style={{ background: 'linear-gradient(90deg, #F26419 0%, #52C9A0 100%)' }}
+          />
+
+          <div className="relative z-10 max-w-2xl mx-auto pt-4">
+            <div
+              className="text-6xl font-bold opacity-50 leading-none mb-2"
+              style={{ color: '#52C9A0', fontFamily: 'Georgia, serif' }}
+            >
+              &ldquo;
+            </div>
+            <p
+              className="italic font-normal leading-snug mb-3"
+              style={{
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                fontSize: 22,
+                color: '#ffffff',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              Marketing is no longer about the stuff that you make, but about the stories you tell.
+            </p>
+            <p
+              className="text-xs font-semibold mb-5 uppercase"
+              style={{ color: '#52C9A0', letterSpacing: '0.2em', wordSpacing: '0.5em' }}
+            >
+              — Seth Godin
+            </p>
+            <div className="h-px w-12 mx-auto opacity-25 bg-white mb-5" />
+            <Image
+              src="https://demandsignals.us/assets/logos/dsig_logo_v2b.png"
+              alt="Demand Signals"
+              width={140}
+              height={36}
+              className="h-9 w-auto object-contain mx-auto mb-4"
+              unoptimized
+            />
+            <h2 className="text-xl font-bold mb-4" style={{ letterSpacing: '-0.01em' }}>
+              Let&rsquo;s get to work — <span style={{ color: '#52C9A0' }}>together.</span>
+            </h2>
+            <span
+              className="inline-block px-7 py-2.5 rounded-full text-[11px] font-bold uppercase mb-5"
+              style={{ background: '#F26419', color: '#fff', letterSpacing: '0.1em' }}
+            >
+              QUESTIONS? GET IN TOUCH →
+            </span>
+            <div className="grid grid-cols-3 gap-0 max-w-md mx-auto text-left mb-3">
+              <div className="px-4 border-r border-white/10">
+                <div className="text-[8px] uppercase opacity-60 tracking-wider mb-1">EMAIL</div>
+                <div className="text-[10px] font-bold">DemandSignals@gmail.com</div>
+              </div>
+              <div className="px-4 border-r border-white/10">
+                <div className="text-[8px] uppercase opacity-60 tracking-wider mb-1">PHONE</div>
+                <div className="text-[10px] font-bold">(916) 542-2423</div>
+              </div>
+              <div className="px-4">
+                <div className="text-[8px] uppercase opacity-60 tracking-wider mb-1">WEB</div>
+                <div className="text-[10px] font-bold">DemandSignals.co</div>
+              </div>
+            </div>
+            <p className="text-[9px] opacity-50">© 2026 Demand Signals. Confidential.</p>
+          </div>
+
+          {/* Meta band — same as cover */}
+          <div
+            className="absolute bottom-0 left-0 right-0 grid grid-cols-3 text-[10px] uppercase tracking-wider px-10 py-3 border-t border-white/10 text-left"
+            style={{ background: 'rgba(0,0,0,0.18)' }}
+          >
+            <div>
+              <div className="opacity-60">Prepared for</div>
+              <div className="font-semibold mt-0.5">{p?.business_name ?? '—'}</div>
+            </div>
+            <div>
+              <div className="opacity-60">Prepared by</div>
+              <div className="font-semibold mt-0.5">Demand Signals</div>
+            </div>
+            <div>
+              <div className="opacity-60">Issued</div>
+              <div className="font-semibold mt-0.5">
+                {sendDate ? new Date(sendDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -168,7 +168,8 @@ export async function POST(request: NextRequest) {
       total_due_cents: totalDueCents,
       currency: 'USD',
       due_date: due_date ?? null,
-      send_date: send_date ?? null,
+      // Default issue date to today (admin can edit afterward).
+      send_date: send_date ?? new Date().toISOString().slice(0, 10),
       late_fee_cents: late_fee_cents ?? 0,
       late_fee_grace_days: late_fee_grace_days ?? 0,
       category_hint: category_hint ?? (effectiveKind === 'subscription_cycle' ? 'subscription_revenue' : 'service_revenue'),

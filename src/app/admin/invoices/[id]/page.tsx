@@ -196,7 +196,7 @@ export default function InvoiceDetailPage({
     )
     setNotes(d.invoice.notes ?? '')
     setDueDate(d.invoice.due_date ?? '')
-    setSendDate(d.invoice.send_date ?? '')
+    setSendDate(d.invoice.send_date ?? new Date().toISOString().slice(0, 10))
     const lateFee = d.invoice.late_fee_cents ?? 0
     setLateFeeCents(lateFee)
     setLateFeeDollarsInput(centsToInput(lateFee))
