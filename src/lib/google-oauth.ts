@@ -20,20 +20,26 @@ const SCOPES = [
 ]
 
 // Calendar integration uses the DSIG Main OAuth client.
-// Env var names are GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET (per
-// PROJECT.md). Older code referenced suffixed names — that mismatch
-// surfaced as the calendar reporting "disconnected" even though the
-// integrations row had a valid refresh token. Always read the canonical
-// names; fall back to the legacy dated names for during-rotation
-// continuity.
+//
+// Precedence is INTENTIONAL: dated GOOGLE_DSIG_MAIN_*_042826 names win
+// when present. Reason: GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are
+// generic names and Hunter discovered (twice now — see CLAUDE.md §12)
+// that they had been set to a different OAuth client (prefix 21990712...)
+// rather than DSIG Main (prefix 995295804425-tm28...). Reading the dated
+// name first ensures the Calendar code locks onto the *intended* client
+// regardless of what the generic vars happen to hold.
+//
+// During a secret rotation: bump the date suffix on the dated env var,
+// deploy, then drop the old suffix from Vercel. Code keeps working
+// throughout — both names share the fallback chain.
 function clientId(): string {
-  const v = process.env.GOOGLE_CLIENT_ID ?? process.env.GOOGLE_DSIG_MAIN_ID_042826
-  if (!v) throw new Error('GOOGLE_CLIENT_ID not configured')
+  const v = process.env.GOOGLE_DSIG_MAIN_ID_042826 ?? process.env.GOOGLE_CLIENT_ID
+  if (!v) throw new Error('GOOGLE_DSIG_MAIN_ID_042826 (or GOOGLE_CLIENT_ID) not configured')
   return v
 }
 function clientSecret(): string {
-  const v = process.env.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_DSIG_MAIN_SECRET_042826
-  if (!v) throw new Error('GOOGLE_CLIENT_SECRET not configured')
+  const v = process.env.GOOGLE_DSIG_MAIN_SECRET_042826 ?? process.env.GOOGLE_CLIENT_SECRET
+  if (!v) throw new Error('GOOGLE_DSIG_MAIN_SECRET_042826 (or GOOGLE_CLIENT_SECRET) not configured')
   return v
 }
 function redirectUri(): string {

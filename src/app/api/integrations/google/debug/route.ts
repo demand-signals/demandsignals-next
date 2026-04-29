@@ -31,8 +31,10 @@ export async function GET(request: NextRequest) {
   const legacySecret = process.env.GOOGLE_DSIG_MAIN_SECRET_042826
   const redirect = process.env.GOOGLE_OAUTH_REDIRECT_URI
 
-  const effectiveId = canonicalId ?? legacyId
-  const effectiveSecret = canonicalSecret ?? legacySecret
+  // Precedence MUST mirror google-oauth.ts: dated DSIG_MAIN names win.
+  // Reason documented there + in CLAUDE.md §12 (env var collision history).
+  const effectiveId = legacyId ?? canonicalId
+  const effectiveSecret = legacySecret ?? canonicalSecret
   const expectedClientPrefix = '99529580' // DSIG Main = 995295804425-tm28...
 
   return NextResponse.json({
@@ -50,15 +52,15 @@ export async function GET(request: NextRequest) {
       GOOGLE_OAUTH_REDIRECT_URI: mask(redirect),
     },
     diagnostics: {
-      using_canonical_names: !!canonicalId,
-      using_legacy_dated_names: !canonicalId && !!legacyId,
+      using_dated_dsig_main: !!legacyId,
+      using_generic_fallback: !legacyId && !!canonicalId,
       no_credentials_at_all: !effectiveId,
       client_id_looks_like_dsig_main: effectiveId?.startsWith(expectedClientPrefix) ?? false,
       hint: !effectiveId
-        ? 'Neither GOOGLE_CLIENT_ID nor GOOGLE_DSIG_MAIN_ID_042826 is set in Vercel. Calendar will report disconnected. Set GOOGLE_CLIENT_ID = DSIG Main client id (starts with 995295804425-tm28).'
+        ? 'Neither GOOGLE_DSIG_MAIN_ID_042826 nor GOOGLE_CLIENT_ID is set in Vercel. Calendar will report disconnected.'
         : !effectiveId.startsWith(expectedClientPrefix)
-          ? 'Effective GOOGLE_CLIENT_ID does NOT match DSIG Main (which starts 995295804425-tm28). The current value points at a different OAuth client. Refresh-token redemption will return invalid_client and the integration will be marked revoked.'
-          : 'Effective client id matches DSIG Main. If calendar still reports disconnected, check the integrations row revoked_at, then re-run /admin/integrations/google connect flow.',
+          ? 'Effective client id does NOT match DSIG Main (prefix 995295804425-tm28). Refresh-token redemption will return invalid_client. Set GOOGLE_DSIG_MAIN_ID_042826 to the DSIG Main client id.'
+          : 'Effective client id matches DSIG Main. If calendar still reports disconnected, check integrations row revoked_at, then re-run /admin/integrations/google connect flow.',
     },
   })
 }
