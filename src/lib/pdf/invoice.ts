@@ -315,7 +315,11 @@ function paymentCard(inv: InvoiceWithLineItems, paySummary?: PaymentSummary): st
       const parts: string[] = []
       if (paySummary.paid_cash_cents > 0) parts.push(`${formatCents(paySummary.paid_cash_cents)} cash`)
       if (paySummary.paid_tik_cents > 0) parts.push(`${formatCents(paySummary.paid_tik_cents)} trade-in-kind`)
-      message = `Paid in full — ${parts.join(' + ')}. Thank you.`
+      // Hunter directive 2026-04-29: "Paid in full" was ambiguous next
+      // to a SOW-balance block showing remaining money. Scope the
+      // sentence explicitly to THIS invoice so a paid deposit doesn't
+      // read as "the whole project is paid".
+      message = `This invoice paid in full — ${parts.join(' + ')}. Thank you.`
     } else if (isPaid) {
       message = 'This invoice has been paid in full. Thank you.'
     } else {

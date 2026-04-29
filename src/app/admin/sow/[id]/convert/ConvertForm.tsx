@@ -107,7 +107,13 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
       currency_type: 'cash',
       expected_payment_method: 'card',
       trigger_type: 'on_acceptance',
-      description: 'Full payment',
+      // Hunter directive 2026-04-29: "Full payment" was confusing
+      // alongside the "Paid in full" payment-card text on a paid
+      // invoice. The label needs to be self-describing as a line
+      // item — uses the SOW title so the line in the invoice item
+      // table says e.g. "Demand Generation Project — single payment"
+      // instead of bare "Full payment".
+      description: `${sow.title} — single payment`,
     },
   ])
 
@@ -150,7 +156,7 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
           currency_type: 'cash',
           expected_payment_method: 'card',
           trigger_type: 'on_acceptance',
-          description: 'Full payment',
+          description: `${sow.title} — single payment`,
         },
       ])
     } else if (preset === 'two') {
@@ -165,7 +171,7 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
           currency_type: 'cash',
           expected_payment_method: 'card',
           trigger_type: 'on_acceptance',
-          description: 'Installment 1 of 2',
+          description: `${sow.title} — payment 1 of 2`,
         },
         {
           sequence: 2,
@@ -174,7 +180,7 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
           expected_payment_method: 'card',
           trigger_type: 'time',
           trigger_date: due.toISOString().slice(0, 10),
-          description: 'Installment 2 of 2',
+          description: `${sow.title} — payment 2 of 2`,
         },
       ])
     } else {
@@ -189,7 +195,7 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
           currency_type: 'cash',
           expected_payment_method: 'card',
           trigger_type: 'on_acceptance',
-          description: 'Installment 1 of 3',
+          description: `${sow.title} — payment 1 of 3`,
         },
         {
           sequence: 2,
@@ -198,7 +204,7 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
           expected_payment_method: 'card',
           trigger_type: 'time',
           trigger_date: d30.toISOString().slice(0, 10),
-          description: 'Installment 2 of 3',
+          description: `${sow.title} — payment 2 of 3`,
         },
         {
           sequence: 3,
@@ -207,7 +213,7 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
           expected_payment_method: 'card',
           trigger_type: 'time',
           trigger_date: d60.toISOString().slice(0, 10),
-          description: 'Installment 3 of 3',
+          description: `${sow.title} — payment 3 of 3`,
         },
       ])
     }
@@ -227,7 +233,7 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
         currency_type: 'cash',
         expected_payment_method: 'card',
         trigger_type: 'on_acceptance',
-        description: `Installment ${prev.length + 1}`,
+        description: `${sow.title} — payment ${prev.length + 1}`,
       },
     ])
     setActivePreset(null)
