@@ -474,7 +474,7 @@ function paidStamp(inv: InvoiceWithLineItems): string {
   <div style="
     position:absolute;
     top:32px;
-    left:38%;
+    left:48%;
     transform:translateX(-50%) rotate(-12deg);
     pointer-events:none;
     z-index:10;
@@ -505,7 +505,7 @@ function voidStamp(inv: InvoiceWithLineItems): string {
   <div style="
     position:absolute;
     top:32px;
-    left:38%;
+    left:48%;
     transform:translateX(-50%) rotate(-12deg);
     pointer-events:none;
     z-index:10;

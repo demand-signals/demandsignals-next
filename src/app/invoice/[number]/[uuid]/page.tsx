@@ -282,16 +282,19 @@ export default async function PublicInvoicePage({
 
               Header strip is padding "40px 48px 28px" with logo h:36
               vertically centered. Stamp top:32 lines up with the logo
-              vertically. Horizontally centered between left edge of
-              card and the right-aligned INVOICE block, which is at
-              roughly 60% width — so left:38% with translateX(-50%)
-              parks it right in the gutter Hunter circled. */}
+              vertically. Logo sits roughly 0-15% width (anchored left),
+              INVOICE block roughly 75-92% width (anchored right). The
+              empty gutter between them spans 15-75%, so geometric
+              center is around 45%. left:48% with translateX(-50%)
+              parks the stamp dead-center in the gutter. Round 4
+              coords (left:38%) drifted left because they assumed a
+              different INVOICE block width than the live render. */}
           {isPaid && (
             <div
               style={{
                 position: 'absolute',
                 top: 32,
-                left: '38%',
+                left: '48%',
                 transform: 'translateX(-50%) rotate(-12deg)',
                 pointerEvents: 'none',
                 zIndex: 10,
@@ -337,7 +340,7 @@ export default async function PublicInvoicePage({
               style={{
                 position: 'absolute',
                 top: 32,
-                left: '38%',
+                left: '48%',
                 transform: 'translateX(-50%) rotate(-12deg)',
                 pointerEvents: 'none',
                 zIndex: 10,
