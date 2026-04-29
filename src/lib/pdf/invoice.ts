@@ -414,6 +414,73 @@ function notesSection(inv: InvoiceWithLineItems): string {
   </div>`
 }
 
+// ── Paid / Void stamps ────────────────────────────────────────────────
+// Hunter directive 2026-04-29: paid invoices show an angled "PAID" stamp
+// across the page, like a bank stamp on an old paper invoice. Easier
+// for clients + internal workers to see status at a glance than reading
+// the totals block.
+//
+// Implementation: absolute-positioned over the body wrapper, centered,
+// rotated -18deg with a thick double-stroke border. Semi-transparent so
+// document text underneath stays readable. Only renders when paid.
+
+function paidStamp(inv: InvoiceWithLineItems): string {
+  if (inv.status !== 'paid') return ''
+  return `
+  <div style="
+    position:absolute;
+    top:48%;
+    left:50%;
+    transform:translate(-50%, -50%) rotate(-18deg);
+    pointer-events:none;
+    z-index:10;
+    border:6px double ${T.TEAL_S};
+    border-radius:8px;
+    padding:14px 36px 10px;
+    opacity:0.32;
+    font-family:Georgia,'Times New Roman',serif;
+  ">
+    <p style="
+      font-size:72px;
+      font-weight:900;
+      letter-spacing:0.08em;
+      color:${T.TEAL_S};
+      margin:0;
+      line-height:1;
+      text-transform:uppercase;
+    ">PAID</p>
+    ${inv.paid_at ? `<p style="font-size:11px;font-weight:600;letter-spacing:0.15em;color:${T.TEAL_S};margin:4px 0 0;text-align:center;font-family:${FONT_STACK}">${formatDate(inv.paid_at)}</p>` : ''}
+  </div>`
+}
+
+function voidStamp(inv: InvoiceWithLineItems): string {
+  if (inv.status !== 'void') return ''
+  return `
+  <div style="
+    position:absolute;
+    top:48%;
+    left:50%;
+    transform:translate(-50%, -50%) rotate(-18deg);
+    pointer-events:none;
+    z-index:10;
+    border:6px double ${T.RED};
+    border-radius:8px;
+    padding:14px 36px 10px;
+    opacity:0.32;
+    font-family:Georgia,'Times New Roman',serif;
+  ">
+    <p style="
+      font-size:72px;
+      font-weight:900;
+      letter-spacing:0.08em;
+      color:${T.RED};
+      margin:0;
+      line-height:1;
+      text-transform:uppercase;
+    ">VOID</p>
+  </div>`
+}
+
 // ── Main export ───────────────────────────────────────────────────────
 
 export interface RenderInvoiceOptions {
@@ -448,7 +515,7 @@ export async function renderInvoicePdf(
   }
 
   const body = `
-  <div style="width:100%;min-height:100vh;background:${T.WHITE};display:flex;flex-direction:column;font-family:${FONT_STACK};">
+  <div style="position:relative;width:100%;min-height:100vh;background:${T.WHITE};display:flex;flex-direction:column;font-family:${FONT_STACK};">
     ${interiorPageHeader('Invoice')}
     ${invoiceMeta(invoice, opts.project)}
     ${billToBlock(invoice, p)}
@@ -459,6 +526,8 @@ export async function renderInvoicePdf(
     ${notesSection(invoice)}
     <div style="flex:1"></div>
     ${interiorPageFooter()}
+    ${paidStamp(invoice)}
+    ${voidStamp(invoice)}
   </div>`
 
   const html = docShell(`Invoice ${invoice.invoice_number}`, body)

@@ -256,12 +256,94 @@ export default async function PublicInvoicePage({
         {/* ── Document card ─────────────────────────────────────── */}
         <div
           style={{
+            position: 'relative',
             background: T.white,
             borderRadius: 16,
             boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 4px 24px rgba(0,0,0,0.04)',
             overflow: 'hidden',
           }}
         >
+
+          {/* Angled PAID / VOID stamp — mirrors the PDF stamp so the
+              magic-link page and the downloaded PDF read identically.
+              Hunter directive 2026-04-29. Pointer-events:none so it
+              doesn't block clicks on anything underneath. */}
+          {isPaid && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '38%',
+                left: '50%',
+                transform: 'translate(-50%, -50%) rotate(-18deg)',
+                pointerEvents: 'none',
+                zIndex: 10,
+                border: `6px double ${T.teal}`,
+                borderRadius: 8,
+                padding: '14px 36px 10px',
+                opacity: 0.32,
+                fontFamily: "Georgia, 'Times New Roman', serif",
+                textAlign: 'center',
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 72,
+                  fontWeight: 900,
+                  letterSpacing: '0.08em',
+                  color: T.teal,
+                  margin: 0,
+                  lineHeight: 1,
+                  textTransform: 'uppercase',
+                }}
+              >
+                PAID
+              </p>
+              {invoice.paid_at && (
+                <p
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: '0.15em',
+                    color: T.teal,
+                    margin: '4px 0 0',
+                  }}
+                >
+                  {fmtDate(invoice.paid_at)}
+                </p>
+              )}
+            </div>
+          )}
+          {isVoid && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '38%',
+                left: '50%',
+                transform: 'translate(-50%, -50%) rotate(-18deg)',
+                pointerEvents: 'none',
+                zIndex: 10,
+                border: '6px double #dc2626',
+                borderRadius: 8,
+                padding: '14px 36px 10px',
+                opacity: 0.32,
+                fontFamily: "Georgia, 'Times New Roman', serif",
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 72,
+                  fontWeight: 900,
+                  letterSpacing: '0.08em',
+                  color: '#dc2626',
+                  margin: 0,
+                  lineHeight: 1,
+                  textTransform: 'uppercase',
+                }}
+              >
+                VOID
+              </p>
+            </div>
+          )}
 
           {/* ── 1. Header strip ─────────────────────────────────── */}
           <div
