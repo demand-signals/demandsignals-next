@@ -483,6 +483,8 @@ export default function QuotePageClient() {
               nudge={unlockNudge}
               softSaveOffered={softSaveOffered}
               sessionToken={sessionToken}
+              onSendMessage={sendMessage}
+              sending={sending}
             />
           </div>
         </div>
@@ -537,6 +539,8 @@ export default function QuotePageClient() {
                 nudge={unlockNudge}
                 softSaveOffered={softSaveOffered}
                 sessionToken={sessionToken}
+                onSendMessage={sendMessage}
+                sending={sending}
               />
             </div>
           </div>
@@ -707,6 +711,8 @@ function Configurator({
   nudge,
   softSaveOffered,
   sessionToken,
+  onSendMessage,
+  sending,
 }: {
   session: SessionPublic | null
   prices: PricesPayload | null
@@ -717,6 +723,8 @@ function Configurator({
   nudge: boolean
   softSaveOffered: boolean
   sessionToken: string
+  onSendMessage: (text: string) => void
+  sending: boolean
 }) {
   const items = prices?.items ?? []
   const verified = session?.phone_verified ?? false
@@ -985,18 +993,28 @@ function Configurator({
                 />
               </div>
             ) : (
+              // Both CTAs route into the AI conversation rather than to
+              // external pages. The AI then runs the matching tool flow:
+              //   Book → asks for email, calls offer_meeting_slots, books.
+              //   Research → captures email, fires trigger_handoff with
+              //              reason='research_report_requested', soft-saves.
+              // This keeps the prospect inside the quote experience instead
+              // of bouncing them to an external Google Calendar URL.
               <div className="grid grid-cols-2 gap-2 pt-2">
-                <a
-                  href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true"
-                  target="_blank"
-                  rel="noopener"
-                  className="col-span-2 bg-[var(--teal)] text-white rounded-lg py-2.5 text-sm font-semibold text-center"
+                <button
+                  onClick={() => onSendMessage("I'd like to book a strategy call.")}
+                  disabled={sending}
+                  className="col-span-2 bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white rounded-lg py-2.5 text-sm font-semibold text-center disabled:opacity-50"
                 >
                   Book a Strategy Call
-                </a>
+                </button>
                 <button
-                  onClick={() => alert('Research CTA coming soon')}
-                  className="col-span-2 border border-slate-200 text-slate-700 rounded-lg py-2 text-sm font-medium"
+                  onClick={() => {
+                    const biz = session?.business_name ?? 'our'
+                    onSendMessage(`Yes — please run the free competitor research report on ${biz}${session?.business_name ? "'s" : ''} competitors while I think about this budget. I'd like to see how we stack up before we move forward.`)
+                  }}
+                  disabled={sending}
+                  className="col-span-2 border border-slate-200 hover:border-[var(--teal)] hover:text-[var(--teal)] text-slate-700 rounded-lg py-2 text-sm font-medium disabled:opacity-50"
                 >
                   Start With a Free Research Report
                 </button>
