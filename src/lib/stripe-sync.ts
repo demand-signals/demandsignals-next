@@ -282,13 +282,14 @@ export async function createReceiptForInvoice(args: {
   try {
     const { data: invoice } = await supabaseAdmin
       .from('invoices')
-      .select('id, invoice_number, prospect:prospects(business_name, owner_name, owner_email, business_email, owner_phone, business_phone)')
+      .select('id, invoice_number, total_due_cents, send_date, prospect:prospects(business_name, client_code, owner_name, owner_email, business_email, owner_phone, business_phone)')
       .eq('id', args.invoiceId)
       .maybeSingle()
 
     if (invoice && invoice.prospect) {
       const prospect = invoice.prospect as unknown as {
         business_name?: string
+        client_code?: string | null
         owner_name?: string | null
         owner_email?: string | null
         business_email?: string | null
@@ -299,8 +300,45 @@ export async function createReceiptForInvoice(args: {
       const recipientPhone = prospect.owner_phone ?? prospect.business_phone ?? null
       const amountStr = `$${(args.amountCents / 100).toFixed(2)}`
 
-      // Email — receipt confirmation
+      // Email — receipt confirmation. Render the PDF first so the
+      // attachment lands inline with the email send. PDF render is
+      // wrapped so a Chromium failure never blocks the email itself —
+      // we'd rather send a body-only email than no email.
       if (recipientEmail) {
+        const paidAtIso = new Date().toISOString()
+        let receiptPdfBuffer: Buffer | undefined
+        try {
+          const { renderReceiptPdf } = await import('./pdf/receipt')
+          receiptPdfBuffer = await renderReceiptPdf(
+            {
+              id: rctRow.id,
+              receipt_number: receiptNumber,
+              invoice_id: args.invoiceId,
+              prospect_id: args.prospectId,
+              amount_cents: args.amountCents,
+              currency: 'USD',
+              payment_method: args.paymentMethod,
+              payment_reference: args.paymentReference ?? null,
+              paid_at: paidAtIso,
+              notes: null,
+              created_at: paidAtIso,
+            },
+            {
+              invoice_number: invoice.invoice_number,
+              total_due_cents: invoice.total_due_cents ?? args.amountCents,
+              send_date: invoice.send_date ?? null,
+            },
+            {
+              business_name: prospect.business_name ?? '',
+              client_code: prospect.client_code ?? null,
+              owner_name: prospect.owner_name ?? null,
+              owner_email: prospect.owner_email ?? null,
+            },
+          )
+        } catch (e) {
+          console.error('[createReceiptForInvoice] receipt PDF render failed (sending body-only email):', e instanceof Error ? e.message : e)
+        }
+
         try {
           const { sendReceiptEmail } = await import('./receipt-email')
           const r = await sendReceiptEmail(
@@ -312,12 +350,13 @@ export async function createReceiptForInvoice(args: {
               currency: 'USD',
               payment_method: args.paymentMethod,
               payment_reference: args.paymentReference ?? null,
-              paid_at: new Date().toISOString(),
+              paid_at: paidAtIso,
               prospect_id: args.prospectId,
             },
             invoice.invoice_number,
             recipientEmail,
             { business_name: prospect.business_name, owner_name: prospect.owner_name },
+            receiptPdfBuffer,
           )
           if (!r.success) console.error('[createReceiptForInvoice] receipt email failed:', r.error)
         } catch (e) {

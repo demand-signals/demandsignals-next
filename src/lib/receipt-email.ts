@@ -81,6 +81,12 @@ export async function sendReceiptEmail(
   invoiceNumber: string,
   to: string,
   prospect: { business_name?: string; owner_name?: string | null },
+  // PDF attachment is optional so legacy callers don't break, but in
+  // practice the Stripe webhook path now always passes one. Without
+  // a PDF the email looks like just an inline summary — clients have
+  // nothing to file. Hunter's directive 2026-04-29: receipt email
+  // MUST attach the rendered PDF for clients to keep on file.
+  pdfBuffer?: Buffer,
 ): Promise<{ success: boolean; message_id?: string; error?: string }> {
   if (!(await isEmailEnabled())) {
     return { success: false, error: 'Email delivery disabled in config' }
@@ -101,6 +107,15 @@ export async function sendReceiptEmail(
       invoice_id: receipt.invoice_id,
       prospect_id: receipt.prospect_id,
     },
+    attachments: pdfBuffer
+      ? [
+          {
+            filename: `Receipt-${receipt.receipt_number}.pdf`,
+            content: pdfBuffer,
+            contentType: 'application/pdf',
+          },
+        ]
+      : undefined,
   })
 
   return {
