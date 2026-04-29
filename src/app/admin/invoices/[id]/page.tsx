@@ -660,10 +660,13 @@ export default function InvoiceDetailPage({
         </div>
 
         <div className="px-10 py-8 space-y-8" style={{ color: '#1d2330' }}>
-          {/* Status notices */}
+          {/* Status notices — when paid, surface the AMOUNT prominently
+              so internal workers don't squint to figure out what came in. */}
           {invoice.paid_at && (
             <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800">
-              Paid {new Date(invoice.paid_at).toLocaleString()} via {invoice.paid_method}
+              <strong>Paid {formatCents(invoice.total_due_cents)}</strong> on{' '}
+              {new Date(invoice.paid_at).toLocaleString()}
+              {invoice.paid_method && ` via ${invoice.paid_method}`}
             </div>
           )}
           {invoice.voided_at && (
@@ -853,10 +856,29 @@ export default function InvoiceDetailPage({
                     <td className="py-1 text-right font-semibold">{formatCents(lateFeeCents)}</td>
                   </tr>
                 )}
-                <tr style={{ borderTop: '2px solid #1d2330' }}>
-                  <td className="pt-3 font-bold text-base">Total due (cash)</td>
-                  <td className="pt-3 text-right font-bold text-base">{formatCents(totalDueCents)}</td>
-                </tr>
+                {invoice.paid_at ? (
+                  <>
+                    <tr style={{ borderTop: '2px solid #1d2330' }}>
+                      <td className="pt-3 font-bold text-base">Invoice total</td>
+                      <td className="pt-3 text-right font-bold text-base">{formatCents(totalDueCents)}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1 text-emerald-700 font-semibold">Paid</td>
+                      <td className="py-1 text-right text-emerald-700 font-semibold">
+                        −{formatCents(totalDueCents)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-1 font-bold text-base text-emerald-800">Outstanding</td>
+                      <td className="py-1 text-right font-bold text-base text-emerald-800">$0.00</td>
+                    </tr>
+                  </>
+                ) : (
+                  <tr style={{ borderTop: '2px solid #1d2330' }}>
+                    <td className="pt-3 font-bold text-base">Total due (cash)</td>
+                    <td className="pt-3 text-right font-bold text-base">{formatCents(totalDueCents)}</td>
+                  </tr>
+                )}
               </tbody>
             </table>
 
@@ -1069,7 +1091,8 @@ export default function InvoiceDetailPage({
               )}
               {invoice.paid_at && (
                 <div className="text-emerald-700">
-                  Paid: {new Date(invoice.paid_at).toLocaleString()} via {invoice.paid_method}
+                  Paid {formatCents(invoice.total_due_cents)}: {new Date(invoice.paid_at).toLocaleString()}
+                  {invoice.paid_method && ` via ${invoice.paid_method}`}
                 </div>
               )}
               {invoice.voided_at && (
