@@ -13,6 +13,7 @@ import {
   interiorPageHeader, interiorPageFooter,
   darkCoverTopStrip, darkCoverMetaBand, darkCoverFooterStrip,
 } from './_shared'
+import { pickBackCoverQuote } from './back-cover-quotes'
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -542,7 +543,11 @@ function investmentPage(sow: SowDocument): string {
 // ── PAGE 4 — Back Cover ────────────────────────────────────────────────
 // Dark bg + circles + shared top/bottom chrome + centered Godin quote + CTA.
 
-function backCoverPage(prospect: SowProspect, issueDate: string): string {
+function backCoverPage(prospect: SowProspect, issueDate: string, sow: SowDocument): string {
+  // Rotating motivational quote, deterministic per sow_number so the
+  // same SOW always renders the same quote across re-renders. Different
+  // SOWs naturally land on different quotes.
+  const quote = pickBackCoverQuote(sow.sow_number)
   return `
   <div style="
     position:relative;
@@ -596,7 +601,7 @@ function backCoverPage(prospect: SowProspect, issueDate: string): string {
         margin:0 0 20px 0;
         font-family:Georgia,'Times New Roman',${FONT_STACK};
         letter-spacing:-0.01em;
-      ">Marketing is no longer about the stuff that you make, but about the stories you tell.</p>
+      ">${esc(quote.text)}</p>
 
       <!-- Attribution -->
       <p style="
@@ -607,7 +612,7 @@ function backCoverPage(prospect: SowProspect, issueDate: string): string {
         word-spacing:0.7em;
         text-transform:uppercase;
         margin:0 0 28px 0;
-      ">&mdash; Seth Godin</p>
+      ">&mdash; ${esc(quote.author)}</p>
 
       <!-- Divider -->
       <div style="width:40pt;height:1pt;background:rgba(255,255,255,0.15);margin:0 auto 28px;"></div>
@@ -687,7 +692,7 @@ export async function renderSowPdf(
     coverPage(sow, prospect)
     + scopePage(sow)
     + investmentPage(sow)
-    + backCoverPage(prospect, issueDate),
+    + backCoverPage(prospect, issueDate, sow),
   )
 
   return htmlToPdfBuffer(html, { format: 'Legal', printBackground: true })
