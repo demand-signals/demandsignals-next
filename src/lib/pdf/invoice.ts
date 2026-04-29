@@ -120,11 +120,9 @@ function billToBlock(inv: InvoiceWithLineItems, prospect: InvoiceProspect): stri
         <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:3px">DUE DATE</p>
         <p style="font-size:12px;color:${T.SLATE};font-weight:600">${formatDate(inv.due_date)}</p>
       </div>` : ''}
-      ${inv.paid_at ? `
-      <div>
-        <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:3px">PAID</p>
-        <p style="font-size:12px;color:${T.TEAL};font-weight:600">${formatDate(inv.paid_at)}</p>
-      </div>` : ''}
+      ${/* PAID date intentionally NOT rendered in the meta band — the
+           angled PAID stamp anchored to the upper-right covers it.
+           Hunter directive 2026-04-29: stamp replaces the text. */ ''}
     </div>
   </div>`
 }
@@ -424,24 +422,30 @@ function notesSection(inv: InvoiceWithLineItems): string {
 // rotated -18deg with a thick double-stroke border. Semi-transparent so
 // document text underneath stays readable. Only renders when paid.
 
+// Stamp positioned upper-right where the meta band's PAID date used to
+// live. Smaller scale than a center-of-page stamp because the upper-right
+// real estate is tight, but still angled and bold enough to read at a
+// glance. Hunter directive 2026-04-29: replace meta-band PAID text with
+// the stamp at this anchor.
 function paidStamp(inv: InvoiceWithLineItems): string {
   if (inv.status !== 'paid') return ''
   return `
   <div style="
     position:absolute;
-    top:48%;
-    left:50%;
-    transform:translate(-50%, -50%) rotate(-18deg);
+    top:88px;
+    right:48px;
+    transform:rotate(-12deg);
     pointer-events:none;
     z-index:10;
-    border:6px double ${T.TEAL_S};
-    border-radius:8px;
-    padding:14px 36px 10px;
-    opacity:0.32;
+    border:4px double ${T.TEAL_S};
+    border-radius:6px;
+    padding:8px 18px 6px;
+    opacity:0.55;
     font-family:Georgia,'Times New Roman',serif;
+    text-align:center;
   ">
     <p style="
-      font-size:72px;
+      font-size:36px;
       font-weight:900;
       letter-spacing:0.08em;
       color:${T.TEAL_S};
@@ -449,7 +453,7 @@ function paidStamp(inv: InvoiceWithLineItems): string {
       line-height:1;
       text-transform:uppercase;
     ">PAID</p>
-    ${inv.paid_at ? `<p style="font-size:11px;font-weight:600;letter-spacing:0.15em;color:${T.TEAL_S};margin:4px 0 0;text-align:center;font-family:${FONT_STACK}">${formatDate(inv.paid_at)}</p>` : ''}
+    ${inv.paid_at ? `<p style="font-size:9px;font-weight:600;letter-spacing:0.15em;color:${T.TEAL_S};margin:3px 0 0;font-family:${FONT_STACK}">${formatDate(inv.paid_at)}</p>` : ''}
   </div>`
 }
 
@@ -458,19 +462,20 @@ function voidStamp(inv: InvoiceWithLineItems): string {
   return `
   <div style="
     position:absolute;
-    top:48%;
-    left:50%;
-    transform:translate(-50%, -50%) rotate(-18deg);
+    top:88px;
+    right:48px;
+    transform:rotate(-12deg);
     pointer-events:none;
     z-index:10;
-    border:6px double ${T.RED};
-    border-radius:8px;
-    padding:14px 36px 10px;
-    opacity:0.32;
+    border:4px double ${T.RED};
+    border-radius:6px;
+    padding:8px 18px 6px;
+    opacity:0.55;
     font-family:Georgia,'Times New Roman',serif;
+    text-align:center;
   ">
     <p style="
-      font-size:72px;
+      font-size:36px;
       font-weight:900;
       letter-spacing:0.08em;
       color:${T.RED};

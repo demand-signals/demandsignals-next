@@ -264,30 +264,30 @@ export default async function PublicInvoicePage({
           }}
         >
 
-          {/* Angled PAID / VOID stamp — mirrors the PDF stamp so the
-              magic-link page and the downloaded PDF read identically.
-              Hunter directive 2026-04-29. Pointer-events:none so it
-              doesn't block clicks on anything underneath. */}
+          {/* Angled PAID / VOID stamp — anchored upper-right where the
+              meta band's PAID date used to live. Hunter directive
+              2026-04-29: stamp replaces the inline text. Pointer-events
+              none so it never blocks clicks on the header buttons. */}
           {isPaid && (
             <div
               style={{
                 position: 'absolute',
-                top: '38%',
-                left: '50%',
-                transform: 'translate(-50%, -50%) rotate(-18deg)',
+                top: 88,
+                right: 48,
+                transform: 'rotate(-12deg)',
                 pointerEvents: 'none',
                 zIndex: 10,
-                border: `6px double ${T.teal}`,
-                borderRadius: 8,
-                padding: '14px 36px 10px',
-                opacity: 0.32,
+                border: `4px double ${T.teal}`,
+                borderRadius: 6,
+                padding: '8px 18px 6px',
+                opacity: 0.55,
                 fontFamily: "Georgia, 'Times New Roman', serif",
                 textAlign: 'center',
               }}
             >
               <p
                 style={{
-                  fontSize: 72,
+                  fontSize: 36,
                   fontWeight: 900,
                   letterSpacing: '0.08em',
                   color: T.teal,
@@ -301,11 +301,11 @@ export default async function PublicInvoicePage({
               {invoice.paid_at && (
                 <p
                   style={{
-                    fontSize: 11,
+                    fontSize: 9,
                     fontWeight: 600,
                     letterSpacing: '0.15em',
                     color: T.teal,
-                    margin: '4px 0 0',
+                    margin: '3px 0 0',
                   }}
                 >
                   {fmtDate(invoice.paid_at)}
@@ -317,21 +317,21 @@ export default async function PublicInvoicePage({
             <div
               style={{
                 position: 'absolute',
-                top: '38%',
-                left: '50%',
-                transform: 'translate(-50%, -50%) rotate(-18deg)',
+                top: 88,
+                right: 48,
+                transform: 'rotate(-12deg)',
                 pointerEvents: 'none',
                 zIndex: 10,
-                border: '6px double #dc2626',
-                borderRadius: 8,
-                padding: '14px 36px 10px',
-                opacity: 0.32,
+                border: '4px double #dc2626',
+                borderRadius: 6,
+                padding: '8px 18px 6px',
+                opacity: 0.55,
                 fontFamily: "Georgia, 'Times New Roman', serif",
               }}
             >
               <p
                 style={{
-                  fontSize: 72,
+                  fontSize: 36,
                   fontWeight: 900,
                   letterSpacing: '0.08em',
                   color: '#dc2626',
@@ -400,7 +400,10 @@ export default async function PublicInvoicePage({
                   For {project.sow_number}
                 </p>
               )}
-              <StatusPill status={invoice.status} />
+              {/* StatusPill suppressed for paid/void — the angled stamp
+                  in those states already conveys status more loudly.
+                  Other statuses (sent, viewed, draft) still show the pill. */}
+              {!isPaid && !isVoid && <StatusPill status={invoice.status} />}
             </div>
           </div>
 
@@ -515,14 +518,9 @@ export default async function PublicInvoicePage({
                   <p style={{ fontSize: 13, fontWeight: 600, color: T.dark }}>{fmtDate(invoice.due_date)}</p>
                 </div>
               )}
-              {invoice.paid_at && (
-                <div>
-                  <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.slateSoft, marginBottom: 3 }}>
-                    PAID
-                  </p>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: T.tealDark }}>{fmtDate(invoice.paid_at)}</p>
-                </div>
-              )}
+              {/* PAID date intentionally NOT rendered in the meta band —
+                  the angled PAID stamp anchored to the upper-right covers
+                  it. Hunter directive 2026-04-29: stamp replaces text. */}
             </div>
           </div>
 
