@@ -135,7 +135,13 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
   const sumOk = allocatedCents === expectedCash
 
   // ── Presets ──────────────────────────────────────────────────────
+  // activePreset gives visible feedback when a preset is clicked. Default
+  // installments mirror "single" exactly, so clicking Single previously
+  // produced no observable change (perceived as broken).
+  const [activePreset, setActivePreset] = useState<'single' | 'two' | 'three' | null>('single')
+
   function applyPreset(preset: 'single' | 'two' | 'three') {
+    setActivePreset(preset)
     if (preset === 'single') {
       setInstallments([
         {
@@ -209,6 +215,8 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
 
   function patchInstallment(idx: number, patch: Partial<InstallmentRow>) {
     setInstallments((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)))
+    // Manual edit means we're no longer matching any preset shape.
+    setActivePreset(null)
   }
   function addInstallment() {
     setInstallments((prev) => [
@@ -222,11 +230,13 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
         description: `Installment ${prev.length + 1}`,
       },
     ])
+    setActivePreset(null)
   }
   function removeInstallment(idx: number) {
     setInstallments((prev) =>
       prev.filter((_, i) => i !== idx).map((p, i) => ({ ...p, sequence: i + 1 })),
     )
+    setActivePreset(null)
   }
 
   function patchSub(idx: number, patch: Partial<SubscriptionRow>) {
@@ -548,28 +558,32 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
         <div style={legendStyle}>
           Build payment plan · cash to allocate: {fmtCents(expectedCash)}
         </div>
-        <div style={{ marginBottom: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => applyPreset('single')}
-            style={{ padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: 6, background: '#f4f6f9' }}
-          >
-            Single payment
-          </button>
-          <button
-            type="button"
-            onClick={() => applyPreset('two')}
-            style={{ padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: 6, background: '#f4f6f9' }}
-          >
-            2 installments (30d)
-          </button>
-          <button
-            type="button"
-            onClick={() => applyPreset('three')}
-            style={{ padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: 6, background: '#f4f6f9' }}
-          >
-            3 installments (30d/60d)
-          </button>
+        <div style={{ marginBottom: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          {(['single', 'two', 'three'] as const).map((p) => {
+            const label = p === 'single' ? 'Single payment' : p === 'two' ? '2 installments (30d)' : '3 installments (30d/60d)'
+            const isActive = activePreset === p
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => applyPreset(p)}
+                style={{
+                  padding: '6px 12px',
+                  border: `1px solid ${isActive ? '#3ecfaa' : '#cbd5e1'}`,
+                  borderRadius: 6,
+                  background: isActive ? '#e6faf3' : '#f4f6f9',
+                  color: isActive ? '#0f766e' : '#1d2330',
+                  fontWeight: isActive ? 600 : 400,
+                  cursor: 'pointer',
+                }}
+              >
+                {label}
+              </button>
+            )
+          })}
+          <span style={{ marginLeft: 'auto', fontSize: 11, color: '#5d6780' }}>
+            Presets fill the rows below — edit any field afterward.
+          </span>
         </div>
 
         {installments.map((inst, idx) => (
