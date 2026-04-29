@@ -8,7 +8,31 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-04-24 (PDF pipeline + design reconciliation + public doc pages + security hardening)
+**Last updated:** 2026-04-29 (calendar OAuth env-var lockdown + /quote fix pass: intro pre-parser, ranges, ongoing-mgmt panel killed, slot-offer phrasing, soft-save fallback)
+
+---
+
+## SHIPPED 2026-04-25 through 2026-04-29
+
+- **Stripe Plans A/B/C** — magic-link Pay buttons, payment plans + SOW conversion, subscriptions + caps + pause. Migrations 025a-e. CLAUDE.md §10.
+- **Quick inquiry form** — homepage CTA alt path. Spec + plan 2026-04-27.
+- **Resend SDK swap + email/page tracking** — all nodemailer call sites migrated to `src/lib/email.ts` (Resend + SMTP fallback). Per-purpose `from` aliases on demandsignals.co. Three new tables: `system_notifications`, `email_engagement`, `page_visits`. Resend webhook + Svix signature verification. Magic-link pages log visits via `logPageVisit()` and promote `dsig_attr` cookie. Migrations 026/027/028. CLAUDE.md §10.
+- **Existing-client match during /quote research** — returning prospect at /quote silently links to existing prospects row, no duplicate. Migration 034. `src/lib/quote-existing-match.ts` with 3-tier match (phone E.164 → website host → name+city). AI asks last-4 confirmation with strict no-account-state directive. CLAUDE.md §10.
+- **/quote → real Google Calendar booking** — replaces fake "team will call" closing. Migration 035 adds `integrations` + `bookings` tables. Three AI tools: `capture_attendee_email`, `offer_meeting_slots`, `book_meeting`. Booking lifecycle: prospect SMS confirmation, admin SMS notification, 24h + 1h reminder cron, admin cancel SMS. Right-pane CTA flips to MeetingConfirmedPanel after booking. CLAUDE.md §10 + §23.
+- **/quote fix pass (2026-04-28 → 04-29)** — Hunter's iterative-feedback session. Specifics:
+    - Killed the "Ongoing management after launch" RetainerStep panel from /quote — retainer is post-build, not part of the build estimate
+    - 5 rotating intro variants (random per session)
+    - Deterministic name+location pre-parser (`src/lib/quote-intro-parser.ts`) — fixes the bug where AI re-asked for business name after location was already given
+    - All UI dollar values render as low–high ranges (±30%) even at low accuracy
+    - Phone-unlock message no longer promises a fake "walkthrough"
+    - System prompt: every chat dollar figure must be a range; no monthly-services in build quote; banned from inventing pain points; must attempt email + meeting before any goodbye/rage-quit; no role/title question
+    - capture_attendee_email rejects placeholder addresses (none@none.com, test@test.com) and single-character locals
+    - offer_meeting_slots failure path now MANDATES offer_soft_save BEFORE trigger_handoff so QR + bookmark card always renders
+    - Slot-offer phrasing fixed: "How about 20 minutes Tomorrow at 10:00 AM PT or Thursday at 2:00 PM PT?" (was: "Works for you Tomorrow 10:00 AM PT or Thursday 2:00 PM PT?" — broken English, missing duration, missing "at")
+    - Slot duration default 30 min → 20 min so calendar block matches the ask
+    - Calendar OAuth env vars locked to dated names (`GOOGLE_DSIG_MAIN_ID_042826` + matching SECRET) — generic `GOOGLE_CLIENT_*` names are NOT consulted at runtime; that name had been aliased to the wrong OAuth client twice. CLAUDE.md §12 documents the permanent fix.
+    - New admin diagnostic endpoint: `GET /api/integrations/google/debug` reports live env state without echoing secrets.
+    - Spec: `docs/superpowers/specs/2026-04-28-quote-fix-pass-design.md`. Commits: `b7338ba` (initial fixes), `f6a8389` (calendar diag + email validator + soft-save), `7f00ef9` (env precedence v1), `940b3bf` (retire generic names), `8cd805c` (doc cleanup), `ecf1c52` (slot phrasing).
 
 ---
 
@@ -43,6 +67,12 @@
 | 022a | APPLY-022-2026-04-23 | Channels backfill (website_url, google/yelp ratings) |
 | 023a | APPLY-023-2026-04-24 | SOW trade-in-kind (trade_credit_cents, trade_credit_description) |
 | 024a | APPLY-024-2026-04-24 | Supabase security hardening |
+| 025a-e | APPLY-025-2026-04-25 | Stripe payment plans + subscriptions (cycle_cap, paused_until, parent_sow_id, payment_installment_id, receipt method 'tik') |
+| 026 | 2026-04-27 | system_notifications table |
+| 027 | 2026-04-27 | email_engagement table + Resend webhook idempotency |
+| 028 | 2026-04-27 | page_visits table + dsig_attr cookie support |
+| 034 | 2026-04-29 | quote_sessions.matched_prospect_id + matched_phone_last_four |
+| 035 | 2026-04-29 | integrations + bookings tables (Google Calendar) |
 
 ## Architectural decisions locked (do not re-debate)
 
@@ -53,6 +83,9 @@
 - **Prospect lifecycle: prospect → is_client=true + projects row on SOW accept.** No separate clients table.
 - **One apex domain (demandsignals.co).** See CLAUDE.md §18.
 - **Cloudflare R2 for file storage.** Two buckets: public (`assets.demandsignals.co`) + private (signed URLs). See CLAUDE.md §19.
+- **OAuth env var convention: `<APP>_<PURPOSE>_<DATE>` only.** No generic names like `GOOGLE_CLIENT_ID` for any DSIG OAuth integration. Generic names alias across multiple OAuth clients in Vercel and have caused silent failures twice. Calendar code reads `GOOGLE_DSIG_MAIN_ID_042826` exclusively. Future integrations: same pattern. See CLAUDE.md §12.
+- **/quote dollar values are always low–high ranges.** Single-number prices (fake precision) are forbidden in chat copy, UI, EST PDF, and ROI math. ±30% spread default. The retainer/ongoing-management panel does NOT appear inside the build quote — retainer is its own post-build step. See `docs/superpowers/specs/2026-04-28-quote-fix-pass-design.md`.
+- **AI must close the loop before any goodbye.** Every terminal path on /quote tries email capture → meeting offer → soft-save QR card. No "your plan is saved" closer without that sequence. Rage-quit triggers softened version, not skip. AI may NOT speculate about prospect-side behavior (e.g., "your customers aren't converting") — only research-data facts.
 
 ---
 
@@ -591,6 +624,36 @@ Commit `abcbd10`. Deployed to https://dsig.demandsignals.dev/quote.
     diff focused makes review and rollback surgical. Stale files in the repo
     (e.g., `public/Untitled-1-07.jpg`, `docs/videos/`) are not ours to touch.
 
+11. **DO NOT use generic OAuth env var names** (`GOOGLE_CLIENT_ID`,
+    `GOOGLE_CLIENT_SECRET`, etc.) for any DSIG integration. They alias across
+    multiple OAuth clients in Vercel — Hunter discovered them set to the wrong
+    client TWICE, both causing silent failures (`redirect_uri_mismatch` first
+    time, `calendar_disconnected` second time). Always use dated, purpose-
+    specific names: `<APP>_<PURPOSE>_<DATE>`. Calendar code reads
+    `GOOGLE_DSIG_MAIN_ID_042826` exclusively now. See CLAUDE.md §12.
+
+12. **DO NOT speculate about prospect-side behavior in /quote AI replies.**
+    AI may NOT invent claims like "your customers are landing and not
+    converting" or "people are second-guessing after the referral" unless
+    the prospect explicitly described that pain. Allowed: research-data
+    facts (page speed, schema presence, GBP rating). Forbidden: speculation
+    about how OTHER PEOPLE behave with this prospect's business. Hunter
+    rage-quit a /quote session over this. See `docs/superpowers/specs/2026-04-28-quote-fix-pass-design.md`.
+
+13. **DO NOT show single-number prices in /quote.** Every dollar figure
+    is a low–high range (±30%) — chat copy, UI, EST PDF, ROI math. Single
+    numbers read as fake-precision and undercut the budgetary framing.
+
+14. **DO NOT include ongoing/retainer services as line items in the
+    build quote.** Retainer is its own step, post-build. The
+    "Ongoing management after launch" RetainerStep panel was killed from
+    /quote 2026-04-28 — bringing it back conflates build vs ongoing
+    pricing and frustrates prospects.
+
+15. **DO NOT promise actions the system can't deliver.** Phone-unlock used
+    to say "Let me walk you through the numbers" — then nothing happened.
+    AI must either DO the thing in the next turn or not promise it.
+
 ---
 
 ## Environment state
@@ -625,14 +688,18 @@ Commit `abcbd10`. Deployed to https://dsig.demandsignals.dev/quote.
 
 ## Open questions / decisions deferred
 
-1. **A2P 10DLC registration** — Hunter needs to submit Marketing use case before Stage C cadence SMS. Unknown timeline. Does not block Stage B.
+1. **A2P 10DLC registration** — Hunter needs to submit Marketing use case before Stage C cadence SMS. Unknown timeline. Booking SMS reminders use a separate path (verified service) so this doesn't block /quote bookings.
 2. **VAPI integration surface** — Hunter has VAPI.ai wired up for a test app. Potential future integrations: voice handoff fallback, Day 14+ outbound calls, pre-call confirmations. Not in any stage plan yet.
 3. **Social proof library content** — 10-15 real or clearly-anonymized client results. None seeded yet. Avoid fabricating.
-4. **OAuth Checkpoint 2** — design says Google OAuth for "save estimate to account" flow. Not built. Stage C.
-5. **Admin quote detail: "Join Chat" button** — not built. Requires Supabase realtime subscriptions or polling. Stage C.
+4. **OAuth Checkpoint 2** — Google OAuth for "save estimate to account" / client-portal login flow. Not built. Out of scope for current /quote work; deferred.
+5. **Admin quote detail: "Join Chat" button** — not built. Requires Supabase realtime subscriptions or polling. Deferred.
 6. **POST-LAUNCH: tighten `maxSessionsPerIpPerDay`** — currently 25 (for testing/household tolerance). Hunter's directive: reduce to 3-5 once real traffic patterns are observed. File: `src/lib/quote-ai-budget.ts`, HARD_LIMITS.
-7. **STAGE C: Google Calendar API booking** — SHIPPED 2026-04-29 (see CLAUDE.md §23). The `/quote` AI now offers two real Google Calendar slots, books on prospect pick, sends invite + Meet link + SMS confirmations + reminders. Implementation uses dated DSIG_MAIN env var names (`GOOGLE_DSIG_MAIN_ID_042826` / `GOOGLE_DSIG_MAIN_SECRET_042826`) — generic `GOOGLE_CLIENT_*` names are NOT consulted (see CLAUDE.md §12 for the collision history that drove this).
-8. **STAGE C SPINE scope (pivoting to after v1.11)** — invoicing system (tables + admin UI + $0 research invoices), bid system + counter-offer UI, admin estimate builder at `/admin/quotes/new`, SOW auto-generation from accepted estimates, hot-handoff realtime polish, Calendar API (per #7). See design spec Sections 19, 21 for detail.
+7. **Public `/book` page** — non-AI booking form. Foundation laid (`bookings.source='public_book'` is a valid value, `bookSlot()` is the single entry point). Remaining: form UI, CAPTCHA + rate limit, intake fields. ~half-day on top of the booking foundation. CLAUDE.md §11.
+8. **Calendar webhook for prospect-side declines** — when a prospect declines via Google invite email, the platform doesn't sync today. Add a Calendar push notification webhook. CLAUDE.md §11.
+9. **Multi-host scheduling** — `bookings.host_email` already supports it. Wire to a `team_members` table when team grows beyond Hunter solo. CLAUDE.md §11.
+10. **Manual EST admin form** — standalone admin-created budgetary estimate not from /quote AI. Low priority; admin path starts with SOW today. CLAUDE.md §11.
+11. **Project expense + time tracking** — new tables `project_expenses` and `project_time_entries`. UI on `/admin/projects/[id]`. CLAUDE.md §11.
+12. **Scheduled rating sync for clients** — weekly cron re-runs research on `prospects.is_client = true` review channels. CLAUDE.md §11.
 
 ---
 
@@ -664,4 +731,8 @@ Before making any production change, confirm with Hunter. Before running any des
 - "I dont pause, I work." — velocity over ceremony.
 - "Our job is velocity not 6 months durations." — 45-60 day bid window is intentional, not negotiable.
 - "[Don't]... pretend the 10DLC warning doesn't apply" — acknowledge blockers honestly.
+- "I gave you feedback, you act dont ask more questions" (2026-04-28) — when Hunter gives a structured feedback list, EXECUTE, don't elaborate-ask. Confirm in one line if at all, then ship.
+- "always update and keep things current" (2026-04-29) — every code change ships with matching doc updates (CLAUDE.md, MEMORY.md, INDEX.md, runbooks). No "I'll update the docs later." Same commit or no commit.
+- "always check CODE before blaming credentials" (recurring) — when something fails after Hunter confirmed config is correct, the code is wrong. Read the consuming path end-to-end. Build a debug endpoint. Stop asking for repeat config verification.
+- "DSIG_Main should be deprecated and replaced with GOOGLE_DSIG_MAIN_ID_042826" (2026-04-29) — purpose-specific dated env-var names are the contract; generic names are forbidden because they alias. Convention applies to all future OAuth integrations.
 - Working hours: nights, often 2am. Design for that reader.

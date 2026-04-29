@@ -1,6 +1,6 @@
 # DSIG Documentation Index
 
-**Last updated: 2026-04-24**
+**Last updated: 2026-04-29**
 
 Start here to find every artifact in the DSIG Next.js project.
 
@@ -28,6 +28,14 @@ Start here to find every artifact in the DSIG Next.js project.
 | [`docs/superpowers/specs/2026-04-24-client-lifecycle.md`](superpowers/specs/2026-04-24-client-lifecycle.md) | 2026-04-24 | SHIPPED | Prospect → client transition + project auto-creation (retrospective) |
 | [`docs/superpowers/specs/2026-04-24-tik-accounting.md`](superpowers/specs/2026-04-24-tik-accounting.md) | 2026-04-24 | SHIPPED | Trade-in-Kind credit on SOWs (retrospective) |
 | [`docs/superpowers/specs/2026-04-24-channels-ratings.md`](superpowers/specs/2026-04-24-channels-ratings.md) | 2026-04-24 | SHIPPED | Prospect channels + review ratings data model (retrospective) |
+| [`docs/superpowers/specs/2026-04-24-stripe-payment-plans-design.md`](superpowers/specs/2026-04-24-stripe-payment-plans-design.md) | 2026-04-24 | SHIPPED | Stripe payment plans + subscriptions design (Plans A/B/C) |
+| [`docs/superpowers/specs/2026-04-27-quick-inquiry-form-design.md`](superpowers/specs/2026-04-27-quick-inquiry-form-design.md) | 2026-04-27 | SHIPPED | Quick inquiry form (homepage CTA alt path) |
+| [`docs/superpowers/specs/2026-04-27-resend-email-swap-design.md`](superpowers/specs/2026-04-27-resend-email-swap-design.md) | 2026-04-27 | SHIPPED | Resend SDK swap + email/page tracking infrastructure |
+| [`docs/superpowers/specs/2026-04-28-portal-messaging-design.md`](superpowers/specs/2026-04-28-portal-messaging-design.md) | 2026-04-28 | DRAFT | Portal-side prospect messaging system |
+| [`docs/superpowers/specs/2026-04-28-quote-fix-pass-design.md`](superpowers/specs/2026-04-28-quote-fix-pass-design.md) | 2026-04-28 | SHIPPED | /quote fix pass — intro pre-parser, ranges, anti-fabrication, close-the-loop, kill ongoing-mgmt panel |
+| [`docs/superpowers/specs/2026-04-29-client-sms-notifications-design.md`](superpowers/specs/2026-04-29-client-sms-notifications-design.md) | 2026-04-29 | DRAFT | Client-facing SMS notifications |
+| [`docs/superpowers/specs/2026-04-29-quote-existing-client-match-design.md`](superpowers/specs/2026-04-29-quote-existing-client-match-design.md) | 2026-04-29 | SHIPPED | Existing-client match during /quote research |
+| [`docs/superpowers/specs/2026-04-29-quote-to-booked-meeting-design.md`](superpowers/specs/2026-04-29-quote-to-booked-meeting-design.md) | 2026-04-29 | SHIPPED | /quote → real Google Calendar booking + Meet + SMS reminders |
 
 ---
 
@@ -41,6 +49,14 @@ Start here to find every artifact in the DSIG Next.js project.
 | [`docs/superpowers/plans/2026-04-18-invoicing-v2-expanded.md`](superpowers/plans/2026-04-18-invoicing-v2-expanded.md) | 2026-04-18 | SHIPPED | various | Invoicing v2 overnight build |
 | [`docs/superpowers/plans/2026-04-21-retainer-bundling.md`](superpowers/plans/2026-04-21-retainer-bundling.md) | 2026-04-21 | SHIPPED | various | /quote retainer bundling |
 | [`docs/superpowers/plans/2026-04-22-doc-system.md`](superpowers/plans/2026-04-22-doc-system.md) | 2026-04-22 | SHIPPED | various | SOW + Invoice + Receipt doc overhaul |
+| [`docs/superpowers/plans/2026-04-24-stripe-plan-A-magic-link-pay.md`](superpowers/plans/2026-04-24-stripe-plan-A-magic-link-pay.md) | 2026-04-24 | SHIPPED | various | Stripe Plan A — magic-link Pay button + activation |
+| [`docs/superpowers/plans/2026-04-24-stripe-plan-B-payment-plans.md`](superpowers/plans/2026-04-24-stripe-plan-B-payment-plans.md) | 2026-04-24 | SHIPPED | various | Stripe Plan B — payment plans + SOW conversion |
+| [`docs/superpowers/plans/2026-04-24-stripe-plan-C-subscriptions.md`](superpowers/plans/2026-04-24-stripe-plan-C-subscriptions.md) | 2026-04-24 | SHIPPED | various | Stripe Plan C — subscriptions + caps + pause |
+| [`docs/superpowers/plans/2026-04-25-READY-TO-APPLY.md`](superpowers/plans/2026-04-25-READY-TO-APPLY.md) | 2026-04-25 | reference | — | Migration apply notes |
+| [`docs/superpowers/plans/2026-04-27-quick-inquiry-form-plan.md`](superpowers/plans/2026-04-27-quick-inquiry-form-plan.md) | 2026-04-27 | SHIPPED | various | Quick inquiry form |
+| [`docs/superpowers/plans/2026-04-27-resend-email-tracking-plan.md`](superpowers/plans/2026-04-27-resend-email-tracking-plan.md) | 2026-04-27 | SHIPPED | various | Resend email + tracking infrastructure |
+| [`docs/superpowers/plans/2026-04-29-quote-existing-client-match-plan.md`](superpowers/plans/2026-04-29-quote-existing-client-match-plan.md) | 2026-04-29 | SHIPPED | various | /quote existing-client match |
+| [`docs/superpowers/plans/2026-04-29-quote-to-booked-meeting-plan.md`](superpowers/plans/2026-04-29-quote-to-booked-meeting-plan.md) | 2026-04-29 | SHIPPED | various | /quote → real Calendar booking |
 
 ---
 
