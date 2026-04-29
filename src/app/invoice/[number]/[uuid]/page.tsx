@@ -264,17 +264,18 @@ export default async function PublicInvoicePage({
           }}
         >
 
-          {/* Angled PAID / VOID stamp — anchored upper-right where the
-              meta band's PAID date used to live. Hunter directive
-              2026-04-29: stamp replaces the inline text. Pointer-events
-              none so it never blocks clicks on the header buttons. */}
+          {/* Angled PAID / VOID stamp — anchored to the empty whitespace
+              top-center, between the logo (left) and the invoice number
+              block (right). Hunter directive 2026-04-29 round 2: don't
+              obscure existing text. Pointer-events:none so it never
+              blocks clicks. */}
           {isPaid && (
             <div
               style={{
                 position: 'absolute',
-                top: 88,
-                right: 48,
-                transform: 'rotate(-12deg)',
+                top: 56,
+                left: '50%',
+                transform: 'translateX(-50%) rotate(-12deg)',
                 pointerEvents: 'none',
                 zIndex: 10,
                 border: `4px double ${T.teal}`,
@@ -317,9 +318,9 @@ export default async function PublicInvoicePage({
             <div
               style={{
                 position: 'absolute',
-                top: 88,
-                right: 48,
-                transform: 'rotate(-12deg)',
+                top: 56,
+                left: '50%',
+                transform: 'translateX(-50%) rotate(-12deg)',
                 pointerEvents: 'none',
                 zIndex: 10,
                 border: '4px double #dc2626',
@@ -842,6 +843,8 @@ export default async function PublicInvoicePage({
           >
             <a
               href={downloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
