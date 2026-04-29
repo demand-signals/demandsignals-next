@@ -335,7 +335,15 @@ function scopePage(sow: SowDocument): string {
       ${phasesHtml}
     </div>
 
-    ${interiorPageFooter()}
+    <!--
+      Footer chrome intentionally OMITTED on the scope page.
+      Reason: when phases overflow, Chromium splits the footer's <p>
+      from its rule, orphaning a footer-only blank page (witnessed in
+      SOW-DOCK-042826A v2a). The investment page keeps its footer
+      because it's the last interior page and content always fits.
+      The break-before:page on investmentPage ensures investment
+      starts on a fresh sheet regardless.
+    -->
   </div>`
 }
 
@@ -519,7 +527,15 @@ function investmentPage(sow: SowDocument): string {
       </div>
     </div>
 
-    ${interiorPageFooter()}
+    <!--
+      Footer wrapped in break-inside:avoid so the rule and the text
+      stay together as one atomic unit. If ever pushed to a new page
+      it goes as a unit, never split (which used to orphan the text
+      alone on a fresh sheet — see SOW-DOCK-042826A v2a debug notes).
+    -->
+    <div style="break-inside:avoid">
+      ${interiorPageFooter()}
+    </div>
   </div>`
 }
 
