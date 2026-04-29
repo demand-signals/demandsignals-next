@@ -25,16 +25,16 @@ export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request)
   if ('error' in auth) return auth.error
 
-  const canonicalId = process.env.GOOGLE_CLIENT_ID
-  const canonicalSecret = process.env.GOOGLE_CLIENT_SECRET
-  const legacyId = process.env.GOOGLE_DSIG_MAIN_ID_042826
-  const legacySecret = process.env.GOOGLE_DSIG_MAIN_SECRET_042826
+  const datedId = process.env.GOOGLE_DSIG_MAIN_ID_042826
+  const datedSecret = process.env.GOOGLE_DSIG_MAIN_SECRET_042826
+  const genericId = process.env.GOOGLE_CLIENT_ID
+  const genericSecret = process.env.GOOGLE_CLIENT_SECRET
   const redirect = process.env.GOOGLE_OAUTH_REDIRECT_URI
 
-  // Precedence MUST mirror google-oauth.ts: dated DSIG_MAIN names win.
-  // Reason documented there + in CLAUDE.md §12 (env var collision history).
-  const effectiveId = legacyId ?? canonicalId
-  const effectiveSecret = legacySecret ?? canonicalSecret
+  // Calendar code reads ONLY the dated names. Generic names are reported
+  // here for diagnostic completeness but are NOT consulted at runtime.
+  const effectiveId = datedId
+  const effectiveSecret = datedSecret
   const expectedClientPrefix = '99529580' // DSIG Main = 995295804425-tm28...
 
   return NextResponse.json({
@@ -45,22 +45,22 @@ export async function GET(request: NextRequest) {
       redirect_uri: redirect ?? '(unset, falls back to demandsignals.co/api/integrations/google/callback)',
     },
     sources: {
-      GOOGLE_CLIENT_ID: mask(canonicalId),
-      GOOGLE_CLIENT_SECRET: mask(canonicalSecret),
-      GOOGLE_DSIG_MAIN_ID_042826: mask(legacyId),
-      GOOGLE_DSIG_MAIN_SECRET_042826: mask(legacySecret),
+      GOOGLE_DSIG_MAIN_ID_042826: mask(datedId),
+      GOOGLE_DSIG_MAIN_SECRET_042826: mask(datedSecret),
       GOOGLE_OAUTH_REDIRECT_URI: mask(redirect),
+      _generic_not_consulted_at_runtime: {
+        GOOGLE_CLIENT_ID: mask(genericId),
+        GOOGLE_CLIENT_SECRET: mask(genericSecret),
+      },
     },
     diagnostics: {
-      using_dated_dsig_main: !!legacyId,
-      using_generic_fallback: !legacyId && !!canonicalId,
-      no_credentials_at_all: !effectiveId,
+      no_credentials: !effectiveId,
       client_id_looks_like_dsig_main: effectiveId?.startsWith(expectedClientPrefix) ?? false,
       hint: !effectiveId
-        ? 'Neither GOOGLE_DSIG_MAIN_ID_042826 nor GOOGLE_CLIENT_ID is set in Vercel. Calendar will report disconnected.'
+        ? 'GOOGLE_DSIG_MAIN_ID_042826 is not set in Vercel. Calendar will report disconnected. The Calendar code reads ONLY this dated name — generic GOOGLE_CLIENT_ID is intentionally ignored.'
         : !effectiveId.startsWith(expectedClientPrefix)
-          ? 'Effective client id does NOT match DSIG Main (prefix 995295804425-tm28). Refresh-token redemption will return invalid_client. Set GOOGLE_DSIG_MAIN_ID_042826 to the DSIG Main client id.'
-          : 'Effective client id matches DSIG Main. If calendar still reports disconnected, check integrations row revoked_at, then re-run /admin/integrations/google connect flow.',
+          ? 'GOOGLE_DSIG_MAIN_ID_042826 does NOT match DSIG Main (prefix 995295804425-tm28). Set it to the DSIG Main client id from PROJECT.md §2.'
+          : 'GOOGLE_DSIG_MAIN_ID_042826 matches DSIG Main. If calendar still reports disconnected, check integrations row revoked_at, then re-run /admin/integrations/google connect flow.',
     },
   })
 }

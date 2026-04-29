@@ -21,25 +21,24 @@ const SCOPES = [
 
 // Calendar integration uses the DSIG Main OAuth client.
 //
-// Precedence is INTENTIONAL: dated GOOGLE_DSIG_MAIN_*_042826 names win
-// when present. Reason: GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are
-// generic names and Hunter discovered (twice now — see CLAUDE.md §12)
-// that they had been set to a different OAuth client (prefix 21990712...)
-// rather than DSIG Main (prefix 995295804425-tm28...). Reading the dated
-// name first ensures the Calendar code locks onto the *intended* client
-// regardless of what the generic vars happen to hold.
+// ONLY the dated GOOGLE_DSIG_MAIN_*_042826 names are read. Generic names
+// (GOOGLE_CLIENT_ID/SECRET) are intentionally NOT consulted — Hunter
+// discovered (twice now — see CLAUDE.md §12) that the generic names
+// had been set to a different OAuth client (prefix 21990712...) rather
+// than DSIG Main (prefix 995295804425-tm28...). Reading dated names
+// only eliminates the aliasing risk.
 //
-// During a secret rotation: bump the date suffix on the dated env var,
-// deploy, then drop the old suffix from Vercel. Code keeps working
-// throughout — both names share the fallback chain.
+// Rotation: bump the date suffix on these env var names, set the new
+// secret in Vercel, deploy code that reads the new suffix, then drop
+// the old suffix from Vercel + GCP. The dated name is the contract.
 function clientId(): string {
-  const v = process.env.GOOGLE_DSIG_MAIN_ID_042826 ?? process.env.GOOGLE_CLIENT_ID
-  if (!v) throw new Error('GOOGLE_DSIG_MAIN_ID_042826 (or GOOGLE_CLIENT_ID) not configured')
+  const v = process.env.GOOGLE_DSIG_MAIN_ID_042826
+  if (!v) throw new Error('GOOGLE_DSIG_MAIN_ID_042826 not configured')
   return v
 }
 function clientSecret(): string {
-  const v = process.env.GOOGLE_DSIG_MAIN_SECRET_042826 ?? process.env.GOOGLE_CLIENT_SECRET
-  if (!v) throw new Error('GOOGLE_DSIG_MAIN_SECRET_042826 (or GOOGLE_CLIENT_SECRET) not configured')
+  const v = process.env.GOOGLE_DSIG_MAIN_SECRET_042826
+  if (!v) throw new Error('GOOGLE_DSIG_MAIN_SECRET_042826 not configured')
   return v
 }
 function redirectUri(): string {
