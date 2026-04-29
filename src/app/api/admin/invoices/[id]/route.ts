@@ -75,11 +75,18 @@ export async function GET(
     superseded_by_number = data?.invoice_number ?? null
   }
 
+  // SOW-balance project meta — feeds the "Remaining balance for SOW…"
+  // block on the admin detail page. Mirrors what the public magic-link
+  // page receives so admin and client see the same itemized breakdown.
+  const { getInvoiceProjectMeta } = await import('@/lib/invoice-context')
+  const project = await getInvoiceProjectMeta(id)
+
   return NextResponse.json({
     invoice,
     line_items: lineItems ?? [],
     supersedes_number,
     superseded_by_number,
+    project,
   })
 }
 

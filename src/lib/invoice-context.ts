@@ -32,6 +32,17 @@ export interface InvoiceProjectMeta {
   schedule_outstanding?: ScheduleOutstanding | null
 }
 
+export interface OutstandingInstallment {
+  sequence: number
+  /** Free-text label like "Phase 2 — Cash payment" or "Trade-in-Kind installment". */
+  description: string
+  amount_cents: number
+  amount_paid_cents: number
+  remaining_cents: number
+  currency_type: 'cash' | 'tik'
+  status: string
+}
+
 export interface ScheduleOutstanding {
   /** Sum of cash installment amount_cents minus amount_paid_cents. */
   cash_remaining_cents: number
@@ -43,6 +54,16 @@ export interface ScheduleOutstanding {
   tik_paid_cents: number
   /** True iff the schedule has more than one installment (i.e. this invoice is one of several). */
   is_multi_installment: boolean
+  /**
+   * Per-installment breakdown for installments that still have a non-zero
+   * remaining balance (after subtracting amount_paid_cents). Excludes
+   * fully-paid and cancelled rows. Sorted ascending by sequence so
+   * renderers can show "Phase 2 — $X, Phase 3 — $Y" in chronological
+   * order. Hunter directive 2026-04-29 — itemize the SOW-balance block
+   * so a paid invoice's "Remaining balance: $2.00" reads as "Phase 2
+   * Payment $1 + TIK Payment $1" instead of an unlabelled total.
+   */
+  outstanding_installments: OutstandingInstallment[]
 }
 
 const TIK_METHODS = new Set(['tik', 'trade'])
@@ -207,14 +228,16 @@ export async function getInvoiceProjectMeta(
   if (scheduleId) {
     const { data: installments } = await supabaseAdmin
       .from('payment_installments')
-      .select('amount_cents, amount_paid_cents, currency_type, status')
+      .select('sequence, amount_cents, amount_paid_cents, currency_type, status, description')
       .eq('schedule_id', scheduleId)
+      .order('sequence', { ascending: true })
 
     if (installments && installments.length > 0) {
       let cash_paid_cents = 0
       let tik_paid_cents = 0
       let cash_remaining_cents = 0
       let tik_remaining_cents = 0
+      const outstanding_installments: OutstandingInstallment[] = []
       for (const i of installments) {
         if (i.status === 'cancelled') continue
         const remaining = Math.max(0, i.amount_cents - i.amount_paid_cents)
@@ -225,6 +248,23 @@ export async function getInvoiceProjectMeta(
           cash_paid_cents += i.amount_paid_cents
           cash_remaining_cents += remaining
         }
+        // Per-installment row only when there's still money on the table.
+        // Fully-paid installments are interesting for the historical view
+        // but the SOW-balance block answers "what's still owed?".
+        if (remaining > 0) {
+          outstanding_installments.push({
+            sequence: i.sequence,
+            description: i.description?.trim()
+              || (i.currency_type === 'tik'
+                ? `Trade-in-Kind installment ${i.sequence}`
+                : `Cash installment ${i.sequence}`),
+            amount_cents: i.amount_cents,
+            amount_paid_cents: i.amount_paid_cents,
+            remaining_cents: remaining,
+            currency_type: i.currency_type as 'cash' | 'tik',
+            status: i.status,
+          })
+        }
       }
       schedule_outstanding = {
         cash_paid_cents,
@@ -232,6 +272,7 @@ export async function getInvoiceProjectMeta(
         cash_remaining_cents,
         tik_remaining_cents,
         is_multi_installment: installments.length > 1,
+        outstanding_installments,
       }
     }
   }

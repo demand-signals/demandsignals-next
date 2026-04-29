@@ -34,6 +34,16 @@ export interface InvoiceProjectMeta {
     cash_paid_cents: number
     tik_paid_cents: number
     is_multi_installment: boolean
+    /** Per-row breakdown of installments still owing money. */
+    outstanding_installments?: Array<{
+      sequence: number
+      description: string
+      amount_cents: number
+      amount_paid_cents: number
+      remaining_cents: number
+      currency_type: 'cash' | 'tik'
+      status: string
+    }>
   } | null
 }
 
@@ -374,24 +384,51 @@ function paymentCard(inv: InvoiceWithLineItems, paySummary?: PaymentSummary): st
 function projectBalanceBlock(project?: InvoiceProjectMeta): string {
   const so = project?.schedule_outstanding
   if (!so || !so.is_multi_installment) return ''
-  const cashLine = so.cash_remaining_cents > 0 || so.cash_paid_cents > 0
-    ? `<tr>
-        <td style="padding:4px 0;font-size:11px;color:${T.BODY}">Cash balance</td>
-        <td style="padding:4px 0;text-align:right;font-size:11px;font-variant-numeric:tabular-nums;color:${T.SLATE}">${formatCents(so.cash_paid_cents)} paid · <strong style="color:${so.cash_remaining_cents > 0 ? T.ORANGE_S : T.TEAL}">${formatCents(so.cash_remaining_cents)}</strong> remaining</td>
-      </tr>`
-    : ''
-  const tikLine = so.tik_remaining_cents > 0 || so.tik_paid_cents > 0
-    ? `<tr>
-        <td style="padding:4px 0;font-size:11px;color:${T.BODY}">Trade-in-kind balance</td>
-        <td style="padding:4px 0;text-align:right;font-size:11px;font-variant-numeric:tabular-nums;color:${T.SLATE}">${formatCents(so.tik_paid_cents)} drawn · <strong style="color:${so.tik_remaining_cents > 0 ? T.ORANGE_S : T.TEAL}">${formatCents(so.tik_remaining_cents)}</strong> remaining</td>
-      </tr>`
-    : ''
-  if (!cashLine && !tikLine) return ''
-  const projectLabel = project?.name ?? 'project'
+
+  const items = so.outstanding_installments ?? []
+  const totalRemaining = so.cash_remaining_cents + so.tik_remaining_cents
+
+  // Nothing left to bill on the SOW — render a celebratory "fully paid"
+  // line instead of a confusing empty box.
+  if (totalRemaining <= 0 && items.length === 0) {
+    if (so.cash_paid_cents === 0 && so.tik_paid_cents === 0) return ''
+    const sowLabel = project?.sow_number ? `SOW ${project.sow_number}` : 'SOW'
+    return `
+    <div style="margin:16px 54px 0;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:12px 16px;font-family:${FONT_STACK}">
+      <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.TEAL};margin-bottom:6px">${esc(sowLabel)} — paid in full</p>
+      <p style="font-size:11px;color:${T.BODY}">All scheduled payments on this SOW have been received. Thank you.</p>
+    </div>`
+  }
+
+  const sowLabel = project?.sow_number ? `Remaining balance for SOW ${project.sow_number}` : 'Remaining balance for this SOW'
+
+  // Per-installment rows. Cash items appear first (most relevant for
+  // the "what do I owe in money" question), TIK items follow.
+  const cashItems = items.filter((i) => i.currency_type === 'cash')
+  const tikItems = items.filter((i) => i.currency_type === 'tik')
+  const orderedItems = [...cashItems, ...tikItems]
+
+  const itemRows = orderedItems.map((i) => {
+    const settlement = i.currency_type === 'tik' ? 'TIK' : 'Cash'
+    return `<tr>
+      <td style="padding:5px 0;font-size:11px;color:${T.BODY}">
+        ${esc(i.description)}
+        <span style="color:${T.GRAY};font-size:10px"> · ${settlement}</span>
+      </td>
+      <td style="padding:5px 0;text-align:right;font-size:11px;font-variant-numeric:tabular-nums;color:${T.SLATE};font-weight:600">${formatCents(i.remaining_cents)}</td>
+    </tr>`
+  }).join('')
+
+  const totalRow = `<tr>
+    <td style="padding:8px 0 0;border-top:1px solid ${T.BORDER};font-size:11px;font-weight:700;color:${T.SLATE}">Total remaining on SOW</td>
+    <td style="padding:8px 0 0;border-top:1px solid ${T.BORDER};text-align:right;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:${T.ORANGE_S}">${formatCents(totalRemaining)}</td>
+  </tr>`
+
   return `
   <div style="margin:16px 54px 0;background:#fbfcfd;border:1px solid ${T.BORDER};border-radius:6px;padding:12px 16px;font-family:${FONT_STACK}">
-    <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:8px">${esc(projectLabel)} — overall balance</p>
-    <table style="width:100%;border-collapse:collapse"><tbody>${cashLine}${tikLine}</tbody></table>
+    <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:8px">${esc(sowLabel)}</p>
+    <p style="font-size:10px;color:${T.GRAY};margin-bottom:8px;line-height:1.4">This invoice is for the deposit. Below is the rest of the SOW schedule — separate invoices will be issued as each phase completes.</p>
+    <table style="width:100%;border-collapse:collapse"><tbody>${itemRows}${totalRow}</tbody></table>
   </div>`
 }
 

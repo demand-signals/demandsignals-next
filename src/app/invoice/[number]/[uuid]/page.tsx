@@ -104,6 +104,15 @@ interface PublicProjectMeta {
     cash_paid_cents: number
     tik_paid_cents: number
     is_multi_installment: boolean
+    outstanding_installments?: Array<{
+      sequence: number
+      description: string
+      amount_cents: number
+      amount_paid_cents: number
+      remaining_cents: number
+      currency_type: 'cash' | 'tik'
+      status: string
+    }>
   } | null
 }
 
@@ -701,42 +710,96 @@ export default async function PublicInvoicePage({
             </div>
           </div>
 
-          {/* ── 4b. Project-level balance (multi-installment plans) ── */}
-          {project?.schedule_outstanding && project.schedule_outstanding.is_multi_installment && (
-            <div
-              style={{
-                margin: '20px 48px 0',
-                background: '#fbfcfd',
-                border: `1px solid ${T.rule}`,
-                borderRadius: 10,
-                padding: '14px 18px',
-              }}
-            >
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.slateSoft, marginBottom: 10 }}>
-                {project.name ?? 'Project'} — overall balance
-              </p>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: FONT }}>
-                <tbody>
-                  {(project.schedule_outstanding.cash_remaining_cents > 0 || project.schedule_outstanding.cash_paid_cents > 0) && (
+          {/* ── 4b. SOW balance remaining (multi-installment plans) ──
+              Replaces the unlabelled "Remaining balance: $X" legacy
+              line that sat in the orange Notes box. Now itemizes
+              each outstanding installment by phase + settlement type
+              (Cash vs TIK) so a paid invoice ($0 outstanding on this
+              doc) doesn't visually conflict with future SOW-level
+              obligations. Hunter directive 2026-04-29. */}
+          {project?.schedule_outstanding && project.schedule_outstanding.is_multi_installment && (() => {
+            const so = project.schedule_outstanding!
+            const items = so.outstanding_installments ?? []
+            const totalRemaining = so.cash_remaining_cents + so.tik_remaining_cents
+
+            // SOW fully paid — show a celebratory line if anything was ever paid.
+            if (totalRemaining <= 0 && items.length === 0) {
+              if (so.cash_paid_cents === 0 && so.tik_paid_cents === 0) return null
+              const sowLabel = project.sow_number ? `SOW ${project.sow_number}` : 'SOW'
+              return (
+                <div
+                  style={{
+                    margin: '20px 48px 0',
+                    background: '#f0fdf4',
+                    border: '1px solid #bbf7d0',
+                    borderRadius: 10,
+                    padding: '14px 18px',
+                  }}
+                >
+                  <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.tealDark, marginBottom: 6 }}>
+                    {sowLabel} — paid in full
+                  </p>
+                  <p style={{ fontSize: 12, color: T.slate, lineHeight: 1.5 }}>
+                    All scheduled payments on this SOW have been received. Thank you.
+                  </p>
+                </div>
+              )
+            }
+
+            // Cash items first, TIK items second — most relevant ordering
+            // for the "what do I still owe" question.
+            const cashItems = items.filter((i) => i.currency_type === 'cash')
+            const tikItems = items.filter((i) => i.currency_type === 'tik')
+            const orderedItems = [...cashItems, ...tikItems]
+
+            const sowLabel = project.sow_number
+              ? `Remaining balance for SOW ${project.sow_number}`
+              : 'Remaining balance for this SOW'
+
+            return (
+              <div
+                style={{
+                  margin: '20px 48px 0',
+                  background: '#fbfcfd',
+                  border: `1px solid ${T.rule}`,
+                  borderRadius: 10,
+                  padding: '14px 18px',
+                }}
+              >
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.slateSoft, marginBottom: 6 }}>
+                  {sowLabel}
+                </p>
+                <p style={{ fontSize: 11, color: T.slateSoft, marginBottom: 12, lineHeight: 1.5 }}>
+                  This invoice is for the deposit. Below is the rest of the SOW schedule — separate invoices will be issued as each phase completes.
+                </p>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: FONT }}>
+                  <tbody>
+                    {orderedItems.map((i) => (
+                      <tr key={i.sequence}>
+                        <td style={{ padding: '5px 0', fontSize: 12, color: T.slate }}>
+                          {i.description}
+                          <span style={{ color: T.slateSoft, fontSize: 11, marginLeft: 6 }}>
+                            · {i.currency_type === 'tik' ? 'TIK' : 'Cash'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '5px 0', textAlign: 'right', fontSize: 12, fontVariantNumeric: 'tabular-nums', color: T.dark, fontWeight: 600 }}>
+                          {formatCents(i.remaining_cents)}
+                        </td>
+                      </tr>
+                    ))}
                     <tr>
-                      <td style={{ padding: '4px 0', fontSize: 12, color: T.slate }}>Cash balance</td>
-                      <td style={{ padding: '4px 0', textAlign: 'right', fontSize: 12, fontVariantNumeric: 'tabular-nums', color: T.dark }}>
-                        {formatCents(project.schedule_outstanding.cash_paid_cents)} paid · <strong style={{ color: project.schedule_outstanding.cash_remaining_cents > 0 ? T.orange : T.tealDark }}>{formatCents(project.schedule_outstanding.cash_remaining_cents)}</strong> remaining
+                      <td style={{ padding: '8px 0 0', borderTop: `1px solid ${T.rule}`, fontSize: 12, fontWeight: 700, color: T.dark }}>
+                        Total remaining on SOW
+                      </td>
+                      <td style={{ padding: '8px 0 0', borderTop: `1px solid ${T.rule}`, textAlign: 'right', fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: T.orange }}>
+                        {formatCents(totalRemaining)}
                       </td>
                     </tr>
-                  )}
-                  {(project.schedule_outstanding.tik_remaining_cents > 0 || project.schedule_outstanding.tik_paid_cents > 0) && (
-                    <tr>
-                      <td style={{ padding: '4px 0', fontSize: 12, color: T.slate }}>Trade-in-kind balance</td>
-                      <td style={{ padding: '4px 0', textAlign: 'right', fontSize: 12, fontVariantNumeric: 'tabular-nums', color: T.dark }}>
-                        {formatCents(project.schedule_outstanding.tik_paid_cents)} drawn · <strong style={{ color: project.schedule_outstanding.tik_remaining_cents > 0 ? T.orange : T.tealDark }}>{formatCents(project.schedule_outstanding.tik_remaining_cents)}</strong> remaining
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </tbody>
+                </table>
+              </div>
+            )
+          })()}
 
           {/* ── 5. Payment card ──────────────────────────────────── */}
           <div

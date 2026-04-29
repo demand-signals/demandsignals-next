@@ -129,11 +129,15 @@ export async function POST(
       // Hunter directive 2026-04-29: do NOT inject the value-stack block
       // ("Included with your engagement: Market Research Report, etc.")
       // into invoice notes. Value-stack items belong on the SOW; the
-      // invoice should stay focused on what's owed today.
-      notes: [
-        `Deposit invoice for SOW ${sow.sow_number} — ${sow.title}.`,
-        `Remaining balance: $${((pricing.total_cents - depositCents) / 100).toFixed(2)}`,
-      ].join(' '),
+      // invoice should stay focused on what's owed today. The
+      // structured "SOW balance remaining" block on the rendered
+      // invoice (PDF + magic-link + admin) handles the full SOW-level
+      // outstanding picture with itemized cash/TIK breakdown — that
+      // replaces the legacy "Remaining balance: $X" line that used to
+      // sit here and confused clients (was ambiguous about whether
+      // it meant invoice-level or SOW-level remaining). Hunter
+      // directive 2026-04-29: drop the legacy line entirely.
+      notes: `Deposit invoice for SOW ${sow.sow_number} — ${sow.title}.`,
     })
     .select('*')
     .single()

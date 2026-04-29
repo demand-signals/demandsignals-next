@@ -67,6 +67,26 @@ interface InvoiceDetail {
   line_items: LineItem[]
   supersedes_number: string | null
   superseded_by_number: string | null
+  project?: {
+    name: string | null
+    sow_number: string | null
+    schedule_outstanding?: {
+      cash_remaining_cents: number
+      tik_remaining_cents: number
+      cash_paid_cents: number
+      tik_paid_cents: number
+      is_multi_installment: boolean
+      outstanding_installments?: Array<{
+        sequence: number
+        description: string
+        amount_cents: number
+        amount_paid_cents: number
+        remaining_cents: number
+        currency_type: 'cash' | 'tik'
+        status: string
+      }>
+    } | null
+  } | null
 }
 
 // ── Money helpers ─────────────────────────────────────────────────────
@@ -901,6 +921,72 @@ export default function InvoiceDetailPage({
                 )}
               </tbody>
             </table>
+
+            {/* SOW-balance block — itemized cash/TIK installments still
+                owing on the parent SOW. Renders only when this invoice
+                is part of a multi-installment plan. Same data structure
+                as the magic-link page so admin and client see the same
+                breakdown. Hunter directive 2026-04-29. */}
+            {detail.project?.schedule_outstanding && detail.project.schedule_outstanding.is_multi_installment && (() => {
+              const so = detail.project.schedule_outstanding!
+              const items = so.outstanding_installments ?? []
+              const totalRemaining = so.cash_remaining_cents + so.tik_remaining_cents
+
+              if (totalRemaining <= 0 && items.length === 0) {
+                if (so.cash_paid_cents === 0 && so.tik_paid_cents === 0) return null
+                const sowLabel = detail.project.sow_number ? `SOW ${detail.project.sow_number}` : 'SOW'
+                return (
+                  <div className="mt-6 p-3 border border-emerald-200 rounded-lg bg-emerald-50/50">
+                    <div className="text-xs uppercase text-emerald-700 font-semibold mb-1">
+                      {sowLabel} — paid in full
+                    </div>
+                    <p className="text-xs text-slate-600">
+                      All scheduled payments on this SOW have been received.
+                    </p>
+                  </div>
+                )
+              }
+
+              const cashItems = items.filter((i) => i.currency_type === 'cash')
+              const tikItems = items.filter((i) => i.currency_type === 'tik')
+              const orderedItems = [...cashItems, ...tikItems]
+
+              const sowLabel = detail.project.sow_number
+                ? `Remaining balance for SOW ${detail.project.sow_number}`
+                : 'Remaining balance for this SOW'
+
+              return (
+                <div className="mt-6 p-3 border border-slate-200 rounded-lg bg-slate-50/40">
+                  <div className="text-xs uppercase text-slate-500 font-semibold mb-1">
+                    {sowLabel}
+                  </div>
+                  <p className="text-xs text-slate-400 mb-3 leading-snug">
+                    This invoice is for the deposit. Below is the rest of the SOW schedule — separate invoices will be issued as each phase completes.
+                  </p>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {orderedItems.map((i) => (
+                        <tr key={i.sequence}>
+                          <td className="py-1 text-slate-700">
+                            {i.description}
+                            <span className="text-xs text-slate-400 ml-1">· {i.currency_type === 'tik' ? 'TIK' : 'Cash'}</span>
+                          </td>
+                          <td className="py-1 text-right font-semibold text-slate-800 tabular-nums">
+                            {formatCents(i.remaining_cents)}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="border-t border-slate-200">
+                        <td className="pt-2 font-bold text-slate-800">Total remaining on SOW</td>
+                        <td className="pt-2 text-right font-bold tabular-nums" style={{ color: '#f28500' }}>
+                          {formatCents(totalRemaining)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )
+            })()}
 
             {/* TIK block */}
             <div className="mt-6 p-3 border border-slate-100 rounded-lg bg-slate-50/50">
