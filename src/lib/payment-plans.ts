@@ -698,6 +698,21 @@ export async function generateInvoiceFromInstallment(
     throw new Error(`Line item insert failed: ${liErr.message}`)
   }
 
+  // Render + upload the PDF so /api/invoices/public/[number]/pdf serves
+  // it. Without this, the magic-link Download PDF button returns
+  // "PDF not available" (witnessed on INV-DOCK-042926A — first real
+  // SOW conversion). Best-effort: PDF render failure shouldn't unwind
+  // the invoice creation (admin can hit "Regenerate PDF" later).
+  try {
+    const { regenerateInvoicePdf } = await import('./invoice-pdf-regenerate')
+    const result = await regenerateInvoicePdf(invoice.id)
+    if (!result.ok) {
+      console.error('[generateInvoiceFromInstallment] PDF render failed:', result.error)
+    }
+  } catch (e) {
+    console.error('[generateInvoiceFromInstallment] PDF render threw:', e instanceof Error ? e.message : e)
+  }
+
   return { invoice }
 }
 
