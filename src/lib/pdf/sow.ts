@@ -90,6 +90,12 @@ function accumulateAll(phases: SowPhase[]): TotalsAccum {
 // ── PAGE 1 — Cover ─────────────────────────────────────────────────────
 // Full-bleed SLATE, decorative circles, logo, eyebrow, title, meta band.
 
+// Page-break strategy: each interior page starts with `break-before:page`
+// so it ALWAYS begins on a fresh sheet. We avoid `page-break-after:always`
+// because, when the previous page's content already ended at a page
+// boundary, that emits an extra phantom blank page (witnessed in
+// SOW-DOCK-042826A where scope ended cleanly and an empty page 3 with
+// just the footer rendered between scope and investment).
 function coverPage(sow: SowDocument, prospect: SowProspect): string {
   const issueDate = sow.send_date
     ? new Date(sow.send_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
@@ -125,7 +131,6 @@ function coverPage(sow: SowDocument, prospect: SowProspect): string {
     background:${T.SLATE};
     display:flex;
     flex-direction:column;
-    page-break-after:always;
     overflow:hidden;
     -webkit-print-color-adjust:exact;
     print-color-adjust:exact;
@@ -295,7 +300,7 @@ function scopePage(sow: SowDocument): string {
     background:${T.WHITE};
     display:flex;
     flex-direction:column;
-    page-break-after:always;
+    break-before:page;
     font-family:${FONT_STACK};
   ">
     ${interiorPageHeader('01 — Scope')}
@@ -448,6 +453,7 @@ function investmentPage(sow: SowDocument): string {
     background:${T.WHITE};
     display:flex;
     flex-direction:column;
+    break-before:page;
     font-family:${FONT_STACK};
   ">
     ${interiorPageHeader('02 — Investment')}
@@ -523,6 +529,7 @@ function backCoverPage(prospect: SowProspect, issueDate: string): string {
     background:${T.SLATE};
     display:flex;
     flex-direction:column;
+    break-before:page;
     overflow:hidden;
     -webkit-print-color-adjust:exact;
     print-color-adjust:exact;
