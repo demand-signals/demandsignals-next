@@ -170,6 +170,24 @@ export default async function SharedEstimatePage({ params, searchParams }: Props
         }
       }
     }
+
+    // Activity timeline: also log to activities so the prospect
+    // record's view shows the share-link visit alongside SOW + invoice
+    // views. Deduped per IP per 24h. Hunter directive 2026-04-29.
+    const linkedProspectId = session.prospect_id ?? visitResult.prospect_id
+    if (linkedProspectId) {
+      try {
+        const { logViewActivity } = await import('@/lib/activity-tracking')
+        await logViewActivity({
+          prospect_id: linkedProspectId,
+          activity_type: 'quote_share_view',
+          doc_label: token.slice(0, 8),
+          doc_id: token,
+        })
+      } catch (actErr) {
+        console.error('[quote page] activity log threw:', actErr instanceof Error ? actErr.message : actErr)
+      }
+    }
   } catch (e) {
     console.error('[quote page] tracking failed:', e instanceof Error ? e.message : e)
   }

@@ -72,6 +72,23 @@ export async function GET(
     }
   }
 
+  // Activity timeline: log every view (deduped per IP per 24h) so the
+  // prospect record shows when the client opens the SOW. Captures
+  // source IP + user-agent for audit. Hunter directive 2026-04-29.
+  if (sow.prospect_id) {
+    try {
+      const { logViewActivity } = await import('@/lib/activity-tracking')
+      await logViewActivity({
+        prospect_id: sow.prospect_id,
+        activity_type: 'sow_view',
+        doc_label: sow.sow_number,
+        doc_id: sow.sow_number,
+      })
+    } catch (e) {
+      console.error('[sow public GET] activity log threw:', e instanceof Error ? e.message : e)
+    }
+  }
+
   // For accepted SOWs, look up actual delivery state of the deposit invoice
   // email so the post-accept UI can be honest ('A deposit invoice has been
   // sent.' becomes a real claim instead of marketing copy).

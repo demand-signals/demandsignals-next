@@ -156,6 +156,23 @@ export async function GET(
       .eq('id', invoice.id)
   }
 
+  // Activity timeline: log every view (deduped per IP per 24h) with
+  // source IP + user-agent. Hunter directive 2026-04-29 — every view
+  // hits the prospect timeline so admin sees engagement at a glance.
+  if (invoice.prospect_id) {
+    try {
+      const { logViewActivity } = await import('@/lib/activity-tracking')
+      await logViewActivity({
+        prospect_id: invoice.prospect_id,
+        activity_type: 'invoice_view',
+        doc_label: invoice.invoice_number,
+        doc_id: invoice.invoice_number,
+      })
+    } catch (e) {
+      console.error('[invoices public GET] activity log threw:', e instanceof Error ? e.message : e)
+    }
+  }
+
   const [stripeEnabled, paymentSummary, project] = await Promise.all([
     isStripeEnabled(),
     getInvoicePaymentSummary(invoice.id, invoice.total_due_cents),
