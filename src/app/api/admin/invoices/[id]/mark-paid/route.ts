@@ -123,6 +123,22 @@ export async function POST(
     }
   }
 
+  // Regenerate the cached invoice PDF in R2 if this was a full payment
+  // so future downloads reflect the paid state. Mirrors the Stripe-paid
+  // path in lib/stripe-sync.markInvoicePaidFromStripe. Best-effort —
+  // failures don't block the API response.
+  if (isFullPayment) {
+    try {
+      const { regenerateInvoicePdf } = await import('@/lib/invoice-pdf-regenerate')
+      const result = await regenerateInvoicePdf(id)
+      if (!result.ok) {
+        console.error('[mark-paid] PDF regeneration failed:', result.error)
+      }
+    } catch (e) {
+      console.error('[mark-paid] PDF regeneration threw:', e instanceof Error ? e.message : e)
+    }
+  }
+
   return NextResponse.json({
     invoice: updatedInvoice,
     receipt,

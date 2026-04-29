@@ -202,6 +202,23 @@ export async function markInvoicePaidFromStripe(
       notes: options.note ?? null,
     })
   }
+
+  // Regenerate the cached invoice PDF in R2 so future downloads reflect
+  // the paid state. Without this, the public PDF endpoint serves the
+  // pre-payment snapshot forever (orange "Pay online" button still
+  // active, no Paid / Balance remaining rows). The regenerator deletes
+  // the old R2 file and uploads a fresh one — Hunter directive
+  // 2026-04-29: each invoice update must replace the R2 file, not
+  // accumulate stale versions. Best-effort, never throws.
+  try {
+    const { regenerateInvoicePdf } = await import('./invoice-pdf-regenerate')
+    const result = await regenerateInvoicePdf(invoiceId)
+    if (!result.ok) {
+      console.error('[markInvoicePaidFromStripe] PDF regeneration failed:', result.error)
+    }
+  } catch (e) {
+    console.error('[markInvoicePaidFromStripe] PDF regeneration threw:', e instanceof Error ? e.message : e)
+  }
 }
 
 // ── Auto-issue RCT receipt for a paid invoice ───────────────────────
