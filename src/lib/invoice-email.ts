@@ -26,7 +26,17 @@ export function buildInvoiceEmail(
 ): { subject: string; html: string; text: string; publicUrl: string } {
   const baseUrl = `https://demandsignals.co/invoice/${invoice.invoice_number}/${invoice.public_uuid}`
   // If a send_id is provided, embed it for tracking (?e=<send_id>).
-  const publicUrl = send_id ? `${baseUrl}?e=${send_id}` : baseUrl
+  const trackedBase = send_id ? `${baseUrl}?e=${send_id}` : baseUrl
+  // UTM-tag the URL so the destination's ClientTracker session_start
+  // event can attribute the visit to email + this specific invoice.
+  // Hunter directive 2026-04-29: UTM the links.
+  const { trackLink } = require('@/lib/track-link') as typeof import('@/lib/track-link')
+  const publicUrl = trackLink(trackedBase, {
+    medium: 'email',
+    campaign: 'invoice',
+    content: invoice.invoice_number,
+    send_id,
+  })
   const isZero = invoice.total_due_cents === 0
   const totalStr = `$${(invoice.total_due_cents / 100).toFixed(2)}`
   const firstName = prospect.owner_name?.split(' ')[0] ?? 'there'

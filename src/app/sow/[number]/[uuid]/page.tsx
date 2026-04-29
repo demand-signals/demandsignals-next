@@ -4,6 +4,7 @@
 
 import { notFound } from 'next/navigation'
 import { SowAcceptClient } from './SowAcceptClient'
+import ClientTracker from '@/components/ClientTracker'
 import { formatCents } from '@/lib/format'
 import type { SowPhase, SowPhaseDeliverable, Cadence } from '@/lib/invoice-types'
 
@@ -415,6 +416,11 @@ export default async function PublicSowPage({
 
   return (
     <div className="min-h-screen" style={{ background: '#fafbfc', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+      <ClientTracker
+        surface="sow"
+        surface_uuid={sow.public_uuid}
+        doc_label={sow.sow_number}
+      />
 
       {/* ── 1. Hero section ───────────────────────────────────────── */}
       <section
@@ -669,6 +675,9 @@ export default async function PublicSowPage({
               </p>
               <a
                 href={downloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-track="download-pdf"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold transition-colors"
                 style={{
                   color: '#ffffff',

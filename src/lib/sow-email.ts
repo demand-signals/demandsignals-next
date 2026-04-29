@@ -13,7 +13,15 @@ export function buildSowEmail(
   send_id?: string,
 ): { subject: string; html: string; text: string; publicUrl: string } {
   const baseUrl = `https://demandsignals.co/sow/${sow.sow_number}/${sow.public_uuid}`
-  const publicUrl = send_id ? `${baseUrl}?e=${send_id}` : baseUrl
+  const trackedBase = send_id ? `${baseUrl}?e=${send_id}` : baseUrl
+  // UTM-tag for email attribution (Hunter directive 2026-04-29).
+  const { trackLink } = require('@/lib/track-link') as typeof import('@/lib/track-link')
+  const publicUrl = trackLink(trackedBase, {
+    medium: 'email',
+    campaign: 'sow',
+    content: sow.sow_number,
+    send_id,
+  })
   const firstName = prospect.owner_name?.split(' ')[0] ?? 'there'
   const totalCents = sow.pricing?.total_cents ?? 0
   const totalStr = `$${(totalCents / 100).toFixed(2)}`

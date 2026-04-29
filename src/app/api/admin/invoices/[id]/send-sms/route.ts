@@ -48,7 +48,12 @@ export async function POST(
   }
 
   const businessName = invoice.prospect?.business_name ?? 'your business'
-  const url = `https://demandsignals.co/invoice/${invoice.invoice_number}/${invoice.public_uuid}`
+  // UTM-tagged for SMS attribution (Hunter directive 2026-04-29).
+  const { trackLink } = await import('@/lib/track-link')
+  const url = trackLink(
+    `https://demandsignals.co/invoice/${invoice.invoice_number}/${invoice.public_uuid}`,
+    { medium: 'sms', campaign: 'invoice', content: invoice.invoice_number },
+  )
   const totalStr =
     invoice.total_due_cents === 0
       ? 'complimentary'

@@ -5,6 +5,7 @@
 import { notFound } from 'next/navigation'
 import { formatCents } from '@/lib/format'
 import { BUSINESS_ADDRESS } from '@/lib/constants'
+import ClientTracker from '@/components/ClientTracker'
 
 // ── Brand tokens (mirrored from src/lib/pdf/_shared.ts) ───────────────
 const T = {
@@ -52,6 +53,7 @@ interface PublicInvoice {
   id: string
   prospect_id: string | null
   invoice_number: string
+  public_uuid: string
   kind: string
   status: string
   currency: string
@@ -259,6 +261,11 @@ export default async function PublicInvoicePage({
         color: T.dark,
       }}
     >
+      <ClientTracker
+        surface="invoice"
+        surface_uuid={invoice.public_uuid}
+        doc_label={invoice.invoice_number}
+      />
       {/* ── Outer wrapper ─────────────────────────────────────────── */}
       <div style={{ maxWidth: 780, margin: '0 auto', padding: '40px 20px 80px' }}>
 
@@ -846,6 +853,7 @@ export default async function PublicInvoicePage({
                 </p>
                 <a
                   href={payRedirectHref}
+                  data-track="pay-button"
                   style={{
                     display: 'inline-block',
                     background: T.orangeDeep,
@@ -922,6 +930,7 @@ export default async function PublicInvoicePage({
               href={downloadUrl}
               target="_blank"
               rel="noopener noreferrer"
+              data-track="download-pdf"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -941,6 +950,7 @@ export default async function PublicInvoicePage({
             {canPay && (
               <a
                 href={payRedirectHref}
+                data-track="pay-button"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',

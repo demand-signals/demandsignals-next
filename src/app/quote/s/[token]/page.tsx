@@ -9,6 +9,7 @@ import { calculateTotals, monthlyPlan, type SelectedItem } from '@/lib/quote-eng
 import { formatCents, formatRange } from '@/lib/format'
 import { buildMetadata } from '@/lib/metadata'
 import { ShareActions } from './ShareActions'
+import ClientTracker from '@/components/ClientTracker'
 
 export const metadata = {
   ...buildMetadata({
@@ -255,6 +256,11 @@ export default async function SharedEstimatePage({ params, searchParams }: Props
       className="min-h-screen"
       style={{ background: '#fafbfc', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}
     >
+      <ClientTracker
+        surface="quote_share"
+        surface_uuid={token}
+        doc_label={(session as { doc_number?: string | null }).doc_number ?? token.slice(0, 8)}
+      />
 
       {/* ── 1. Hero section ───────────────────────────────────────── */}
       <section
