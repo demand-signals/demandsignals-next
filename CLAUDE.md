@@ -563,6 +563,10 @@ Key files:
 **Problem:** After applying a migration cleanly, API calls return "Could not find column X" or "relation does not exist".
 **Solution:** PostgREST's schema cache hasn't refreshed yet. Wait 30 seconds and retry, or reload the Supabase SQL Editor tab. This is not a migration bug — the migration applied; it's purely a cache TTL issue.
 
+### psql meta-commands fail in the Supabase web SQL Editor
+**Problem:** `\echo` and `\i` (and other backslash commands) throw `syntax error at or near "\"` when pasted into the Supabase web SQL Editor. Older `APPLY-NNN-*.sql` files in this repo were written for the `psql` CLI, where those work fine. Hunter applies migrations via the web editor, so the wrappers fail.
+**Solution:** APPLY wrapper files going forward MUST inline the SQL content directly (don't `\i` other files). Web editor + psql CLI both run inlined SQL fine; only `\i` and `\echo` are CLI-only. As of 2026-04-29, `APPLY-036-2026-04-29.sql` is the new pattern — fully inlined, web-editor-safe. Older APPLY files remain unchanged but require running each individual `NNNa_*.sql` file separately in the web editor (or run via psql).
+
 ### Chromium on Vercel (serverless PDF)
 **Problem:** `puppeteer-core` + `@sparticuz/chromium` will fail to bundle if not externalized. Also, `/var/task` is read-only in the Vercel runtime.
 **Solution:** Add `['puppeteer-core', '@sparticuz/chromium']` to `serverExternalPackages` in `next.config.ts`. Write any temp files to `/tmp` (writable). Use the remote binary URL in `chromium.executablePath('https://...')` for v147+; do NOT vendor the binary in the repo.
