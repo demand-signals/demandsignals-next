@@ -20,6 +20,7 @@ import { applyOutputPolicy, regenerationNudge, scanOutput } from '@/lib/quote-ou
 import { executeTool, type ToolUse } from '@/lib/quote-tools'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { alertFromSession } from '@/lib/quote-notify'
+import { extractNameAndLocation } from '@/lib/quote-intro-parser'
 import type Anthropic from '@anthropic-ai/sdk'
 
 export const runtime = 'nodejs'
@@ -153,6 +154,37 @@ export async function POST(request: NextRequest) {
       )
     }
     throw e
+  }
+
+  // INTRO PRE-PARSER — only fires when this is plausibly the first turn
+  // (no business_name AND no business_location captured yet). Prevents
+  // the bug where a prospect answers "Demand Signals in El Dorado Hills"
+  // and the AI extracts business_name but ignores location, then re-asks
+  // for the business name. We pull both fields out deterministically and
+  // write them to the session BEFORE the AI sees the message, so the
+  // AI's dynamic context already shows both slots filled.
+  if (!session.business_name && !session.business_location) {
+    const extracted = extractNameAndLocation(userText)
+    if (extracted.businessName || extracted.location) {
+      const updates: Record<string, string> = {}
+      if (extracted.businessName) updates.business_name = extracted.businessName
+      if (extracted.location) updates.business_location = extracted.location
+      await supabaseAdmin
+        .from('quote_sessions')
+        .update(updates)
+        .eq('id', session.id)
+      // Mutate the in-memory session reference so buildDynamicContext
+      // (called below) sees the freshly-extracted values without an extra
+      // round-trip to the DB.
+      Object.assign(session, updates)
+      // Log the event for analytics (and so the AI's tool history shows
+      // the business profile was already captured).
+      await supabaseAdmin.from('quote_events').insert({
+        session_id: session.id,
+        event_type: 'intro_pre_parsed',
+        event_data: updates,
+      })
+    }
   }
 
   // Persist the user message first — this gives us a row to attribute tokens against

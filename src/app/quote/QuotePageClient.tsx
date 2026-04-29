@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Phone, Send, Loader2, Lock, Unlock, Sparkles, X } from 'lucide-react'
-import RetainerStep from '@/components/quote/RetainerStep'
 import { MeetingConfirmedPanel } from '@/components/quote/MeetingConfirmedPanel'
 
 // ============================================================
@@ -170,7 +169,6 @@ export default function QuotePageClient() {
   // Budget cap hit — disable input, stop echoing canned reply, show escalation card.
   const [budgetExceeded, setBudgetExceeded] = useState(false)
   const [paymentMode, setPaymentMode] = useState<'upfront' | 'monthly' | 'milestone'>('upfront')
-  const [retainerComplete, setRetainerComplete] = useState(false)
 
   // ── Bootstrap: create session on mount ──────────────
   useEffect(() => {
@@ -240,12 +238,25 @@ export default function QuotePageClient() {
         if (cancelled) return
         setSessionToken(data.session_token)
         setSession(data.session)
-        // Seed with the AI's opening message.
+        // Seed with the AI's opening message — rotates through 5 variants
+        // so prospects who land twice don't see identical wording. All 5
+        // ask for both business name and location in one breath; a
+        // deterministic pre-parser on the server pulls both fields out of
+        // a single utterance, so the AI never re-asks for the business
+        // name when location was already given.
+        const INTROS = [
+          "Hey — happy to help you rough out what your project could look like. Let's start with the basics — what's your business name and where are you located?",
+          "Welcome in. Quickest way to get you a budgetary range is to start with two things: business name and the city you're in. What've you got?",
+          "Hey there. I'll walk you through a budgetary scope in a few minutes — first, what's the business and where's it based?",
+          "Glad you stopped by. To frame this up, tell me the business name and your location and we'll go from there.",
+          "Alright, let's build you a rough number. Business name and city to kick it off?",
+        ]
+        const introText = INTROS[Math.floor(Math.random() * INTROS.length)]
         setMessages([
           {
             id: 'ai-opener',
             role: 'ai',
-            text: "Hey — happy to help you rough out what your project could look like. Let's start with the basics — what's your business name and where are you located?",
+            text: introText,
             createdAt: Date.now(),
           },
         ])
@@ -380,12 +391,18 @@ export default function QuotePageClient() {
   function onPhoneVerified(lastFour: string) {
     setSession((prev) => (prev ? { ...prev, phone_verified: true, phone_last_four: lastFour } : prev))
     setShowPhoneGate(false)
+    // Old message ("Let me walk you through the numbers.") promised a
+    // walkthrough that never fired — prospect waited, AI did nothing,
+    // prospect typed "walk me through it", AI confabulated a fake pain
+    // point. Honest replacement: confirm the unlock, point to the right
+    // pane (where the prices just appeared), and the AI's next-turn
+    // directive in the system prompt handles continuing the flow.
     setMessages((prev) => [
       ...prev,
       {
         id: `ai-pv-${Date.now()}`,
         role: 'ai',
-        text: 'Got it — phone verified. Your budgetary prices just unlocked. Let me walk you through the numbers.',
+        text: 'Numbers are unlocked — your budgetary ranges just appeared on the right. What else should we lock down?',
         createdAt: Date.now(),
       },
     ])
@@ -466,8 +483,6 @@ export default function QuotePageClient() {
               nudge={unlockNudge}
               softSaveOffered={softSaveOffered}
               sessionToken={sessionToken}
-              retainerComplete={retainerComplete}
-              onRetainerComplete={() => setRetainerComplete(true)}
             />
           </div>
         </div>
@@ -522,8 +537,6 @@ export default function QuotePageClient() {
                 nudge={unlockNudge}
                 softSaveOffered={softSaveOffered}
                 sessionToken={sessionToken}
-                retainerComplete={retainerComplete}
-                onRetainerComplete={() => setRetainerComplete(true)}
               />
             </div>
           </div>
@@ -694,8 +707,6 @@ function Configurator({
   nudge,
   softSaveOffered,
   sessionToken,
-  retainerComplete,
-  onRetainerComplete,
 }: {
   session: SessionPublic | null
   prices: PricesPayload | null
@@ -706,8 +717,6 @@ function Configurator({
   nudge: boolean
   softSaveOffered: boolean
   sessionToken: string
-  retainerComplete: boolean
-  onRetainerComplete: () => void
 }) {
   const items = prices?.items ?? []
   const verified = session?.phone_verified ?? false
@@ -869,16 +878,17 @@ function Configurator({
           {paymentMode === 'upfront' && (
             <div>
               {/*
-                Under 70% detail we show a midpoint with "starting around" framing
-                so the prospect doesn't see a scary high-end number. As they share
-                more specifics (service count, page count, integrations), narrowing
-                factors tighten the range and the full spread reveals above 70%.
+                Always render as a low-high range, never a single number. Under
+                70% accuracy we widen the spread visually with "Starting around"
+                framing; above 70% the system's narrowing factors have tightened
+                the range and we drop the qualifier. Either way, the prospect
+                sees two numbers — that's how budgetary estimates actually work.
               */}
               {prices.totals.accuracy_pct < 70 ? (
                 <>
                   <div className="text-xs text-slate-500">Starting around</div>
                   <div className="text-2xl font-bold text-slate-900">
-                    {formatCents(Math.round((prices.totals.upfront_low + prices.totals.upfront_high) / 2))}
+                    {formatRange(prices.totals.upfront_low, prices.totals.upfront_high)}
                   </div>
                   <div className="text-[11px] text-slate-500 mt-1">
                     Tightens as we learn more about your scope
@@ -931,39 +941,41 @@ function Configurator({
             </div>
           )}
 
-          {/* ROI context */}
-          {prices.roi && prices.roi.display !== 'none' && (
-            <div className="bg-emerald-50 rounded-lg p-3 text-xs">
-              <div className="font-semibold text-emerald-900 mb-1">ROI Context</div>
-              <div className="text-emerald-800">
-                Recoverable at ~{prices.roi.captureRatePct}% capture: ~{formatCents(prices.roi.recoverableMonthlyCents)}/mo
-                {prices.roi.display === 'full' && prices.roi.paybackMonths && (
-                  <> · Payback ~{prices.roi.paybackMonths.toFixed(1)} mo</>
-                )}
+          {/* ROI context — render recoverable revenue as a range so it
+              matches the budgetary tone of the rest of the quote. ±30%
+              spread per Hunter's directive. The "stated loss" line stays
+              as a single number because that's what the prospect told us. */}
+          {prices.roi && prices.roi.display !== 'none' && (() => {
+            const recovLow = Math.round(prices.roi.recoverableMonthlyCents * 0.7)
+            const recovHigh = Math.round(prices.roi.recoverableMonthlyCents * 1.3)
+            return (
+              <div className="bg-emerald-50 rounded-lg p-3 text-xs">
+                <div className="font-semibold text-emerald-900 mb-1">ROI Context</div>
+                <div className="text-emerald-800">
+                  Recoverable at ~{prices.roi.captureRatePct}% capture: {formatRange(recovLow, recovHigh)}/mo
+                  {prices.roi.display === 'full' && prices.roi.paybackMonths && (
+                    <> · Payback ~{prices.roi.paybackMonths.toFixed(1)} mo</>
+                  )}
+                </div>
+                <div className="text-[10px] text-emerald-700 mt-1">
+                  (Stated loss: {formatCents(prices.roi.monthlyLostCents)}/mo — we project DSIG captures roughly a quarter of that in year one.)
+                </div>
               </div>
-              <div className="text-[10px] text-emerald-700 mt-1">
-                (Stated loss: {formatCents(prices.roi.monthlyLostCents)}/mo — we project DSIG captures roughly a quarter of that in year one.)
-              </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* Risk reversal */}
           <div className="text-[10px] text-slate-500 border-t border-slate-100 pt-3">
             Every project starts with a free research report. First milestone satisfaction-guaranteed.
           </div>
 
-          {/* Retainer selection — shown after scope is priced, before terminal CTAs */}
-          {!retainerComplete && (
-            <RetainerStep
-              sessionToken={sessionToken}
-              onContinue={onRetainerComplete}
-            />
-          )}
-
-          {/* CTAs — shown after retainer step is complete.
-              When the AI has booked a real meeting, replace the CTAs
-              with a MeetingConfirmedPanel showing time + meet link. */}
-          {retainerComplete && (
+          {/* CTAs — retainer/ongoing-management section is intentionally NOT
+              shown inside the build quote. Ongoing services are handled
+              separately, post-build, after the strategy call. The build quote
+              should focus solely on the build scope.
+              When the AI has booked a real meeting, replace the CTAs with a
+              MeetingConfirmedPanel showing time + meet link. */}
+          {(
             session?.booking_id && session?.booking_start_at ? (
               <div className="pt-2">
                 <MeetingConfirmedPanel
