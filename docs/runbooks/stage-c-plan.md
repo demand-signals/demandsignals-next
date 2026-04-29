@@ -37,8 +37,10 @@ or similar. Stage C eliminates every manual step.
    + 60-second team-ping window. The AI already captures the intent
    (`trigger_handoff`), this completes the loop.
 6. **Google Calendar API** — replaces Hunter's manual booking with actual
-   API writes. Uses existing `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`
-   creds; adds `calendar.events` scope.
+   API writes. Uses dated `GOOGLE_DSIG_MAIN_ID_042826` /
+   `GOOGLE_DSIG_MAIN_SECRET_042826` creds (DSIG Main OAuth client);
+   adds `calendar.events` scope. Generic `GOOGLE_CLIENT_*` names are NOT
+   consulted — see CLAUDE.md §12.
 7. **OAuth Checkpoint 2** — Google OAuth for prospect-side client portal.
    Lets prospects log back in and see their full project status.
 8. **A2P 10DLC Marketing campaign** — unblocks cadence SMS (`cadence_enabled`

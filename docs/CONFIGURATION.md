@@ -23,7 +23,8 @@
 | **Quote estimator — phone encryption** | `QUOTE_PHONE_ENCRYPTION_KEY`, `QUOTE_PHONE_HASH_PEPPER` (+ optional `QUOTE_PHONE_ENCRYPTION_KEY_PREV`) |
 | **Quote estimator — Twilio** | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID` |
 | Twilio outbound (Stage C) | `TWILIO_DSIG_866_NUMBER`, `TWILIO_DSIG_PLATFORM_SID`, `TWILIO_DSIG_PLATFORM_SECRET` |
-| Google OAuth (admin sign-in) | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (configured in Supabase Auth provider) |
+| Google OAuth (admin sign-in) | Configured inside the Supabase dashboard (Authentication → Providers → Google), not via Vercel env vars |
+| Google Calendar (booking integration) | `GOOGLE_DSIG_MAIN_ID_042826`, `GOOGLE_DSIG_MAIN_SECRET_042826`, `GOOGLE_OAUTH_REDIRECT_URI`, `BOOKING_SLOT_SECRET` (dated names exclusively — see CLAUDE.md §12) |
 | Meta (Facebook + Instagram) | `META_APP_ID`, `META_APP_SECRET`, `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_ACCESS_TOKEN`, `FACEBOOK_PERMISSION_TOKEN`, `INSTAGRAM_ACCESS_TOKEN` |
 | Blogger (Google Blogger API) | `BLOGGER_API_KEY`, `BLOGGER_BLOG_ID`, `BLOGGER_CLIENT_ID`, `BLOGGER_CLIENT_SECRET` |
 | Tumblr | `TUMBLR_API_KEY`, `TUMBLR_SECRET_KEY`, `TUMBLR_OAUTH_CONSUMER_KEY`, `TUMBLR_TOKEN`, `TUMBLR_TOKEN_SECRET`, `TUMBLR_ACCESS_TOKEN`, `TUMBLR_BLOG_NAME` |
@@ -168,10 +169,38 @@
 
 ## Google OAuth (admin sign-in)
 
-### `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
-- **Used by:** Google OAuth provider (configured in Supabase Auth → Providers → Google)
+The Supabase Auth Google provider holds its own client_id/secret INSIDE the Supabase dashboard (Authentication → Providers → Google) — these are NOT Vercel env vars. There is no overlap with the Calendar integration credentials below.
+
 - **Access control:** Sign-in alone does NOT grant access. The `admin_users` allowlist table in Supabase is the gate. Any Google user who is not in `admin_users` gets 403 on every `/api/admin/*` call via `requireAdmin()`.
 - **Rotation:** Google Cloud Console → APIs & Services → Credentials → rotate client secret → update Supabase provider config.
+
+---
+
+## Google Calendar (booking integration)
+
+Calendar code (`src/lib/google-oauth.ts`) reads dated DSIG_MAIN names exclusively. Generic `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` are NOT consulted — see CLAUDE.md §12 for the collision history that led to retiring generic names entirely.
+
+### `GOOGLE_DSIG_MAIN_ID_042826`
+- **Value:** DSIG Main OAuth client ID (prefix `995295804425-tm28...`, GCP project `demand-signals-489406`)
+- **Used by:** `src/lib/google-oauth.ts` for refresh-token redemption
+- **Rotation:** GCP Console → DSIG Main credential → "+ Add secret" → set new value in Vercel under a new dated name (e.g. `GOOGLE_DSIG_MAIN_ID_<MMDDYY>`), update the env var name in `src/lib/google-oauth.ts` + the verification script, deploy, then drop the old dated env var from Vercel and the old secret from GCP
+
+### `GOOGLE_DSIG_MAIN_SECRET_042826`
+- **Value:** DSIG Main OAuth client secret
+- **Rotation:** same flow as above — paired with the ID
+
+### `GOOGLE_OAUTH_REDIRECT_URI`
+- **Value:** `https://demandsignals.co/api/integrations/google/callback`
+- **MUST match exactly** the redirect URI registered on DSIG Main in GCP
+
+### `BOOKING_SLOT_SECRET`
+- **Value:** 32-byte hex
+- **Used by:** `src/lib/slot-signing.ts` to HMAC-sign slot ids the AI passes around (prevents prompt-injection from fabricating arbitrary booking timestamps)
+- **Generate:** `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+- **Rotation impact:** in-flight slot ids return `invalid_slot` after rotation; slots are short-lived (offered → booked within minutes), so safe to rotate any time
+
+### Diagnostic endpoint
+`GET /api/integrations/google/debug` (admin-gated) reports the live state of all relevant env vars, which one Calendar would actually use, and whether the client_id matches DSIG Main's prefix. Run this before debugging any "calendar disconnected" report.
 
 ---
 

@@ -3,7 +3,13 @@
 //
 // Run AFTER admin has connected the calendar via /admin/integrations/google.
 // Requires .env.local with NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-// BOOKING_SLOT_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET.
+// BOOKING_SLOT_SECRET, GOOGLE_DSIG_MAIN_ID_042826, GOOGLE_DSIG_MAIN_SECRET_042826.
+//
+// Calendar OAuth credentials use the dated DSIG_MAIN names exclusively
+// — generic GOOGLE_CLIENT_ID/SECRET names are NOT consulted (per
+// CLAUDE.md §12 collision history). Match what src/lib/google-oauth.ts
+// reads, since this script's whole point is to mirror the production
+// refresh-token flow.
 
 import { readFileSync, existsSync } from 'fs'
 import { resolve, dirname } from 'path'
@@ -20,7 +26,7 @@ if (existsSync(envPath)) {
   }
 }
 
-const required = ['NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'BOOKING_SLOT_SECRET', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET']
+const required = ['NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'BOOKING_SLOT_SECRET', 'GOOGLE_DSIG_MAIN_ID_042826', 'GOOGLE_DSIG_MAIN_SECRET_042826']
 for (const k of required) {
   if (!process.env[k]) { console.error(`Missing env: ${k}`); process.exit(1) }
 }
@@ -49,8 +55,8 @@ async function getAccessToken() {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      client_id: process.env.GOOGLE_DSIG_MAIN_ID_042826,
+      client_secret: process.env.GOOGLE_DSIG_MAIN_SECRET_042826,
       grant_type: 'refresh_token',
       refresh_token: row.refresh_token,
     }).toString(),

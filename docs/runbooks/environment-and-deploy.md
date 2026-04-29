@@ -120,12 +120,20 @@ SSL mode must be Full (Strict) in Cloudflare → SSL/TLS.
 |---|---|
 | `POSTGRES_URL` | Vercel Postgres connection string (visitor analytics) |
 
-### Supabase Google OAuth
+### Google Calendar (booking integration)
 
 | Variable | Purpose |
 |---|---|
-| `GOOGLE_CLIENT_ID` | Google OAuth client ID |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
+| `GOOGLE_DSIG_MAIN_ID_042826` | DSIG Main OAuth client ID (prefix `995295804425-tm28...`) |
+| `GOOGLE_DSIG_MAIN_SECRET_042826` | DSIG Main OAuth client secret |
+| `GOOGLE_OAUTH_REDIRECT_URI` | `https://demandsignals.co/api/integrations/google/callback` (must match GCP-registered URI exactly) |
+| `BOOKING_SLOT_SECRET` | 32-byte hex; HMAC-signs slot ids the AI passes around |
+
+Calendar code in `src/lib/google-oauth.ts` reads ONLY the dated names above. Generic `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` are NOT consulted at runtime — see CLAUDE.md §12 for the collision history that led to this convention.
+
+### Supabase Google OAuth (admin sign-in)
+
+Configured inside the Supabase dashboard (Authentication → Providers → Google), not via Vercel env vars. Independent of the Calendar credentials above.
 
 ---
 
