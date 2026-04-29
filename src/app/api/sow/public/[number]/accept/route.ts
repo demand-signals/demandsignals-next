@@ -26,7 +26,6 @@ export const maxDuration = 60
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { allocateDocNumber } from '@/lib/doc-numbering'
-import { getValueStackItems } from '@/lib/services-catalog'
 import { sendInvoiceEmail } from '@/lib/invoice-email'
 import { sendSms, isSmsEnabled } from '@/lib/twilio-sms'
 import { renderInvoicePdf } from '@/lib/pdf/invoice'
@@ -79,16 +78,13 @@ export async function POST(
   const pricing = sow.pricing as SowPricing
   const depositCents = pricing.deposit_cents ?? Math.round(pricing.total_cents * 0.25)
 
-  // Pull the "New Client Appreciation" value stack from services_catalog.
-  // These are bonuses included with the engagement — they MUST NOT appear
-  // as line items (line items are the legal record of what's billed).
-  // We surface them in notes + on the invoice page as a separate callout
-  // so the client sees the value without bloating the invoice total.
-  const valueStackItems = await getValueStackItems()
-  const valueStackSubtotalCents = valueStackItems.reduce(
-    (sum, item) => sum + item.display_price_cents,
-    0,
-  )
+  // Value stack ("New Client Appreciation" — Market Research Report,
+  // Competitor Analysis, Comprehensive Project Plan) is intentionally
+  // NOT pulled or rendered here. Hunter directive 2026-04-29: remove
+  // value stack from SOWs and invoices entirely. The
+  // services_catalog.included_with_paid_project flag is preserved for
+  // catalog-level rendering elsewhere, but the auto-injection on SOW
+  // accept is gone. Do NOT reintroduce getValueStackItems() here.
 
   // Invoice totals: only the deposit is billed. Subtotal = total = deposit.
   // No phantom discount, no inflated subtotal. The invoice document tells
