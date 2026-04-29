@@ -238,20 +238,13 @@ export default function QuotePageClient() {
         if (cancelled) return
         setSessionToken(data.session_token)
         setSession(data.session)
-        // Seed with the AI's opening message — rotates through 5 variants
-        // so prospects who land twice don't see identical wording. All 5
-        // ask for both business name and location in one breath; a
-        // deterministic pre-parser on the server pulls both fields out of
-        // a single utterance, so the AI never re-asks for the business
-        // name when location was already given.
-        const INTROS = [
-          "Hey — happy to help you rough out what your project could look like. Let's start with the basics — what's your business name and where are you located?",
-          "Welcome in. Quickest way to get you a budgetary range is to start with two things: business name and the city you're in. What've you got?",
-          "Hey there. I'll walk you through a budgetary scope in a few minutes — first, what's the business and where's it based?",
-          "Glad you stopped by. To frame this up, tell me the business name and your location and we'll go from there.",
-          "Alright, let's build you a rough number. Business name and city to kick it off?",
-        ]
-        const introText = INTROS[Math.floor(Math.random() * INTROS.length)]
+        // Seed with the AI's opening message. Hunter-locked phrasing
+        // 2026-04-29: introduces "James the DSIG AI Estimator" and
+        // frames the conversation as a budgetary range exercise.
+        // Single-variant — no rotation. The deterministic pre-parser on
+        // the server still pulls business name + city out of a single
+        // utterance so the AI never re-asks if both were given at once.
+        const introText = "Welcome to the Demand Signals (DSIG) Budgetary Estimator. My name is James the DSIG AI Estimator. My job is to provide you with a budgetary range for your project. Let's start with the basics — what's your business name and in which city is your business located?"
         setMessages([
           {
             id: 'ai-opener',

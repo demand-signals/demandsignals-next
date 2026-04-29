@@ -90,12 +90,22 @@ function accumulateAll(phases: SowPhase[]): TotalsAccum {
 // ── PAGE 1 — Cover ─────────────────────────────────────────────────────
 // Full-bleed SLATE, decorative circles, logo, eyebrow, title, meta band.
 
-// Page-break strategy: each interior page starts with `break-before:page`
-// so it ALWAYS begins on a fresh sheet. We avoid `page-break-after:always`
-// because, when the previous page's content already ended at a page
-// boundary, that emits an extra phantom blank page (witnessed in
-// SOW-DOCK-042826A where scope ended cleanly and an empty page 3 with
-// just the footer rendered between scope and investment).
+// Page-break strategy (locked 2026-04-29 after SOW-DOCK-042826A bug):
+//
+// Each interior page wrapper uses break-before:page to start on a fresh
+// sheet. White content pages do NOT use min-height:100vh — that combined
+// with flex:1 on inner content was forcing 1px of overflow onto a 2nd
+// physical sheet, and the persistent header/footer chrome rendered alone
+// there as an empty page (just the "Demand Signals — Confidential | …"
+// footer). Instead, content sizes naturally; Chromium handles wrapping
+// when real content overflows. Dark cover pages keep min-height:100vh
+// because their full-bleed dark background MUST fill the sheet.
+//
+// Anti-pattern banned in this file:
+//   white-interior-page + min-height:100vh + flex:1 + page-break-after
+//
+// If you reintroduce any of those on a white interior page, the empty
+// page returns. Don't.
 function coverPage(sow: SowDocument, prospect: SowProspect): string {
   const issueDate = sow.send_date
     ? new Date(sow.send_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
@@ -296,16 +306,14 @@ function scopePage(sow: SowDocument): string {
   return `
   <div style="
     width:100%;
-    min-height:100vh;
     background:${T.WHITE};
-    display:flex;
-    flex-direction:column;
+    display:block;
     break-before:page;
     font-family:${FONT_STACK};
   ">
     ${interiorPageHeader('01 — Scope')}
 
-    <div style="padding:32px 54px;flex:1">
+    <div style="padding:32px 54px">
       <!-- Section eyebrow + H1 + ODiv -->
       ${eyebrow('Scope')}
       <h1 style="
@@ -449,16 +457,14 @@ function investmentPage(sow: SowDocument): string {
   return `
   <div style="
     width:100%;
-    min-height:100vh;
     background:${T.WHITE};
-    display:flex;
-    flex-direction:column;
+    display:block;
     break-before:page;
     font-family:${FONT_STACK};
   ">
     ${interiorPageHeader('02 — Investment')}
 
-    <div style="padding:28px 54px 24px;flex:1">
+    <div style="padding:28px 54px 24px">
       <!-- Section eyebrow + big number + ODiv -->
       ${eyebrow('Investment')}
       <div style="
