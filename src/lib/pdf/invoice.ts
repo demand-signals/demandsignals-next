@@ -459,25 +459,30 @@ function notesSection(inv: InvoiceWithLineItems): string {
 // rotated -18deg with a thick double-stroke border. Semi-transparent so
 // document text underneath stays readable. Only renders when paid.
 
-// Stamp positioned upper-right where the meta band's PAID date used to
-// live. Smaller scale than a center-of-page stamp because the upper-right
-// real estate is tight, but still angled and bold enough to read at a
-// glance. Hunter directive 2026-04-29: replace meta-band PAID text with
-// the stamp at this anchor.
+// Stamp positioned in the top-center white-space gutter between the
+// logo (left) and the INVOICE-number block (right). Hunter directive
+// 2026-04-29 round 4: lock to white-space coords, never overlap text.
+//
+// PDF page is Legal portrait (612pt = 816px wide at default DPI). Logo
+// row sits at top with logo on the left. INVOICE label + number block
+// is right-aligned. Top:32 vertically aligns with the logo. Left:38%
+// puts the stamp center in the gutter — same coords as the magic-link
+// page so the two surfaces look identical.
 function paidStamp(inv: InvoiceWithLineItems): string {
   if (inv.status !== 'paid') return ''
   return `
   <div style="
     position:absolute;
-    top:88px;
-    right:48px;
-    transform:rotate(-12deg);
+    top:32px;
+    left:38%;
+    transform:translateX(-50%) rotate(-12deg);
     pointer-events:none;
     z-index:10;
     border:4px double ${T.TEAL_S};
     border-radius:6px;
-    padding:8px 18px 6px;
-    opacity:0.55;
+    padding:8px 22px 6px;
+    opacity:0.6;
+    background:${T.WHITE};
     font-family:Georgia,'Times New Roman',serif;
     text-align:center;
   ">
@@ -499,15 +504,16 @@ function voidStamp(inv: InvoiceWithLineItems): string {
   return `
   <div style="
     position:absolute;
-    top:88px;
-    right:48px;
-    transform:rotate(-12deg);
+    top:32px;
+    left:38%;
+    transform:translateX(-50%) rotate(-12deg);
     pointer-events:none;
     z-index:10;
     border:4px double ${T.RED};
     border-radius:6px;
-    padding:8px 18px 6px;
-    opacity:0.55;
+    padding:8px 22px 6px;
+    opacity:0.6;
+    background:${T.WHITE};
     font-family:Georgia,'Times New Roman',serif;
     text-align:center;
   ">
