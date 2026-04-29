@@ -130,15 +130,14 @@ export async function POST(
       discount_value_bps: sowDiscountValueBps,
       discount_amount_cents: sowDiscountAmountCents,
       discount_description: sowDiscountDescription,
+      // Hunter directive 2026-04-29: do NOT inject the value-stack block
+      // ("Included with your engagement: Market Research Report, etc.")
+      // into invoice notes. Value-stack items belong on the SOW; the
+      // invoice should stay focused on what's owed today.
       notes: [
         `Deposit invoice for SOW ${sow.sow_number} — ${sow.title}.`,
         `Remaining balance: $${((pricing.total_cents - depositCents) / 100).toFixed(2)}`,
-        valueStackItems.length > 0
-          ? `\nIncluded with your engagement (no additional charge):\n${valueStackItems
-              .map((i) => `  • ${i.name} (a $${(i.display_price_cents / 100).toFixed(0)} value)`)
-              .join('\n')}`
-          : '',
-      ].filter(Boolean).join(' '),
+      ].join(' '),
     })
     .select('*')
     .single()

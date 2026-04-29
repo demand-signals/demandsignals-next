@@ -77,7 +77,11 @@ interface PublicInvoice {
   discount_value_bps: number | null
   discount_amount_cents: number | null
   discount_description: string | null
-  payment_terms: string | null
+  // payment_terms used to be selected here but it's a SOW column, not
+  // an invoice column. The API no longer returns it. Kept optional for
+  // type safety in case a future schema adds it; render path is
+  // conditional so undefined just hides the block.
+  payment_terms?: string | null
   prospect: PublicProspect | null
 }
 

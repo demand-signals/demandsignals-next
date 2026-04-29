@@ -19,6 +19,12 @@ export async function GET(
   const key = request.nextUrl.searchParams.get('key')
   if (!key) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
+  // NOTE: invoices.payment_terms does NOT exist — that's a SOW column.
+  // Removing it from this SELECT was the fix for a 404 cascade where
+  // PostgREST aborted the entire query with code 42703 the moment the
+  // unknown column was referenced. Anything labelled payment_terms on
+  // the public invoice page should pull from the parent SOW (via
+  // project metadata) or from the invoice's notes field.
   const SELECT = `
       id, invoice_number, public_uuid, kind, status, currency, prospect_id,
       subtotal_cents, discount_cents, total_due_cents,
@@ -28,7 +34,6 @@ export async function GET(
       late_fee_cents, late_fee_grace_days, late_fee_applied_at,
       trade_credit_cents, trade_credit_description,
       discount_kind, discount_value_bps, discount_amount_cents, discount_description,
-      payment_terms,
       prospect:prospects(business_name, owner_name, owner_email, address, city, state, zip)
     `
 
