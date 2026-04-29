@@ -98,6 +98,16 @@ export async function POST(
   // Insert deposit invoice with a temp placeholder number, then allocate
   // a proper INV-CLIENT-MMDDYY{SUFFIX} number once we have the row id.
   const tempInvNumber = `PENDING-${crypto.randomUUID()}`
+  // Inherit discount fields from the SOW so the audit trail is preserved
+  // on the invoice row. Renderer decides whether to display the discount
+  // line based on the invoice subtotal/total math (the deposit invoice's
+  // subtotal is the deposit amount, already net of discount, so the line
+  // is suppressed there to avoid double-counting).
+  const sowDiscountKind = (sow as { discount_kind?: 'percent' | 'amount' | null }).discount_kind ?? null
+  const sowDiscountValueBps = (sow as { discount_value_bps?: number }).discount_value_bps ?? 0
+  const sowDiscountAmountCents = (sow as { discount_amount_cents?: number }).discount_amount_cents ?? 0
+  const sowDiscountDescription = (sow as { discount_description?: string | null }).discount_description ?? null
+
   const { data: depositInvoice, error: invErr } = await supabaseAdmin
     .from('invoices')
     .insert({
@@ -116,6 +126,10 @@ export async function POST(
       auto_trigger: 'sow_deposit',
       auto_sent: true,
       category_hint: 'service_revenue',
+      discount_kind: sowDiscountKind,
+      discount_value_bps: sowDiscountValueBps,
+      discount_amount_cents: sowDiscountAmountCents,
+      discount_description: sowDiscountDescription,
       notes: [
         `Deposit invoice for SOW ${sow.sow_number} — ${sow.title}.`,
         `Remaining balance: $${((pricing.total_cents - depositCents) / 100).toFixed(2)}`,

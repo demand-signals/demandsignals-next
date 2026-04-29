@@ -646,6 +646,14 @@ export async function generateInvoiceFromInstallment(
       auto_sent: options.autoSent ?? false,
       category_hint: 'service_revenue',
       notes: `${installment.description ?? `Payment ${installment.sequence}`} for SOW ${sow.sow_number} — ${sow.title}`,
+      // Discount inheritance (migration 036). Per-installment invoices
+      // bill the installment amount which is already a fraction of the
+      // post-discount total — copying preserves the audit trail without
+      // changing math.
+      discount_kind: sow.discount_kind ?? null,
+      discount_value_bps: sow.discount_value_bps ?? 0,
+      discount_amount_cents: sow.discount_amount_cents ?? 0,
+      discount_description: sow.discount_description ?? null,
     })
     .select('*')
     .single()

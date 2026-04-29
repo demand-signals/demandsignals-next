@@ -175,6 +175,13 @@ export default function InvoiceDetailPage({
   const [tikCents, setTikCents] = useState(0)
   const [tikAmountInput, setTikAmountInput] = useState('0.00')
   const [tikDescription, setTikDescription] = useState('')
+  // Document-level discount (migration 036). One-time only. Stacks with TIK.
+  const [discountKind, setDiscountKind] = useState<'percent' | 'amount' | ''>('')
+  const [discountPctInput, setDiscountPctInput] = useState('0')
+  const [discountAmountInput, setDiscountAmountInput] = useState('0.00')
+  const [discountValueBps, setDiscountValueBps] = useState(0)
+  const [discountAmountCents, setDiscountAmountCents] = useState(0)
+  const [discountDescription, setDiscountDescription] = useState('')
 
   function markDirty() {
     setDirty(true)
@@ -205,6 +212,22 @@ export default function InvoiceDetailPage({
     setTikCents(tc)
     setTikAmountInput(centsToInput(tc))
     setTikDescription((d.invoice as typeof d.invoice & { trade_credit_description?: string | null }).trade_credit_description ?? '')
+    // Document-level discount (migration 036)
+    type DiscFields = typeof d.invoice & {
+      discount_kind?: 'percent' | 'amount' | null
+      discount_value_bps?: number
+      discount_amount_cents?: number
+      discount_description?: string | null
+    }
+    const dk = (d.invoice as DiscFields).discount_kind ?? null
+    const dbps = (d.invoice as DiscFields).discount_value_bps ?? 0
+    const damt = (d.invoice as DiscFields).discount_amount_cents ?? 0
+    setDiscountKind(dk ?? '')
+    setDiscountValueBps(dbps)
+    setDiscountAmountCents(damt)
+    setDiscountPctInput((dbps / 100).toString())
+    setDiscountAmountInput(centsToInput(damt))
+    setDiscountDescription((d.invoice as DiscFields).discount_description ?? '')
     setDirty(false)
   }
 
@@ -227,11 +250,27 @@ export default function InvoiceDetailPage({
   // ── Computed totals ────────────────────────────────────────────────
 
   const subtotalCents = lines.reduce((s, li) => s + li.quantity * li.unit_price_cents, 0)
-  const discountCents = lines.reduce((s, li) => {
+  const lineDiscountCents = lines.reduce((s, li) => {
     const sub = li.quantity * li.unit_price_cents
     return s + Math.round(sub * (li.discount_pct || 0) / 100)
   }, 0)
-  const totalDueCents = Math.max(0, subtotalCents - discountCents - tikCents)
+  // line total = subtotal − line-item discounts
+  const lineTotalCents = subtotalCents - lineDiscountCents
+  // Document-level discount (migration 036). Applied AFTER line discounts,
+  // BEFORE TIK. Same order as SOW: subtotal → line disc → doc disc → TIK.
+  const docDiscountCents = (() => {
+    if (discountKind === 'percent') {
+      const bps = Math.max(0, Math.min(10000, discountValueBps))
+      return Math.min(lineTotalCents, Math.round(lineTotalCents * bps / 10000))
+    }
+    if (discountKind === 'amount') {
+      return Math.min(lineTotalCents, Math.max(0, discountAmountCents))
+    }
+    return 0
+  })()
+  // Kept for backward compat: existing UI may still reference discountCents
+  const discountCents = lineDiscountCents
+  const totalDueCents = Math.max(0, lineTotalCents - docDiscountCents - tikCents)
 
   // ── Save ──────────────────────────────────────────────────────────
 
@@ -247,6 +286,10 @@ export default function InvoiceDetailPage({
         late_fee_grace_days: lateFeeGraceDays,
         trade_credit_cents: tikCents,
         trade_credit_description: tikDescription || null,
+        discount_kind: discountKind || null,
+        discount_value_bps: discountKind === 'percent' ? discountValueBps : 0,
+        discount_amount_cents: discountKind === 'amount' ? discountAmountCents : 0,
+        discount_description: discountKind ? (discountDescription.trim() || null) : null,
         line_items: lines
           .filter((l) => l.description.trim())
           .map((l) => ({
@@ -774,9 +817,22 @@ export default function InvoiceDetailPage({
                 </tr>
                 {discountCents > 0 && (
                   <tr>
-                    <td className="py-1 text-slate-600">Discount</td>
+                    <td className="py-1 text-slate-600">Line item discounts</td>
                     <td className="py-1 text-right font-semibold" style={{ color: '#f28500' }}>
                       -{formatCents(discountCents)}
+                    </td>
+                  </tr>
+                )}
+                {docDiscountCents > 0 && (
+                  <tr>
+                    <td className="py-1 text-amber-700">
+                      {discountDescription || 'Discount'}
+                      {discountKind === 'percent' && (
+                        <span className="text-xs text-slate-400"> ({(discountValueBps / 100).toFixed(discountValueBps % 100 === 0 ? 0 : 2)}%)</span>
+                      )}
+                    </td>
+                    <td className="py-1 text-right font-semibold text-amber-700">
+                      -{formatCents(docDiscountCents)}
                     </td>
                   </tr>
                 )}
@@ -839,6 +895,81 @@ export default function InvoiceDetailPage({
                     className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
                   />
                 </label>
+              </div>
+            </div>
+
+            {/* Discount block (migration 036). Document-level discount.
+                Inherited from parent SOW at creation; editable per-invoice. */}
+            <div className="mt-4 p-3 border border-slate-100 rounded-lg bg-slate-50/50">
+              <div className="text-xs uppercase text-slate-500 font-semibold mb-1">
+                Discount
+              </div>
+              <p className="text-xs text-slate-400 mb-2">
+                Optional discount on the invoice total. Stacks with TIK and any per-line-item discounts. Inherits from parent SOW.
+              </p>
+              <div className="grid grid-cols-[120px_1fr_160px] gap-3">
+                <label className="text-xs">
+                  Type
+                  <select
+                    value={discountKind}
+                    onChange={(e) => { setDiscountKind(e.target.value as 'percent' | 'amount' | ''); markDirty() }}
+                    className="w-full border border-slate-200 rounded px-2 py-1 mt-1 bg-white"
+                  >
+                    <option value="">None</option>
+                    <option value="percent">Percent (%)</option>
+                    <option value="amount">Amount ($)</option>
+                  </select>
+                </label>
+                <label className="text-xs">
+                  Description
+                  <input
+                    type="text"
+                    value={discountDescription}
+                    onChange={(e) => { setDiscountDescription(e.target.value); markDirty() }}
+                    placeholder="e.g. Loyalty discount, Friends &amp; family"
+                    disabled={!discountKind}
+                    className="w-full border border-slate-200 rounded px-2 py-1 mt-1 disabled:bg-slate-100 disabled:text-slate-400"
+                  />
+                </label>
+                {discountKind === 'percent' ? (
+                  <label className="text-xs">
+                    Percent (%)
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={discountPctInput}
+                      onChange={(e) => setDiscountPctInput(e.target.value)}
+                      onBlur={() => {
+                        const pctRaw = parseFloat(discountPctInput || '0')
+                        const pctClamped = Math.max(0, Math.min(100, isFinite(pctRaw) ? pctRaw : 0))
+                        const bps = Math.round(pctClamped * 100)
+                        setDiscountValueBps(bps)
+                        setDiscountPctInput(pctClamped.toString())
+                        markDirty()
+                      }}
+                      className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+                    />
+                  </label>
+                ) : discountKind === 'amount' ? (
+                  <label className="text-xs">
+                    Amount ($)
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={discountAmountInput}
+                      onChange={(e) => setDiscountAmountInput(e.target.value)}
+                      onBlur={() => {
+                        const cents = Math.max(0, Math.round(parseFloat(discountAmountInput || '0') * 100))
+                        setDiscountAmountCents(cents)
+                        setDiscountAmountInput(centsToInput(cents))
+                        markDirty()
+                      }}
+                      className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+                    />
+                  </label>
+                ) : (
+                  <div />
+                )}
               </div>
             </div>
           </section>

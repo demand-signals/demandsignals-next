@@ -90,6 +90,14 @@ export interface Invoice {
   trade_credit_cents: number
   trade_credit_description: string | null
   trade_credit_id: string | null
+  // Document-level discount (migration 036). Different from per-line-item
+  // discount_pct on invoice line items — this is a SOW/invoice-WIDE
+  // discount that renders as its own pricing-block row. One-time only.
+  // Inherits from parent SOW at invoice creation time, then editable.
+  discount_kind: 'percent' | 'amount' | null
+  discount_value_bps: number
+  discount_amount_cents: number
+  discount_description: string | null
   created_by: string | null
   created_at: string
   updated_at: string
@@ -275,6 +283,13 @@ export interface SowDocument {
   deposit_invoice_id: string | null
   trade_credit_cents?: number
   trade_credit_description?: string | null
+  // Document-level discount (migration 036). One-time only. Stacks
+  // with TIK on the same SOW. Auto-inherits to deposit + downstream
+  // invoices at creation time, then editable per-invoice.
+  discount_kind?: 'percent' | 'amount' | null
+  discount_value_bps?: number
+  discount_amount_cents?: number
+  discount_description?: string | null
   // Per-SOW cover overrides — when null, PDF renderer uses defaults
   // ('Statement of Work' eyebrow, 'Prepared by Demand Signals — Digital
   // Growth & Strategy' tagline). Migration 031 added these columns.

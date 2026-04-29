@@ -267,6 +267,13 @@ export default function SowDetailPage({
   const [tradeCents, setTradeCents] = useState(0)
   const [tradeAmountInput, setTradeAmountInput] = useState('0.00')
   const [tradeDescription, setTradeDescription] = useState('')
+  // Document-level discount (migration 036). One-time only. Stacks with TIK.
+  const [discountKind, setDiscountKind] = useState<'percent' | 'amount' | ''>('')
+  const [discountPctInput, setDiscountPctInput] = useState('0')
+  const [discountAmountInput, setDiscountAmountInput] = useState('0.00')
+  const [discountValueBps, setDiscountValueBps] = useState(0)
+  const [discountAmountCents, setDiscountAmountCents] = useState(0)
+  const [discountDescription, setDiscountDescription] = useState('')
   const [coverEyebrow, setCoverEyebrow] = useState('')
   const [coverTagline, setCoverTagline] = useState('')
   const [dirty, setDirty] = useState(false)
@@ -327,6 +334,22 @@ export default function SowDetailPage({
     setTradeCents(tc)
     setTradeAmountInput((tc / 100).toFixed(2))
     setTradeDescription((s as SowData & { trade_credit_description?: string | null }).trade_credit_description ?? '')
+    // Document-level discount fields (migration 036). Empty kind = no discount.
+    type DiscFields = SowData & {
+      discount_kind?: 'percent' | 'amount' | null
+      discount_value_bps?: number
+      discount_amount_cents?: number
+      discount_description?: string | null
+    }
+    const dk = (s as DiscFields).discount_kind ?? null
+    const dbps = (s as DiscFields).discount_value_bps ?? 0
+    const damt = (s as DiscFields).discount_amount_cents ?? 0
+    setDiscountKind(dk ?? '')
+    setDiscountValueBps(dbps)
+    setDiscountAmountCents(damt)
+    setDiscountPctInput((dbps / 100).toString())
+    setDiscountAmountInput((damt / 100).toFixed(2))
+    setDiscountDescription((s as DiscFields).discount_description ?? '')
     setCoverEyebrow((s as SowData & { cover_eyebrow?: string | null }).cover_eyebrow ?? '')
     setCoverTagline((s as SowData & { cover_tagline?: string | null }).cover_tagline ?? '')
     setDirty(false)
@@ -368,7 +391,19 @@ export default function SowDetailPage({
     .reduce((s, d) => s + computeLineCents(d), 0)
 
   const pct = parseFloat(depositPct) || 25
-  const cashTotalCents = Math.max(0, oneTimeTotalCents - tradeCents)
+  // Discount math: order is subtotal → minus discount → minus TIK → cash.
+  // Final clamped to 0. Same order applied in SOW PDF and public page.
+  const discountCents = (() => {
+    if (discountKind === 'percent') {
+      const bps = Math.max(0, Math.min(10000, discountValueBps))
+      return Math.min(oneTimeTotalCents, Math.round(oneTimeTotalCents * bps / 10000))
+    }
+    if (discountKind === 'amount') {
+      return Math.min(oneTimeTotalCents, Math.max(0, discountAmountCents))
+    }
+    return 0
+  })()
+  const cashTotalCents = Math.max(0, oneTimeTotalCents - discountCents - tradeCents)
   const depositCents = Math.round(cashTotalCents * pct / 100)
   const balanceCents = cashTotalCents - depositCents
 
@@ -406,6 +441,13 @@ export default function SowDetailPage({
         send_date: sendDate || null,
         trade_credit_cents: tradeCents,
         trade_credit_description: tradeDescription || null,
+        // Document-level discount (migration 036). When kind is empty,
+        // we send null + zeroed values so the API clears any prior
+        // discount on this SOW. Otherwise persist the captured numbers.
+        discount_kind: discountKind || null,
+        discount_value_bps: discountKind === 'percent' ? discountValueBps : 0,
+        discount_amount_cents: discountKind === 'amount' ? discountAmountCents : 0,
+        discount_description: discountKind ? (discountDescription.trim() || null) : null,
         cover_eyebrow: coverEyebrow.trim() || null,
         cover_tagline: coverTagline.trim() || null,
       }
@@ -1275,6 +1317,81 @@ export default function SowDetailPage({
               </div>
             </div>
 
+            {/* Discount block (migration 036). Document-level, one-time only,
+                stacks with TIK. Inherits to invoices created from this SOW. */}
+            <div className="mb-4 p-3 border border-slate-100 rounded-lg bg-slate-50/50">
+              <div className="text-xs uppercase text-slate-500 font-semibold mb-1">
+                Discount
+              </div>
+              <p className="text-xs text-slate-400 mb-2">
+                Optional discount on the one-time total. Stacks with TIK. Inherits to invoices created from this SOW.
+              </p>
+              <div className="grid grid-cols-[120px_1fr_160px] gap-3">
+                <label className="text-xs">
+                  Type
+                  <select
+                    value={discountKind}
+                    onChange={(e) => { setDiscountKind(e.target.value as 'percent' | 'amount' | ''); markDirty() }}
+                    className="w-full border border-slate-200 rounded px-2 py-1 mt-1 bg-white"
+                  >
+                    <option value="">None</option>
+                    <option value="percent">Percent (%)</option>
+                    <option value="amount">Amount ($)</option>
+                  </select>
+                </label>
+                <label className="text-xs">
+                  Description
+                  <input
+                    type="text"
+                    value={discountDescription}
+                    onChange={(e) => { setDiscountDescription(e.target.value); markDirty() }}
+                    placeholder="e.g. Loyalty discount, Friends &amp; family"
+                    disabled={!discountKind}
+                    className="w-full border border-slate-200 rounded px-2 py-1 mt-1 disabled:bg-slate-100 disabled:text-slate-400"
+                  />
+                </label>
+                {discountKind === 'percent' ? (
+                  <label className="text-xs">
+                    Percent (%)
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={discountPctInput}
+                      onChange={(e) => setDiscountPctInput(e.target.value)}
+                      onBlur={() => {
+                        const pctRaw = parseFloat(discountPctInput || '0')
+                        const pctClamped = Math.max(0, Math.min(100, isFinite(pctRaw) ? pctRaw : 0))
+                        const bps = Math.round(pctClamped * 100)
+                        setDiscountValueBps(bps)
+                        setDiscountPctInput(pctClamped.toString())
+                        markDirty()
+                      }}
+                      className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+                    />
+                  </label>
+                ) : discountKind === 'amount' ? (
+                  <label className="text-xs">
+                    Amount ($)
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={discountAmountInput}
+                      onChange={(e) => setDiscountAmountInput(e.target.value)}
+                      onBlur={() => {
+                        const cents = Math.max(0, Math.round(parseFloat(discountAmountInput || '0') * 100))
+                        setDiscountAmountCents(cents)
+                        setDiscountAmountInput((cents / 100).toFixed(2))
+                        markDirty()
+                      }}
+                      className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+                    />
+                  </label>
+                ) : (
+                  <div />
+                )}
+              </div>
+            </div>
+
             <table className="w-full max-w-xs ml-auto text-sm">
               <tbody>
                 {oneTimeTotalCents > 0 && (
@@ -1307,19 +1424,32 @@ export default function SowDetailPage({
                     </td>
                   </tr>
                 )}
+                {(oneTimeTotalCents > 0 && discountCents > 0) && (
+                  <tr>
+                    <td className="py-1 text-amber-700">
+                      {discountDescription || 'Discount'}
+                      {discountKind === 'percent' && (
+                        <span className="text-xs text-slate-400"> ({(discountValueBps / 100).toFixed(discountValueBps % 100 === 0 ? 0 : 2)}%)</span>
+                      )}
+                    </td>
+                    <td className="py-1 text-right font-semibold text-amber-700">
+                      −{formatCents(discountCents)}
+                    </td>
+                  </tr>
+                )}
                 {(oneTimeTotalCents > 0 && tradeCents > 0) && (
-                  <>
-                    <tr>
-                      <td className="py-1 text-amber-700">Trade-in-Kind credit</td>
-                      <td className="py-1 text-right font-semibold text-amber-700">
-                        −{formatCents(tradeCents)}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-1 text-slate-600">Cash project total</td>
-                      <td className="py-1 text-right font-semibold">{formatCents(cashTotalCents)}</td>
-                    </tr>
-                  </>
+                  <tr>
+                    <td className="py-1 text-amber-700">Trade-in-Kind credit</td>
+                    <td className="py-1 text-right font-semibold text-amber-700">
+                      −{formatCents(tradeCents)}
+                    </td>
+                  </tr>
+                )}
+                {(oneTimeTotalCents > 0 && (tradeCents > 0 || discountCents > 0)) && (
+                  <tr>
+                    <td className="py-1 text-slate-600">Cash project total</td>
+                    <td className="py-1 text-right font-semibold">{formatCents(cashTotalCents)}</td>
+                  </tr>
                 )}
                 {oneTimeTotalCents > 0 && (
                   <>

@@ -182,6 +182,23 @@ function totalsBlock(inv: InvoiceWithLineItems, paySummary?: PaymentSummary): st
   const lateFeeApplied = inv.late_fee_cents > 0 && !!inv.late_fee_applied_at
   const grandTotal = inv.total_due_cents + (lateFeeApplied ? inv.late_fee_cents : 0)
   const tikCents   = inv.trade_credit_cents ?? 0
+  // Document-level discount (migration 036). Computed for display only —
+  // inv.total_due_cents already reflects it from the persisted math.
+  const docDiscountKind = (inv as InvoiceWithLineItems & { discount_kind?: 'percent' | 'amount' | null }).discount_kind ?? null
+  const docDiscountValueBps = (inv as InvoiceWithLineItems & { discount_value_bps?: number }).discount_value_bps ?? 0
+  const docDiscountAmountCents = (inv as InvoiceWithLineItems & { discount_amount_cents?: number }).discount_amount_cents ?? 0
+  const docDiscountDescription = (inv as InvoiceWithLineItems & { discount_description?: string | null }).discount_description ?? null
+  const lineTotalForDisc = Math.max(0, inv.subtotal_cents - inv.discount_cents)
+  const docDiscountCents = (() => {
+    if (docDiscountKind === 'percent') {
+      const bps = Math.max(0, Math.min(10000, docDiscountValueBps))
+      return Math.min(lineTotalForDisc, Math.round(lineTotalForDisc * bps / 10000))
+    }
+    if (docDiscountKind === 'amount') {
+      return Math.min(lineTotalForDisc, Math.max(0, docDiscountAmountCents))
+    }
+    return 0
+  })()
 
   const rows: string[] = []
 
@@ -192,8 +209,19 @@ function totalsBlock(inv: InvoiceWithLineItems, paySummary?: PaymentSummary): st
 
   if (inv.discount_cents > 0) {
     rows.push(`<tr>
-      <td style="padding:7px 0;font-size:12px;color:${T.BODY}">Discount</td>
+      <td style="padding:7px 0;font-size:12px;color:${T.BODY}">Line item discounts</td>
       <td style="padding:7px 0;text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:${T.ORANGE_S}">−${formatCents(inv.discount_cents)}</td>
+    </tr>`)
+  }
+
+  if (docDiscountCents > 0) {
+    const discLabel = docDiscountDescription?.trim() || 'Discount'
+    const discSuffix = docDiscountKind === 'percent'
+      ? ` <span style="color:${T.GRAY};font-weight:400">(${(docDiscountValueBps / 100).toFixed(docDiscountValueBps % 100 === 0 ? 0 : 2)}%)</span>`
+      : ''
+    rows.push(`<tr>
+      <td style="padding:7px 0;font-size:12px;color:${T.BODY}">${esc(discLabel)}${discSuffix}</td>
+      <td style="padding:7px 0;text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:${T.ORANGE_S}">−${formatCents(docDiscountCents)}</td>
     </tr>`)
   }
 

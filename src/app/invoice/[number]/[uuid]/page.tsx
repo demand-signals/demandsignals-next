@@ -72,6 +72,11 @@ interface PublicInvoice {
   late_fee_applied_at: string | null
   trade_credit_cents: number | null
   trade_credit_description: string | null
+  // Document-level discount (migration 036). One-time only. Stacks with TIK.
+  discount_kind: 'percent' | 'amount' | null
+  discount_value_bps: number | null
+  discount_amount_cents: number | null
+  discount_description: string | null
   payment_terms: string | null
   prospect: PublicProspect | null
 }
@@ -209,6 +214,22 @@ export default async function PublicInvoicePage({
   const grandTotal     = invoice.total_due_cents + (lateFeeApplied ? (invoice.late_fee_cents ?? 0) : 0)
   const tikCents       = invoice.trade_credit_cents ?? 0
   const discountTotal  = invoice.discount_cents ?? 0
+  // Document-level discount (migration 036)
+  const docDiscountKind = invoice.discount_kind ?? null
+  const docDiscountValueBps = invoice.discount_value_bps ?? 0
+  const docDiscountAmountCents = invoice.discount_amount_cents ?? 0
+  const docDiscountDescription = invoice.discount_description ?? null
+  const lineTotalForDisc = Math.max(0, invoice.subtotal_cents - discountTotal)
+  const docDiscountCents = (() => {
+    if (docDiscountKind === 'percent') {
+      const bps = Math.max(0, Math.min(10000, docDiscountValueBps))
+      return Math.min(lineTotalForDisc, Math.round(lineTotalForDisc * bps / 10000))
+    }
+    if (docDiscountKind === 'amount') {
+      return Math.min(lineTotalForDisc, Math.max(0, docDiscountAmountCents))
+    }
+    return 0
+  })()
 
   const prospect = invoice.prospect
   const cityLine = [prospect?.city, prospect?.state, prospect?.zip].filter(Boolean).join(', ')
@@ -503,9 +524,24 @@ export default async function PublicInvoicePage({
                   </tr>
                   {discountTotal > 0 && (
                     <tr>
-                      <td style={{ padding: '7px 0', fontSize: 13, color: T.slate }}>Discount</td>
+                      <td style={{ padding: '7px 0', fontSize: 13, color: T.slate }}>Line item discounts</td>
                       <td style={{ padding: '7px 0', textAlign: 'right', fontSize: 13, fontVariantNumeric: 'tabular-nums', color: T.orange }}>
                         −{formatCents(discountTotal)}
+                      </td>
+                    </tr>
+                  )}
+                  {docDiscountCents > 0 && (
+                    <tr>
+                      <td style={{ padding: '7px 0', fontSize: 13, color: T.slate }}>
+                        {docDiscountDescription?.trim() || 'Discount'}
+                        {docDiscountKind === 'percent' && (
+                          <span style={{ fontSize: 11, color: T.slateSoft, marginLeft: 4 }}>
+                            ({(docDiscountValueBps / 100).toFixed(docDiscountValueBps % 100 === 0 ? 0 : 2)}%)
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '7px 0', textAlign: 'right', fontSize: 13, fontVariantNumeric: 'tabular-nums', color: T.orange }}>
+                        −{formatCents(docDiscountCents)}
                       </td>
                     </tr>
                   )}

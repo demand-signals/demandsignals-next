@@ -55,6 +55,12 @@ export interface SowPdfPayload {
     ongoing_services?: SowOngoingServices | null
     trade_credit_cents: number
     trade_credit_description: string | null
+    // Document-level discount (migration 036). One-time only. Stacks
+    // with TIK. Pricing block renders this as its own row.
+    discount_kind: 'percent' | 'amount' | null
+    discount_value_bps: number
+    discount_amount_cents: number
+    discount_description: string | null
   }
 }
 
@@ -86,6 +92,10 @@ export function sowToRenderPayload(
       ongoing_services: sow.ongoing_services ?? null,
       trade_credit_cents: sow.trade_credit_cents ?? 0,
       trade_credit_description: sow.trade_credit_description ?? null,
+      discount_kind: sow.discount_kind ?? null,
+      discount_value_bps: sow.discount_value_bps ?? 0,
+      discount_amount_cents: sow.discount_amount_cents ?? 0,
+      discount_description: sow.discount_description ?? null,
     },
   }
 }

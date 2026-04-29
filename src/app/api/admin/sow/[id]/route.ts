@@ -87,6 +87,12 @@ const patchBodySchema = z.object({
   force_edit: z.boolean().optional(),
   trade_credit_cents: z.number().int().nonnegative().optional(),
   trade_credit_description: z.string().nullable().optional(),
+  // Document-level discount (migration 036). Send null to clear the
+  // kind. Value fields stay non-negative and bounded.
+  discount_kind: z.enum(['percent', 'amount']).nullable().optional(),
+  discount_value_bps: z.number().int().min(0).max(10000).optional(),
+  discount_amount_cents: z.number().int().nonnegative().optional(),
+  discount_description: z.string().nullable().optional(),
   cover_eyebrow: z.string().nullable().optional(),
   cover_tagline: z.string().nullable().optional(),
 })
@@ -155,6 +161,10 @@ export async function PATCH(
   }
   if (fields.trade_credit_cents !== undefined) updates.trade_credit_cents = fields.trade_credit_cents
   if (fields.trade_credit_description !== undefined) updates.trade_credit_description = fields.trade_credit_description
+  if (fields.discount_kind !== undefined) updates.discount_kind = fields.discount_kind
+  if (fields.discount_value_bps !== undefined) updates.discount_value_bps = fields.discount_value_bps
+  if (fields.discount_amount_cents !== undefined) updates.discount_amount_cents = fields.discount_amount_cents
+  if (fields.discount_description !== undefined) updates.discount_description = fields.discount_description
   if (fields.cover_eyebrow !== undefined) updates.cover_eyebrow = fields.cover_eyebrow
   if (fields.cover_tagline !== undefined) updates.cover_tagline = fields.cover_tagline
 

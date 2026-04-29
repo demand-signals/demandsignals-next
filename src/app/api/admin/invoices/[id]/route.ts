@@ -25,6 +25,12 @@ const patchSchema = z.object({
   force_edit: z.boolean().optional(),
   trade_credit_cents: z.number().int().nonnegative().optional(),
   trade_credit_description: z.string().nullable().optional(),
+  // Document-level discount (migration 036). Inherits from parent SOW
+  // at creation; admin can edit per-invoice afterwards.
+  discount_kind: z.enum(['percent', 'amount']).nullable().optional(),
+  discount_value_bps: z.number().int().min(0).max(10000).optional(),
+  discount_amount_cents: z.number().int().nonnegative().optional(),
+  discount_description: z.string().nullable().optional(),
 })
 
 export async function GET(
@@ -114,6 +120,10 @@ export async function PATCH(
   if (body.late_fee_grace_days !== undefined) updates.late_fee_grace_days = body.late_fee_grace_days
   if (body.trade_credit_cents !== undefined) updates.trade_credit_cents = body.trade_credit_cents
   if (body.trade_credit_description !== undefined) updates.trade_credit_description = body.trade_credit_description
+  if (body.discount_kind !== undefined) updates.discount_kind = body.discount_kind
+  if (body.discount_value_bps !== undefined) updates.discount_value_bps = body.discount_value_bps
+  if (body.discount_amount_cents !== undefined) updates.discount_amount_cents = body.discount_amount_cents
+  if (body.discount_description !== undefined) updates.discount_description = body.discount_description
 
   if (body.line_items !== undefined) {
     // Delete all existing line items and reinsert.
@@ -152,9 +162,21 @@ export async function PATCH(
     updates.subtotal_cents = newRows.reduce((s, r) => s + r.subtotal_cents, 0)
     updates.discount_cents = newRows.reduce((s, r) => s + r.discount_cents, 0)
     const lineTotal = newRows.reduce((s, r) => s + r.line_total_cents, 0)
-    // Subtract TIK credit (existing or newly-set) from total_due_cents
+    // Apply document-level discount (migration 036) on top of line totals.
+    // Order matches SOW: subtotal − doc discount − TIK = total due.
+    const docDiscountKind = body.discount_kind ?? null
+    const docDiscountCents = (() => {
+      if (docDiscountKind === 'percent') {
+        const bps = Math.max(0, Math.min(10000, body.discount_value_bps ?? 0))
+        return Math.min(lineTotal, Math.round(lineTotal * bps / 10000))
+      }
+      if (docDiscountKind === 'amount') {
+        return Math.min(lineTotal, Math.max(0, body.discount_amount_cents ?? 0))
+      }
+      return 0
+    })()
     const tikCents = body.trade_credit_cents ?? 0
-    updates.total_due_cents = Math.max(0, lineTotal - tikCents)
+    updates.total_due_cents = Math.max(0, lineTotal - docDiscountCents - tikCents)
   }
 
   if (Object.keys(updates).length > 0) {

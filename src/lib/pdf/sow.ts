@@ -349,16 +349,28 @@ function infoCard(
 function investmentPage(sow: SowDocument): string {
   const totals      = accumulateAll(sow.phases)
   const tikCents    = sow.trade_credit_cents ?? 0
-  const cashOneTime = totals.oneTime - tikCents
+  // Document-level discount (migration 036). Order: subtotal − discount − TIK = cash.
+  const discountCents = (() => {
+    if (sow.discount_kind === 'percent') {
+      const bps = Math.max(0, Math.min(10000, sow.discount_value_bps ?? 0))
+      return Math.min(totals.oneTime, Math.round(totals.oneTime * bps / 10000))
+    }
+    if (sow.discount_kind === 'amount') {
+      return Math.min(totals.oneTime, Math.max(0, sow.discount_amount_cents ?? 0))
+    }
+    return 0
+  })()
+  const cashOneTime = Math.max(0, totals.oneTime - discountCents - tikCents)
   const depositPct  = sow.pricing.deposit_pct ?? 50
-  const depositCents = tikCents > 0
+  const hasReductions = tikCents > 0 || discountCents > 0
+  const depositCents = hasReductions
     ? Math.round((cashOneTime * depositPct) / 100)
     : (sow.pricing.deposit_cents ?? Math.round((totals.oneTime * depositPct) / 100))
-  const balanceCents  = (tikCents > 0 ? cashOneTime : totals.oneTime) - depositCents
+  const balanceCents  = (hasReductions ? cashOneTime : totals.oneTime) - depositCents
   const hasCash       = totals.oneTime > 0
   const hasRecurring  = totals.monthly > 0 || totals.quarterly > 0 || totals.annual > 0
 
-  const bigNumber = tikCents > 0 ? formatCents(cashOneTime) : formatCents(totals.oneTime)
+  const bigNumber = hasReductions ? formatCents(cashOneTime) : formatCents(totals.oneTime)
 
   const isAccepted  = !!sow.accepted_at && !!sow.accepted_signature
   const acceptedDate = isAccepted
@@ -391,6 +403,18 @@ function investmentPage(sow: SowDocument): string {
       <td style="padding:7px 0;border-bottom:1px solid ${T.BORDER};text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:${T.TEAL}">${formatCents(totals.annual)}<span style="font-size:10px;color:${T.GRAY}">/yr</span></td>
     </tr>`)
   }
+  if (discountCents > 0) {
+    const discLabel = sow.discount_description?.trim() || 'Discount'
+    const discSuffix = sow.discount_kind === 'percent'
+      ? ` <span style="color:${T.GRAY};font-weight:400">(${((sow.discount_value_bps ?? 0) / 100).toFixed((sow.discount_value_bps ?? 0) % 100 === 0 ? 0 : 2)}%)</span>`
+      : ''
+    rows.push(`<tr>
+      <td style="padding:7px 0;border-bottom:1px solid ${T.BORDER};font-size:12px;color:${T.BODY}">
+        ${esc(discLabel)}${discSuffix}
+      </td>
+      <td style="padding:7px 0;border-bottom:1px solid ${T.BORDER};text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:${T.ORANGE_S}">−${formatCents(discountCents)}</td>
+    </tr>`)
+  }
   if (tikCents > 0) {
     rows.push(`<tr>
       <td style="padding:7px 0;border-bottom:1px solid ${T.BORDER};font-size:12px;color:${T.BODY}">
@@ -399,6 +423,8 @@ function investmentPage(sow: SowDocument): string {
       </td>
       <td style="padding:7px 0;border-bottom:1px solid ${T.BORDER};text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:${T.ORANGE_S}">−${formatCents(tikCents)}</td>
     </tr>`)
+  }
+  if (hasReductions) {
     rows.push(`<tr>
       <td style="padding:7px 0;border-bottom:2px solid ${T.RULE};font-size:12px;font-weight:600;color:${T.SLATE}">Cash project total</td>
       <td style="padding:7px 0;border-bottom:2px solid ${T.RULE};text-align:right;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:${T.SLATE}">${formatCents(cashOneTime)}</td>

@@ -19,6 +19,7 @@ export async function GET(
       id, sow_number, public_uuid, status, title, scope_summary, prospect_id,
       phases, deliverables, timeline, pricing,
       trade_credit_cents, trade_credit_description,
+      discount_kind, discount_value_bps, discount_amount_cents, discount_description,
       payment_terms, guarantees, notes,
       sent_at, viewed_at, accepted_at, accepted_signature, declined_at, decline_reason,
       voided_at, void_reason, deposit_invoice_id,

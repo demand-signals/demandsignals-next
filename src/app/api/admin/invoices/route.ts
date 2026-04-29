@@ -80,6 +80,10 @@ export async function POST(request: NextRequest) {
     category_hint,
     trade_credit_cents,
     trade_credit_description,
+    discount_kind,
+    discount_value_bps,
+    discount_amount_cents,
+    discount_description,
   }: {
     kind?: InvoiceKind
     prospect_id?: string
@@ -94,6 +98,11 @@ export async function POST(request: NextRequest) {
     category_hint?: CategoryHint
     trade_credit_cents?: number
     trade_credit_description?: string | null
+    // Document-level discount (migration 036). One-time only. Stacks with TIK.
+    discount_kind?: 'percent' | 'amount' | null
+    discount_value_bps?: number
+    discount_amount_cents?: number
+    discount_description?: string | null
   } = body
 
   const effectiveKind: InvoiceKind = kind ?? (quote_session_id ? 'quote_driven' : 'business')
@@ -144,8 +153,20 @@ export async function POST(request: NextRequest) {
   const subtotalCents = resolved.reduce((s, r) => s + Math.max(0, r.subtotal_cents), 0)
   const discountCents = resolved.reduce((s, r) => s + r.discount_cents, 0)
   const lineTotalCents = resolved.reduce((s, r) => s + r.line_total_cents, 0)
+  // Document-level discount (migration 036). Applied AFTER line discounts,
+  // BEFORE TIK. Same order as SOW: subtotal → line disc → doc disc → TIK.
+  const docDiscountCents = (() => {
+    if (discount_kind === 'percent') {
+      const bps = Math.max(0, Math.min(10000, discount_value_bps ?? 0))
+      return Math.min(lineTotalCents, Math.round(lineTotalCents * bps / 10000))
+    }
+    if (discount_kind === 'amount') {
+      return Math.min(lineTotalCents, Math.max(0, discount_amount_cents ?? 0))
+    }
+    return 0
+  })()
   const tikCents = trade_credit_cents ?? 0
-  const totalDueCents = Math.max(0, lineTotalCents - tikCents)
+  const totalDueCents = Math.max(0, lineTotalCents - docDiscountCents - tikCents)
 
   // ── New numbering: TYPE-CLIENT-MMDDYY{SUFFIX} ───────────────────────
   // Insert with temp placeholder → allocate number → update row.
@@ -176,6 +197,10 @@ export async function POST(request: NextRequest) {
       notes: notes ?? null,
       trade_credit_cents: tikCents,
       trade_credit_description: trade_credit_description ?? null,
+      discount_kind: discount_kind ?? null,
+      discount_value_bps: discount_value_bps ?? 0,
+      discount_amount_cents: discount_amount_cents ?? 0,
+      discount_description: discount_description ?? null,
       created_by: auth.user.id,
     })
     .select('*')

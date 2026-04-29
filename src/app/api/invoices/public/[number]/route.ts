@@ -27,6 +27,7 @@ export async function GET(
       stripe_payment_link_url, public_viewed_count,
       late_fee_cents, late_fee_grace_days, late_fee_applied_at,
       trade_credit_cents, trade_credit_description,
+      discount_kind, discount_value_bps, discount_amount_cents, discount_description,
       payment_terms,
       prospect:prospects(business_name, owner_name, owner_email, address, city, state, zip)
     `

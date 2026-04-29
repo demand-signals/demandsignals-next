@@ -45,6 +45,11 @@ interface PublicSow {
   pricing: SowPricing
   trade_credit_cents: number | null
   trade_credit_description: string | null
+  // Document-level discount (migration 036). One-time only. Stacks with TIK.
+  discount_kind: 'percent' | 'amount' | null
+  discount_value_bps: number | null
+  discount_amount_cents: number | null
+  discount_description: string | null
   payment_terms: string | null
   guarantees: string | null
   notes: string | null
@@ -376,14 +381,26 @@ export default async function PublicSowPage({
     : { oneTime: sow.pricing.total_cents, monthly: 0, quarterly: 0, annual: 0 }
 
   const tikCents    = sow.trade_credit_cents ?? 0
-  const cashOneTime = totals.oneTime - tikCents
+  // Document-level discount (migration 036). Same math as PDF + admin: subtotal − discount − TIK = cash.
+  const discountCents = (() => {
+    if (sow.discount_kind === 'percent') {
+      const bps = Math.max(0, Math.min(10000, sow.discount_value_bps ?? 0))
+      return Math.min(totals.oneTime, Math.round(totals.oneTime * bps / 10000))
+    }
+    if (sow.discount_kind === 'amount') {
+      return Math.min(totals.oneTime, Math.max(0, sow.discount_amount_cents ?? 0))
+    }
+    return 0
+  })()
+  const cashOneTime = Math.max(0, totals.oneTime - discountCents - tikCents)
+  const hasReductions = tikCents > 0 || discountCents > 0
   const depositPct  = sow.pricing.deposit_pct ?? 50
   const depositCents = sow.pricing.deposit_cents ?? Math.round(cashOneTime * depositPct / 100)
-  const balanceCents = (tikCents > 0 ? cashOneTime : totals.oneTime) - depositCents
+  const balanceCents = (hasReductions ? cashOneTime : totals.oneTime) - depositCents
   const hasRecurring = totals.monthly > 0 || totals.quarterly > 0 || totals.annual > 0
 
   const bigNumber = usePhases
-    ? (tikCents > 0 ? formatCents(cashOneTime) : formatCents(totals.oneTime))
+    ? (hasReductions ? formatCents(cashOneTime) : formatCents(totals.oneTime))
     : formatCents(sow.pricing.total_cents)
 
   const issueDate = sow.sent_at
@@ -563,22 +580,35 @@ export default async function PublicSowPage({
                   <td className="py-2.5 border-b border-slate-100 text-right text-sm tabular-nums font-medium" style={{ color: 'var(--teal)' }}>{formatCents(totals.annual)}<span className="text-[11px] font-normal" style={{ color: '#94a0b8' }}>/yr</span></td>
                 </tr>
               )}
+              {discountCents > 0 && (
+                <tr>
+                  <td className="py-2.5 border-b border-slate-100 text-sm" style={{ color: 'var(--slate)' }}>
+                    {sow.discount_description?.trim() || 'Discount'}
+                    {sow.discount_kind === 'percent' && (
+                      <span className="text-[11px] ml-1" style={{ color: '#94a0b8' }}>
+                        ({((sow.discount_value_bps ?? 0) / 100).toFixed((sow.discount_value_bps ?? 0) % 100 === 0 ? 0 : 2)}%)
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-2.5 border-b border-slate-100 text-right text-sm tabular-nums font-medium" style={{ color: 'var(--orange)' }}>−{formatCents(discountCents)}</td>
+                </tr>
+              )}
               {tikCents > 0 && (
-                <>
-                  <tr>
-                    <td className="py-2.5 border-b border-slate-100 text-sm" style={{ color: 'var(--slate)' }}>
-                      Trade-in-Kind credit
-                      {sow.trade_credit_description && (
-                        <div className="text-[11px] mt-0.5" style={{ color: '#94a0b8' }}>{sow.trade_credit_description}</div>
-                      )}
-                    </td>
-                    <td className="py-2.5 border-b border-slate-100 text-right text-sm tabular-nums font-medium" style={{ color: 'var(--orange)' }}>−{formatCents(tikCents)}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2.5 border-b-2 border-slate-200 text-sm font-semibold" style={{ color: 'var(--dark)' }}>Cash project total</td>
-                    <td className="py-2.5 border-b-2 border-slate-200 text-right text-sm tabular-nums font-semibold" style={{ color: 'var(--dark)' }}>{formatCents(cashOneTime)}</td>
-                  </tr>
-                </>
+                <tr>
+                  <td className="py-2.5 border-b border-slate-100 text-sm" style={{ color: 'var(--slate)' }}>
+                    Trade-in-Kind credit
+                    {sow.trade_credit_description && (
+                      <div className="text-[11px] mt-0.5" style={{ color: '#94a0b8' }}>{sow.trade_credit_description}</div>
+                    )}
+                  </td>
+                  <td className="py-2.5 border-b border-slate-100 text-right text-sm tabular-nums font-medium" style={{ color: 'var(--orange)' }}>−{formatCents(tikCents)}</td>
+                </tr>
+              )}
+              {hasReductions && (
+                <tr>
+                  <td className="py-2.5 border-b-2 border-slate-200 text-sm font-semibold" style={{ color: 'var(--dark)' }}>Cash project total</td>
+                  <td className="py-2.5 border-b-2 border-slate-200 text-right text-sm tabular-nums font-semibold" style={{ color: 'var(--dark)' }}>{formatCents(cashOneTime)}</td>
+                </tr>
               )}
               {(totals.oneTime > 0 || sow.pricing.deposit_cents > 0) && (
                 <>
