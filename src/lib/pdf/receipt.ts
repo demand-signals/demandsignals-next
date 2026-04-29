@@ -70,6 +70,7 @@ function receiptBody(
 
   return `
   <div style="
+    position:relative;
     width:100%;
     min-height:100vh;
     background:${T.WHITE};
@@ -79,31 +80,45 @@ function receiptBody(
   ">
     ${interiorPageHeader('Receipt')}
 
-    <!-- Receipt number + PAID stamp row -->
+    <!-- Angled PAID stamp in the white-space gutter, matches the
+         invoice PDF + invoice magic-link page exactly so a paid
+         invoice and its receipt look like a coordinated set.
+         Hunter directive 2026-04-29. -->
     <div style="
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
+      position:absolute;
+      top:32px;
+      left:48%;
+      transform:translateX(-50%) rotate(-12deg);
+      pointer-events:none;
+      z-index:10;
+      border:4px double ${T.TEAL_S};
+      border-radius:6px;
+      padding:8px 22px 6px;
+      opacity:0.6;
+      background:${T.WHITE};
+      font-family:Georgia,'Times New Roman',serif;
+      text-align:center;
+    ">
+      <p style="
+        font-size:36px;
+        font-weight:900;
+        letter-spacing:0.08em;
+        color:${T.TEAL_S};
+        margin:0;
+        line-height:1;
+        text-transform:uppercase;
+      ">PAID</p>
+      <p style="font-size:9px;font-weight:600;letter-spacing:0.15em;color:${T.TEAL_S};margin:3px 0 0;font-family:${FONT_STACK}">${formatDate(receipt.paid_at)}</p>
+    </div>
+
+    <!-- Receipt number row (PAID pill removed — angled stamp above
+         replaces it as the primary status signal). -->
+    <div style="
       padding:16px 54px 14px;
       border-bottom:1px solid ${T.BORDER};
     ">
-      <div>
-        <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px">PAYMENT RECEIPT</p>
-        <p style="font-size:26px;font-weight:700;color:${T.SLATE};letter-spacing:-0.02em;line-height:1;font-variant-numeric:tabular-nums">${esc(receipt.receipt_number)}</p>
-      </div>
-      <!-- PAID stamp -->
-      <div style="
-        display:inline-block;
-        background:#d1fae5;
-        color:#065f46;
-        font-size:12px;
-        font-weight:700;
-        letter-spacing:0.15em;
-        text-transform:uppercase;
-        padding:6px 18px;
-        border-radius:4px;
-        border:1.5px solid #6ee7b7;
-      ">&#x2713; PAID</div>
+      <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px">PAYMENT RECEIPT</p>
+      <p style="font-size:26px;font-weight:700;color:${T.SLATE};letter-spacing:-0.02em;line-height:1;font-variant-numeric:tabular-nums">${esc(receipt.receipt_number)}</p>
     </div>
 
     <!-- Amount hero -->
