@@ -300,18 +300,57 @@ export async function executeTool(session_id: string, tool: ToolUse): Promise<To
       }
 
       case 'capture_attendee_email': {
-        const email = typeof tool.input.email === 'string' ? tool.input.email.trim() : ''
+        const email = typeof tool.input.email === 'string' ? tool.input.email.trim().toLowerCase() : ''
+        // Basic shape check
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           return {
             tool_use_id: tool.id,
             content: JSON.stringify({ ok: false, reason: 'invalid_email' }),
           }
         }
+        // Reject obvious placeholders + known disposable domains. The AI
+        // was happily accepting "none@none.com" — that's a non-deliverable
+        // address and burning a real booking on it sends the calendar
+        // invite into the void.
+        const domain = email.split('@')[1]
+        const localPart = email.split('@')[0]
+        const PLACEHOLDER_DOMAINS = new Set([
+          'none.com', 'none.none', 'example.com', 'example.org', 'example.net',
+          'test.com', 'test.test', 'fake.com', 'noemail.com', 'na.com',
+          'asdf.com', 'abc.com', 'xxx.com', 'localhost', 'email.com',
+        ])
+        const PLACEHOLDER_LOCALS = new Set([
+          'none', 'no', 'na', 'n/a', 'nope', 'test', 'fake', 'asdf', 'abc',
+          'noemail', 'noreply', 'donotreply', 'do-not-reply', 'placeholder',
+          'x', 'xxx', 'aaa', 'qwerty',
+        ])
+        if (PLACEHOLDER_DOMAINS.has(domain) || PLACEHOLDER_LOCALS.has(localPart)) {
+          return {
+            tool_use_id: tool.id,
+            content: JSON.stringify({
+              ok: false,
+              reason: 'placeholder_email',
+              hint: 'The email looks like a placeholder (none@none.com, test@test.com, etc.). Push back warmly: "That looks like a placeholder — what is the real best email to send the invite to?" Do not accept it.',
+            }),
+          }
+        }
+        // Reject email addresses that match the business name with a
+        // single-character local part — usually fake "z@moiraebrewing.com"
+        if (localPart.length === 1) {
+          return {
+            tool_use_id: tool.id,
+            content: JSON.stringify({
+              ok: false,
+              reason: 'suspiciously_short',
+              hint: 'That email is just one character before the @. Ask for a more complete address.',
+            }),
+          }
+        }
         await supabaseAdmin
           .from('quote_sessions')
           .update({ attendee_email: email })
           .eq('id', session_id)
-        await logEvent(session_id, 'attendee_email_captured', { email_domain: email.split('@')[1] })
+        await logEvent(session_id, 'attendee_email_captured', { email_domain: domain })
         return { tool_use_id: tool.id, content: JSON.stringify({ ok: true }) }
       }
 

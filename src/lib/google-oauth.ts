@@ -20,17 +20,20 @@ const SCOPES = [
 ]
 
 // Calendar integration uses the DSIG Main OAuth client.
-// The dated suffix on the env var name signals which secret rotation is
-// active — change the date suffix on rotation, deploy, then delete the
-// old secret in GCP. This matches the DSIG_STRIPE_KEY_* convention.
+// Env var names are GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET (per
+// PROJECT.md). Older code referenced suffixed names — that mismatch
+// surfaced as the calendar reporting "disconnected" even though the
+// integrations row had a valid refresh token. Always read the canonical
+// names; fall back to the legacy dated names for during-rotation
+// continuity.
 function clientId(): string {
-  const v = process.env.GOOGLE_DSIG_MAIN_ID_042826
-  if (!v) throw new Error('GOOGLE_DSIG_MAIN_ID_042826 not configured')
+  const v = process.env.GOOGLE_CLIENT_ID ?? process.env.GOOGLE_DSIG_MAIN_ID_042826
+  if (!v) throw new Error('GOOGLE_CLIENT_ID not configured')
   return v
 }
 function clientSecret(): string {
-  const v = process.env.GOOGLE_DSIG_MAIN_SECRET_042826
-  if (!v) throw new Error('GOOGLE_DSIG_MAIN_SECRET_042826 not configured')
+  const v = process.env.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_DSIG_MAIN_SECRET_042826
+  if (!v) throw new Error('GOOGLE_CLIENT_SECRET not configured')
   return v
 }
 function redirectUri(): string {
