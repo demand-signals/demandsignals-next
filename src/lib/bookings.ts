@@ -51,8 +51,12 @@ export interface BookSlotError {
 const HOST_EMAIL = 'demandsignals@gmail.com'
 
 export async function listAvailableSlots(opts?: { count?: number; durationMinutes?: number }): Promise<AvailableSlot[]> {
+  // Default 20 minutes — intro discovery calls don't need a 30-min block
+  // and the shorter ask lowers commitment friction. Hunter's directive
+  // 2026-04-29: AI offers "20 minutes Tomorrow at 10:00 AM PT or
+  // Thursday at 2:00 PM PT". Slot duration must match the ask.
   return getAvailableSlots({
-    duration_minutes: opts?.durationMinutes ?? 30,
+    duration_minutes: opts?.durationMinutes ?? 20,
     count: opts?.count ?? 2,
   })
 }
