@@ -273,11 +273,98 @@ export default async function PublicInvoicePage({
           }}
         >
 
-          {/* Angled PAID / VOID stamp lives INSIDE the bill-to/from
-              right column further down (line ~525) so it occupies the
-              empty whitespace below the FROM block instead of overlapping
-              the invoice number. Hunter directive 2026-04-29 round 3.
-              See the inline stamp render in the FROM column below. */}
+          {/* Angled PAID / VOID stamp — absolute-positioned at the top
+              of the document card, anchored to the white-space gutter
+              between the logo (left) and the invoice number block
+              (right). Hunter directive 2026-04-29 round 4: dumb fixed
+              coordinates, no flex/inline layout dependencies, stamp
+              stays put regardless of column content.
+
+              Header strip is padding "40px 48px 28px" with logo h:36
+              vertically centered. Stamp top:32 lines up with the logo
+              vertically. Horizontally centered between left edge of
+              card and the right-aligned INVOICE block, which is at
+              roughly 60% width — so left:38% with translateX(-50%)
+              parks it right in the gutter Hunter circled. */}
+          {isPaid && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 32,
+                left: '38%',
+                transform: 'translateX(-50%) rotate(-12deg)',
+                pointerEvents: 'none',
+                zIndex: 10,
+                border: `4px double ${T.teal}`,
+                borderRadius: 6,
+                padding: '8px 22px 6px',
+                opacity: 0.6,
+                fontFamily: "Georgia, 'Times New Roman', serif",
+                textAlign: 'center',
+                background: T.white,
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 32,
+                  fontWeight: 900,
+                  letterSpacing: '0.08em',
+                  color: T.teal,
+                  margin: 0,
+                  lineHeight: 1,
+                  textTransform: 'uppercase',
+                }}
+              >
+                PAID
+              </p>
+              {invoice.paid_at && (
+                <p
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 600,
+                    letterSpacing: '0.15em',
+                    color: T.teal,
+                    margin: '3px 0 0',
+                  }}
+                >
+                  {fmtDate(invoice.paid_at)}
+                </p>
+              )}
+            </div>
+          )}
+          {isVoid && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 32,
+                left: '38%',
+                transform: 'translateX(-50%) rotate(-12deg)',
+                pointerEvents: 'none',
+                zIndex: 10,
+                border: '4px double #dc2626',
+                borderRadius: 6,
+                padding: '8px 22px 6px',
+                opacity: 0.6,
+                fontFamily: "Georgia, 'Times New Roman', serif",
+                textAlign: 'center',
+                background: T.white,
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 32,
+                  fontWeight: 900,
+                  letterSpacing: '0.08em',
+                  color: '#dc2626',
+                  margin: 0,
+                  lineHeight: 1,
+                  textTransform: 'uppercase',
+                }}
+              >
+                VOID
+              </p>
+            </div>
+          )}
 
           {/* ── 1. Header strip ─────────────────────────────────── */}
           <div
@@ -452,84 +539,9 @@ export default async function PublicInvoicePage({
                   <p style={{ fontSize: 13, fontWeight: 600, color: T.dark }}>{fmtDate(invoice.due_date)}</p>
                 </div>
               )}
-              {/* Angled PAID / VOID stamp anchored INSIDE the right meta
-                  column, in the empty whitespace below the FROM block.
-                  Hunter directive 2026-04-29 round 3: stamp must sit in
-                  whitespace, not overlap any text. Inline-positioned as
-                  a flex child so the column's natural layout pushes it
-                  into the open area below the dates. */}
-              {isPaid && (
-                <div
-                  style={{
-                    marginTop: 8,
-                    transform: 'rotate(-12deg)',
-                    transformOrigin: 'left center',
-                    border: `4px double ${T.teal}`,
-                    borderRadius: 6,
-                    padding: '8px 18px 6px',
-                    opacity: 0.65,
-                    fontFamily: "Georgia, 'Times New Roman', serif",
-                    textAlign: 'center',
-                    alignSelf: 'flex-start',
-                  }}
-                >
-                  <p
-                    style={{
-                      fontSize: 32,
-                      fontWeight: 900,
-                      letterSpacing: '0.08em',
-                      color: T.teal,
-                      margin: 0,
-                      lineHeight: 1,
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    PAID
-                  </p>
-                  {invoice.paid_at && (
-                    <p
-                      style={{
-                        fontSize: 9,
-                        fontWeight: 600,
-                        letterSpacing: '0.15em',
-                        color: T.teal,
-                        margin: '3px 0 0',
-                      }}
-                    >
-                      {fmtDate(invoice.paid_at)}
-                    </p>
-                  )}
-                </div>
-              )}
-              {isVoid && (
-                <div
-                  style={{
-                    marginTop: 8,
-                    transform: 'rotate(-12deg)',
-                    transformOrigin: 'left center',
-                    border: '4px double #dc2626',
-                    borderRadius: 6,
-                    padding: '8px 18px 6px',
-                    opacity: 0.65,
-                    fontFamily: "Georgia, 'Times New Roman', serif",
-                    alignSelf: 'flex-start',
-                  }}
-                >
-                  <p
-                    style={{
-                      fontSize: 32,
-                      fontWeight: 900,
-                      letterSpacing: '0.08em',
-                      color: '#dc2626',
-                      margin: 0,
-                      lineHeight: 1,
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    VOID
-                  </p>
-                </div>
-              )}
+              {/* PAID stamp lives at the top of the document card as an
+                  absolute child, NOT inline here. See the absolute stamp
+                  block below the document-card div opener. */}
             </div>
           </div>
 
