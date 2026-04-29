@@ -435,6 +435,22 @@ export default function InvoiceDetailPage({
     load()
   }
 
+  // Force-regenerate the cached invoice PDF in R2. Used for invoices
+  // whose state changed BEFORE the auto-regen on paid-flip landed
+  // (commit 6850303), or any case where the cached PDF has drifted
+  // from current DB state. Going forward most regens are automatic;
+  // this is a manual escape hatch.
+  async function regeneratePdf() {
+    if (!confirm('Regenerate the PDF for this invoice? This re-renders against current state and replaces the file in R2.')) return
+    setBusy(true)
+    const res = await fetch(`/api/admin/invoices/${id}/regenerate-pdf`, { method: 'POST' })
+    const data = await res.json()
+    setBusy(false)
+    if (!res.ok) { alert(data.error ?? 'Regeneration failed'); return }
+    alert('PDF regenerated. Reload the magic-link page or re-download to see fresh state.')
+    load()
+  }
+
   // ── Line item helpers ─────────────────────────────────────────────
 
   function addLine() {
@@ -579,6 +595,10 @@ export default function InvoiceDetailPage({
             <RefreshCw className="w-3.5 h-3.5" /> Resend
           </button>
         )}
+
+        <button onClick={regeneratePdf} disabled={busy} className="bg-slate-100 text-slate-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1 disabled:opacity-50" title="Re-render the cached PDF against current state and replace the file in R2.">
+          <RefreshCw className="w-3.5 h-3.5" /> Regenerate PDF
+        </button>
 
         {s === 'paid' && (
           <>
