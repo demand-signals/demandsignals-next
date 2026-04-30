@@ -81,6 +81,40 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 3.5)
 }
 
+/**
+ * Remove cache_control from the last block of the last message in a
+ * conversation array. Used in the round-trip loop before appending new
+ * messages so the cache breakpoint always sits at the END of the
+ * array, never buried mid-conversation.
+ *
+ * Anthropic only respects cache_control on the FINAL message of a
+ * request. Leaving it on a buried message wastes the cache-write fee
+ * (25% premium) without giving us a usable cache read on subsequent
+ * round trips.
+ */
+function stripTailCacheControl(
+  msgs: Anthropic.MessageParam[],
+): Anthropic.MessageParam[] {
+  if (msgs.length === 0) return msgs
+  const lastIdx = msgs.length - 1
+  const last = msgs[lastIdx]
+  if (typeof last.content === 'string') return msgs  // string content can't carry cache_control
+  const blocks = [...last.content]
+  if (blocks.length === 0) return msgs
+  const lastBlockIdx = blocks.length - 1
+  const lastBlock = blocks[lastBlockIdx]
+  // Use index-signature cast to read cache_control without TS narrowing.
+  const lastBlockObj = lastBlock as unknown as Record<string, unknown>
+  if (!('cache_control' in lastBlockObj)) return msgs
+  // Clone without cache_control. Spread into a fresh object, drop key.
+  const cleanedBlock = { ...lastBlockObj }
+  delete cleanedBlock.cache_control
+  blocks[lastBlockIdx] = cleanedBlock as unknown as typeof lastBlock
+  const cleaned = [...msgs]
+  cleaned[lastIdx] = { role: last.role, content: blocks } as Anthropic.MessageParam
+  return cleaned
+}
+
 export async function POST(request: NextRequest) {
   // Auth
   const auth = await authorizeSession(request)
@@ -203,13 +237,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'failed to persist user message' }, { status: 500 })
   }
 
-  // Build messages history + append the new user turn
+  // Build messages history. The new user turn (with dynamic context
+  // prefix) is built later in this function, after dynamicContextText
+  // is declared in the system-block section.
   const history = await loadHistory(session.id)
   // history already includes the just-inserted row; drop duplicates at tail
   if (history.length > 0 && history[history.length - 1].role === 'user') {
     history.pop()
   }
-  const messages: Anthropic.MessageParam[] = [...history, { role: 'user', content: userText }]
 
   // Pick model — count stored messages for Opus bump
   const messageCount = history.length + 1
@@ -219,18 +254,24 @@ export async function POST(request: NextRequest) {
     confusionSignals: 0,
   })
 
-  // System prompt — static first (cached), dynamic second (not cached).
+  // System prompt — STATIC ONLY, fully cached. Dynamic context used to
+  // sit here as a second uncached block, but that broke cache breakpoints
+  // on tools + messages because the cached prefix has to match exactly.
+  // Solution: dynamic context now ships INSIDE the user message (below)
+  // as a wrapped prefix. That keeps the system prompt cached forever,
+  // tools cached forever, and the only uncached input per turn is the
+  // freshly-built dynamic context + the user's actual text.
   const systemBlocks: Anthropic.TextBlockParam[] = [
     {
       type: 'text',
       text: buildStaticSystemPrompt() + '\n\n' + buildCatalogPrompt(),
       cache_control: { type: 'ephemeral' },
     },
-    {
-      type: 'text',
-      text: buildDynamicContext(session, await getBookingSlots()),
-    },
   ]
+
+  // Build the dynamic context separately — it'll be prepended to the
+  // user's message text below.
+  const dynamicContextText = buildDynamicContext(session, await getBookingSlots())
 
   // Soft-warn pivot: when we're past the soft threshold AND the prospect
   // still has no phone or email, inject a directive to pivot the next reply
@@ -268,6 +309,71 @@ Only deliver this pivot ONCE. If they already dodged the ask, don't repeat.`,
     })
   }
 
+  // ── PROMPT CACHING (the actual cost fix) ────────────────────────────
+  // Anthropic caches by PREFIX. Every block before a cache_control
+  // checkpoint is hashed and cached for ~5 min. Cache hits pay 10%
+  // of the input-token cost; cache writes pay 25% premium (one-time).
+  //
+  // Without this: every user turn re-sends ~30k tokens of static stuff
+  // at full price. WITH this: first turn writes cache (25% premium),
+  // every subsequent turn reads cache (90% discount). Net savings on
+  // a 10-turn conversation: ~70% of input cost.
+  //
+  // Hunter directive 2026-04-30: input/output ratio was 100x, $25 in
+  // 5-6 test conversations. The previous "fix" only cached the system
+  // block — that broke when dynamic context shipped as a second
+  // uncached system block, AND tools + history were never tagged.
+  //
+  // Two breakpoints set:
+  //   1. Last tool definition (caches the entire tools array)
+  //   2. Last message in HISTORY (caches all prior conversation)
+  // The brand-new user message + its dynamic-context prefix are
+  // intentionally NOT cached — they're new content this turn.
+  const cachedTools = TOOLS.map((t, i, arr) =>
+    i === arr.length - 1
+      ? ({ ...t, cache_control: { type: 'ephemeral' } } as Anthropic.Tool)
+      : t,
+  )
+
+  // Wrap the brand-new user message with dynamic context as a prefix
+  // so the cached system prompt above stays valid across turns.
+  const newUserContent: Anthropic.TextBlockParam[] = [
+    {
+      type: 'text',
+      text: `${dynamicContextText}\n\n────────\nProspect message:\n${userText}`,
+    },
+  ]
+
+  // Tag the last HISTORY message with cache_control so next turn the
+  // full prior conversation reads from cache. (NOT the brand-new user
+  // message — that's the freshly-uncached tail.)
+  const cachedHistory: Anthropic.MessageParam[] = history.map((m, i, arr) => {
+    if (i !== arr.length - 1) return m
+    if (typeof m.content === 'string') {
+      return {
+        role: m.role,
+        content: [
+          {
+            type: 'text',
+            text: m.content,
+            cache_control: { type: 'ephemeral' },
+          } as Anthropic.TextBlockParam,
+        ],
+      }
+    }
+    const blocks = [...m.content]
+    if (blocks.length > 0) {
+      const last = blocks[blocks.length - 1]
+      blocks[blocks.length - 1] = { ...(last as object), cache_control: { type: 'ephemeral' } } as typeof last
+    }
+    return { role: m.role, content: blocks } as Anthropic.MessageParam
+  })
+
+  const cachedMessages: Anthropic.MessageParam[] = [
+    ...cachedHistory,
+    { role: 'user', content: newUserContent },
+  ]
+
   // Conversation loop: up to 4 tool-use round-trips per user turn.
   const MAX_ROUND_TRIPS = 4
   let assistantText = ''
@@ -288,9 +394,16 @@ Only deliver this pivot ONCE. If they already dodged the ask, don't repeat.`,
     totalCacheReadTokens = 0
     totalCacheWriteTokens = 0
 
-    const convoMessages: Anthropic.MessageParam[] = [...messages]
+    // Use the cache-tagged messages on every attempt. cachedMessages
+    // has cache_control on its last block (the brand-new user turn).
+    // After the first round trip in the loop below we re-tag the new
+    // last message so the cache breakpoint always sits at the tail.
+    let convoMessages: Anthropic.MessageParam[] = [...cachedMessages]
 
     // On retry, inject a nudge as an additional system-level instruction.
+    // The static system block above this still hits cache because cached
+    // prefixes match by hash — adding a new (uncached) trailing block
+    // doesn't invalidate the cached prefix.
     const systemForAttempt = [...systemBlocks]
     if (attempt === 2) {
       systemForAttempt.push({
@@ -303,9 +416,12 @@ Only deliver this pivot ONCE. If they already dodged the ask, don't repeat.`,
     while (roundTrip < MAX_ROUND_TRIPS) {
       const response = await anthropic.messages.create({
         model,
-        max_tokens: 1024,
+        // Drop max_tokens from 1024 → 600. Real responses average ~250
+        // tokens; 1024 was a generous ceiling that's never approached.
+        // Doesn't change billed-input cost but caps any runaway output.
+        max_tokens: 600,
         system: systemForAttempt,
-        tools: TOOLS,
+        tools: cachedTools,
         messages: convoMessages,
       })
       totalInputTokens += response.usage.input_tokens
@@ -337,10 +453,26 @@ Only deliver this pivot ONCE. If they already dodged the ask, don't repeat.`,
         })
       }
 
-      convoMessages.push(
-        { role: 'assistant', content: response.content },
-        { role: 'user', content: toolResults },
+      // Strip cache_control from the prior last message (it's no longer
+      // the tail) and append the new assistant + tool_result messages
+      // with cache_control on the final block. This keeps the cache
+      // breakpoint at the END of convoMessages so each round trip
+      // benefits from cache reads on everything sent before it.
+      convoMessages = stripTailCacheControl(convoMessages)
+      const newAssistantMsg: Anthropic.MessageParam = {
+        role: 'assistant',
+        content: response.content,
+      }
+      const taggedToolResults = toolResults.map((tr, i, arr) =>
+        i === arr.length - 1
+          ? ({ ...tr, cache_control: { type: 'ephemeral' } } as Anthropic.ToolResultBlockParam)
+          : tr,
       )
+      const newUserMsg: Anthropic.MessageParam = {
+        role: 'user',
+        content: taggedToolResults,
+      }
+      convoMessages = [...convoMessages, newAssistantMsg, newUserMsg]
       roundTrip += 1
     }
 
