@@ -157,7 +157,7 @@ npm run dev
 
 **Likely cause:** `setContent` with `waitUntil: 'networkidle0'` timed out before the logo URL loaded.
 
-Check: the logo URL in `_shared.ts` is `https://demandsignals.us/assets/logos/dsig_logo_v2b.png`. That domain must be reachable from the Vercel serverless function. If demandsignals.us is down or rate-limiting:
+Check: the logo URL in `_shared.ts` is `https://demandsignals.co/logo.png` (served by Vercel from `public/logo.png` in this repo, 750×150 PNG). It's the same production domain the rest of the site lives on, so reachability problems are extremely unlikely — but if Vercel is having an outage or the asset has been deleted from `public/`, the PDF render will hang waiting for the image. If you need to fall back to a different host:
 1. Upload the logo to R2: `r2.uploadPublic('brand/dsig_logo_v2b.png', buffer, 'image/png')`
 2. Update `LOGO_URL` in `_shared.ts` to `https://assets.demandsignals.co/brand/dsig_logo_v2b.png`
 

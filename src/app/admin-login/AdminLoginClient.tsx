@@ -44,7 +44,7 @@ export default function AdminLoginClient() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center space-y-3 pb-2">
           <img
-            src="https://demandsignals.us/assets/logos/dsig_logo_v2b.png"
+            src="https://demandsignals.co/logo.png"
             alt="Demand Signals"
             className="h-10 mx-auto"
           />

@@ -48,7 +48,7 @@ export const LEGACY_T = {
   white:      T.WHITE,
 }
 
-export const LOGO_URL = 'https://demandsignals.us/assets/logos/dsig_logo_v2b.png'
+export const LOGO_URL = 'https://demandsignals.co/logo.png'
 
 /** Helvetica/Arial system font stack — per DSIG PDF Standard v2 */
 export const FONT_STACK = 'Helvetica, Arial, sans-serif'

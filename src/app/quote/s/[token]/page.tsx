@@ -273,7 +273,7 @@ export default async function SharedEstimatePage({ params, searchParams }: Props
         <div className="max-w-[920px] mx-auto px-6 pt-10 pb-0 flex items-center justify-between">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="https://demandsignals.us/assets/logos/dsig_logo_v2b.png"
+            src="https://demandsignals.co/logo.png"
             alt="Demand Signals"
             className="h-9 object-contain"
             style={{}}

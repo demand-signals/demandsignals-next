@@ -250,7 +250,7 @@ export function renderSowHtml(sow: SowDocument, client: ClientInfo): string {
 <body>
 <header>
   <div>
-    <img src="https://demandsignals.us/assets/logos/dsig_logo_v2b.png" alt="Demand Signals">
+    <img src="https://demandsignals.co/logo.png" alt="Demand Signals">
     <div class="meta">Demand Signals · demandsignals.co</div>
   </div>
   <div style="text-align:right">
@@ -300,7 +300,7 @@ export function renderInvoiceHtml(inv: InvoiceWithLineItems, client: ClientInfo)
 <body>
 <header>
   <div>
-    <img src="https://demandsignals.us/assets/logos/dsig_logo_v2b.png" alt="Demand Signals">
+    <img src="https://demandsignals.co/logo.png" alt="Demand Signals">
     <div class="meta">Demand Signals · demandsignals.co</div>
   </div>
   <div style="text-align:right">

@@ -24,7 +24,7 @@ const T = {
   white:      '#ffffff',
 } as const
 
-const LOGO_URL = 'https://demandsignals.us/assets/logos/dsig_logo_v2b.png'
+const LOGO_URL = 'https://demandsignals.co/logo.png'
 const FONT = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
 
 // ── Types ─────────────────────────────────────────────────────────────

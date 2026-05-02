@@ -362,7 +362,7 @@ export default function AdminQuoteDetailPage({ params }: { params: Promise<{ id:
           <div className="flex items-start justify-between mb-8 relative z-10">
             <div>
               <Image
-                src="https://demandsignals.us/assets/logos/dsig_logo_v2b.png"
+                src="https://demandsignals.co/logo.png"
                 alt="Demand Signals"
                 width={160}
                 height={50}

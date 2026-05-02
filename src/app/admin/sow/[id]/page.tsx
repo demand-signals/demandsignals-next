@@ -793,7 +793,7 @@ export default function SowDetailPage({
           <div className="flex items-start justify-between mb-10 relative z-10">
             <div>
               <Image
-                src="https://demandsignals.us/assets/logos/dsig_logo_v2b.png"
+                src="https://demandsignals.co/logo.png"
                 alt="Demand Signals"
                 width={160}
                 height={50}
@@ -1669,7 +1669,7 @@ export default function SowDetailPage({
             </p>
             <div className="h-px w-12 mx-auto opacity-25 bg-white mb-5" />
             <Image
-              src="https://demandsignals.us/assets/logos/dsig_logo_v2b.png"
+              src="https://demandsignals.co/logo.png"
               alt="Demand Signals"
               width={140}
               height={36}

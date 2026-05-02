@@ -149,7 +149,7 @@ export default function CreditMemoDetailPage({
         >
           <div>
             <Image
-              src="https://demandsignals.us/assets/logos/dsig_logo_v2b.png"
+              src="https://demandsignals.co/logo.png"
               alt="Demand Signals"
               width={160}
               height={50}
