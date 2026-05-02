@@ -1,10 +1,12 @@
 // ── POST /api/admin/invoices/[id]/send-sms ──────────────────────────
-// Send an SMS with the invoice link. Respects SMS_TEST_MODE allowlist.
+// Synchronous admin send. Thin wrapper over dispatchInvoiceSms() so the
+// cron path and the admin button share one code path — including
+// activity-log writes (CLAUDE.md §D). Respects SMS_TEST_MODE allowlist
+// inside the underlying twilio-sms helper.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
-import { supabaseAdmin } from '@/lib/supabase/admin'
-import { sendSms } from '@/lib/twilio-sms'
+import { dispatchInvoiceSms } from '@/lib/invoice-send'
 
 export async function POST(
   request: NextRequest,
@@ -17,70 +19,15 @@ export async function POST(
   const body = await request.json().catch(() => ({}))
   const overridePhone: string | undefined = body.phone
 
-  const { data: invoice, error } = await supabaseAdmin
-    .from('invoices')
-    .select('*, prospect:prospects(business_name, owner_phone, business_phone)')
-    .eq('id', id)
-    .maybeSingle()
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  if (!invoice) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  if (!['sent', 'viewed', 'paid'].includes(invoice.status)) {
-    return NextResponse.json(
-      { error: `Cannot SMS an invoice in status ${invoice.status}` },
-      { status: 409 },
-    )
-  }
-
-  // Fallback chain: explicit override → owner_phone → business_phone
-  const phone =
-    overridePhone ??
-    invoice.prospect?.owner_phone ??
-    invoice.prospect?.business_phone
-  if (!phone) {
-    return NextResponse.json(
-      {
-        error:
-          'No phone number found on prospect.owner_phone or prospect.business_phone — pass an override in the request body',
-      },
-      { status: 400 },
-    )
-  }
-
-  const businessName = invoice.prospect?.business_name ?? 'your business'
-  // UTM-tagged for SMS attribution (Hunter directive 2026-04-29).
-  const { trackLink } = await import('@/lib/track-link')
-  const url = trackLink(
-    `https://demandsignals.co/invoice/${invoice.invoice_number}/${invoice.public_uuid}`,
-    { medium: 'sms', campaign: 'invoice', content: invoice.invoice_number },
-  )
-  const totalStr =
-    invoice.total_due_cents === 0
-      ? 'complimentary'
-      : `$${(invoice.total_due_cents / 100).toFixed(2)}`
-
-  const message = `${businessName}: Your Demand Signals invoice ${invoice.invoice_number} (${totalStr}) — ${url}`
-
-  const result = await sendSms(phone, message)
-
-  await supabaseAdmin.from('invoice_delivery_log').insert({
-    invoice_id: id,
-    channel: 'sms',
-    recipient: phone,
-    success: result.success,
-    provider_message_id: result.message_id ?? null,
-    error_message: result.error ?? null,
+  const result = await dispatchInvoiceSms(id, {
+    overridePhone,
+    createdBy: auth.user.id,
   })
 
   if (!result.success) {
-    return NextResponse.json({ error: result.error ?? 'SMS send failed' }, { status: 502 })
+    const status = result.error === 'Invoice not found' ? 404 : 502
+    return NextResponse.json({ error: result.error ?? 'SMS send failed' }, { status })
   }
-
-  // Update sent_via_channel to reflect SMS delivery.
-  await supabaseAdmin
-    .from('invoices')
-    .update({ sent_via_channel: invoice.sent_via_channel === 'email' ? 'both' : 'sms' })
-    .eq('id', id)
 
   return NextResponse.json({ ok: true, message_id: result.message_id })
 }
