@@ -66,7 +66,7 @@ export async function POST(
       amount_cents: parsed.amount_cents,
       description: parsed.description,
       delivered_on: deliveredOn,
-      recorded_by: auth.user.id,
+      recorded_by: auth.admin.id,
       notes: parsed.notes ?? null,
     })
     .select('*')

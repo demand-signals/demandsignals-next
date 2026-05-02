@@ -8,36 +8,43 @@
 
 ## 1. What This Project Is
 
-Next.js 16 rebuild of demandsignals.co — an AI-powered demand generation agency website. **DNS cutover in progress** — demandsignals.co is being pointed to Vercel.
+Next.js 16 rebuild of demandsignals.co — an AI-powered demand generation agency website. Live in production.
 
 | Item | Value |
 |------|-------|
-| **Production URL** | https://demandsignals.co (DNS cutover to Vercel in progress) |
-| **Staging URL** | https://dsig.demandsignals.dev |
-| **Local path** | `D:\CLAUDE\demandsignals-next` |
+| **Production URL** | https://demandsignals.co |
+| **Staging URL** | https://dsig.demandsignals.dev (legacy; migration to `preview.demandsignals.co` deferred per §29) |
+| **Y: working state (canonical)** | `Y:\DSIG\demandsignals-next` (multi-workstation; all sessions open here) |
+| **D:\\dev (per workstation, optional)** | `D:\dev\demandsignals-next` (build/run loop; only when hot-reload needed) |
 | **GitHub repo** | `demand-signals/demandsignals-next` |
 | **Branch** | `master` |
 | **Vercel project** | `demandsignals-next` — auto-deploys on push to master |
-| **Owner** | Hunter (MD, Demand Signals) — 30-year web dev veteran |
+| **Owner** | Hunter — Managing Director @ Demand Signals |
 
 ---
 
 ## 2. Tech Stack
+
+This project inherits all DSIG defaults from root `Y:\CLAUDE.md` §2 (Next.js App Router, TypeScript strict, Tailwind only, Supabase, Cloudflare R2, Resend, Twilio, Anthropic API, PostHog, Leaflet). The table below records project-specific versions and deviations only.
 
 | Layer | Tech | Notes |
 |-------|------|-------|
 | Framework | Next.js 16.2.2 (App Router) | Read `node_modules/next/dist/docs/` for API changes |
 | React | 19.2.4 | |
 | Language | TypeScript (strict) | Zero TS errors required before push |
-| Styling | Tailwind CSS v4 + CSS Modules for layout | CSS vars in `globals.css` |
+| Styling | Tailwind v4 + CSS Modules for layout | Deviation from root §2 (Tailwind only) — CSS Modules used for layout grids; documented and accepted |
 | Animation | Framer Motion | |
-| Maps | Leaflet + react-leaflet + OpenStreetMap | Prospect detail map, no API key |
+| Maps | Leaflet + react-leaflet + OpenStreetMap | Prospect detail map, no API key (per root §2) |
 | Blog | MDX via `next-mdx-remote` + `gray-matter` | 145 posts in `src/content/blog/` |
-| Forms | Nodemailer (API routes) | SMTP not fully wired yet |
+| Email (outbound) | **Resend** (per root §2 + memory) | Migrated from nodemailer 2026-04-27. SMTP forbidden. |
+| SMS | Twilio | 5 dispatchers gated by kill switches (§23) |
+| Calendar | Google Calendar API v3 | OAuth via dated env names (§23). Native booking UI on-site, no external Appointment Schedules link (§29). |
+| File storage | Cloudflare R2 (S3-compatible) | Two buckets: public (`assets.demandsignals.co`) + private. Helper at `src/lib/r2-storage.ts`. |
+| PDF generation | puppeteer-core + @sparticuz/chromium | Legal portrait per `dsig-pdf-standards`. Remote Chromium binary via `chromium.executablePath('https://...')`. |
 | Sitemap | `next-sitemap` | |
 | UI primitives | shadcn (base-ui), lucide-react | |
 | Deployment | Vercel (auto-deploy on push to master) | |
-| Dev server | `npm run dev` → http://localhost:3000 | |
+| Dev server (when hot-reload needed) | `npm run dev` from `D:\dev\demandsignals-next` only | Per root §5 — SMB watchers don't fire reliably. Localhost runs aren't useful for OAuth-dependent features (Google Calendar, Stripe webhooks); test those against the deployed staging URL instead. |
 
 ---
 
@@ -60,32 +67,33 @@ CTA button orange: `#FF6B2B` (used in most places, slight variation from `--oran
 
 ## 4. Credentials
 
-### GitHub
+**Per root constitution §4 (v2c) — credential VALUES never appear in any markdown file, including this one.** All workstation-wide tokens auto-load from `Y:\.credentials\dsig.env` at every Claude Code SessionStart via `Y:\SCRIPTS\load-dsig-env.ps1`. CLIs (`gh`, `vercel`, `wrangler`, `supabase`, etc.) read these env vars natively. No manual paste, no `PROJECT.md` token storage.
 
-> **All real tokens are in `PROJECT.md`** (gitignored, local only). CLAUDE.md uses placeholders.
-- **OAuth token (git push):** See `PROJECT.md` section 2 — starts with `gho_`
-- **Fine-grained PAT (API only, NOT git push):** See `PROJECT.md` section 2 — starts with `github_pat_`
-- **Vercel env var names:** `GITHUB_DEMANDSIGNALS_NEXT` (GitHub), `VERCEL_DEMANDSIGNALS_NEXT` (Vercel)
+**For this project, the env vars actually used are:**
 
-**Git push command (headless bash):**
-```bash
-# Token from PROJECT.md section 2 (OAuth token, NOT the fine-grained PAT)
-GHTOKEN="<get from PROJECT.md>"
-git -c credential.helper="" \
-  -c "http.https://github.com.extraheader=Authorization: Basic $(echo -n "demand-signals:${GHTOKEN}" | base64 -w0)" \
-  push origin master
-```
+| Env var (loaded from `Y:\.credentials\dsig.env`) | What it's for |
+|---|---|
+| `GH_TOKEN` | `git push` to `demand-signals/demandsignals-next` |
+| `VERCEL_TOKEN` | Vercel CLI ops, env var management |
+| `ANTHROPIC_API_KEY` | Claude API (quote AI, agents, content generation) |
+| `RESEND_API_KEY` | Outbound email (per root §2) |
+| `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | R2 buckets, DNS |
+| `SUPABASE_ACCESS_TOKEN` | Supabase CLI (migrations, project mgmt) |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` | SMS dispatch (§23) |
 
-### Vercel
-- **Token:** See `PROJECT.md` section 2 — starts with `vca_`
+**Project-specific Vercel identifiers (not secrets — IDs only):**
 - **Team ID:** `team_jPyeNYJSdDRpqSdsw3WD3AiQ`
 - **Project ID:** `prj_MOFD7RLAS1tVLG1yLlt0kIZwPQrp`
 
-### Other
-- **Contact email:** `DemandSignals@gmail.com`
+**Vercel env vars set in the platform** (Tier 1 per root §4) — read from Vercel dashboard, never duplicated here:
+- App secrets: Stripe keys (live + test), Resend webhook secret, Supabase service role, Anthropic, Twilio, Google Calendar OAuth (`GOOGLE_DSIG_MAIN_ID_042826` + `_SECRET_042826` per §23 dated-name pattern), `BOOKING_SLOT_SECRET`, `ATTRIBUTION_COOKIE_SECRET`, `CRON_SECRET`
+- Locations: Vercel project `demandsignals-next` → Settings → Environment Variables
+
+**Reference public-facing values** (not secrets):
+- **Contact email:** `DemandSignals@gmail.com` (root §2 — inbound + human comms)
 - **Phone:** `(916) 542-2423`
-- **Booking URL:** `https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true`
-- **Logo:** `https://demandsignals.us/assets/logos/dsig_logo_v2b.png`
+- **Logo:** `https://assets.demandsignals.co/logos/dsig_logo_v2b.png` (R2 public bucket)
+- **Booking:** native on-site `/book` page (per §29 — no external Google Appointment Schedules link)
 
 ---
 
@@ -492,16 +500,15 @@ Key files:
 - [ ] **Project time tracking** — new table `project_time_entries` (project_id, phase_id, deliverable_id, hours, description, logged_at, logged_by). UI on `/admin/projects/[id]`. Aggregate hours roll up per phase and project.
 - [ ] **Scheduled rating sync for clients** — weekly/daily cron re-runs research specifically on `prospects.is_client = true` review channels. New cron: `scripts/sync-client-ratings.mjs` + Vercel cron entry.
 - [ ] **PDF design v2 fine-tuning** — iterate as real prospects respond; design spec at DSIG_PDF_STANDARDS_v2.md is authoritative.
-- [ ] **Public `/book` page** — replaces the current Google Appointment Schedules link (`https://calendar.google.com/calendar/u/0/appointments/...`). Foundation laid in §23 booking system: `bookings.source='public_book'` is a valid value, `bookSlot()` is the single entry point. What remains: a non-AI form UI for slot selection, CAPTCHA + rate limit (unauth surface), small intake form to populate `bookings.context_for_summary`. Estimated half-day on top of the booking foundation.
+- [ ] **Public `/book` page** — native on-site booking UI (per §29 architectural decision: no external Google Appointment Schedules link, ever). Foundation laid in §23 booking system: `bookings.source='public_book'` is a valid value, `bookSlot()` is the single entry point. Availability is fetched via Google Calendar API (`listAvailableSlots`); bookings are pushed via Google Calendar API (`bookSlot`) — both server-side, no client-facing Google URL. What remains: non-AI form UI for slot selection, CAPTCHA + rate limit (unauth surface), small intake form to populate `bookings.context_for_summary`. Estimated half-day on top of the booking foundation.
 - [ ] **Calendar webhook for prospect-side declines** — when a prospect declines via the Google invite email, today the platform doesn't know (soft drift between Google's record and ours). Add a Calendar push notification webhook that syncs `bookings.status` when the event flips on Google's side.
 - [ ] **Multi-host scheduling** — `bookings.host_email` already supports it. Wire to a `team_members` table when the team grows beyond Hunter solo.
 - [ ] **Quote AI booking smoke verification** — exercise the full flow end-to-end with a real prospect and confirm: AI asks email, AI offers two slots, book_meeting fires, calendar event lands, prospect invite arrives, SMS confirmations send (if phone resolved), reminders fire 24h + 1h ahead, admin BookingCard + LatestQuotePanel surface correctly. (As of 2026-04-29 the code is shipped, env vars are configured, OAuth is connected — remaining: live test.)
 
 ### High Priority — Site
-1. **301 redirects from PHP site** — old .co URLs are Google-indexed; need redirects now that DNS is cutting over
+1. **301 redirects from PHP site** — old .co URLs are Google-indexed; redirects needed for SEO continuity post-cutover
 2. **Roll out Section Theater** to remaining 22 service pages (pilot done on wordpress-development)
-3. **SMTP wiring** — contact form needs Gmail app password in Vercel env vars
-4. **Google Search Console** — DNS TXT record in Cloudflare for verification
+3. **Google Search Console** — DNS TXT record in Cloudflare for verification
 
 ### Medium Priority
 - [ ] **Mobile menu UX** — currently a simple slide-down; .co uses full-screen overlay with animations
@@ -521,8 +528,8 @@ Key files:
 
 ### Git push in headless bash
 **Problem:** Windows credential manager opens GUI dialog — fails in non-interactive shell.
-**Solution:** Always use `credential.helper=""` with inline base64 token (see section 4).
-**Token note:** Fine-grained PAT (`github_pat_...`) returns 403 on git push. Use OAuth token (`gho_...`).
+**Solution:** `GH_TOKEN` is auto-loaded from `Y:\.credentials\dsig.env` at SessionStart (per §4 + root §4 v2c). `git push` and `gh` CLI both read it natively — no prompt, no manual base64 trick needed.
+**Token note:** The `GH_TOKEN` value in `dsig.env` must be either an OAuth token (`gho_...`) or a fine-grained PAT (`github_pat_...`) with the right scopes. Fine-grained PATs historically returned 403 on raw `git push` over HTTPS in some configurations — if push fails with 403 despite the token being valid for `gh api`, swap to an OAuth token in `dsig.env` and retry. This is a known footgun, not a project bug.
 
 ### Vercel deployment API
 **Problem:** Including `projectId` in request body causes 400.
@@ -601,6 +608,13 @@ The `/api/admin/config` PATCH path (commit `9e0784d`) coerces incoming `'true'`/
 **Problem:** Repeated wasted-hours debugging cycles where the assistant defaults to "let me have you re-verify the credential" instead of inspecting the code that consumes the credential. The user has flagged this multiple times explicitly.
 **Solution:** When something fails AFTER the user confirmed config is correct: assume the code is wrong. Read the code path end-to-end. Build a debug endpoint that returns literal runtime values if needed. Stop asking for repeat config verification. The user is not going to be wrong about something they've already verified twice.
 
+### Chrome strips Origin on header-light same-origin POSTs (resolved 2026-05-01)
+**Problem:** `fetch('/api/admin/...', { method: 'POST' })` with no body and no `Content-Type` header omits the `Origin` request header in Chrome. The CSRF guard at `requireAdmin()` (and `adminOriginCheck()`) was Origin-only and rejected those requests with `Forbidden — origin required`. Six "Send invoice" / "Send email" / etc. buttons on the invoice detail page were broken because of this.
+**Two-part fix:**
+1. Caller side — `src/app/admin/invoices/[id]/page.tsx`: added `headers: { 'Content-Type': 'application/json' }` to all six bare POSTs. With a header attached, Chrome includes Origin again. Match this pattern in any new admin POST.
+2. Guard side — `src/lib/admin-auth.ts` and `src/lib/api-security.ts`: tiered check. If `Origin` is present, exact-match against `ALLOWED_ORIGINS` as before. If `Origin` is absent, accept `Sec-Fetch-Site: same-origin` or `none` as proof of CSRF-safety. `Sec-Fetch-Site` is a Fetch-Metadata "forbidden" header — JS can't set it, browser writes it after the fetch leaves the page. Cross-origin attackers cannot forge it.
+**Don't remove the `Sec-Fetch-Site` fallback** without first restoring header-bearing-fetch conventions across every admin caller. The fallback is what keeps the system robust against a single forgotten header on a future admin button.
+
 ---
 
 ## 13. Important Constraints
@@ -622,10 +636,10 @@ The `/api/admin/config` PATCH path (commit `9e0784d`) coerces incoming `'true'`/
 ## 14. Running the Project
 
 ```bash
-# Dev server
-cd "D:\CLAUDE\demandsignals-next"
+# Dev server (only when hot-reload needed; OAuth-dependent features won't
+# work on localhost — test those against staging instead)
+cd "D:\dev\demandsignals-next"
 npm run dev
-# → http://localhost:3000
 
 # Build check (ALWAYS before pushing)
 npm run build
@@ -764,7 +778,7 @@ scope unified under a single apex domain.
 | Domain | Purpose | Lifetime |
 |--------|---------|----------|
 | `demandsignals.co` | Production DSIG site — main marketing, admin portal, client portal, all public APIs | permanent |
-| `preview.demandsignals.co` | DSIG's own site staging (currently at `dsig.demandsignals.dev` — migrate later, not urgent) | permanent |
+| `preview.demandsignals.co` | Reserved for DSIG's own site staging. **Not yet used** — current staging still runs on `dsig.demandsignals.dev`. Migration deferred per §29. | reserved |
 | `*.demos.demandsignals.co` | Per-client demo sandboxes. `[client-code].demos.demandsignals.co`. AI-generated pitch sites. | 30–90 days (throwaway) |
 | `*.staging.demandsignals.co` | Per-client project staging. `[client-code].staging.demandsignals.co`. Real production builds pre-launch. | weeks to months |
 | `assets.demandsignals.co` | R2 public bucket — CDN-backed static assets (marketing, media, logos, public project galleries) | permanent |
@@ -1107,3 +1121,22 @@ Supabase Auth (the `/admin-login` Google sign-in) configures its OAuth client IN
 - Public `/book` page UI (foundation laid; `bookings.source='public_book'` + `bookSlot()` API both ready).
 - Calendar webhook to sync prospect-side declines (today: admin notices on next dashboard load).
 - Multi-host scheduling (today: every booking on `demandsignals@gmail.com`; `bookings.host_email` makes this a one-line change).
+
+## 29. Booking architecture — native on-site, never external (2026-05-01)
+
+**Hard rule: DSIG never sends visitors, prospects, or clients to an external Google Appointment Schedules link.** All booking happens on demandsignals.co (or, for retired URLs, a redirect lands the visitor on demandsignals.co/book).
+
+**Architecture:**
+- **Availability** is fetched from Google Calendar via API (`google.calendar.v3.freebusy.query` + custom slotting in `src/lib/bookings.ts:listAvailableSlots`). Returned as HMAC-signed slot ids per §23 (prevents prompt-injection fabrication).
+- **Bookings** are created via Google Calendar API (`google.calendar.v3.events.insert` wrapped by `bookSlot()`), generating the Meet link, persisting to `bookings` table, dispatching SMS confirmations.
+- **No client-side Google URL** is ever exposed in the UI. The visitor sees a DSIG-branded form on demandsignals.co; under the hood it's making the same Google API calls our admin does.
+
+**What this replaces:** the prior `https://calendar.google.com/calendar/u/0/appointments/schedules/...` link in §4 footer, in marketing CTAs, and in the `/quote` AI's fallback. All of those are now removed or routed to `/book`.
+
+**Why this is normative:** branded experience, full attribution (we own the page-visit data, not Google), conversion tracking via our `page_visits` table, future-proofs against Google changing their Appointment Schedules UI/URL.
+
+**Implementation status:** §23 booking system is live for the `/quote` AI flow. The public `/book` page UI is the only remaining piece (see open work above). Until shipped, the only place a booking can happen is via the AI quote conversation — which is fine; there is currently NO public booking link anywhere on the site.
+
+---
+
+**Project CLAUDE.md update — 2026-05-01:** Aligned to root constitution v2c. §1 header table updated (production live, Y: as canonical working state with D:\dev\ as per-workstation build/run loop). §2 tech stack now references root §2 defaults instead of duplicating; nodemailer line removed (Resend only per root §2 + memory); localhost dev server qualified (only when needed; OAuth-dependent features won't work locally). §4 credentials section restructured to comply with root §4 v1g (no token references in markdown; env vars auto-load from `Y:\.credentials\dsig.env` via SessionStart hook). Cookbook path updated from `D:\CLAUDE\` to `D:\dev\`. `preview.demandsignals.co` flagged as reserved-not-yet-used. SMTP wiring item removed from open work (contradicts Resend-only). DNS-cutover-in-progress wording removed (cutover complete). Added §29 codifying native-on-site booking architecture.
