@@ -17,6 +17,8 @@ interface CreateLineItem {
   discount_pct?: number
   discount_label?: string
   use_display_price?: boolean
+  // Cadence (migration 043). Defaults to 'one_time' for back-compat.
+  cadence?: 'one_time' | 'monthly' | 'annual'
 }
 
 const VALID_KINDS: readonly InvoiceKind[] = [
@@ -86,6 +88,8 @@ export async function POST(request: NextRequest) {
     discount_amount_cents,
     discount_description,
     payment_terms,
+    term_months,
+    until_cancelled,
   }: {
     kind?: InvoiceKind
     prospect_id?: string
@@ -107,6 +111,9 @@ export async function POST(request: NextRequest) {
     discount_description?: string | null
     // Free-text payment terms (migration 040). Empty/missing → server auto-generates.
     payment_terms?: string | null
+    // Term governs subscription duration (migration 043). Mutually exclusive.
+    term_months?: number | null
+    until_cancelled?: boolean
   } = body
 
   const effectiveKind: InvoiceKind = kind ?? (quote_session_id ? 'quote_driven' : 'business')
@@ -145,6 +152,7 @@ export async function POST(request: NextRequest) {
         discount_cents: discountCents,
         discount_label: li.discount_label ?? null,
         line_total_cents: lineTotal,
+        cadence: li.cadence ?? 'one_time',
       }
     })
   } catch (e) {
@@ -205,6 +213,15 @@ export async function POST(request: NextRequest) {
       discount_value_bps: discount_value_bps ?? 0,
       discount_amount_cents: discount_amount_cents ?? 0,
       discount_description: discount_description ?? null,
+      // subscription_intent flips to 'pending' when any line is recurring.
+      // Webhook flips → 'created' on first Payment Link checkout.
+      subscription_intent: resolved.some((r) => r.cadence !== 'one_time') ? 'pending' : 'none',
+      // Term: default to 12 months for recurring invoices, NULL for pure
+      // one-time. Admin can edit to 24 / N / until_cancelled afterwards.
+      term_months: until_cancelled
+        ? null
+        : (term_months ?? (resolved.some((r) => r.cadence !== 'one_time') ? 12 : null)),
+      until_cancelled: until_cancelled ?? false,
       // Auto-generate payment terms from invoice shape if admin left it blank.
       // Empty trim = "auto"; any non-blank value = "admin-authored, leave alone".
       payment_terms:

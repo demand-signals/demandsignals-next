@@ -19,9 +19,18 @@ const patchSchema = z.object({
         unit_price_cents: z.number().int().nonnegative(),
         discount_pct: z.number().min(0).max(100).optional(),
         discount_label: z.string().nullable().optional(),
+        // Cadence (migration 043). 'one_time' (default) bills only on this
+        // invoice. 'monthly' / 'annual' bill the first cycle on this invoice
+        // and Stripe runs the rest as a subscription.
+        cadence: z.enum(['one_time', 'monthly', 'annual']).optional(),
       }),
     )
     .optional(),
+  // Term governs the subscription duration created on first payment.
+  // Either a finite term in months (12 / 24 / N) OR until_cancelled = true,
+  // never both. Server-side CHECK on the table enforces this.
+  term_months: z.number().int().positive().max(120).nullable().optional(),
+  until_cancelled: z.boolean().optional(),
   force_edit: z.boolean().optional(),
   trade_credit_cents: z.number().int().nonnegative().optional(),
   trade_credit_description: z.string().nullable().optional(),
@@ -138,6 +147,15 @@ export async function PATCH(
   // Non-empty = "keep as-is, admin authored". The auto-regen happens at save time
   // in the UI before PATCH fires, so the server just stores whatever it receives.
   if (body.payment_terms !== undefined) updates.payment_terms = body.payment_terms
+  // Term invariant — exactly one model. CHECK constraint mirrors this on the table.
+  if (body.term_months !== undefined) {
+    updates.term_months = body.term_months
+    if (body.term_months !== null) updates.until_cancelled = false
+  }
+  if (body.until_cancelled !== undefined) {
+    updates.until_cancelled = body.until_cancelled
+    if (body.until_cancelled === true) updates.term_months = null
+  }
 
   if (body.line_items !== undefined) {
     // Delete all existing line items and reinsert.
@@ -162,6 +180,7 @@ export async function PATCH(
         discount_cents,
         line_total_cents,
         sort_order: idx,
+        cadence: item.cadence ?? 'one_time',
       }
     })
 
@@ -191,6 +210,12 @@ export async function PATCH(
     })()
     const tikCents = body.trade_credit_cents ?? 0
     updates.total_due_cents = Math.max(0, lineTotal - docDiscountCents - tikCents)
+
+    // subscription_intent flips to 'pending' the moment the invoice has any
+    // recurring lines. Webhook flips 'pending' → 'created' on Payment Link
+    // checkout. Pure one-time invoices stay 'none'.
+    const hasRecurring = newRows.some((r) => r.cadence !== 'one_time')
+    updates.subscription_intent = hasRecurring ? 'pending' : 'none'
   }
 
   if (Object.keys(updates).length > 0) {

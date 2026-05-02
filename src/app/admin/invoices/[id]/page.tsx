@@ -29,6 +29,8 @@ import ProspectContactEditor, { type ProspectContact } from '@/components/admin/
 
 // ── Types ─────────────────────────────────────────────────────────────
 
+type Cadence = 'one_time' | 'monthly' | 'annual'
+
 interface LineItem {
   id?: string
   description: string
@@ -38,6 +40,9 @@ interface LineItem {
   discount_pct: number
   discount_label: string | null
   sort_order: number
+  // Cadence (migration 043). 'one_time' bills here only; monthly/annual
+  // bill the first cycle on this invoice and the rest on a Stripe sub.
+  cadence: Cadence
 }
 
 interface InvoiceDetail {
@@ -67,6 +72,11 @@ interface InvoiceDetail {
     late_fee_grace_days: number
     late_fee_applied_at: string | null
     created_at: string
+    // Term + subscription intent (migration 043). Drives the recurring-bills
+    // policy: monthly/annual lines auto-create a Stripe sub on first payment.
+    term_months: number | null
+    until_cancelled: boolean
+    subscription_intent: 'none' | 'pending' | 'created'
     prospect: (ProspectContact & { business_name: string; id: string }) | null
   }
   line_items: LineItem[]
@@ -333,6 +343,11 @@ export default function InvoiceDetailPage({
   const [discountDescription, setDiscountDescription] = useState('')
   // Free-text payment terms (migration 040). Empty on save = server auto-generates.
   const [paymentTerms, setPaymentTerms] = useState('')
+  // Term governs subscription duration (migration 043). Either a finite
+  // term in months OR until_cancelled, never both. NULL termMonths +
+  // untilCancelled=false = no recurring lines (pure one-time invoice).
+  const [termMonths, setTermMonths] = useState<number | null>(null)
+  const [untilCancelled, setUntilCancelled] = useState<boolean>(false)
 
   function markDirty() {
     setDirty(true)
@@ -350,8 +365,12 @@ export default function InvoiceDetailPage({
         discount_pct: li.discount_pct ?? 0,
         discount_label: li.discount_label ?? null,
         sort_order: li.sort_order ?? 0,
+        cadence: (li.cadence ?? 'one_time') as Cadence,
       })),
     )
+    // Term — default 12 months for recurring invoices, NULL otherwise.
+    setTermMonths(d.invoice.term_months ?? null)
+    setUntilCancelled(d.invoice.until_cancelled ?? false)
     setNotes(d.invoice.notes ?? '')
     setDueDate(d.invoice.due_date ?? '')
     setSendDate(d.invoice.send_date ?? new Date().toISOString().slice(0, 10))
@@ -426,6 +445,30 @@ export default function InvoiceDetailPage({
   const discountCents = lineDiscountCents
   const totalDueCents = Math.max(0, lineTotalCents - docDiscountCents - tikCents)
 
+  // Cadence split (migration 043). Each line contributes to one of three
+  // buckets: one-time (billed only on this invoice), monthly (first cycle
+  // billed here, rest auto-charges via Stripe sub), annual (same).
+  const oneTimeCents = lines.reduce((s, li) => {
+    if (li.cadence !== 'one_time') return s
+    return s + computeLineTotal(li)
+  }, 0)
+  const monthlyCents = lines.reduce((s, li) => {
+    if (li.cadence !== 'monthly') return s
+    return s + computeLineTotal(li)
+  }, 0)
+  const annualCents = lines.reduce((s, li) => {
+    if (li.cadence !== 'annual') return s
+    return s + computeLineTotal(li)
+  }, 0)
+  // Annual normalized to monthly for the middle "Monthly" column display.
+  const annualAsMonthlyCents = Math.round(annualCents / 12)
+  const monthlyDisplayCents = monthlyCents + annualAsMonthlyCents
+  // First-cycle total for the right column. Annual lines bill the full
+  // annual amount in cycle 1, not the monthly equivalent — Stripe will
+  // re-charge once a year. Same with monthly: one month's worth here.
+  const firstCycleRecurringCents = monthlyCents + annualCents
+  const hasRecurringLines = monthlyCents > 0 || annualCents > 0
+
   // ── Save ──────────────────────────────────────────────────────────
 
   async function save(forceEdit = false) {
@@ -446,6 +489,10 @@ export default function InvoiceDetailPage({
         discount_description: discountKind ? (discountDescription.trim() || null) : null,
         // Empty trim = server keeps NULL until next auto-gen. Non-empty = admin-authored.
         payment_terms: paymentTerms.trim() || null,
+        // Term + until_cancelled govern subscription duration (migration 043).
+        // Server enforces XOR — exactly one model.
+        term_months: untilCancelled ? null : termMonths,
+        until_cancelled: untilCancelled,
         line_items: lines
           .filter((l) => l.description.trim())
           .map((l) => ({
@@ -454,6 +501,7 @@ export default function InvoiceDetailPage({
             unit_price_cents: l.unit_price_cents,
             discount_pct: l.discount_pct,
             discount_label: l.discount_label,
+            cadence: l.cadence,
           })),
       }
       if (forceEdit) body.force_edit = true
@@ -1144,7 +1192,7 @@ export default function InvoiceDetailPage({
   function addLine() {
     setLines((ls) => [
       ...ls,
-      { description: '', quantity: 1, unit_price_cents: 0, unit_price_input: '0.00', discount_pct: 0, discount_label: null, sort_order: ls.length },
+      { description: '', quantity: 1, unit_price_cents: 0, unit_price_input: '0.00', discount_pct: 0, discount_label: null, sort_order: ls.length, cadence: 'one_time' },
     ])
     markDirty()
   }
@@ -1468,12 +1516,24 @@ export default function InvoiceDetailPage({
                           placeholder="Description"
                           className="font-medium"
                         />
-                        <FieldInput
-                          value={li.discount_label ?? ''}
-                          onChange={(v) => updateLine(idx, { discount_label: v || null })}
-                          placeholder="Discount label (optional)"
-                          className="text-xs mt-1"
-                        />
+                        <div className="flex items-center gap-2 mt-1">
+                          <select
+                            value={li.cadence}
+                            onChange={(e) => updateLine(idx, { cadence: e.target.value as Cadence })}
+                            className="text-xs border border-slate-200 rounded px-1.5 py-0.5 bg-white"
+                            title="Billing cadence — monthly/annual lines bill cycle 1 here, the rest auto-charges via Stripe subscription"
+                          >
+                            <option value="one_time">One-time</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="annual">Annual</option>
+                          </select>
+                          <FieldInput
+                            value={li.discount_label ?? ''}
+                            onChange={(v) => updateLine(idx, { discount_label: v || null })}
+                            placeholder="Discount label (optional)"
+                            className="text-xs flex-1"
+                          />
+                        </div>
                       </td>
                       <td className="p-2 align-top">
                         <input
@@ -1535,13 +1595,44 @@ export default function InvoiceDetailPage({
               <Plus className="w-3 h-3" /> Add line
             </button>
 
-            {/* Totals */}
-            <table className="w-full max-w-xs ml-auto mt-6 text-sm">
+            {/* Economics — three columns: One-Time | Monthly | Total
+                (this invoice's cycle 1 only). Recurring lines (monthly /
+                annual) bill cycle 1 here and Stripe runs the rest as a
+                subscription. */}
+            <div className="mt-6 grid grid-cols-3 gap-4 max-w-xl ml-auto">
+              <div className="rounded-lg p-3 border border-slate-200" style={{ background: '#fafbfc' }}>
+                <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">One-Time</div>
+                <div className="text-lg font-bold" style={{ color: '#1d2330' }}>{formatCents(oneTimeCents)}</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">billed once</div>
+              </div>
+              <div className="rounded-lg p-3 border border-slate-200" style={{ background: '#fafbfc' }}>
+                <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Monthly</div>
+                <div className="text-lg font-bold" style={{ color: '#1d2330' }}>
+                  {formatCents(monthlyDisplayCents)}
+                  {monthlyDisplayCents > 0 && <span className="text-xs text-slate-400 font-normal">/mo</span>}
+                </div>
+                <div className="text-[10px] text-slate-400 mt-0.5">
+                  {hasRecurringLines
+                    ? annualCents > 0 && monthlyCents === 0
+                      ? `${formatCents(annualCents)}/yr equiv`
+                      : annualCents > 0
+                        ? `incl. annual equiv`
+                        : 'Stripe subscription'
+                    : '—'}
+                </div>
+              </div>
+              <div className="rounded-lg p-3 border border-2" style={{ background: '#f0fdf9', borderColor: '#68c5ad' }}>
+                <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">This Invoice</div>
+                <div className="text-lg font-bold" style={{ color: '#1d2330' }}>{formatCents(oneTimeCents + firstCycleRecurringCents)}</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">
+                  {hasRecurringLines ? 'one-time + first cycle' : 'one-time only'}
+                </div>
+              </div>
+            </div>
+
+            {/* Discounts / TIK / late fee — shown only if non-zero, mirrors prior totals table */}
+            <table className="w-full max-w-xs ml-auto mt-4 text-sm">
               <tbody>
-                <tr>
-                  <td className="py-1 text-slate-600">Subtotal</td>
-                  <td className="py-1 text-right font-semibold">{formatCents(subtotalCents)}</td>
-                </tr>
                 {discountCents > 0 && (
                   <tr>
                     <td className="py-1 text-slate-600">Line item discounts</td>
@@ -1580,7 +1671,7 @@ export default function InvoiceDetailPage({
                     <td className="py-1 text-right font-semibold">{formatCents(lateFeeCents)}</td>
                   </tr>
                 )}
-                {invoice.paid_at ? (
+                {invoice.paid_at && (
                   <>
                     <tr style={{ borderTop: '2px solid #1d2330' }}>
                       <td className="pt-3 font-bold text-base">Invoice total</td>
@@ -1597,14 +1688,74 @@ export default function InvoiceDetailPage({
                       <td className="py-1 text-right font-bold text-base text-emerald-800">$0.00</td>
                     </tr>
                   </>
-                ) : (
-                  <tr style={{ borderTop: '2px solid #1d2330' }}>
-                    <td className="pt-3 font-bold text-base">Total due (cash)</td>
-                    <td className="pt-3 text-right font-bold text-base">{formatCents(totalDueCents)}</td>
-                  </tr>
                 )}
               </tbody>
             </table>
+
+            {/* Term picker — visible only when invoice has recurring lines.
+                Drives the Stripe subscription duration that's auto-created
+                on first Payment Link checkout. */}
+            {hasRecurringLines && (
+              <div className="mt-6 p-4 border-2 rounded-lg" style={{ borderColor: '#68c5ad', background: '#f0fdf9' }}>
+                <div className="text-xs uppercase tracking-wide font-semibold mb-2" style={{ color: '#1d2330' }}>
+                  Subscription term
+                </div>
+                <div className="text-xs text-slate-600 mb-3">
+                  Months 2..N auto-bill via Stripe subscription using the same card paid here.
+                  Card captured once on the first payment, set-and-forget for the term.
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {[12, 24].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => { setTermMonths(m); setUntilCancelled(false); markDirty() }}
+                      className={`px-3 py-1.5 rounded text-sm font-medium border ${
+                        !untilCancelled && termMonths === m
+                          ? 'bg-teal-500 text-white border-teal-500'
+                          : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      {m} months
+                    </button>
+                  ))}
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const v = parseInt(prompt('Custom term (months, 1-120):', String(termMonths ?? 12)) || '0', 10)
+                        if (v > 0 && v <= 120) { setTermMonths(v); setUntilCancelled(false); markDirty() }
+                      }}
+                      className={`px-3 py-1.5 rounded text-sm font-medium border ${
+                        !untilCancelled && termMonths !== null && termMonths !== 12 && termMonths !== 24
+                          ? 'bg-teal-500 text-white border-teal-500'
+                          : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      {!untilCancelled && termMonths !== null && termMonths !== 12 && termMonths !== 24
+                        ? `${termMonths} months`
+                        : 'Custom…'}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setUntilCancelled(true); setTermMonths(null); markDirty() }}
+                    className={`px-3 py-1.5 rounded text-sm font-medium border ${
+                      untilCancelled
+                        ? 'bg-teal-500 text-white border-teal-500'
+                        : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    Until cancelled
+                  </button>
+                </div>
+                {invoice.subscription_intent === 'created' && (
+                  <div className="mt-3 text-xs text-emerald-700">
+                    Stripe subscription is live. Editing the term here only affects future invoice copies — to change the live subscription, use the Subscriptions admin page.
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* SOW-balance block — itemized cash/TIK installments still
                 owing on the parent SOW. Renders only when this invoice

@@ -114,17 +114,57 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
         if (installmentId && amountCents) {
           await markInstallmentPaid(installmentId, amountCents)
         }
+
+        // Set-and-forget subscription path (migration 043). When this
+        // invoice has subscription_intent='pending' (i.e. has monthly
+        // or annual cadence lines), spin up the Stripe subscription
+        // for cycles 2..N using the just-saved card. Idempotent —
+        // safe on webhook retries. Best-effort: failure leaves the
+        // invoice paid but flagged 'pending' for manual recovery.
+        try {
+          const customerId = (obj.customer as string | undefined) ?? null
+          if (customerId) {
+            const { createSubscriptionFromInvoice } = await import('@/lib/invoice-subscription')
+            await createSubscriptionFromInvoice({
+              invoiceId,
+              stripeCustomerId: customerId,
+            })
+          }
+        } catch (e) {
+          console.error(
+            '[stripe webhook] createSubscriptionFromInvoice threw:',
+            e instanceof Error ? e.message : e,
+          )
+        }
       }
       return
     }
 
     case 'invoice.paid': {
       // Subscription cycle invoice marked paid by Stripe.
-      const invoiceId = await findInvoiceForStripeEvent(event)
+      let invoiceId = await findInvoiceForStripeEvent(event)
+      const stripeInv = event.data.object as Stripe.Invoice
+
+      // If no DSIG invoice matches this Stripe cycle invoice yet, this is
+      // most likely a subscription-driven cycle from migration 043's
+      // invoice-driven subscription path. Auto-create the DSIG cycle
+      // invoice + receipt now.
+      if (!invoiceId) {
+        try {
+          const { generateRecurringInvoiceFromSubscriptionCycle } = await import('@/lib/invoice-subscription')
+          const newId = await generateRecurringInvoiceFromSubscriptionCycle(stripeInv)
+          if (newId) invoiceId = newId
+        } catch (e) {
+          console.error(
+            '[stripe webhook] generateRecurringInvoiceFromSubscriptionCycle threw:',
+            e instanceof Error ? e.message : e,
+          )
+        }
+      }
+
       if (invoiceId) {
-        const obj = event.data.object as unknown as Record<string, unknown>
-        const amountCents = (obj.amount_paid as number | undefined) ?? undefined
-        const reference = (obj.id as string | undefined) ?? null
+        const amountCents = (stripeInv.amount_paid as number | undefined) ?? undefined
+        const reference = (stripeInv.id as string | undefined) ?? null
         await markInvoicePaidFromStripe(invoiceId, {
           paymentMethod: 'stripe',
           amountCents,
