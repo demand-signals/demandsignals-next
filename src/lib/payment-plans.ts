@@ -555,64 +555,138 @@ async function fireBackfilledInstallment(
 export async function firePaymentInstallment(
   installmentId: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  options: { sow?: any; sendInvoice?: boolean } = {},
+  options: { sow?: any; parentInvoice?: any; sendInvoice?: boolean } = {},
 ): Promise<void> {
   const { data: installment } = await supabaseAdmin
     .from('payment_installments')
-    .select('*, schedule:payment_schedules(sow_document_id, project_id)')
+    .select('*, schedule:payment_schedules(sow_document_id, project_id, parent_invoice_id)')
     .eq('id', installmentId)
     .single()
 
   if (!installment || installment.status !== 'pending') return
 
-  let sow = options.sow
-  if (!sow) {
-    const sowId = installment.schedule?.sow_document_id
-    if (!sowId) throw new Error(`Installment ${installmentId} has no SOW link`)
-    const { data: sowRow } = await supabaseAdmin
-      .from('sow_documents')
-      .select('*, prospect:prospects(*)')
-      .eq('id', sowId)
-      .single()
-    sow = sowRow
+  // Resolve the parent — either a SOW (Stripe Plan B / SOW conversion
+  // path, the original use case) or an invoice (per-invoice payment
+  // plan path, migration 042a). The schedule CHECK constraint ensures
+  // exactly one parent is set; both null = invariant violation, both
+  // set = invariant violation.
+  const sowId = installment.schedule?.sow_document_id
+  const parentInvoiceId = installment.schedule?.parent_invoice_id
+
+  if (sowId) {
+    let sow = options.sow
+    if (!sow) {
+      const { data: sowRow } = await supabaseAdmin
+        .from('sow_documents')
+        .select('*, prospect:prospects(*)')
+        .eq('id', sowId)
+        .single()
+      sow = sowRow
+    }
+
+    if (installment.currency_type === 'cash') {
+      const { invoice } = await generateInvoiceFromInstallment(installment, sow, {
+        autoSent: options.sendInvoice ?? false,
+      })
+
+      await supabaseAdmin
+        .from('payment_installments')
+        .update({
+          status: 'invoice_issued',
+          invoice_id: invoice.id,
+          fired_at: new Date().toISOString(),
+        })
+        .eq('id', installmentId)
+    } else if (installment.currency_type === 'tik') {
+      const { data: tc } = await supabaseAdmin
+        .from('trade_credits')
+        .insert({
+          prospect_id: sow.prospect_id,
+          sow_document_id: sow.id,
+          original_amount_cents: installment.amount_cents,
+          remaining_cents: installment.amount_cents,
+          description: installment.description ?? `TIK installment ${installment.sequence} from SOW ${sow.sow_number}`,
+          status: 'outstanding',
+        })
+        .select('id')
+        .single()
+
+      await supabaseAdmin
+        .from('payment_installments')
+        .update({
+          status: 'tik_open',
+          trade_credit_id: tc?.id ?? null,
+          fired_at: new Date().toISOString(),
+        })
+        .eq('id', installmentId)
+    }
+    return
   }
 
-  if (installment.currency_type === 'cash') {
-    const { invoice } = await generateInvoiceFromInstallment(installment, sow, {
-      autoSent: options.sendInvoice ?? false,
-    })
+  if (parentInvoiceId) {
+    // Per-invoice payment plan (migration 042a). The "parent" here is
+    // a regular invoice that's been split into installments; firing
+    // generates a child invoice for this slice and links it back.
+    let parentInvoice = options.parentInvoice
+    if (!parentInvoice) {
+      const { data: invRow } = await supabaseAdmin
+        .from('invoices')
+        .select('*, prospect:prospects(*)')
+        .eq('id', parentInvoiceId)
+        .single()
+      parentInvoice = invRow
+    }
+    if (!parentInvoice) {
+      throw new Error(`Installment ${installmentId} parent_invoice ${parentInvoiceId} not found`)
+    }
 
-    await supabaseAdmin
-      .from('payment_installments')
-      .update({
-        status: 'invoice_issued',
-        invoice_id: invoice.id,
-        fired_at: new Date().toISOString(),
-      })
-      .eq('id', installmentId)
-  } else if (installment.currency_type === 'tik') {
-    const { data: tc } = await supabaseAdmin
-      .from('trade_credits')
-      .insert({
-        prospect_id: sow.prospect_id,
-        sow_document_id: sow.id,
-        original_amount_cents: installment.amount_cents,
-        remaining_cents: installment.amount_cents,
-        description: installment.description ?? `TIK installment ${installment.sequence} from SOW ${sow.sow_number}`,
-        status: 'outstanding',
-      })
-      .select('id')
-      .single()
+    if (installment.currency_type === 'cash') {
+      const { invoice } = await generateInvoiceFromParentInvoiceInstallment(
+        installment,
+        parentInvoice,
+        { autoSent: options.sendInvoice ?? false },
+      )
 
-    await supabaseAdmin
-      .from('payment_installments')
-      .update({
-        status: 'tik_open',
-        trade_credit_id: tc?.id ?? null,
-        fired_at: new Date().toISOString(),
-      })
-      .eq('id', installmentId)
+      await supabaseAdmin
+        .from('payment_installments')
+        .update({
+          status: 'invoice_issued',
+          invoice_id: invoice.id,
+          fired_at: new Date().toISOString(),
+        })
+        .eq('id', installmentId)
+    } else if (installment.currency_type === 'tik') {
+      // TIK installments on an invoice-parented plan: open a trade
+      // credit row tied to the prospect (no SOW reference). Same
+      // status flip pattern as the SOW path.
+      const { data: tc } = await supabaseAdmin
+        .from('trade_credits')
+        .insert({
+          prospect_id: parentInvoice.prospect_id,
+          sow_document_id: null,
+          original_amount_cents: installment.amount_cents,
+          remaining_cents: installment.amount_cents,
+          description:
+            installment.description ??
+            `TIK installment ${installment.sequence} from invoice ${parentInvoice.invoice_number}`,
+          status: 'outstanding',
+        })
+        .select('id')
+        .single()
+
+      await supabaseAdmin
+        .from('payment_installments')
+        .update({
+          status: 'tik_open',
+          trade_credit_id: tc?.id ?? null,
+          fired_at: new Date().toISOString(),
+        })
+        .eq('id', installmentId)
+    }
+    return
   }
+
+  throw new Error(`Installment ${installmentId} has no parent (sow_document_id and parent_invoice_id both null)`)
 }
 
 // ── generateInvoiceFromInstallment ─────────────────────────────────
@@ -711,6 +785,124 @@ export async function generateInvoiceFromInstallment(
     }
   } catch (e) {
     console.error('[generateInvoiceFromInstallment] PDF render threw:', e instanceof Error ? e.message : e)
+  }
+
+  return { invoice }
+}
+
+// ── generateInvoiceFromParentInvoiceInstallment ────────────────────
+//
+// Per-invoice payment plan path (migration 042a). The parent invoice
+// is a regular invoice that's been split into installments. Firing an
+// installment generates a CHILD invoice for this slice — same prospect,
+// same currency, same Stripe enablement; total = installment.amount_cents.
+//
+// Mirrors generateInvoiceFromInstallment for the SOW path. Differences:
+//   - notes reference the parent invoice number, not a SOW number
+//   - quote_session_id is null (no quote session backing)
+//   - discount fields copy from the parent invoice instead of a SOW
+//   - auto_trigger label is `installment_invoice_${trigger_type}` so
+//     audit logs distinguish from SOW-derived installments
+//
+// We DO NOT touch the parent invoice's status here. The parent stays
+// as the full-ledger source of truth ("split into a payment plan");
+// each child invoice is its own collection unit. Reconciliation happens
+// when each child invoice marks paid → the matching installment flips
+// status='paid' via markInstallmentPaid (existing flow).
+async function generateInvoiceFromParentInvoiceInstallment(
+  installment: PaymentInstallment,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  parentInvoice: any,
+  options: { autoSent?: boolean } = {},
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<{ invoice: any }> {
+  const now = new Date().toISOString()
+
+  const tempInvNumber = `PENDING-${crypto.randomUUID()}`
+  const { data: invoice, error: invErr } = await supabaseAdmin
+    .from('invoices')
+    .insert({
+      invoice_number: tempInvNumber,
+      kind: 'business',
+      prospect_id: parentInvoice.prospect_id,
+      quote_session_id: null,
+      payment_installment_id: installment.id,
+      status: 'sent',
+      sent_at: options.autoSent ? now : null,
+      sent_via_channel: options.autoSent ? 'manual' : null,
+      subtotal_cents: installment.amount_cents,
+      discount_cents: 0,
+      total_due_cents: installment.amount_cents,
+      currency: 'USD',
+      auto_generated: true,
+      auto_trigger: `installment_invoice_${installment.trigger_type}`,
+      auto_sent: options.autoSent ?? false,
+      category_hint: parentInvoice.category_hint ?? 'service_revenue',
+      notes:
+        installment.description
+          ? `${installment.description} (installment ${installment.sequence} of plan for ${parentInvoice.invoice_number})`
+          : `Installment ${installment.sequence} of payment plan for ${parentInvoice.invoice_number}`,
+      // Inherit document-level discount fields from the parent so the
+      // child invoice's audit trail reflects the same agreement.
+      discount_kind: parentInvoice.discount_kind ?? null,
+      discount_value_bps: parentInvoice.discount_value_bps ?? 0,
+      discount_amount_cents: parentInvoice.discount_amount_cents ?? 0,
+      discount_description: parentInvoice.discount_description ?? null,
+    })
+    .select('*')
+    .single()
+
+  if (invErr || !invoice) {
+    throw new Error(`Child invoice insert failed: ${invErr?.message}`)
+  }
+
+  if (parentInvoice.prospect_id) {
+    try {
+      const invNumber = await allocateDocNumber({
+        doc_type: 'INV',
+        prospect_id: parentInvoice.prospect_id,
+        ref_table: 'invoices',
+        ref_id: invoice.id,
+      })
+      await supabaseAdmin
+        .from('invoices')
+        .update({ invoice_number: invNumber })
+        .eq('id', invoice.id)
+      invoice.invoice_number = invNumber
+    } catch (numErr) {
+      console.warn('[generateInvoiceFromParentInvoiceInstallment] number allocation failed:', numErr)
+    }
+  }
+
+  const lineItem = {
+    invoice_id: invoice.id,
+    description:
+      installment.description ?? `Installment ${installment.sequence} of payment plan`,
+    quantity: 1,
+    unit_price_cents: installment.amount_cents,
+    subtotal_cents: installment.amount_cents,
+    discount_pct: 0,
+    discount_cents: 0,
+    line_total_cents: installment.amount_cents,
+    sort_order: 0,
+  }
+
+  const { error: liErr } = await supabaseAdmin.from('invoice_line_items').insert(lineItem)
+  if (liErr) {
+    await supabaseAdmin.from('invoices').delete().eq('id', invoice.id)
+    throw new Error(`Line item insert failed: ${liErr.message}`)
+  }
+
+  // Render PDF best-effort. Same pattern as the SOW path — magic-link
+  // Download PDF won't work without it.
+  try {
+    const { regenerateInvoicePdf } = await import('./invoice-pdf-regenerate')
+    const result = await regenerateInvoicePdf(invoice.id)
+    if (!result.ok) {
+      console.error('[generateInvoiceFromParentInvoiceInstallment] PDF render failed:', result.error)
+    }
+  } catch (e) {
+    console.error('[generateInvoiceFromParentInvoiceInstallment] PDF render threw:', e instanceof Error ? e.message : e)
   }
 
   return { invoice }

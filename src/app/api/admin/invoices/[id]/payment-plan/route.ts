@@ -163,9 +163,38 @@ export async function POST(
     return NextResponse.json({ error: instErr.message }, { status: 500 })
   }
 
+  // Fire any on_acceptance installments immediately. For SOW-parented
+  // plans, on_acceptance fires when the SOW is accepted via the public
+  // accept endpoint; for invoice-parented plans, plan creation IS the
+  // acceptance moment (the invoice was already issued before the
+  // admin opted to split it). Time-triggered installments wait for
+  // the daily payment-triggers cron.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fired: any[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fireErrors: any[] = []
+  if (insertedInst) {
+    const { firePaymentInstallment } = await import('@/lib/payment-plans')
+    for (const inst of insertedInst) {
+      if (inst.trigger_type !== 'on_acceptance') continue
+      try {
+        await firePaymentInstallment(inst.id, { sendInvoice: false })
+        fired.push({ id: inst.id, sequence: inst.sequence })
+      } catch (e) {
+        fireErrors.push({
+          id: inst.id,
+          sequence: inst.sequence,
+          error: e instanceof Error ? e.message : String(e),
+        })
+      }
+    }
+  }
+
   return NextResponse.json({
     schedule_id: schedule.id,
     installments: insertedInst ?? [],
+    fired_on_acceptance: fired,
+    fire_errors: fireErrors,
   })
 }
 
