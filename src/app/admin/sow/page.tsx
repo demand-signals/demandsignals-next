@@ -16,12 +16,15 @@ interface SowRow {
   sent_at: string | null
   viewed_at: string | null
   accepted_at: string | null
-  // Computed server-side per migration 043 + walk-phases:
+  // Computed server-side. List view shows gross deal value (TIK additive,
+  // not subtractive — Hunter spec 2026-05-02).
   //   project_cents = sum of one-time deliverables
   //   subscriptions_cents = sum of monthly/quarterly/annual at full per-cycle price
-  //   computed_total_cents = project_cents + subscriptions_cents (first-cycle billable)
+  //   tik_cents = trade_credit_cents (TIK is additive in the LIST view)
+  //   computed_total_cents = project + subs + TIK
   project_cents: number
   subscriptions_cents: number
+  tik_cents: number
   computed_total_cents: number
 }
 
@@ -98,6 +101,7 @@ export default function AdminSowPage() {
                 <th className="text-left px-4 py-3">Title</th>
                 <th className="text-right px-4 py-3">$ Project</th>
                 <th className="text-right px-4 py-3">$ Subscriptions</th>
+                <th className="text-right px-4 py-3">$ TIK</th>
                 <th className="text-right px-4 py-3">$ Total</th>
                 <th className="text-left px-4 py-3">Status</th>
                 <th className="text-left px-4 py-3">Sent</th>
@@ -121,6 +125,9 @@ export default function AdminSowPage() {
                     {s.subscriptions_cents > 0
                       ? <>{formatCents(s.subscriptions_cents)}<span className="text-xs text-slate-400">/cycle</span></>
                       : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-right tabular-nums text-amber-700">
+                    {s.tik_cents > 0 ? formatCents(s.tik_cents) : '—'}
                   </td>
                   <td className="px-4 py-3 text-right font-semibold tabular-nums">
                     {formatCents(s.computed_total_cents > 0 ? s.computed_total_cents : (s.pricing?.total_cents ?? 0))}

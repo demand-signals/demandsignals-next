@@ -47,8 +47,9 @@ export async function GET(request: NextRequest) {
       `id, invoice_number, kind, prospect_id, status, total_due_cents, currency,
        auto_generated, auto_trigger, created_at, sent_at, viewed_at, paid_at,
        stripe_payment_link_url, subscription_intent, term_months, until_cancelled,
+       trade_credit_cents,
        prospects(business_name),
-       invoice_line_items(line_total_cents, cadence)`,
+       invoice_line_items(line_total_cents, cadence, quantity, unit_price_cents)`,
       { count: 'exact' },
     )
     .order('created_at', { ascending: false })
@@ -63,22 +64,48 @@ export async function GET(request: NextRequest) {
   const { data, count, error } = await q
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Per-row split: $ Project (one-time line totals) + $ Subscriptions
-  // (monthly+annual line totals at full per-cycle price). Old rows
-  // pre-cadence count entirely as one_time. The existing total_due_cents
-  // stays as-is (= one-time + first cycle of recurring), used for the
-  // $ Total column in the list.
-  type LineRow = { line_total_cents: number | null; cadence: string | null }
+  // Per-row split (matches /admin/sow endpoint shape):
+  //   $ Project = one-time line totals
+  //   $ Subscriptions = monthly+annual at full per-cycle price ($40/mo + $25/yr = $65)
+  //   $ TIK = trade_credit_cents
+  //   $ Total = project + subscriptions + TIK (gross deal value, additive)
+  //
+  // Legacy invoices (pre-043) have no cadence column on existing line
+  // items — those rows default to 'one_time' on the DB side via the
+  // migration DEFAULT, so they bucket into project_cents naturally.
+  // line_total_cents fallback math mirrors the SOW endpoint helper.
+  type LineRow = {
+    line_total_cents: number | null
+    cadence: string | null
+    quantity: number | null
+    unit_price_cents: number | null
+  }
+  function lineValueCents(li: LineRow): number {
+    if (typeof li.line_total_cents === 'number' && li.line_total_cents > 0) {
+      return li.line_total_cents
+    }
+    const unit = li.unit_price_cents ?? 0
+    const qty = li.quantity ?? 1
+    return Math.round(unit * qty)
+  }
   const enriched = (data ?? []).map((row) => {
     const lines = (row as unknown as { invoice_line_items?: LineRow[] }).invoice_line_items ?? []
+    const tikCents = (row as unknown as { trade_credit_cents?: number }).trade_credit_cents ?? 0
     let oneTimeCents = 0
     let recurringCents = 0
     for (const li of lines) {
-      const v = li.line_total_cents ?? 0
+      const v = lineValueCents(li)
       if (li.cadence === 'monthly' || li.cadence === 'annual') recurringCents += v
       else oneTimeCents += v
     }
-    return { ...row, project_cents: oneTimeCents, subscriptions_cents: recurringCents }
+    const totalCents = oneTimeCents + recurringCents + tikCents
+    return {
+      ...row,
+      project_cents: oneTimeCents,
+      subscriptions_cents: recurringCents,
+      tik_cents: tikCents,
+      computed_total_cents: totalCents,
+    }
   })
 
   return NextResponse.json({ invoices: enriched, total: count ?? 0, limit, offset })

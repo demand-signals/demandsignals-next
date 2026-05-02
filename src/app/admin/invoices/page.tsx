@@ -22,12 +22,16 @@ interface InvoiceRow {
   term_months: number | null
   until_cancelled: boolean
   prospects: { business_name: string } | null
-  // Computed server-side per migration 043:
+  // Computed server-side. Mirrors SOW endpoint shape (Hunter spec
+  // 2026-05-02). Gross deal value with TIK additive.
   //   project_cents = sum of one_time line totals
   //   subscriptions_cents = sum of monthly+annual line totals at full per-cycle price
-  // total_due_cents stays as-is (= project + first cycle of recurring) and feeds $ Total.
+  //   tik_cents = trade_credit_cents
+  //   computed_total_cents = project + subs + TIK
   project_cents: number
   subscriptions_cents: number
+  tik_cents: number
+  computed_total_cents: number
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -131,6 +135,7 @@ export default function AdminInvoicesPage() {
                 <th className="text-left px-4 py-3">Client</th>
                 <th className="text-right px-4 py-3">$ Project</th>
                 <th className="text-right px-4 py-3">$ Subscriptions</th>
+                <th className="text-right px-4 py-3">$ TIK</th>
                 <th className="text-right px-4 py-3">$ Total</th>
                 <th className="text-left px-4 py-3">Status</th>
                 <th className="text-left px-4 py-3">Sent</th>
@@ -169,8 +174,14 @@ export default function AdminInvoicesPage() {
                         </>
                       : '—'}
                   </td>
+                  <td className="px-4 py-3 text-right tabular-nums text-amber-700">
+                    {inv.tik_cents > 0 ? formatCents(inv.tik_cents) : '—'}
+                  </td>
                   <td className="px-4 py-3 text-right font-semibold tabular-nums">
-                    {formatCents(inv.total_due_cents)}
+                    {/* Gross deal value: project + subscriptions + TIK.
+                        Falls back to total_due_cents for legacy rows
+                        without computed totals. */}
+                    {formatCents(inv.computed_total_cents > 0 ? inv.computed_total_cents : inv.total_due_cents)}
                   </td>
                   <td className="px-4 py-3">
                     <span

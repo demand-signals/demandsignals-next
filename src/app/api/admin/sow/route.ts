@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
   let q = supabaseAdmin
     .from('sow_documents')
-    .select('id, sow_number, title, status, pricing, phases, prospect_id, quote_session_id, created_at, sent_at, viewed_at, accepted_at, prospects(business_name)')
+    .select('id, sow_number, title, status, pricing, phases, trade_credit_cents, prospect_id, quote_session_id, created_at, sent_at, viewed_at, accepted_at, prospects(business_name)')
     .order('created_at', { ascending: false })
 
   if (status) q = q.eq('status', status)
@@ -52,20 +52,41 @@ export async function GET(request: NextRequest) {
   const { data, error } = await q
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Per-row split: $ Project (one-time deliverables) + $ Subscriptions
-  // (monthly + quarterly + annual at full per-cycle price). Walk the
-  // phases jsonb to derive these from deliverables. Old rows lacking
-  // phases fall back to pricing.total_cents in the project column.
-  type Deliverable = { cadence?: string; line_total_cents?: number }
+  // Per-row split: $ Project (one-time) + $ Subscriptions (recurring at
+  // full per-cycle price — $40/mo + $25/yr = $65) + $ TIK (trade credit).
+  // Total = sum of all three. TIK is additive at the LIST level — this is
+  // gross deal value including trade. (Inside a SOW, TIK still reduces the
+  // cash side; that's a different view.)
+  //
+  // Deliverables in `phases` jsonb may not always have line_total_cents
+  // populated (it's an optional field on the new client format). When it's
+  // missing, derive it from quantity * unit_price_cents — same math the
+  // SOW editor does for the live total display.
+  type Deliverable = {
+    cadence?: string
+    line_total_cents?: number
+    quantity?: number
+    hours?: number | null
+    unit_price_cents?: number
+  }
   type Phase = { deliverables?: Deliverable[] }
+  function deliverableValueCents(d: Deliverable): number {
+    if (typeof d.line_total_cents === 'number' && d.line_total_cents > 0) {
+      return d.line_total_cents
+    }
+    const unit = d.unit_price_cents ?? 0
+    const qty = d.quantity ?? d.hours ?? 1
+    return Math.round(unit * qty)
+  }
   const enriched = (data ?? []).map((row) => {
     const phases = ((row as unknown as { phases?: Phase[] | null }).phases ?? []) as Phase[]
+    const tikCents = (row as unknown as { trade_credit_cents?: number }).trade_credit_cents ?? 0
     let oneTimeCents = 0
     let recurringCents = 0
     if (Array.isArray(phases) && phases.length > 0) {
       for (const ph of phases) {
         for (const d of (ph.deliverables ?? [])) {
-          const v = d.line_total_cents ?? 0
+          const v = deliverableValueCents(d)
           if (d.cadence === 'monthly' || d.cadence === 'quarterly' || d.cadence === 'annual') {
             recurringCents += v
           } else {
@@ -80,8 +101,14 @@ export async function GET(request: NextRequest) {
       const pricing = (row as unknown as { pricing?: { total_cents?: number } }).pricing
       oneTimeCents = pricing?.total_cents ?? 0
     }
-    const totalCents = oneTimeCents + recurringCents
-    return { ...row, project_cents: oneTimeCents, subscriptions_cents: recurringCents, computed_total_cents: totalCents }
+    const totalCents = oneTimeCents + recurringCents + tikCents
+    return {
+      ...row,
+      project_cents: oneTimeCents,
+      subscriptions_cents: recurringCents,
+      tik_cents: tikCents,
+      computed_total_cents: totalCents,
+    }
   })
 
   return NextResponse.json({ sows: enriched })
