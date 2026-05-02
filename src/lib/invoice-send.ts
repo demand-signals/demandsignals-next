@@ -23,8 +23,10 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { sendInvoiceEmail, buildInvoiceEmail } from '@/lib/invoice-email'
 import { sendSms } from '@/lib/twilio-sms'
 import { trackLink } from '@/lib/track-link'
-import { getPrivateSignedUrl } from '@/lib/r2-storage'
-import type { Invoice } from '@/lib/invoice-types'
+import { getPrivateSignedUrl, uploadPrivate, deletePrivate } from '@/lib/r2-storage'
+import { renderInvoicePdf } from '@/lib/pdf/invoice'
+import { getInvoicePaymentSummary, getInvoiceProjectMeta } from '@/lib/invoice-context'
+import type { Invoice, InvoiceWithLineItems } from '@/lib/invoice-types'
 
 interface DispatchEmailOptions {
   /** Override recipient (admin can re-route). */
@@ -391,7 +393,9 @@ export async function previewInvoiceEmail(
 
   if (error) return { ok: false, error: error.message }
   if (!invoice) return { ok: false, error: 'Invoice not found' }
-  if (!['sent', 'viewed', 'paid'].includes(invoice.status)) {
+  // Drafts are previewable — confirming the preview will issue the
+  // invoice (draft→sent) THEN dispatch in the same server hop.
+  if (!['draft', 'sent', 'viewed', 'paid'].includes(invoice.status)) {
     return { ok: false, error: `Cannot preview email for an invoice in status ${invoice.status}` }
   }
 
@@ -446,7 +450,8 @@ export async function previewInvoiceSms(
 
   if (error) return { ok: false, error: error.message }
   if (!invoice) return { ok: false, error: 'Invoice not found' }
-  if (!['sent', 'viewed', 'paid'].includes(invoice.status)) {
+  // Drafts are previewable — confirming the preview will issue.
+  if (!['draft', 'sent', 'viewed', 'paid'].includes(invoice.status)) {
     return { ok: false, error: `Cannot preview SMS for an invoice in status ${invoice.status}` }
   }
 
@@ -480,5 +485,185 @@ export async function previewInvoiceSms(
     recipient,
     message,
     public_url: url,
+  }
+}
+
+/* ── Issue (draft → sent) ───────────────────────────────────────────── */
+//
+// Renders the PDF, uploads to R2, flips status from 'draft' to 'sent'
+// (or 'paid' for $0 invoices). Idempotent: returns success without
+// re-rendering if status is already past 'draft'.
+//
+// Used by:
+//   - /api/admin/invoices/[id]/send (one-click issuance + auto-fire)
+//   - /api/admin/invoices/[id]/send-email (auto-issue if status='draft')
+//   - /api/admin/invoices/[id]/send-sms   (auto-issue if status='draft')
+//
+// Why this lives here and not in /send/route.ts: the email/SMS buttons
+// on a draft invoice need to issue-then-dispatch in one server hop.
+// Moving the issuance logic into a shared helper means /send-email and
+// /send-sms can call issueInvoice() directly without an internal HTTP
+// roundtrip (which would fail the requireAdmin CSRF guard — same
+// failure mode as the resend regression in commit 0cc9cf1).
+
+export interface IssueResult {
+  success: boolean
+  status?: 'sent' | 'paid'
+  is_zero?: boolean
+  pdf_storage_path?: string
+  error?: string
+  /** True if the invoice was already past draft when called — no work done. */
+  already_issued?: boolean
+}
+
+export async function issueInvoice(
+  invoiceId: string,
+  options: { createdBy?: string } = {},
+): Promise<IssueResult> {
+  const { data: invoice, error: fetchErr } = await supabaseAdmin
+    .from('invoices')
+    .select('*, prospect:prospects(business_name, owner_name, owner_email, business_email, owner_phone, business_phone, address, city, state, zip)')
+    .eq('id', invoiceId)
+    .maybeSingle()
+
+  if (fetchErr) return { success: false, error: fetchErr.message }
+  if (!invoice) return { success: false, error: 'Invoice not found' }
+
+  // Idempotent: if it's already issued, just succeed.
+  if (invoice.status !== 'draft') {
+    return {
+      success: true,
+      status: invoice.status as 'sent' | 'paid',
+      is_zero: invoice.total_due_cents === 0,
+      pdf_storage_path: invoice.pdf_storage_path ?? undefined,
+      already_issued: true,
+    }
+  }
+
+  const { data: lineItems } = await supabaseAdmin
+    .from('invoice_line_items')
+    .select('*')
+    .eq('invoice_id', invoiceId)
+    .order('sort_order', { ascending: true })
+
+  if (!lineItems || lineItems.length === 0) {
+    return { success: false, error: 'Invoice has no line items' }
+  }
+
+  const renderInput: InvoiceWithLineItems = {
+    ...invoice,
+    line_items: lineItems,
+    bill_to: {
+      business_name: invoice.prospect?.business_name ?? 'Client',
+      contact_name: invoice.prospect?.owner_name ?? null,
+      email: invoice.prospect?.owner_email ?? null,
+    },
+  }
+
+  const [paymentSummary, project] = await Promise.all([
+    getInvoicePaymentSummary(invoice.id, invoice.total_due_cents),
+    getInvoiceProjectMeta(invoice.id),
+  ])
+
+  let pdfBuffer: Buffer
+  try {
+    pdfBuffer = await renderInvoicePdf(renderInput, {
+      prospect: {
+        business_name: invoice.prospect?.business_name ?? 'Client',
+        owner_name: invoice.prospect?.owner_name ?? null,
+        owner_email: invoice.prospect?.owner_email ?? null,
+        address: invoice.prospect?.address ?? null,
+        city: invoice.prospect?.city ?? null,
+        state: invoice.prospect?.state ?? null,
+        zip: invoice.prospect?.zip ?? null,
+      },
+      project,
+      paymentSummary,
+    })
+  } catch (e) {
+    return { success: false, error: `PDF render failed: ${e instanceof Error ? e.message : e}` }
+  }
+
+  const pdfKey = `invoices/${invoice.invoice_number}_v${invoice.pdf_version}.pdf`
+  try {
+    await uploadPrivate(pdfKey, pdfBuffer, 'application/pdf')
+  } catch (e) {
+    return { success: false, error: `R2 upload failed: ${e instanceof Error ? e.message : e}` }
+  }
+
+  const isZero = invoice.total_due_cents === 0
+  const now = new Date().toISOString()
+  const updates: Record<string, unknown> = {
+    status: isZero ? 'paid' : 'sent',
+    sent_at: now,
+    sent_via_channel: 'manual',
+    sent_via_email_to: invoice.prospect?.owner_email ?? null,
+    pdf_storage_path: pdfKey,
+    pdf_rendered_at: now,
+  }
+  if (isZero) {
+    updates.paid_at = now
+    updates.paid_method = 'zero_balance'
+    updates.paid_note = 'Complimentary — no payment required'
+  }
+
+  const { error: updateErr } = await supabaseAdmin
+    .from('invoices')
+    .update(updates)
+    .eq('id', invoiceId)
+
+  if (updateErr) {
+    await deletePrivate(pdfKey).catch(() => {})
+    return { success: false, error: updateErr.message }
+  }
+
+  await supabaseAdmin.from('invoice_delivery_log').insert({
+    invoice_id: invoiceId,
+    channel: 'manual',
+    recipient: invoice.prospect?.owner_email ?? invoice.prospect?.owner_phone ?? 'admin',
+    success: true,
+  })
+
+  // Activity-log: mark issuance on the prospect's timeline (CLAUDE.md §D).
+  // Best-effort — failures don't block the issuance itself.
+  if (invoice.prospect_id) {
+    try {
+      await supabaseAdmin.from('activities').insert({
+        prospect_id: invoice.prospect_id,
+        type: 'invoice_issued',
+        channel: 'system',
+        direction: 'outbound',
+        subject: `Invoice ${invoice.invoice_number} issued`,
+        body: isZero
+          ? `Complimentary invoice — no payment required.`
+          : `Total: $${(invoice.total_due_cents / 100).toFixed(2)}${invoice.due_date ? ` · Due ${invoice.due_date}` : ''}`,
+        status: 'sent',
+        created_by: options.createdBy ?? 'system',
+      })
+    } catch (e) {
+      console.error('[issueInvoice] activity log failed:', e instanceof Error ? e.message : e)
+    }
+  }
+
+  // Admin alert on issuance — fan-out to ADMIN_TEAM_PHONES. Best-effort.
+  if (!isZero) {
+    try {
+      const { notifyAdminsBySms } = await import('@/lib/admin-sms')
+      const businessName = invoice.prospect?.business_name ?? 'a client'
+      const amountStr = `$${(invoice.total_due_cents / 100).toFixed(2)}`
+      await notifyAdminsBySms({
+        source: 'invoice_send',
+        body: `DSIG: invoice ${invoice.invoice_number} (${amountStr}) issued to ${businessName}.`,
+      })
+    } catch (e) {
+      console.error('[issueInvoice] admin SMS pipeline threw:', e instanceof Error ? e.message : e)
+    }
+  }
+
+  return {
+    success: true,
+    status: isZero ? 'paid' : 'sent',
+    is_zero: isZero,
+    pdf_storage_path: pdfKey,
   }
 }

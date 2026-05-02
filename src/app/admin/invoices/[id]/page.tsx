@@ -950,10 +950,17 @@ export default function InvoiceDetailPage({
             >
               Delete
             </button>
+            <button onClick={openSendSmsPreview} disabled={busy} className="bg-blue-100 text-blue-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
+              <MessageSquare className="w-3.5 h-3.5" /> SMS
+            </button>
+            <button onClick={openSendEmailPreview} disabled={busy} className="bg-blue-100 text-blue-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
+              <Mail className="w-3.5 h-3.5" /> Email
+            </button>
             <button
               onClick={send}
               disabled={busy}
               className="inline-flex items-center gap-1.5 bg-blue-600 text-white rounded px-3 py-1.5 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
+              title="Issue invoice + auto-fire email and SMS to whoever's on file"
             >
               <Send className="w-3.5 h-3.5" /> Send
             </button>

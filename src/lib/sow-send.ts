@@ -17,7 +17,8 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { sendSowEmail, buildSowEmail } from '@/lib/sow-email'
 import { sendSms } from '@/lib/twilio-sms'
 import { trackLink } from '@/lib/track-link'
-import { getPrivateSignedUrl } from '@/lib/r2-storage'
+import { getPrivateSignedUrl, uploadPrivate, deletePrivate } from '@/lib/r2-storage'
+import { renderSowPdf } from '@/lib/pdf/sow'
 import type { SowDocument } from '@/lib/invoice-types'
 
 interface DispatchEmailOptions {
@@ -120,11 +121,12 @@ export async function dispatchSowEmail(
 
   const sow = sowRow as SowWithProspect
 
-  // Allow re-send for any SOW that's been sent (sent / viewed / accepted /
-  // declined). Drafts can't be re-sent — they need to go through the
-  // first-time send flow which renders+uploads the PDF.
+  // Drafts must be issued before email can be dispatched (the email
+  // attaches the PDF, which gets rendered+uploaded during issuance).
+  // Callers route drafts through issueSow first; this guard catches
+  // misuse only.
   if (!['sent', 'viewed', 'accepted', 'declined'].includes(sow.status)) {
-    return { success: false, error: `Cannot email an SOW in status ${sow.status}. Use the Send button to dispatch a draft for the first time.` }
+    return { success: false, error: `Cannot email an SOW in status ${sow.status}. Issue the draft first.` }
   }
 
   const email =
@@ -203,7 +205,7 @@ export async function dispatchSowSms(
   const sow = sowRow as SowWithProspect
 
   if (!['sent', 'viewed', 'accepted', 'declined'].includes(sow.status)) {
-    return { success: false, error: `Cannot SMS an SOW in status ${sow.status}. Use the Send button to dispatch a draft for the first time.` }
+    return { success: false, error: `Cannot SMS an SOW in status ${sow.status}. Issue the draft first.` }
   }
 
   const phone =
@@ -289,8 +291,9 @@ export async function previewSowEmail(
   if (!sowRow) return { ok: false, error: 'SOW not found' }
 
   const sow = sowRow as SowWithProspect
-  if (!['sent', 'viewed', 'accepted', 'declined'].includes(sow.status)) {
-    return { ok: false, error: `Cannot preview email for an SOW in status ${sow.status}. Use the Send button to dispatch a draft for the first time.` }
+  // Drafts are previewable — confirming will issue then dispatch.
+  if (!['draft', 'sent', 'viewed', 'accepted', 'declined'].includes(sow.status)) {
+    return { ok: false, error: `Cannot preview email for an SOW in status ${sow.status}` }
   }
 
   const recipient =
@@ -341,8 +344,9 @@ export async function previewSowSms(
   if (!sowRow) return { ok: false, error: 'SOW not found' }
 
   const sow = sowRow as SowWithProspect
-  if (!['sent', 'viewed', 'accepted', 'declined'].includes(sow.status)) {
-    return { ok: false, error: `Cannot preview SMS for an SOW in status ${sow.status}. Use the Send button to dispatch a draft for the first time.` }
+  // Drafts are previewable — confirming will issue then dispatch.
+  if (!['draft', 'sent', 'viewed', 'accepted', 'declined'].includes(sow.status)) {
+    return { ok: false, error: `Cannot preview SMS for an SOW in status ${sow.status}` }
   }
 
   const recipient =
@@ -374,3 +378,101 @@ export async function previewSowSms(
     public_url: url,
   }
 }
+
+/* ── Issue (draft → sent) ───────────────────────────────────────────── */
+//
+// Renders the SOW PDF, uploads to R2, flips status from 'draft' to
+// 'sent'. Idempotent — no-op if status is past 'draft'.
+
+export interface SowIssueResult {
+  success: boolean
+  status?: 'sent'
+  pdf_storage_path?: string
+  error?: string
+  already_issued?: boolean
+}
+
+export async function issueSow(
+  sowId: string,
+  options: { createdBy?: string } = {},
+): Promise<SowIssueResult> {
+  const { data: sowRow, error: fetchErr } = await supabaseAdmin
+    .from('sow_documents')
+    .select('*, prospect:prospects(business_name, owner_name, owner_email, business_email, owner_phone)')
+    .eq('id', sowId)
+    .maybeSingle()
+
+  if (fetchErr) return { success: false, error: fetchErr.message }
+  if (!sowRow) return { success: false, error: 'SOW not found' }
+
+  if (sowRow.status !== 'draft') {
+    return {
+      success: true,
+      status: sowRow.status as 'sent',
+      pdf_storage_path: sowRow.pdf_storage_path ?? undefined,
+      already_issued: true,
+    }
+  }
+
+  const sow = sowRow as SowDocument & {
+    prospect?: {
+      business_name?: string | null
+      owner_name?: string | null
+      owner_email?: string | null
+    } | null
+  }
+
+  let pdfBuffer: Buffer
+  try {
+    pdfBuffer = await renderSowPdf(sow, {
+      business_name: sow.prospect?.business_name ?? 'Client',
+      owner_name: null,
+      owner_email: sow.prospect?.owner_email ?? null,
+    })
+  } catch (e) {
+    return { success: false, error: `PDF render failed: ${e instanceof Error ? e.message : e}` }
+  }
+
+  const pdfKey = `sow/${sow.sow_number}.pdf`
+  try {
+    await uploadPrivate(pdfKey, pdfBuffer, 'application/pdf')
+  } catch (e) {
+    return { success: false, error: `R2 upload failed: ${e instanceof Error ? e.message : e}` }
+  }
+
+  const now = new Date().toISOString()
+  const { error: updateErr } = await supabaseAdmin
+    .from('sow_documents')
+    .update({
+      status: 'sent',
+      sent_at: now,
+      pdf_storage_path: pdfKey,
+      pdf_rendered_at: now,
+    })
+    .eq('id', sowId)
+
+  if (updateErr) {
+    await deletePrivate(pdfKey).catch(() => {})
+    return { success: false, error: updateErr.message }
+  }
+
+  if (sow.prospect_id) {
+    try {
+      await supabaseAdmin.from('activities').insert({
+        prospect_id: sow.prospect_id,
+        type: 'sow_issued',
+        channel: 'system',
+        direction: 'outbound',
+        subject: `SOW ${sow.sow_number} issued`,
+        body: sow.title ? `Title: ${sow.title}` : null,
+        status: 'sent',
+        created_by: options.createdBy ?? 'system',
+      })
+    } catch (e) {
+      console.error('[issueSow] activity log failed:', e instanceof Error ? e.message : e)
+    }
+  }
+
+  return { success: true, status: 'sent', pdf_storage_path: pdfKey }
+}
+

@@ -1,11 +1,14 @@
 // ── POST /api/admin/sow/[id]/send-email ──────────────────────────────
-// Manual email send for a SOW that's already been sent at least once.
-// Re-renders nothing, re-uploads nothing — just fires the email through
-// dispatchSowEmail with the existing PDF (fetched from R2).
+// Synchronous admin email send. Auto-issues a draft SOW (renders PDF,
+// uploads to R2, flips draft→sent) before dispatching, so admin can
+// hit Email directly on a draft.
+
+export const runtime = 'nodejs'
+export const maxDuration = 30
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
-import { dispatchSowEmail } from '@/lib/sow-send'
+import { dispatchSowEmail, issueSow } from '@/lib/sow-send'
 
 export async function POST(
   request: NextRequest,
@@ -15,12 +18,18 @@ export async function POST(
   if ('error' in auth) return auth.error
   const { id } = await ctx.params
 
+  const issueResult = await issueSow(id, { createdBy: auth.user.id })
+  if (!issueResult.success) {
+    return NextResponse.json({ error: issueResult.error ?? 'Issue failed' }, { status: 502 })
+  }
+
   const result = await dispatchSowEmail(id, { createdBy: auth.user.id })
   if (!result.success) {
     return NextResponse.json({ error: result.error ?? 'Email failed' }, { status: 500 })
   }
   return NextResponse.json({
     ok: true,
+    issued: !issueResult.already_issued,
     recipient: result.recipient,
     message_id: result.message_id,
   })

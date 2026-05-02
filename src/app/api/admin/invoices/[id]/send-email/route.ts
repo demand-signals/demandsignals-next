@@ -1,11 +1,18 @@
 // ── POST /api/admin/invoices/[id]/send-email ────────────────────────
-// Synchronous admin send. Thin wrapper over dispatchInvoiceEmail() so
-// that the cron path (/api/cron/scheduled-sends) and the admin button
-// share one code path — including activity-log writes (CLAUDE.md §D).
+// Synchronous admin email send. Auto-issues a draft invoice (renders
+// PDF, uploads to R2, flips draft→sent) before dispatching, so admin
+// can hit Email directly on a draft without first clicking the
+// generic Send button.
+//
+// On a non-draft invoice this is a re-send — same code path, same
+// activity log writes (CLAUDE.md §D).
+
+export const runtime = 'nodejs'
+export const maxDuration = 30
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
-import { dispatchInvoiceEmail } from '@/lib/invoice-send'
+import { dispatchInvoiceEmail, issueInvoice } from '@/lib/invoice-send'
 
 export async function POST(
   request: NextRequest,
@@ -18,6 +25,26 @@ export async function POST(
   const body = await request.json().catch(() => ({}))
   const overrideEmail: string | undefined = body.email
 
+  // Issue first if needed. Idempotent — no-op if status is past 'draft'.
+  const issueResult = await issueInvoice(id, { createdBy: auth.user.id })
+  if (!issueResult.success) {
+    return NextResponse.json(
+      { error: issueResult.error ?? 'Issue failed' },
+      { status: 502 },
+    )
+  }
+
+  // $0 invoices auto-pay during issuance — there's nothing to email a
+  // payment link for. Surface the result so admin sees what happened.
+  if (issueResult.is_zero && !issueResult.already_issued) {
+    return NextResponse.json({
+      ok: true,
+      issued: true,
+      status: issueResult.status,
+      message: 'Invoice was zero-balance and auto-paid; no email sent.',
+    })
+  }
+
   const result = await dispatchInvoiceEmail(id, {
     overrideEmail,
     createdBy: auth.user.id,
@@ -28,5 +55,11 @@ export async function POST(
     return NextResponse.json({ error: result.error ?? 'Email send failed' }, { status })
   }
 
-  return NextResponse.json({ ok: true, message_id: result.message_id })
+  return NextResponse.json({
+    ok: true,
+    issued: !issueResult.already_issued,
+    status: issueResult.status,
+    message_id: result.message_id,
+    recipient: result.recipient,
+  })
 }

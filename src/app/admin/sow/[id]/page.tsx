@@ -854,7 +854,10 @@ export default function SowDetailPage({
           <FileText className="w-3.5 h-3.5" /> Preview PDF
         </a>
 
-        {/* Send — draft only */}
+        {/* Send / Email / SMS — draft toolbar. Email and SMS each open
+            the preview modal; confirming the preview issues the SOW
+            (renders PDF, uploads to R2, flips draft→sent) and
+            dispatches in one server hop. */}
         {isDraft && (
           <>
             <button
@@ -864,10 +867,17 @@ export default function SowDetailPage({
             >
               Delete
             </button>
+            <button onClick={openSendSmsPreview} disabled={busy} className="bg-blue-100 text-blue-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
+              <MessageSquare className="w-3.5 h-3.5" /> SMS
+            </button>
+            <button onClick={openSendEmailPreview} disabled={busy} className="bg-blue-100 text-blue-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
+              <Mail className="w-3.5 h-3.5" /> Email
+            </button>
             <button
               onClick={send}
               disabled={busy}
               className="inline-flex items-center gap-1.5 bg-blue-600 text-white rounded px-3 py-1.5 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
+              title="Issue SOW + auto-fire email"
             >
               <Send className="w-3.5 h-3.5" /> Send
             </button>
