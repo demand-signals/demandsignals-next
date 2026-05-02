@@ -206,6 +206,25 @@ export default function InvoiceDetailPage({
   const [scheduleSubmitting, setScheduleSubmitting] = useState(false)
   const [scheduleError, setScheduleError] = useState<string | null>(null)
 
+  const [paidModal, setPaidModal] = useState(false)
+  const [paidMethod, setPaidMethod] = useState<'check' | 'wire' | 'stripe' | 'cash' | 'trade' | 'zero_balance' | 'other'>('check')
+  const [paidAmountInput, setPaidAmountInput] = useState('')
+  const [paidReference, setPaidReference] = useState('')
+  const [paidNote, setPaidNote] = useState('')
+  const [paidSubmitting, setPaidSubmitting] = useState(false)
+  const [paidError, setPaidError] = useState<string | null>(null)
+
+  const [refundModal, setRefundModal] = useState(false)
+  const [refundAmountInput, setRefundAmountInput] = useState('')
+  const [refundReason, setRefundReason] = useState('')
+  const [refundSubmitting, setRefundSubmitting] = useState(false)
+  const [refundError, setRefundError] = useState<string | null>(null)
+
+  const [voidModal, setVoidModal] = useState<{ reissue: boolean } | null>(null)
+  const [voidReasonInput, setVoidReasonInput] = useState('')
+  const [voidSubmitting, setVoidSubmitting] = useState(false)
+  const [voidError, setVoidError] = useState<string | null>(null)
+
   // Editable state
   const [lines, setLines] = useState<LineItem[]>([])
   const [notes, setNotes] = useState('')
@@ -396,34 +415,92 @@ export default function InvoiceDetailPage({
     load()
   }
 
-  async function markPaid() {
-    const method = prompt('Payment method (check/wire/other)', 'check')
-    if (!method) return
-    setBusy(true)
-    await fetch(`/api/admin/invoices/${id}/mark-paid`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paid_method: method, paid_note: 'Marked paid by admin' }),
-    })
-    setBusy(false)
-    load()
+  function openPaidModal() {
+    if (!detail) return
+    setPaidMethod('check')
+    setPaidAmountInput(centsToInput(detail.invoice.total_due_cents))
+    setPaidReference('')
+    setPaidNote('')
+    setPaidError(null)
+    setPaidModal(true)
   }
 
-  async function voidInvoice(reissue: boolean) {
-    const reason = prompt('Void reason (min 5 chars):')
-    if (!reason || reason.length < 5) return
-    setBusy(true)
-    const endpoint = reissue ? 'void-and-reissue' : 'void'
-    const res = await fetch(`/api/admin/invoices/${id}/${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ void_reason: reason }),
-    })
-    const data = await res.json()
-    setBusy(false)
-    if (!res.ok) { alert(data.error); return }
-    if (reissue) router.push(`/admin/invoices/${data.new_invoice.id}`)
-    else load()
+  async function submitMarkPaid() {
+    if (!detail) return
+    setPaidSubmitting(true)
+    setPaidError(null)
+    try {
+      const amountCents = inputToCents(paidAmountInput)
+      if (!isFinite(amountCents) || amountCents <= 0) {
+        setPaidError('Amount must be greater than zero.')
+        return
+      }
+      if (amountCents > detail.invoice.total_due_cents) {
+        setPaidError(`Amount exceeds invoice total (${formatCents(detail.invoice.total_due_cents)}).`)
+        return
+      }
+      const res = await fetch(`/api/admin/invoices/${id}/mark-paid`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paid_method: paidMethod,
+          amount_paid_cents: amountCents,
+          payment_reference: paidReference.trim() || null,
+          paid_note: paidNote.trim() || null,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setPaidError(data.error ?? 'Mark-paid failed')
+        return
+      }
+      setPaidModal(false)
+      await load()
+    } catch (e) {
+      setPaidError(e instanceof Error ? e.message : 'Mark-paid failed')
+    } finally {
+      setPaidSubmitting(false)
+    }
+  }
+
+  function openVoidModal(reissue: boolean) {
+    setVoidReasonInput('')
+    setVoidError(null)
+    setVoidModal({ reissue })
+  }
+
+  async function submitVoid() {
+    if (!voidModal) return
+    const reason = voidReasonInput.trim()
+    if (reason.length < 5) {
+      setVoidError('Reason must be at least 5 characters.')
+      return
+    }
+    setVoidSubmitting(true)
+    setVoidError(null)
+    try {
+      const endpoint = voidModal.reissue ? 'void-and-reissue' : 'void'
+      const res = await fetch(`/api/admin/invoices/${id}/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ void_reason: reason }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setVoidError(data.error ?? 'Void failed')
+        return
+      }
+      setVoidModal(null)
+      if (voidModal.reissue && data.new_invoice?.id) {
+        router.push(`/admin/invoices/${data.new_invoice.id}`)
+      } else {
+        await load()
+      }
+    } catch (e) {
+      setVoidError(e instanceof Error ? e.message : 'Void failed')
+    } finally {
+      setVoidSubmitting(false)
+    }
   }
 
   async function sendSms() {
@@ -470,20 +547,50 @@ export default function InvoiceDetailPage({
     router.push('/admin/invoices')
   }
 
-  async function refund() {
-    const reason = prompt('Refund reason:')
-    if (!reason) return
-    setBusy(true)
-    const res = await fetch(`/api/admin/invoices/${id}/refund`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reason }),
-    })
-    const data = await res.json()
-    setBusy(false)
-    if (!res.ok) { alert(data.error ?? 'Refund failed'); return }
-    alert(data.note ?? 'Refund recorded.')
-    load()
+  function openRefundModal() {
+    if (!detail) return
+    setRefundAmountInput(centsToInput(detail.invoice.total_due_cents))
+    setRefundReason('')
+    setRefundError(null)
+    setRefundModal(true)
+  }
+
+  async function submitRefund() {
+    if (!detail) return
+    const reason = refundReason.trim()
+    if (!reason) {
+      setRefundError('Reason is required.')
+      return
+    }
+    const amountCents = inputToCents(refundAmountInput)
+    if (!isFinite(amountCents) || amountCents <= 0) {
+      setRefundError('Amount must be greater than zero.')
+      return
+    }
+    if (amountCents > detail.invoice.total_due_cents) {
+      setRefundError(`Amount exceeds invoice total (${formatCents(detail.invoice.total_due_cents)}).`)
+      return
+    }
+    setRefundSubmitting(true)
+    setRefundError(null)
+    try {
+      const res = await fetch(`/api/admin/invoices/${id}/refund`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason, amount_cents: amountCents }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setRefundError(data.error ?? 'Refund failed')
+        return
+      }
+      setRefundModal(false)
+      await load()
+    } catch (e) {
+      setRefundError(e instanceof Error ? e.message : 'Refund failed')
+    } finally {
+      setRefundSubmitting(false)
+    }
   }
 
   async function resend() {
@@ -723,11 +830,11 @@ export default function InvoiceDetailPage({
                 <CreditCard className="w-3.5 h-3.5" /> Payment Link
               </button>
             )}
-            <button onClick={markPaid} disabled={busy} className="bg-emerald-500 text-white rounded px-3 py-1.5 text-sm">
+            <button onClick={openPaidModal} disabled={busy} className="bg-emerald-500 text-white rounded px-3 py-1.5 text-sm">
               Mark Paid
             </button>
-            <button onClick={() => voidInvoice(false)} disabled={busy} className="bg-slate-100 rounded px-3 py-1.5 text-sm">Void</button>
-            <button onClick={() => voidInvoice(true)} disabled={busy} className="bg-orange-100 text-orange-900 rounded px-3 py-1.5 text-sm">
+            <button onClick={() => openVoidModal(false)} disabled={busy} className="bg-slate-100 rounded px-3 py-1.5 text-sm">Void</button>
+            <button onClick={() => openVoidModal(true)} disabled={busy} className="bg-orange-100 text-orange-900 rounded px-3 py-1.5 text-sm">
               Void &amp; Re-issue
             </button>
           </>
@@ -745,10 +852,10 @@ export default function InvoiceDetailPage({
 
         {s === 'paid' && (
           <>
-            <button onClick={refund} disabled={busy} className="bg-red-100 text-red-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1 disabled:opacity-50">
+            <button onClick={openRefundModal} disabled={busy} className="bg-red-100 text-red-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1 disabled:opacity-50">
               <RotateCcw className="w-3.5 h-3.5" /> Refund
             </button>
-            <button onClick={() => voidInvoice(true)} disabled={busy} className="bg-orange-100 text-orange-900 rounded px-3 py-1.5 text-sm">
+            <button onClick={() => openVoidModal(true)} disabled={busy} className="bg-orange-100 text-orange-900 rounded px-3 py-1.5 text-sm">
               Void &amp; Re-issue
             </button>
           </>
@@ -1507,6 +1614,238 @@ export default function InvoiceDetailPage({
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Mark Paid modal */}
+      {paidModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-bold">Mark invoice paid</h2>
+                <p className="text-sm text-slate-600">
+                  Record a payment against this invoice. Partial amounts are allowed — the invoice stays open until fully paid.
+                </p>
+              </div>
+              <button onClick={() => setPaidModal(false)} className="text-slate-400 hover:text-slate-600">
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block text-sm">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Method</span>
+                  <select
+                    value={paidMethod}
+                    onChange={(e) => setPaidMethod(e.target.value as typeof paidMethod)}
+                    className="w-full border border-slate-300 rounded px-2 py-1.5 mt-1 bg-white"
+                  >
+                    <option value="check">Check</option>
+                    <option value="wire">Wire</option>
+                    <option value="stripe">Stripe</option>
+                    <option value="cash">Cash</option>
+                    <option value="trade">Trade</option>
+                    <option value="zero_balance">Zero balance</option>
+                    <option value="other">Other</option>
+                  </select>
+                </label>
+                <label className="block text-sm">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Amount ($)</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={paidAmountInput}
+                    onChange={(e) => setPaidAmountInput(e.target.value)}
+                    onBlur={() => {
+                      const cents = inputToCents(paidAmountInput)
+                      if (isFinite(cents) && cents >= 0) {
+                        setPaidAmountInput(centsToInput(cents))
+                      }
+                    }}
+                    className="w-full border border-slate-300 rounded px-2 py-1.5 mt-1"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">
+                    Total due: {formatCents(detail?.invoice.total_due_cents ?? 0)}
+                  </span>
+                </label>
+              </div>
+              <label className="block text-sm">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Reference (check #, wire confirmation, etc.)
+                </span>
+                <input
+                  type="text"
+                  value={paidReference}
+                  onChange={(e) => setPaidReference(e.target.value)}
+                  placeholder="optional"
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 mt-1"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Note</span>
+                <textarea
+                  value={paidNote}
+                  onChange={(e) => setPaidNote(e.target.value)}
+                  rows={2}
+                  placeholder="optional internal note"
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 mt-1 resize-y"
+                />
+              </label>
+              {paidError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-3 py-2">
+                  {paidError}
+                </div>
+              )}
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  onClick={() => setPaidModal(false)}
+                  className="bg-slate-100 text-slate-700 rounded px-4 py-1.5 text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitMarkPaid}
+                  disabled={paidSubmitting}
+                  className="bg-emerald-500 text-white rounded px-4 py-1.5 text-sm font-semibold disabled:opacity-50"
+                >
+                  {paidSubmitting ? 'Recording…' : 'Record payment'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Refund modal */}
+      {refundModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-bold">Refund invoice</h2>
+                <p className="text-sm text-slate-600">
+                  Stripe-paid invoices reverse the charge automatically. Other payment methods require a manual refund through your channel — the invoice will still be marked void.
+                </p>
+              </div>
+              <button onClick={() => setRefundModal(false)} className="text-slate-400 hover:text-slate-600">
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-sm">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Amount ($)</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={refundAmountInput}
+                  onChange={(e) => setRefundAmountInput(e.target.value)}
+                  onBlur={() => {
+                    const cents = inputToCents(refundAmountInput)
+                    if (isFinite(cents) && cents >= 0) {
+                      setRefundAmountInput(centsToInput(cents))
+                    }
+                  }}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 mt-1"
+                />
+                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                  Invoice total: {formatCents(detail?.invoice.total_due_cents ?? 0)}
+                </span>
+              </label>
+              <label className="block text-sm">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Reason (required)</span>
+                <textarea
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  rows={2}
+                  placeholder="e.g. duplicate charge, customer request, scope change"
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 mt-1 resize-y"
+                />
+              </label>
+              {refundError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-3 py-2">
+                  {refundError}
+                </div>
+              )}
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  onClick={() => setRefundModal(false)}
+                  className="bg-slate-100 text-slate-700 rounded px-4 py-1.5 text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitRefund}
+                  disabled={refundSubmitting}
+                  className="bg-red-600 text-white rounded px-4 py-1.5 text-sm font-semibold disabled:opacity-50"
+                >
+                  {refundSubmitting ? 'Refunding…' : 'Issue refund'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Void modal — used for both Void and Void & Re-issue */}
+      {voidModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-bold">
+                  {voidModal.reissue ? 'Void & re-issue invoice' : 'Void invoice'}
+                </h2>
+                <p className="text-sm text-slate-600">
+                  {voidModal.reissue
+                    ? 'Voids this invoice and creates a new draft you can edit and re-send.'
+                    : 'Marks this invoice as void. Cannot be undone.'}
+                </p>
+              </div>
+              <button onClick={() => setVoidModal(null)} className="text-slate-400 hover:text-slate-600">
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-sm">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Reason (required, min 5 characters)
+                </span>
+                <textarea
+                  value={voidReasonInput}
+                  onChange={(e) => setVoidReasonInput(e.target.value)}
+                  rows={2}
+                  placeholder="e.g. wrong line items, client requested change, superseded by SOW revision"
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 mt-1 resize-y"
+                />
+              </label>
+              {voidError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-3 py-2">
+                  {voidError}
+                </div>
+              )}
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  onClick={() => setVoidModal(null)}
+                  className="bg-slate-100 text-slate-700 rounded px-4 py-1.5 text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitVoid}
+                  disabled={voidSubmitting}
+                  className={`text-white rounded px-4 py-1.5 text-sm font-semibold disabled:opacity-50 ${
+                    voidModal.reissue ? 'bg-orange-600' : 'bg-slate-700'
+                  }`}
+                >
+                  {voidSubmitting ? 'Voiding…' : voidModal.reissue ? 'Void & re-issue' : 'Void invoice'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
