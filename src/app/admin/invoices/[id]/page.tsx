@@ -185,7 +185,12 @@ export default function InvoiceDetailPage({
   const [busy, setBusy] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [dirty, setDirty] = useState(false)
-  const [sendModal, setSendModal] = useState<{ public_url: string; pay_url: string | null } | null>(null)
+  const [sendModal, setSendModal] = useState<{
+    public_url: string
+    pay_url: string | null
+    auto_email?: { success: boolean; recipient?: string; error?: string } | null
+    auto_sms?: { success: boolean; recipient?: string; error?: string } | null
+  } | null>(null)
   // Schedule-send state. scheduleModal=true opens the picker; scheduledRows
   // is the list of pending+past schedules for this invoice (loaded via GET).
   const [scheduleModal, setScheduleModal] = useState(false)
@@ -411,7 +416,12 @@ export default function InvoiceDetailPage({
     const data = await res.json()
     setBusy(false)
     if (!res.ok) { alert(data.error); return }
-    setSendModal({ public_url: data.public_url, pay_url: data.pay_url })
+    setSendModal({
+      public_url: data.public_url,
+      pay_url: data.pay_url,
+      auto_email: data.auto_email,
+      auto_sms: data.auto_sms,
+    })
     load()
   }
 
@@ -1855,9 +1865,36 @@ export default function InvoiceDetailPage({
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-6 max-w-lg w-full space-y-4">
             <h2 className="text-lg font-bold">Invoice sent</h2>
+
+            {(sendModal.auto_email || sendModal.auto_sms) && (
+              <div className="space-y-2">
+                {sendModal.auto_email && (
+                  <div className={`text-sm rounded px-3 py-2 border ${sendModal.auto_email.success
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                    : 'bg-red-50 border-red-200 text-red-800'}`}>
+                    <strong>Email {sendModal.auto_email.success ? 'sent' : 'failed'}:</strong>{' '}
+                    {sendModal.auto_email.success
+                      ? sendModal.auto_email.recipient
+                      : sendModal.auto_email.error}
+                  </div>
+                )}
+                {sendModal.auto_sms && (
+                  <div className={`text-sm rounded px-3 py-2 border ${sendModal.auto_sms.success
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                    : 'bg-red-50 border-red-200 text-red-800'}`}>
+                    <strong>SMS {sendModal.auto_sms.success ? 'sent' : 'failed'}:</strong>{' '}
+                    {sendModal.auto_sms.success
+                      ? sendModal.auto_sms.recipient
+                      : sendModal.auto_sms.error}
+                  </div>
+                )}
+              </div>
+            )}
+
             <p className="text-sm text-slate-600">
-              Paste this link into your preferred channel. Once the client views it, status flips
-              to &apos;viewed&apos; automatically.
+              {(sendModal.auto_email?.success || sendModal.auto_sms?.success)
+                ? 'You can also share this magic link directly:'
+                : 'Paste this link into your preferred channel. Once the client views it, status flips to viewed automatically.'}
             </p>
             <div className="bg-slate-50 border border-slate-200 rounded p-2 flex items-center gap-2">
               <code className="flex-1 text-xs truncate">{sendModal.public_url}</code>

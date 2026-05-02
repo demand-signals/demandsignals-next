@@ -1,7 +1,17 @@
 // ── POST /api/admin/invoices/[id]/send ──────────────────────────────
-// Draft → sent flow. Renders PDF, uploads to R2, auto-pays on $0.
-// Does NOT auto-email/SMS — use /send-sms and /send-email routes for that,
-// or the dispatch flag on this endpoint.
+// Draft → sent flow. Renders PDF, uploads to R2, auto-pays on $0,
+// then auto-fires email + SMS to the prospect (best-effort).
+//
+// Auto-send rules (mirrors SOW behavior):
+//   - email auto-fires when prospect has owner_email or business_email
+//   - SMS auto-fires when prospect has owner_phone or business_phone
+//   - both/either failing does NOT roll back the send — the magic link
+//     is already live on demandsignals.co/invoice/<n>/<uuid> and admin
+//     can re-fire via the Email / SMS / Resend buttons (which preview first)
+//
+// Manual send buttons (/send-email, /send-sms, /resend) should preview
+// before firing — see Project (B). This auto-send path is the
+// "do-it-all-now" surface and intentionally skips the preview.
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -12,6 +22,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { renderInvoicePdf } from '@/lib/pdf/invoice'
 import { getInvoicePaymentSummary, getInvoiceProjectMeta } from '@/lib/invoice-context'
 import { uploadPrivate, deletePrivate } from '@/lib/r2-storage'
+import { dispatchInvoiceEmail, dispatchInvoiceSms } from '@/lib/invoice-send'
 import type { InvoiceWithLineItems } from '@/lib/invoice-types'
 
 export async function POST(
@@ -24,7 +35,7 @@ export async function POST(
 
   const { data: invoice, error: fetchErr } = await supabaseAdmin
     .from('invoices')
-    .select('*, prospect:prospects(business_name, owner_name, owner_email, owner_phone, address, city, state, zip)')
+    .select('*, prospect:prospects(business_name, owner_name, owner_email, business_email, owner_phone, business_phone, address, city, state, zip)')
     .eq('id', id)
     .maybeSingle()
 
@@ -142,6 +153,35 @@ export async function POST(
     }
   }
 
+  // Auto-fire email + SMS (best-effort; mirrors SOW send route).
+  // Skips for zero-balance auto-paid invoices — there's nothing to collect,
+  // the receipt path handles that notification flow.
+  // Failures here do NOT roll back the send. Admin can re-fire via the
+  // Email / SMS / Resend buttons (which preview-before-send).
+  let autoEmailResult: Awaited<ReturnType<typeof dispatchInvoiceEmail>> | null = null
+  let autoSmsResult: Awaited<ReturnType<typeof dispatchInvoiceSms>> | null = null
+  if (!isZero) {
+    const ownerEmail = invoice.prospect?.owner_email ?? invoice.prospect?.business_email ?? null
+    const ownerPhone = invoice.prospect?.owner_phone ?? invoice.prospect?.business_phone ?? null
+
+    if (ownerEmail) {
+      autoEmailResult = await dispatchInvoiceEmail(id, { createdBy: auth.user.id }).catch(
+        (e: unknown) => ({
+          success: false,
+          error: `auto-email threw: ${e instanceof Error ? e.message : String(e)}`,
+        }),
+      )
+    }
+    if (ownerPhone) {
+      autoSmsResult = await dispatchInvoiceSms(id, { createdBy: auth.user.id }).catch(
+        (e: unknown) => ({
+          success: false,
+          error: `auto-sms threw: ${e instanceof Error ? e.message : String(e)}`,
+        }),
+      )
+    }
+  }
+
   const publicUrl = `https://demandsignals.co/invoice/${invoice.invoice_number}/${invoice.public_uuid}`
 
   return NextResponse.json({
@@ -151,5 +191,7 @@ export async function POST(
       ? null
       : `https://demandsignals.co/invoice/${invoice.invoice_number}/${invoice.public_uuid}#pay`,
     status: isZero ? 'paid' : 'sent',
+    auto_email: autoEmailResult,
+    auto_sms: autoSmsResult,
   })
 }
