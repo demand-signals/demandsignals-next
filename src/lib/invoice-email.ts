@@ -19,6 +19,95 @@ export async function isEmailEnabled(): Promise<boolean> {
   return data?.value === true || data?.value === 'true'
 }
 
+/**
+ * Reminder-flavored variant of buildInvoiceEmail. Subject + body are
+ * tuned to be a nudge, not a first-time issuance. Same magic link,
+ * same UTM tagging.
+ *
+ * `tone`:
+ *   - 'preemptive' = "due in N days" (friendly nudge before due)
+ *   - 'past_due'   = "past due — please settle" (stronger ask, after due)
+ *   - 'day_of'     = "due today"
+ */
+export function buildInvoiceReminderEmail(
+  invoice: Invoice,
+  prospect: { business_name?: string; owner_email?: string | null; owner_name?: string | null },
+  reminderLabel: string,
+  tone: 'preemptive' | 'past_due' | 'day_of',
+  send_id?: string,
+): { subject: string; html: string; text: string; publicUrl: string } {
+  const baseUrl = `https://demandsignals.co/invoice/${invoice.invoice_number}/${invoice.public_uuid}`
+  const trackedBase = send_id ? `${baseUrl}?e=${send_id}` : baseUrl
+  const { trackLink } = require('@/lib/track-link') as typeof import('@/lib/track-link')
+  const publicUrl = trackLink(trackedBase, {
+    medium: 'email',
+    campaign: tone === 'past_due' ? 'invoice_chase' : 'invoice_reminder',
+    content: invoice.invoice_number,
+    send_id,
+  })
+  const totalStr = `$${(invoice.total_due_cents / 100).toFixed(2)}`
+  const firstName = prospect.owner_name?.split(' ')[0] ?? 'there'
+  const businessName = prospect.business_name ?? 'your business'
+
+  const subject =
+    tone === 'past_due'
+      ? `Past due: invoice ${invoice.invoice_number} (${totalStr})`
+      : tone === 'day_of'
+        ? `Due today: invoice ${invoice.invoice_number} (${totalStr})`
+        : `Reminder: invoice ${invoice.invoice_number} due ${invoice.due_date ?? 'soon'} (${totalStr})`
+
+  const intro =
+    tone === 'past_due'
+      ? `This is a friendly nudge — invoice ${invoice.invoice_number} for ${businessName} is past due.
+
+Amount owed: ${totalStr}${invoice.due_date ? `\nWas due: ${invoice.due_date}` : ''}
+
+You can settle online below — takes about 30 seconds.`
+      : tone === 'day_of'
+        ? `Just a heads-up that invoice ${invoice.invoice_number} for ${businessName} is due today.
+
+Amount: ${totalStr}
+
+Quickest way to settle:`
+        : `Quick reminder — invoice ${invoice.invoice_number} for ${businessName} is coming up.
+
+Amount: ${totalStr}${invoice.due_date ? `\nDue: ${invoice.due_date}` : ''}
+
+You can pay online below whenever convenient:`
+
+  const text = `Hi ${firstName},
+
+${intro}
+
+${publicUrl}
+
+Questions or already paid? Just reply to this email or call (916) 542-2423.
+
+— Hunter
+Demand Signals
+demandsignals.co
+`
+
+  const ctaColor = tone === 'past_due' ? '#F26419' : '#68c5ad'
+  const ctaLabel = tone === 'past_due' ? 'Settle Invoice' : 'View & Pay Invoice'
+
+  const html = `<!DOCTYPE html>
+<html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#333;line-height:1.6;max-width:600px;margin:0 auto;padding:20px;">
+  <p>Hi ${firstName},</p>
+  <p>${intro.replace(/\n/g, '<br/>')}</p>
+  <p style="text-align:center;margin:32px 0;">
+    <a href="${publicUrl}" style="background:${ctaColor};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">
+      ${ctaLabel}
+    </a>
+  </p>
+  <p style="font-size:12px;color:#999;text-align:center;">${reminderLabel}</p>
+  <p style="font-size:14px;color:#666;">Questions or already paid? Just reply or call (916) 542-2423.</p>
+  <p style="font-size:14px;color:#666;">— Hunter<br/>Demand Signals<br/><a href="https://demandsignals.co">demandsignals.co</a></p>
+</body></html>`
+
+  return { subject, html, text, publicUrl }
+}
+
 export function buildInvoiceEmail(
   invoice: Invoice,
   prospect: { business_name?: string; owner_email?: string | null; owner_name?: string | null },
@@ -117,6 +206,48 @@ export async function sendInvoiceEmail(
           },
         ]
       : undefined,
+  })
+
+  return {
+    success: result.success,
+    message_id: result.message_id,
+    error: result.error,
+  }
+}
+
+/**
+ * Reminder-flavored sender. Same wire format as sendInvoiceEmail, but
+ * the body comes from buildInvoiceReminderEmail (different subject,
+ * different intro). PDF attachment is intentionally optional and
+ * defaulted off — reminders are a nudge, not a re-issuance, so we
+ * don't blast the PDF every time. Magic link with payment is what
+ * matters.
+ */
+export async function sendInvoiceReminderEmail(
+  invoice: Invoice,
+  to: string,
+  prospect: { business_name?: string; owner_email?: string | null; owner_name?: string | null },
+  reminderLabel: string,
+  tone: 'preemptive' | 'past_due' | 'day_of',
+): Promise<{ success: boolean; message_id?: string; error?: string }> {
+  if (!(await isEmailEnabled())) {
+    return { success: false, error: 'Email delivery disabled in config' }
+  }
+
+  const send_id = crypto.randomUUID()
+  const { subject, html, text } = buildInvoiceReminderEmail(invoice, prospect, reminderLabel, tone, send_id)
+
+  const result = await sendEmail({
+    to,
+    kind: 'invoice',
+    subject,
+    html,
+    text,
+    send_id,
+    link: {
+      invoice_id: invoice.id,
+      prospect_id: invoice.prospect_id ?? undefined,
+    },
   })
 
   return {

@@ -19,6 +19,7 @@ import {
   RotateCcw,
   RefreshCw,
   Clock,
+  Bell,
   X as XIcon,
 } from 'lucide-react'
 import { formatCents } from '@/lib/format'
@@ -210,6 +211,26 @@ export default function InvoiceDetailPage({
   const [scheduleOverridePhone, setScheduleOverridePhone] = useState('')
   const [scheduleSubmitting, setScheduleSubmitting] = useState(false)
   const [scheduleError, setScheduleError] = useState<string | null>(null)
+
+  // Reminders modal state. Pre-due offsets fire BEFORE due_date (preemptive
+  // nudges); post-due offsets fire AFTER due_date (chase reminders).
+  const [reminderModal, setReminderModal] = useState(false)
+  const [reminderRows, setReminderRows] = useState<Array<{
+    id: string
+    channel: 'email' | 'sms' | 'both'
+    send_at: string
+    status: 'scheduled' | 'fired' | 'cancelled' | 'failed'
+    fired_at: string | null
+    reminder_label: string | null
+    error_message: string | null
+  }>>([])
+  const [reminderChannel, setReminderChannel] = useState<'email' | 'sms' | 'both'>('email')
+  const [reminderPreDays, setReminderPreDays] = useState<Set<number>>(new Set([3, 1]))
+  const [reminderIncludeDayOf, setReminderIncludeDayOf] = useState(true)
+  const [reminderPostDays, setReminderPostDays] = useState<Set<number>>(new Set([3, 7, 14]))
+  const [reminderSubmitting, setReminderSubmitting] = useState(false)
+  const [reminderError, setReminderError] = useState<string | null>(null)
+  const [reminderSuccess, setReminderSuccess] = useState<string | null>(null)
 
   const [paidModal, setPaidModal] = useState(false)
   const [paidMethod, setPaidMethod] = useState<'check' | 'wire' | 'stripe' | 'cash' | 'trade' | 'zero_balance' | 'other'>('check')
@@ -844,6 +865,87 @@ export default function InvoiceDetailPage({
     await loadScheduledRows()
   }
 
+  // ── Reminders helpers ─────────────────────────────────────────────
+
+  async function loadReminderRows() {
+    try {
+      const res = await fetch(`/api/admin/invoices/${id}/reminders`)
+      if (!res.ok) return
+      const data = await res.json()
+      setReminderRows(data.data ?? [])
+    } catch {
+      /* silent */
+    }
+  }
+
+  function openReminderModal() {
+    setReminderError(null)
+    setReminderSuccess(null)
+    setReminderModal(true)
+    loadReminderRows()
+  }
+
+  function togglePreDay(d: number) {
+    setReminderPreDays((s) => {
+      const next = new Set(s)
+      if (next.has(d)) next.delete(d)
+      else next.add(d)
+      return next
+    })
+  }
+
+  function togglePostDay(d: number) {
+    setReminderPostDays((s) => {
+      const next = new Set(s)
+      if (next.has(d)) next.delete(d)
+      else next.add(d)
+      return next
+    })
+  }
+
+  async function submitReminders() {
+    setReminderSubmitting(true)
+    setReminderError(null)
+    setReminderSuccess(null)
+    try {
+      const res = await fetch(`/api/admin/invoices/${id}/reminders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          channel: reminderChannel,
+          pre_due_days: Array.from(reminderPreDays),
+          post_due_days: Array.from(reminderPostDays),
+          include_day_of: reminderIncludeDayOf,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setReminderError(data.error ?? 'Failed to schedule reminders')
+        return
+      }
+      setReminderSuccess(`Scheduled ${data.inserted} reminder${data.inserted === 1 ? '' : 's'}`)
+      await loadReminderRows()
+    } catch (e) {
+      setReminderError(e instanceof Error ? e.message : 'Failed to schedule reminders')
+    } finally {
+      setReminderSubmitting(false)
+    }
+  }
+
+  async function cancelReminder(reminderId: string) {
+    if (!confirm('Cancel this reminder?')) return
+    const res = await fetch(`/api/admin/invoices/${id}/schedule-send/${reminderId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      alert(data.error ?? 'Cancel failed')
+      return
+    }
+    await loadReminderRows()
+  }
+
   // ── Line item helpers ─────────────────────────────────────────────
 
   function addLine() {
@@ -977,6 +1079,9 @@ export default function InvoiceDetailPage({
             </button>
             <button onClick={openScheduleModal} disabled={busy} className="bg-indigo-100 text-indigo-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" /> Schedule
+            </button>
+            <button onClick={openReminderModal} disabled={busy} className="bg-indigo-100 text-indigo-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
+              <Bell className="w-3.5 h-3.5" /> Reminders
             </button>
             {invoice.total_due_cents > 0 && (
               <button onClick={createPaymentLink} disabled={busy} className="bg-emerald-100 text-emerald-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
@@ -1638,6 +1743,162 @@ export default function InvoiceDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Reminders modal — pre-due preemptive + post-due chase */}
+      {reminderModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-bold">Set reminders</h2>
+                <p className="text-sm text-slate-600">
+                  Schedule preemptive nudges before <strong>{invoice.due_date ?? '(no due date set)'}</strong> and chase reminders after.
+                  Each fires the email/SMS template tuned for "preemptive" or "past-due" tone.
+                </p>
+              </div>
+              <button onClick={() => setReminderModal(false)} className="text-slate-400 hover:text-slate-600">
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            {!invoice.due_date ? (
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded px-3 py-2">
+                This invoice has no <strong>due date</strong>. Set one on the invoice (top of the document) and save before scheduling reminders.
+              </div>
+            ) : (
+              <div className="space-y-4 border-t border-slate-200 pt-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
+                    Channel
+                  </label>
+                  <select
+                    value={reminderChannel}
+                    onChange={(e) => setReminderChannel(e.target.value as 'email' | 'sms' | 'both')}
+                    className="border border-slate-300 rounded px-2 py-1.5 text-sm"
+                  >
+                    <option value="email">Email</option>
+                    <option value="sms">SMS</option>
+                    <option value="both">Both</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                    Before due (preemptive)
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[7, 3, 1].map((d) => (
+                      <label key={d} className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded px-2.5 py-1 text-sm cursor-pointer hover:bg-slate-100">
+                        <input
+                          type="checkbox"
+                          checked={reminderPreDays.has(d)}
+                          onChange={() => togglePreDay(d)}
+                        />
+                        {d} day{d === 1 ? '' : 's'} before
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded px-2.5 py-1 text-sm cursor-pointer hover:bg-slate-100 w-fit">
+                    <input
+                      type="checkbox"
+                      checked={reminderIncludeDayOf}
+                      onChange={(e) => setReminderIncludeDayOf(e.target.checked)}
+                    />
+                    Day of (due today)
+                  </label>
+                </div>
+
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                    After due (chase)
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[3, 7, 14, 30].map((d) => (
+                      <label key={d} className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded px-2.5 py-1 text-sm cursor-pointer hover:bg-slate-100">
+                        <input
+                          type="checkbox"
+                          checked={reminderPostDays.has(d)}
+                          onChange={() => togglePostDay(d)}
+                        />
+                        {d} day{d === 1 ? '' : 's'} past due
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {reminderError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-3 py-2">
+                    {reminderError}
+                  </div>
+                )}
+                {reminderSuccess && (
+                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm rounded px-3 py-2">
+                    {reminderSuccess}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                  <button
+                    onClick={() => setReminderModal(false)}
+                    className="bg-slate-100 text-slate-700 rounded px-4 py-1.5 text-sm"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={submitReminders}
+                    disabled={reminderSubmitting}
+                    className="bg-indigo-600 text-white rounded px-4 py-1.5 text-sm font-semibold disabled:opacity-50"
+                  >
+                    {reminderSubmitting ? 'Scheduling…' : 'Schedule reminders'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {reminderRows.length > 0 && (
+              <div className="border-t border-slate-200 pt-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                  Existing reminders ({reminderRows.length})
+                </h3>
+                <div className="space-y-2">
+                  {reminderRows.map((r) => (
+                    <div key={r.id} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded px-3 py-2 text-sm">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium">
+                          {r.reminder_label ?? '—'}{' '}
+                          <span className="text-slate-400 text-xs">· {new Date(r.send_at).toLocaleString()} · {r.channel}</span>
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          status:{' '}
+                          <span className={
+                            r.status === 'fired' ? 'text-emerald-600 font-semibold'
+                            : r.status === 'failed' ? 'text-red-600 font-semibold'
+                            : r.status === 'cancelled' ? 'text-slate-500'
+                            : 'text-indigo-600 font-semibold'
+                          }>{r.status}</span>
+                          {r.fired_at && ` · fired ${new Date(r.fired_at).toLocaleString()}`}
+                          {r.error_message && ` · ${r.error_message}`}
+                        </div>
+                      </div>
+                      {r.status === 'scheduled' && (
+                        <button
+                          onClick={() => cancelReminder(r.id)}
+                          className="ml-3 text-red-600 hover:text-red-700 text-xs"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Schedule-send modal */}
       {scheduleModal && (

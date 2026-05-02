@@ -18,6 +18,8 @@
 export type LinkMedium = 'email' | 'sms' | 'manual_share' | 'admin_link'
 export type LinkCampaign =
   | 'invoice'
+  | 'invoice_reminder'
+  | 'invoice_chase'
   | 'sow'
   | 'receipt'
   | 'quote_share'

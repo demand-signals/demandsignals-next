@@ -20,7 +20,7 @@
 // callers (booking, contact, subscribe) — that's a wider cleanup.
 
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { sendInvoiceEmail, buildInvoiceEmail } from '@/lib/invoice-email'
+import { sendInvoiceEmail, sendInvoiceReminderEmail, buildInvoiceEmail } from '@/lib/invoice-email'
 import { sendSms } from '@/lib/twilio-sms'
 import { trackLink } from '@/lib/track-link'
 import { getPrivateSignedUrl, uploadPrivate, deletePrivate } from '@/lib/r2-storage'
@@ -37,6 +37,15 @@ interface DispatchEmailOptions {
   scheduledFor?: string
   /** Who triggered this — 'system' for cron, admin user id otherwise. */
   createdBy?: string
+  /**
+   * If set, dispatch uses the reminder-flavored email template instead
+   * of the standard issuance template. Only the cron path passes this
+   * (when kind='reminder' on the queue row).
+   */
+  reminder?: {
+    label: string
+    tone: 'preemptive' | 'past_due' | 'day_of'
+  }
 }
 
 interface DispatchSmsOptions {
@@ -44,6 +53,10 @@ interface DispatchSmsOptions {
   scheduledSendId?: string
   scheduledFor?: string
   createdBy?: string
+  reminder?: {
+    label: string
+    tone: 'preemptive' | 'past_due' | 'day_of'
+  }
 }
 
 interface DispatchResult {
@@ -214,16 +227,17 @@ export async function dispatchInvoiceEmail(
     }
   }
 
-  const result = await sendInvoiceEmail(
-    inv,
-    email,
-    {
-      business_name: inv.prospect?.business_name ?? undefined,
-      owner_email: inv.prospect?.owner_email ?? undefined,
-      owner_name: inv.prospect?.owner_name ?? undefined,
-    },
-    pdfBuffer,
-  )
+  const prospectArg = {
+    business_name: inv.prospect?.business_name ?? undefined,
+    owner_email: inv.prospect?.owner_email ?? undefined,
+    owner_name: inv.prospect?.owner_name ?? undefined,
+  }
+  // Reminder dispatches use the reminder-flavored template (no PDF
+  // attachment by default — reminders are nudges, not re-issuances).
+  // Standard sends carry the PDF for the client's records.
+  const result = options.reminder
+    ? await sendInvoiceReminderEmail(inv, email, prospectArg, options.reminder.label, options.reminder.tone)
+    : await sendInvoiceEmail(inv, email, prospectArg, pdfBuffer)
 
   // Detail logs — invoice_delivery_log + invoice_email_log (per-send diagnostics).
   await supabaseAdmin.from('invoice_delivery_log').insert({
@@ -305,13 +319,27 @@ export async function dispatchInvoiceSms(
   const businessName = inv.prospect?.business_name ?? 'your business'
   const url = trackLink(
     `https://demandsignals.co/invoice/${inv.invoice_number}/${inv.public_uuid}`,
-    { medium: 'sms', campaign: 'invoice', content: inv.invoice_number },
+    {
+      medium: 'sms',
+      campaign: options.reminder?.tone === 'past_due'
+        ? 'invoice_chase'
+        : options.reminder
+          ? 'invoice_reminder'
+          : 'invoice',
+      content: inv.invoice_number,
+    },
   )
   const totalStr =
     inv.total_due_cents === 0
       ? 'complimentary'
       : `$${(inv.total_due_cents / 100).toFixed(2)}`
-  const message = `${businessName}: Your Demand Signals invoice ${inv.invoice_number} (${totalStr}) — ${url}`
+  const message = options.reminder
+    ? options.reminder.tone === 'past_due'
+      ? `${businessName}: Past due — invoice ${inv.invoice_number} (${totalStr}). Settle: ${url}`
+      : options.reminder.tone === 'day_of'
+        ? `${businessName}: Invoice ${inv.invoice_number} (${totalStr}) is due today. Pay: ${url}`
+        : `${businessName}: Reminder — invoice ${inv.invoice_number} (${totalStr})${inv.due_date ? ` due ${inv.due_date}` : ''}. ${url}`
+    : `${businessName}: Your Demand Signals invoice ${inv.invoice_number} (${totalStr}) — ${url}`
 
   const result = await sendSms(phone, message)
 

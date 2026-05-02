@@ -23,11 +23,13 @@ export async function POST(
   const { id } = await params
 
   const body = await request.json().catch(() => ({}))
-  const { send_at, channel, override_email, override_phone } = body as {
+  const { send_at, channel, override_email, override_phone, kind, reminder_label } = body as {
     send_at?: string
     channel?: string
     override_email?: string
     override_phone?: string
+    kind?: 'send' | 'reminder'
+    reminder_label?: string
   }
 
   if (!send_at || !channel) {
@@ -35,6 +37,10 @@ export async function POST(
   }
   if (!VALID_CHANNELS.has(channel)) {
     return NextResponse.json({ error: `channel must be one of: ${Array.from(VALID_CHANNELS).join(', ')}` }, { status: 400 })
+  }
+  const rowKind: 'send' | 'reminder' = kind === 'reminder' ? 'reminder' : 'send'
+  if (rowKind === 'reminder' && !reminder_label) {
+    return NextResponse.json({ error: 'reminder_label is required when kind=reminder' }, { status: 400 })
   }
   const sendAtDate = new Date(send_at)
   if (isNaN(sendAtDate.getTime())) {
@@ -70,9 +76,11 @@ export async function POST(
       send_at: sendAtDate.toISOString(),
       override_email: override_email ?? null,
       override_phone: override_phone ?? null,
+      kind: rowKind,
+      reminder_label: rowKind === 'reminder' ? reminder_label : null,
       created_by: auth.user.id,
     })
-    .select('id, send_at, channel, status')
+    .select('id, send_at, channel, status, kind, reminder_label')
     .single()
 
   if (insErr || !row) {
@@ -103,7 +111,7 @@ export async function GET(
 
   let query = supabaseAdmin
     .from('invoice_scheduled_sends')
-    .select('id, channel, send_at, status, fired_at, override_email, override_phone, error_message, created_at, created_by')
+    .select('id, channel, send_at, status, fired_at, override_email, override_phone, error_message, created_at, created_by, kind, reminder_label')
     .eq('invoice_id', id)
     .order('send_at', { ascending: true })
 

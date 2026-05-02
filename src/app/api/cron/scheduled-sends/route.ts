@@ -29,6 +29,22 @@ interface ScheduledRow {
   send_at: string
   override_email: string | null
   override_phone: string | null
+  kind?: 'send' | 'reminder'
+  reminder_label?: string | null
+}
+
+/**
+ * Infer reminder tone from the label or send-time vs invoice due_date.
+ * Labels we generate ourselves carry the tone-implying words; for
+ * custom labels we fall back to "preemptive" which is the safest
+ * neutral nudge.
+ */
+function inferReminderTone(label: string | null | undefined): 'preemptive' | 'past_due' | 'day_of' {
+  if (!label) return 'preemptive'
+  const lower = label.toLowerCase()
+  if (lower.includes('past due') || lower.includes('overdue') || lower.includes('chase')) return 'past_due'
+  if (lower.includes('due today') || lower.includes('day of')) return 'day_of'
+  return 'preemptive'
 }
 
 export async function GET(request: NextRequest) {
@@ -43,7 +59,7 @@ export async function GET(request: NextRequest) {
 
   const { data: due, error } = await supabaseAdmin
     .from('invoice_scheduled_sends')
-    .select('id, invoice_id, channel, send_at, override_email, override_phone')
+    .select('id, invoice_id, channel, send_at, override_email, override_phone, kind, reminder_label')
     .eq('status', 'scheduled')
     .lte('send_at', now)
     .limit(50) // safety cap per tick — drains in subsequent runs
@@ -82,12 +98,19 @@ export async function GET(request: NextRequest) {
     let smsOk = true
     let combinedError: string | undefined
 
+    // Reminders use the reminder-flavored template; sends use the
+    // standard issuance template. Same wire path otherwise.
+    const reminder = row.kind === 'reminder' && row.reminder_label
+      ? { label: row.reminder_label, tone: inferReminderTone(row.reminder_label) }
+      : undefined
+
     if (row.channel === 'email' || row.channel === 'both') {
       const r = await dispatchInvoiceEmail(row.invoice_id, {
         overrideEmail: row.override_email ?? undefined,
         scheduledSendId: row.id,
         scheduledFor: row.send_at,
         createdBy: 'system',
+        reminder,
       })
       emailOk = r.success
       if (!r.success) combinedError = `email: ${r.error}`
@@ -99,6 +122,7 @@ export async function GET(request: NextRequest) {
         scheduledSendId: row.id,
         scheduledFor: row.send_at,
         createdBy: 'system',
+        reminder,
       })
       smsOk = r.success
       if (!r.success) {
