@@ -43,6 +43,11 @@ export interface InvoiceLineItem {
   discount_label: string | null
   line_total_cents: number
   sort_order: number
+  // Cadence (migration 043). 'one_time' bills only on this invoice;
+  // 'monthly' / 'annual' bill cycle 1 here and Stripe runs the rest as a
+  // subscription. Optional for back-compat with existing types; defaults
+  // to 'one_time' on the DB side.
+  cadence?: 'one_time' | 'monthly' | 'annual'
 }
 
 export interface Invoice {
@@ -102,6 +107,11 @@ export interface Invoice {
   // Auto-generated from invoice shape at save time when admin leaves it blank;
   // otherwise admin-authored. Renders in its own block on the invoice PDF + magic-link page.
   payment_terms: string | null
+  // Subscription term + intent (migration 043). Optional for back-compat
+  // with rows pre-dating 043 (the columns have DEFAULTs on the DB side).
+  term_months?: number | null
+  until_cancelled?: boolean
+  subscription_intent?: 'none' | 'pending' | 'created'
   created_by: string | null
   created_at: string
   updated_at: string

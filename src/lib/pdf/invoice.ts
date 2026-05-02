@@ -144,10 +144,21 @@ function lineItemsTable(inv: InvoiceWithLineItems): string {
 
   const rows = sorted.map((li, i) => {
     const rowBg = i % 2 === 1 ? T.OFF_WHITE : T.WHITE
+    // Cadence annotation per migration 043. Monthly/annual lines bill cycle 1
+    // here and Stripe runs the rest as a subscription (set-and-forget). The
+    // tag makes that explicit on the PDF so clients understand recurring
+    // billing before paying. Hunter directive 2026-05-02: "nothing in the
+    // invoice says subscription."
+    const cadence = (li as unknown as { cadence?: string }).cadence ?? 'one_time'
+    const cadenceTag = cadence === 'monthly'
+      ? `<span style="display:inline-block;font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;background:${T.VLT};color:${T.TEAL_S};border:1px solid ${T.TEAL_S};border-radius:3px;padding:1px 6px;margin-left:6px;vertical-align:1px">Monthly</span>`
+      : cadence === 'annual'
+        ? `<span style="display:inline-block;font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;background:${T.VLT};color:${T.TEAL_S};border:1px solid ${T.TEAL_S};border-radius:3px;padding:1px 6px;margin-left:6px;vertical-align:1px">Annual</span>`
+        : ''
     return `
     <tr style="background:${rowBg}">
       <td style="padding:10px 11px;border-bottom:1px solid ${T.BORDER};vertical-align:top">
-        <div style="font-size:12px;font-weight:600;color:${T.SLATE}">${esc(li.description)}</div>
+        <div style="font-size:12px;font-weight:600;color:${T.SLATE}">${esc(li.description)}${cadenceTag}</div>
         ${li.discount_label ? `<div style="font-size:10px;color:${T.ORANGE_S};margin-top:2px">${esc(li.discount_label)}</div>` : ''}
       </td>
       <td style="padding:10px 11px;border-bottom:1px solid ${T.BORDER};text-align:right;vertical-align:top;font-size:12px;font-variant-numeric:tabular-nums;color:${T.BODY};white-space:nowrap">${li.quantity}</td>
@@ -287,6 +298,63 @@ function totalsBlock(inv: InvoiceWithLineItems, paySummary?: PaymentSummary): st
   ${inv.late_fee_cents > 0 && !lateFeeApplied
     ? `<p style="font-size:10px;color:${T.GRAY};text-align:right;padding:6px 54px 0;font-family:${FONT_STACK}">Late fee of ${formatCents(inv.late_fee_cents)} applies if unpaid after ${inv.late_fee_grace_days} days past due.</p>`
     : ''}`
+}
+
+// ── Subscription disclosure ───────────────────────────────────────────
+// When the invoice has any recurring lines (cadence=monthly/annual), surface
+// what's about to happen on payment: Stripe sub auto-bills the recurring
+// portion to the same card for the term, set-and-forget. Required by
+// Hunter directive 2026-05-02 — the PDF must say "subscription" so the
+// client understands recurring billing before paying.
+
+function subscriptionDisclosure(inv: InvoiceWithLineItems): string {
+  // Aggregate recurring lines.
+  const monthly = inv.line_items
+    .filter((li) => (li as unknown as { cadence?: string }).cadence === 'monthly')
+    .reduce((s, li) => s + (li.line_total_cents ?? 0), 0)
+  const annual = inv.line_items
+    .filter((li) => (li as unknown as { cadence?: string }).cadence === 'annual')
+    .reduce((s, li) => s + (li.line_total_cents ?? 0), 0)
+
+  if (monthly === 0 && annual === 0) return ''
+
+  const termMonths = (inv as unknown as { term_months?: number | null }).term_months ?? null
+  const untilCancelled = (inv as unknown as { until_cancelled?: boolean }).until_cancelled ?? false
+  const termPhrase = untilCancelled
+    ? 'until cancelled'
+    : termMonths
+      ? `for ${termMonths} months`
+      : 'for the contract term'
+
+  // Bullet list of the recurring components.
+  const lines: string[] = []
+  if (monthly > 0) lines.push(`<li><strong>${formatCents(monthly)}/mo</strong> — auto-charges every month</li>`)
+  if (annual > 0) lines.push(`<li><strong>${formatCents(annual)}/yr</strong> — auto-charges every year</li>`)
+
+  return `
+  <div style="
+    margin:20px 54px 0;
+    background:${T.VLT};
+    border:1px solid ${T.TEAL_S};
+    border-radius:6px;
+    padding:14px 20px;
+    font-family:${FONT_STACK};
+  ">
+    <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.TEAL_S};margin-bottom:8px">RECURRING SUBSCRIPTION</p>
+    <p style="font-size:12px;color:${T.BODY};line-height:1.55;margin-bottom:8px">
+      This invoice covers cycle 1 of an ongoing subscription. After payment, the same card
+      auto-bills the recurring portion ${termPhrase}:
+    </p>
+    <ul style="font-size:12px;color:${T.BODY};line-height:1.65;margin:0 0 8px 18px;padding:0">
+      ${lines.join('')}
+    </ul>
+    <p style="font-size:10px;color:${T.GRAY};line-height:1.55">
+      Card captured once on this invoice — you will not be sent monthly invoices to chase.
+      ${untilCancelled
+        ? 'You can cancel anytime by contacting Demand Signals.'
+        : 'The subscription stops automatically at the end of the term.'}
+    </p>
+  </div>`
 }
 
 // ── Payment card ──────────────────────────────────────────────────────
@@ -613,6 +681,7 @@ export async function renderInvoicePdf(
     ${lineItemsTable(invoice)}
     ${totalsBlock(invoice, opts.paymentSummary)}
     ${projectBalanceBlock(opts.project)}
+    ${subscriptionDisclosure(invoice)}
     ${paymentCard(invoice, opts.paymentSummary)}
     ${paymentTermsSection(invoice)}
     ${notesSection(invoice)}

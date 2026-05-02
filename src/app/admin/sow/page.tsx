@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Loader2, Plus } from 'lucide-react'
+import { formatCents } from '@/lib/format'
 
 interface SowRow {
   id: string
@@ -13,7 +14,15 @@ interface SowRow {
   prospects: { business_name: string } | null
   created_at: string
   sent_at: string | null
+  viewed_at: string | null
   accepted_at: string | null
+  // Computed server-side per migration 043 + walk-phases:
+  //   project_cents = sum of one-time deliverables
+  //   subscriptions_cents = sum of monthly/quarterly/annual at full per-cycle price
+  //   computed_total_cents = project_cents + subscriptions_cents (first-cycle billable)
+  project_cents: number
+  subscriptions_cents: number
+  computed_total_cents: number
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -23,6 +32,11 @@ const STATUS_COLORS: Record<string, string> = {
   accepted: 'bg-emerald-100 text-emerald-700',
   declined: 'bg-slate-200 text-slate-600',
   void: 'bg-red-100 text-red-700 opacity-60',
+}
+
+function fmtDate(iso: string | null): string {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString()
 }
 
 export default function AdminSowPage() {
@@ -80,11 +94,14 @@ export default function AdminSowPage() {
             <thead className="bg-slate-50 text-xs text-slate-500 uppercase">
               <tr>
                 <th className="text-left px-4 py-3">SOW #</th>
+                <th className="text-left px-4 py-3">Prospect</th>
                 <th className="text-left px-4 py-3">Title</th>
-                <th className="text-left px-4 py-3">Client</th>
-                <th className="text-right px-4 py-3">Total</th>
+                <th className="text-right px-4 py-3">$ Project</th>
+                <th className="text-right px-4 py-3">$ Subscriptions</th>
+                <th className="text-right px-4 py-3">$ Total</th>
                 <th className="text-left px-4 py-3">Status</th>
                 <th className="text-left px-4 py-3">Sent</th>
+                <th className="text-left px-4 py-3">Last Viewed</th>
               </tr>
             </thead>
             <tbody>
@@ -95,10 +112,18 @@ export default function AdminSowPage() {
                       {s.sow_number}
                     </Link>
                   </td>
-                  <td className="px-4 py-3">{s.title}</td>
                   <td className="px-4 py-3">{s.prospects?.business_name ?? '—'}</td>
-                  <td className="px-4 py-3 text-right">
-                    ${(s.pricing.total_cents / 100).toFixed(2)}
+                  <td className="px-4 py-3">{s.title}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {s.project_cents > 0 ? formatCents(s.project_cents) : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {s.subscriptions_cents > 0
+                      ? <>{formatCents(s.subscriptions_cents)}<span className="text-xs text-slate-400">/cycle</span></>
+                      : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold tabular-nums">
+                    {formatCents(s.computed_total_cents > 0 ? s.computed_total_cents : (s.pricing?.total_cents ?? 0))}
                   </td>
                   <td className="px-4 py-3">
                     <span
@@ -109,9 +134,8 @@ export default function AdminSowPage() {
                       {s.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-500">
-                    {s.sent_at ? new Date(s.sent_at).toLocaleDateString() : '—'}
-                  </td>
+                  <td className="px-4 py-3 text-xs text-slate-500">{fmtDate(s.sent_at)}</td>
+                  <td className="px-4 py-3 text-xs text-slate-500">{fmtDate(s.viewed_at)}</td>
                 </tr>
               ))}
             </tbody>

@@ -44,7 +44,11 @@ export async function GET(request: NextRequest) {
   let q = supabaseAdmin
     .from('invoices')
     .select(
-      'id, invoice_number, kind, prospect_id, status, total_due_cents, currency, auto_generated, auto_trigger, created_at, sent_at, paid_at, stripe_payment_link_url, prospects(business_name)',
+      `id, invoice_number, kind, prospect_id, status, total_due_cents, currency,
+       auto_generated, auto_trigger, created_at, sent_at, viewed_at, paid_at,
+       stripe_payment_link_url, subscription_intent, term_months, until_cancelled,
+       prospects(business_name),
+       invoice_line_items(line_total_cents, cadence)`,
       { count: 'exact' },
     )
     .order('created_at', { ascending: false })
@@ -59,7 +63,25 @@ export async function GET(request: NextRequest) {
   const { data, count, error } = await q
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ invoices: data ?? [], total: count ?? 0, limit, offset })
+  // Per-row split: $ Project (one-time line totals) + $ Subscriptions
+  // (monthly+annual line totals at full per-cycle price). Old rows
+  // pre-cadence count entirely as one_time. The existing total_due_cents
+  // stays as-is (= one-time + first cycle of recurring), used for the
+  // $ Total column in the list.
+  type LineRow = { line_total_cents: number | null; cadence: string | null }
+  const enriched = (data ?? []).map((row) => {
+    const lines = (row as unknown as { invoice_line_items?: LineRow[] }).invoice_line_items ?? []
+    let oneTimeCents = 0
+    let recurringCents = 0
+    for (const li of lines) {
+      const v = li.line_total_cents ?? 0
+      if (li.cadence === 'monthly' || li.cadence === 'annual') recurringCents += v
+      else oneTimeCents += v
+    }
+    return { ...row, project_cents: oneTimeCents, subscriptions_cents: recurringCents }
+  })
+
+  return NextResponse.json({ invoices: enriched, total: count ?? 0, limit, offset })
 }
 
 export async function POST(request: NextRequest) {

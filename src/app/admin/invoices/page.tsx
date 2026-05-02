@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Loader2, Plus } from 'lucide-react'
+import { formatCents } from '@/lib/format'
 
 interface InvoiceRow {
   id: string
@@ -14,9 +15,19 @@ interface InvoiceRow {
   auto_trigger: string | null
   created_at: string
   sent_at: string | null
+  viewed_at: string | null
   paid_at: string | null
   stripe_payment_link_url: string | null
+  subscription_intent: 'none' | 'pending' | 'created'
+  term_months: number | null
+  until_cancelled: boolean
   prospects: { business_name: string } | null
+  // Computed server-side per migration 043:
+  //   project_cents = sum of one_time line totals
+  //   subscriptions_cents = sum of monthly+annual line totals at full per-cycle price
+  // total_due_cents stays as-is (= project + first cycle of recurring) and feeds $ Total.
+  project_cents: number
+  subscriptions_cents: number
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -27,36 +38,27 @@ const STATUS_COLORS: Record<string, string> = {
   void: 'bg-red-100 text-red-700 opacity-60',
 }
 
-const KIND_LABELS: Record<string, string> = {
-  quote_driven: 'Quote',
-  business: 'Business',
-  subscription_cycle: 'Subscription',
-  restaurant_rule: '🍽️ Restaurant',
-}
-
-function formatCents(c: number): string {
-  const dollars = Math.abs(c) / 100
-  return `${c < 0 ? '-' : ''}$${dollars.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+function fmtDate(iso: string | null): string {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString()
 }
 
 export default function AdminInvoicesPage() {
   const [invoices, setInvoices] = useState<InvoiceRow[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>('')
-  const [kindFilter, setKindFilter] = useState<string>('')
   const [autoOnly, setAutoOnly] = useState(false)
 
   useEffect(() => {
     setLoading(true)
     const sp = new URLSearchParams()
     if (statusFilter) sp.set('status', statusFilter)
-    if (kindFilter) sp.set('kind', kindFilter)
     if (autoOnly) sp.set('auto_generated', 'true')
     fetch(`/api/admin/invoices?${sp}`)
       .then((r) => r.json())
       .then((d) => setInvoices(d.invoices ?? []))
       .finally(() => setLoading(false))
-  }, [statusFilter, kindFilter, autoOnly])
+  }, [statusFilter, autoOnly])
 
   const needsReview = invoices.filter((i) => i.auto_generated && i.status === 'draft').length
   const outstanding = invoices
@@ -104,20 +106,6 @@ export default function AdminInvoicesPage() {
             <option value="void">Void</option>
           </select>
         </label>
-        <label>
-          Kind:&nbsp;
-          <select
-            value={kindFilter}
-            onChange={(e) => setKindFilter(e.target.value)}
-            className="border border-slate-200 rounded px-2 py-1"
-          >
-            <option value="">All</option>
-            <option value="quote_driven">Quote-driven</option>
-            <option value="business">Business</option>
-            <option value="subscription_cycle">Subscription</option>
-            <option value="restaurant_rule">Restaurant Rule</option>
-          </select>
-        </label>
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -140,12 +128,13 @@ export default function AdminInvoicesPage() {
             <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
               <tr>
                 <th className="text-left px-4 py-3">Invoice #</th>
-                <th className="text-left px-4 py-3">Kind</th>
                 <th className="text-left px-4 py-3">Client</th>
-                <th className="text-right px-4 py-3">Total</th>
+                <th className="text-right px-4 py-3">$ Project</th>
+                <th className="text-right px-4 py-3">$ Subscriptions</th>
+                <th className="text-right px-4 py-3">$ Total</th>
                 <th className="text-left px-4 py-3">Status</th>
-                <th className="text-left px-4 py-3">Created</th>
                 <th className="text-left px-4 py-3">Sent</th>
+                <th className="text-left px-4 py-3">Last Viewed</th>
               </tr>
             </thead>
             <tbody>
@@ -162,11 +151,25 @@ export default function AdminInvoicesPage() {
                       {inv.invoice_number}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-600">
-                    {KIND_LABELS[inv.kind] ?? inv.kind}
-                  </td>
                   <td className="px-4 py-3">{inv.prospects?.business_name ?? '—'}</td>
-                  <td className="px-4 py-3 text-right font-medium">
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {inv.project_cents > 0 ? formatCents(inv.project_cents) : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {inv.subscriptions_cents > 0
+                      ? <>
+                          {formatCents(inv.subscriptions_cents)}
+                          <span className="text-xs text-slate-400">/cycle</span>
+                          {inv.subscription_intent === 'created' && (
+                            <span className="ml-1 text-[10px] text-emerald-700" title="Stripe subscription is live">●</span>
+                          )}
+                          {inv.subscription_intent === 'pending' && (
+                            <span className="ml-1 text-[10px] text-amber-600" title="Stripe subscription will be created on payment">○</span>
+                          )}
+                        </>
+                      : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold tabular-nums">
                     {formatCents(inv.total_due_cents)}
                   </td>
                   <td className="px-4 py-3">
@@ -178,12 +181,8 @@ export default function AdminInvoicesPage() {
                       {inv.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-500">
-                    {new Date(inv.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-slate-500">
-                    {inv.sent_at ? new Date(inv.sent_at).toLocaleDateString() : '—'}
-                  </td>
+                  <td className="px-4 py-3 text-xs text-slate-500">{fmtDate(inv.sent_at)}</td>
+                  <td className="px-4 py-3 text-xs text-slate-500">{fmtDate(inv.viewed_at)}</td>
                 </tr>
               ))}
             </tbody>

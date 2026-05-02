@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
   let q = supabaseAdmin
     .from('sow_documents')
-    .select('id, sow_number, title, status, pricing, prospect_id, quote_session_id, created_at, sent_at, accepted_at, prospects(business_name)')
+    .select('id, sow_number, title, status, pricing, phases, prospect_id, quote_session_id, created_at, sent_at, viewed_at, accepted_at, prospects(business_name)')
     .order('created_at', { ascending: false })
 
   if (status) q = q.eq('status', status)
@@ -51,7 +51,40 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await q
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ sows: data ?? [] })
+
+  // Per-row split: $ Project (one-time deliverables) + $ Subscriptions
+  // (monthly + quarterly + annual at full per-cycle price). Walk the
+  // phases jsonb to derive these from deliverables. Old rows lacking
+  // phases fall back to pricing.total_cents in the project column.
+  type Deliverable = { cadence?: string; line_total_cents?: number }
+  type Phase = { deliverables?: Deliverable[] }
+  const enriched = (data ?? []).map((row) => {
+    const phases = ((row as unknown as { phases?: Phase[] | null }).phases ?? []) as Phase[]
+    let oneTimeCents = 0
+    let recurringCents = 0
+    if (Array.isArray(phases) && phases.length > 0) {
+      for (const ph of phases) {
+        for (const d of (ph.deliverables ?? [])) {
+          const v = d.line_total_cents ?? 0
+          if (d.cadence === 'monthly' || d.cadence === 'quarterly' || d.cadence === 'annual') {
+            recurringCents += v
+          } else {
+            oneTimeCents += v
+          }
+        }
+      }
+    } else {
+      // Legacy SOWs (pre-phases) — only have pricing.total_cents. Best
+      // effort: bucket the whole thing into project so admin still sees
+      // a non-zero number rather than a confusing $0.
+      const pricing = (row as unknown as { pricing?: { total_cents?: number } }).pricing
+      oneTimeCents = pricing?.total_cents ?? 0
+    }
+    const totalCents = oneTimeCents + recurringCents
+    return { ...row, project_cents: oneTimeCents, subscriptions_cents: recurringCents, computed_total_cents: totalCents }
+  })
+
+  return NextResponse.json({ sows: enriched })
 }
 
 const deliverableSchema = z.object({
