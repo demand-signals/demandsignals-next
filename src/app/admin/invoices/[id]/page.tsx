@@ -20,6 +20,7 @@ import {
   RefreshCw,
   Clock,
   Bell,
+  Layers,
   X as XIcon,
 } from 'lucide-react'
 import { formatCents } from '@/lib/format'
@@ -231,6 +232,37 @@ export default function InvoiceDetailPage({
   const [reminderSubmitting, setReminderSubmitting] = useState(false)
   const [reminderError, setReminderError] = useState<string | null>(null)
   const [reminderSuccess, setReminderSuccess] = useState<string | null>(null)
+
+  // Payment plan state — split this invoice into N installments
+  const [planModal, setPlanModal] = useState(false)
+  const [planInstallments, setPlanInstallments] = useState<Array<{
+    sequence: number
+    amount_cents: number
+    amount_input: string
+    description: string
+    trigger_type: 'time' | 'on_acceptance'
+    trigger_date: string
+    currency_type: 'cash' | 'tik'
+    expected_payment_method: 'card' | 'check' | 'wire' | 'ach' | 'unspecified'
+  }>>([])
+  const [planExisting, setPlanExisting] = useState<{
+    schedule_id: string | null
+    locked_at: string | null
+    installments: Array<{
+      id: string
+      sequence: number
+      amount_cents: number
+      currency_type: 'cash' | 'tik'
+      trigger_type: string
+      trigger_date: string | null
+      status: string
+      description: string | null
+      invoice_id: string | null
+    }>
+  }>({ schedule_id: null, locked_at: null, installments: [] })
+  const [planSubmitting, setPlanSubmitting] = useState(false)
+  const [planError, setPlanError] = useState<string | null>(null)
+  const [planSuccess, setPlanSuccess] = useState<string | null>(null)
 
   const [paidModal, setPaidModal] = useState(false)
   const [paidMethod, setPaidMethod] = useState<'check' | 'wire' | 'stripe' | 'cash' | 'trade' | 'zero_balance' | 'other'>('check')
@@ -946,6 +978,167 @@ export default function InvoiceDetailPage({
     await loadReminderRows()
   }
 
+  // ── Payment plan helpers ──────────────────────────────────────────
+
+  async function loadPlan() {
+    try {
+      const res = await fetch(`/api/admin/invoices/${id}/payment-plan`)
+      if (!res.ok) return
+      const data = await res.json()
+      setPlanExisting({
+        schedule_id: data.schedule?.id ?? null,
+        locked_at: data.schedule?.locked_at ?? null,
+        installments: data.installments ?? [],
+      })
+    } catch {
+      /* silent */
+    }
+  }
+
+  function seedPlanRows() {
+    if (!detail) return
+    const total = detail.invoice.total_due_cents
+    const half = Math.floor(total / 2)
+    const today = new Date()
+    const in30 = new Date(today.getTime() + 30 * 86_400_000)
+    setPlanInstallments([
+      {
+        sequence: 1,
+        amount_cents: half,
+        amount_input: centsToInput(half),
+        description: 'Deposit',
+        trigger_type: 'on_acceptance',
+        trigger_date: today.toISOString().slice(0, 10),
+        currency_type: 'cash',
+        expected_payment_method: 'unspecified',
+      },
+      {
+        sequence: 2,
+        amount_cents: total - half,
+        amount_input: centsToInput(total - half),
+        description: 'Balance',
+        trigger_type: 'time',
+        trigger_date: in30.toISOString().slice(0, 10),
+        currency_type: 'cash',
+        expected_payment_method: 'unspecified',
+      },
+    ])
+  }
+
+  function openPlanModal() {
+    setPlanError(null)
+    setPlanSuccess(null)
+    setPlanModal(true)
+    loadPlan().then(() => {
+      // If no existing plan, seed two rows split 50/50.
+      if (!planExisting.schedule_id) {
+        seedPlanRows()
+      }
+    })
+  }
+
+  function addPlanRow() {
+    setPlanInstallments((rows) => [
+      ...rows,
+      {
+        sequence: rows.length + 1,
+        amount_cents: 0,
+        amount_input: '0.00',
+        description: `Installment ${rows.length + 1}`,
+        trigger_type: 'time',
+        trigger_date: new Date().toISOString().slice(0, 10),
+        currency_type: 'cash',
+        expected_payment_method: 'unspecified',
+      },
+    ])
+  }
+
+  function removePlanRow(idx: number) {
+    setPlanInstallments((rows) =>
+      rows
+        .filter((_, i) => i !== idx)
+        .map((r, i) => ({ ...r, sequence: i + 1 })),
+    )
+  }
+
+  function updatePlanRow(
+    idx: number,
+    patch: Partial<(typeof planInstallments)[number]>,
+  ) {
+    setPlanInstallments((rows) =>
+      rows.map((r, i) => (i === idx ? { ...r, ...patch } : r)),
+    )
+  }
+
+  async function submitPlan() {
+    if (!detail) return
+    setPlanError(null)
+    setPlanSuccess(null)
+    const sum = planInstallments.reduce((s, r) => s + r.amount_cents, 0)
+    if (sum !== detail.invoice.total_due_cents) {
+      setPlanError(
+        `Installments sum to ${formatCents(sum)} but invoice total is ${formatCents(detail.invoice.total_due_cents)}. They must match.`,
+      )
+      return
+    }
+    if (planInstallments.length < 2) {
+      setPlanError('A payment plan needs at least 2 installments.')
+      return
+    }
+    setPlanSubmitting(true)
+    try {
+      const res = await fetch(`/api/admin/invoices/${id}/payment-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          installments: planInstallments.map((r) => ({
+            sequence: r.sequence,
+            amount_cents: r.amount_cents,
+            description: r.description,
+            trigger_type: r.trigger_type,
+            trigger_date: r.trigger_type === 'time' ? r.trigger_date : undefined,
+            currency_type: r.currency_type,
+            expected_payment_method: r.expected_payment_method,
+          })),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setPlanError(data.error ?? 'Failed to create plan')
+        return
+      }
+      setPlanSuccess('Payment plan created.')
+      await loadPlan()
+    } catch (e) {
+      setPlanError(e instanceof Error ? e.message : 'Failed to create plan')
+    } finally {
+      setPlanSubmitting(false)
+    }
+  }
+
+  async function deletePlan() {
+    if (!confirm('Delete this payment plan? Pending installments will be removed.')) return
+    setPlanSubmitting(true)
+    try {
+      const res = await fetch(`/api/admin/invoices/${id}/payment-plan`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setPlanError(data.error ?? 'Failed to delete plan')
+        return
+      }
+      setPlanSuccess('Payment plan deleted.')
+      setPlanExisting({ schedule_id: null, locked_at: null, installments: [] })
+      seedPlanRows()
+    } catch (e) {
+      setPlanError(e instanceof Error ? e.message : 'Failed to delete plan')
+    } finally {
+      setPlanSubmitting(false)
+    }
+  }
+
   // ── Line item helpers ─────────────────────────────────────────────
 
   function addLine() {
@@ -1082,6 +1275,9 @@ export default function InvoiceDetailPage({
             </button>
             <button onClick={openReminderModal} disabled={busy} className="bg-indigo-100 text-indigo-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
               <Bell className="w-3.5 h-3.5" /> Reminders
+            </button>
+            <button onClick={openPlanModal} disabled={busy} className="bg-purple-100 text-purple-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
+              <Layers className="w-3.5 h-3.5" /> Payment plan
             </button>
             {invoice.total_due_cents > 0 && (
               <button onClick={createPaymentLink} disabled={busy} className="bg-emerald-100 text-emerald-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
@@ -1743,6 +1939,224 @@ export default function InvoiceDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Payment plan modal — split this invoice into N installments */}
+      {planModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 max-w-3xl w-full space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-bold">Payment plan</h2>
+                <p className="text-sm text-slate-600">
+                  Split this invoice into installments. Sum must equal the invoice total
+                  ({formatCents(detail.invoice.total_due_cents)}). Time-triggered installments
+                  fire on their date; on-acceptance installments fire when the plan is created.
+                </p>
+              </div>
+              <button onClick={() => setPlanModal(false)} className="text-slate-400 hover:text-slate-600">
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            {planExisting.schedule_id ? (
+              <div className="space-y-3 border-t border-slate-200 pt-4">
+                <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm rounded px-3 py-2">
+                  Plan exists with {planExisting.installments.length} installments.
+                  {planExisting.locked_at && ' Locked — first installment paid.'}
+                </div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-xs uppercase text-slate-500">
+                      <th className="text-left p-2">#</th>
+                      <th className="text-left p-2">Description</th>
+                      <th className="text-left p-2">Trigger</th>
+                      <th className="text-right p-2">Amount</th>
+                      <th className="text-left p-2">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {planExisting.installments.map((inst) => (
+                      <tr key={inst.id} className="border-t border-slate-100">
+                        <td className="p-2 font-mono text-xs">{inst.sequence}</td>
+                        <td className="p-2">{inst.description ?? '—'}</td>
+                        <td className="p-2 text-xs">
+                          {inst.trigger_type === 'time' ? `On ${inst.trigger_date}` : inst.trigger_type}
+                        </td>
+                        <td className="p-2 text-right font-medium">
+                          {formatCents(inst.amount_cents)}
+                          <span className="text-xs text-slate-400 ml-1">{inst.currency_type === 'tik' ? 'TIK' : 'cash'}</span>
+                        </td>
+                        <td className="p-2 text-xs">{inst.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {planError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-3 py-2">
+                    {planError}
+                  </div>
+                )}
+                {planSuccess && (
+                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm rounded px-3 py-2">
+                    {planSuccess}
+                  </div>
+                )}
+                <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                  <button
+                    onClick={() => setPlanModal(false)}
+                    className="bg-slate-100 text-slate-700 rounded px-4 py-1.5 text-sm"
+                  >
+                    Close
+                  </button>
+                  {!planExisting.locked_at && (
+                    <button
+                      onClick={deletePlan}
+                      disabled={planSubmitting}
+                      className="bg-red-600 text-white rounded px-4 py-1.5 text-sm font-semibold disabled:opacity-50"
+                    >
+                      Delete plan
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3 border-t border-slate-200 pt-4">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-xs uppercase text-slate-500">
+                      <th className="text-left p-2 w-8">#</th>
+                      <th className="text-left p-2">Description</th>
+                      <th className="text-left p-2 w-40">Trigger</th>
+                      <th className="text-right p-2 w-32">Amount</th>
+                      <th className="text-left p-2 w-24">Currency</th>
+                      <th className="w-8" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {planInstallments.map((row, idx) => (
+                      <tr key={idx} className="border-t border-slate-100">
+                        <td className="p-2 font-mono text-xs">{row.sequence}</td>
+                        <td className="p-2">
+                          <input
+                            value={row.description}
+                            onChange={(e) => updatePlanRow(idx, { description: e.target.value })}
+                            className="w-full border border-slate-200 rounded px-2 py-1 text-sm"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <select
+                            value={row.trigger_type}
+                            onChange={(e) => updatePlanRow(idx, { trigger_type: e.target.value as 'time' | 'on_acceptance' })}
+                            className="w-full border border-slate-200 rounded px-1 py-1 text-xs"
+                          >
+                            <option value="on_acceptance">On acceptance</option>
+                            <option value="time">On date</option>
+                          </select>
+                          {row.trigger_type === 'time' && (
+                            <input
+                              type="date"
+                              value={row.trigger_date}
+                              onChange={(e) => updatePlanRow(idx, { trigger_date: e.target.value })}
+                              className="w-full border border-slate-200 rounded px-1 py-1 text-xs mt-1"
+                            />
+                          )}
+                        </td>
+                        <td className="p-2">
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={row.amount_input}
+                            onChange={(e) => updatePlanRow(idx, { amount_input: e.target.value })}
+                            onBlur={() => {
+                              const cents = inputToCents(row.amount_input)
+                              updatePlanRow(idx, {
+                                amount_cents: cents,
+                                amount_input: centsToInput(cents),
+                              })
+                            }}
+                            className="w-full border border-slate-200 rounded px-2 py-1 text-right text-sm"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <select
+                            value={row.currency_type}
+                            onChange={(e) => updatePlanRow(idx, { currency_type: e.target.value as 'cash' | 'tik' })}
+                            className="w-full border border-slate-200 rounded px-1 py-1 text-xs"
+                          >
+                            <option value="cash">Cash</option>
+                            <option value="tik">TIK</option>
+                          </select>
+                        </td>
+                        <td className="p-2">
+                          <button
+                            onClick={() => removePlanRow(idx)}
+                            disabled={planInstallments.length <= 2}
+                            className="text-slate-400 hover:text-red-500 disabled:opacity-25"
+                            title={planInstallments.length <= 2 ? 'Min 2 installments' : 'Remove'}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <button
+                  onClick={addPlanRow}
+                  className="inline-flex items-center gap-1 text-xs bg-slate-100 hover:bg-slate-200 rounded px-3 py-1.5"
+                >
+                  <Plus className="w-3 h-3" /> Add installment
+                </button>
+
+                {/* Sum-check banner */}
+                {(() => {
+                  const sum = planInstallments.reduce((s, r) => s + r.amount_cents, 0)
+                  const target = detail.invoice.total_due_cents
+                  const diff = sum - target
+                  if (diff === 0) {
+                    return (
+                      <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded px-3 py-2">
+                        Sum: {formatCents(sum)} = invoice total {formatCents(target)} ✓
+                      </div>
+                    )
+                  }
+                  return (
+                    <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded px-3 py-2">
+                      Sum: {formatCents(sum)} · invoice total: {formatCents(target)} · {diff > 0 ? `over by ${formatCents(diff)}` : `under by ${formatCents(-diff)}`}
+                    </div>
+                  )
+                })()}
+
+                {planError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-3 py-2">
+                    {planError}
+                  </div>
+                )}
+                {planSuccess && (
+                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm rounded px-3 py-2">
+                    {planSuccess}
+                  </div>
+                )}
+                <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                  <button
+                    onClick={() => setPlanModal(false)}
+                    className="bg-slate-100 text-slate-700 rounded px-4 py-1.5 text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={submitPlan}
+                    disabled={planSubmitting}
+                    className="bg-purple-600 text-white rounded px-4 py-1.5 text-sm font-semibold disabled:opacity-50"
+                  >
+                    {planSubmitting ? 'Creating…' : 'Create plan'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Reminders modal — pre-due preemptive + post-due chase */}
       {reminderModal && (
