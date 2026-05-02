@@ -14,7 +14,7 @@
 // directly bypasses the auth dance entirely.
 
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { sendSowEmail } from '@/lib/sow-email'
+import { sendSowEmail, buildSowEmail } from '@/lib/sow-email'
 import { sendSms } from '@/lib/twilio-sms'
 import { trackLink } from '@/lib/track-link'
 import { getPrivateSignedUrl } from '@/lib/r2-storage'
@@ -245,5 +245,132 @@ export async function dispatchSowSms(
     recipient: phone,
     message_id: result.message_id,
     error: result.error,
+  }
+}
+
+/* ── Preview helpers (no-send) ──────────────────────────────────────── */
+
+export interface SowEmailPreview {
+  ok: true
+  channel: 'email'
+  recipient: string
+  subject: string
+  text: string
+  html: string
+  public_url: string
+  has_pdf_attachment: boolean
+  pdf_filename: string | null
+}
+
+export interface SowSmsPreview {
+  ok: true
+  channel: 'sms'
+  recipient: string
+  message: string
+  public_url: string
+}
+
+export interface SowPreviewError {
+  ok: false
+  error: string
+}
+
+export async function previewSowEmail(
+  sowId: string,
+  overrideEmail?: string,
+): Promise<SowEmailPreview | SowPreviewError> {
+  const { data: sowRow, error } = await supabaseAdmin
+    .from('sow_documents')
+    .select('*, prospect:prospects(business_name, owner_name, owner_email, business_email)')
+    .eq('id', sowId)
+    .maybeSingle()
+
+  if (error) return { ok: false, error: error.message }
+  if (!sowRow) return { ok: false, error: 'SOW not found' }
+
+  const sow = sowRow as SowWithProspect
+  if (!['sent', 'viewed', 'accepted', 'declined'].includes(sow.status)) {
+    return { ok: false, error: `Cannot preview email for an SOW in status ${sow.status}. Use the Send button to dispatch a draft for the first time.` }
+  }
+
+  const recipient =
+    overrideEmail ??
+    sow.prospect?.owner_email ??
+    sow.prospect?.business_email ??
+    null
+  if (!recipient) {
+    return {
+      ok: false,
+      error: 'No email on prospect.owner_email or prospect.business_email',
+    }
+  }
+
+  const { subject, html, text, publicUrl } = buildSowEmail(
+    sow,
+    {
+      business_name: sow.prospect?.business_name ?? undefined,
+      owner_email: sow.prospect?.owner_email ?? undefined,
+      owner_name: sow.prospect?.owner_name ?? undefined,
+    },
+  )
+
+  return {
+    ok: true,
+    channel: 'email',
+    recipient,
+    subject,
+    text,
+    html,
+    public_url: publicUrl,
+    has_pdf_attachment: !!sow.pdf_storage_path,
+    pdf_filename: sow.pdf_storage_path ? `SOW-${sow.sow_number}.pdf` : null,
+  }
+}
+
+export async function previewSowSms(
+  sowId: string,
+  overridePhone?: string,
+): Promise<SowSmsPreview | SowPreviewError> {
+  const { data: sowRow, error } = await supabaseAdmin
+    .from('sow_documents')
+    .select('*, prospect:prospects(business_name, owner_phone, business_phone)')
+    .eq('id', sowId)
+    .maybeSingle()
+
+  if (error) return { ok: false, error: error.message }
+  if (!sowRow) return { ok: false, error: 'SOW not found' }
+
+  const sow = sowRow as SowWithProspect
+  if (!['sent', 'viewed', 'accepted', 'declined'].includes(sow.status)) {
+    return { ok: false, error: `Cannot preview SMS for an SOW in status ${sow.status}. Use the Send button to dispatch a draft for the first time.` }
+  }
+
+  const recipient =
+    overridePhone ??
+    sow.prospect?.owner_phone ??
+    sow.prospect?.business_phone ??
+    null
+  if (!recipient) {
+    return {
+      ok: false,
+      error: 'No phone on prospect.owner_phone or prospect.business_phone',
+    }
+  }
+
+  const businessName = sow.prospect?.business_name ?? 'your business'
+  const url = trackLink(
+    `https://demandsignals.co/sow/${sow.sow_number}/${sow.public_uuid}`,
+    { medium: 'sms', campaign: 'sow', content: sow.sow_number },
+  )
+  const totalCents = (sow as SowDocument).pricing?.total_cents ?? 0
+  const totalStr = totalCents === 0 ? 'review' : `$${(totalCents / 100).toFixed(2)}`
+  const message = `${businessName}: Your Demand Signals SOW ${sow.sow_number} (${totalStr}) — ${url}`
+
+  return {
+    ok: true,
+    channel: 'sms',
+    recipient,
+    message,
+    public_url: url,
   }
 }
