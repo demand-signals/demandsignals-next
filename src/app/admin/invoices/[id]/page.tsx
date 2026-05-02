@@ -230,6 +230,36 @@ export default function InvoiceDetailPage({
   const [voidSubmitting, setVoidSubmitting] = useState(false)
   const [voidError, setVoidError] = useState<string | null>(null)
 
+  // Preview-before-send modal. Fetches the message body from the
+  // matching /preview endpoint, shows it, fires the actual send on confirm.
+  type PreviewState =
+    | { kind: 'email'; loading: true; intent: 'send-email' | 'resend-email' }
+    | {
+        kind: 'email'
+        loading: false
+        intent: 'send-email' | 'resend-email'
+        recipient: string
+        subject: string
+        text: string
+        html: string
+        public_url: string
+        has_pdf_attachment: boolean
+        pdf_filename: string | null
+      }
+    | { kind: 'sms'; loading: true; intent: 'send-sms' | 'resend-sms' }
+    | {
+        kind: 'sms'
+        loading: false
+        intent: 'send-sms' | 'resend-sms'
+        recipient: string
+        message: string
+        public_url: string
+      }
+    | { kind: 'error'; message: string }
+  const [previewModal, setPreviewModal] = useState<PreviewState | null>(null)
+  const [previewSubmitting, setPreviewSubmitting] = useState(false)
+  const [previewResult, setPreviewResult] = useState<string | null>(null)
+
   // Editable state
   const [lines, setLines] = useState<LineItem[]>([])
   const [notes, setNotes] = useState('')
@@ -513,28 +543,147 @@ export default function InvoiceDetailPage({
     }
   }
 
-  async function sendSms() {
-    setBusy(true)
-    const res = await fetch(`/api/admin/invoices/${id}/send-sms`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    })
-    const data = await res.json()
-    setBusy(false)
-    alert(res.ok ? `SMS sent (${data.message_id})` : `SMS failed: ${data.error}`)
-    load()
+  async function openSendSmsPreview() {
+    setPreviewResult(null)
+    setPreviewModal({ kind: 'sms', loading: true, intent: 'send-sms' })
+    try {
+      const res = await fetch(`/api/admin/invoices/${id}/send-sms/preview`)
+      const data = await res.json()
+      if (!res.ok || data.ok === false) {
+        setPreviewModal({ kind: 'error', message: data.error ?? 'Preview failed' })
+        return
+      }
+      setPreviewModal({
+        kind: 'sms',
+        loading: false,
+        intent: 'send-sms',
+        recipient: data.recipient,
+        message: data.message,
+        public_url: data.public_url,
+      })
+    } catch (e) {
+      setPreviewModal({ kind: 'error', message: e instanceof Error ? e.message : 'Preview failed' })
+    }
   }
 
-  async function sendEmail() {
-    setBusy(true)
-    const res = await fetch(`/api/admin/invoices/${id}/send-email`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    })
-    const data = await res.json()
-    setBusy(false)
-    alert(res.ok ? 'Email sent' : `Email failed: ${data.error}`)
-    load()
+  async function openSendEmailPreview() {
+    setPreviewResult(null)
+    setPreviewModal({ kind: 'email', loading: true, intent: 'send-email' })
+    try {
+      const res = await fetch(`/api/admin/invoices/${id}/send-email/preview`)
+      const data = await res.json()
+      if (!res.ok || data.ok === false) {
+        setPreviewModal({ kind: 'error', message: data.error ?? 'Preview failed' })
+        return
+      }
+      setPreviewModal({
+        kind: 'email',
+        loading: false,
+        intent: 'send-email',
+        recipient: data.recipient,
+        subject: data.subject,
+        text: data.text,
+        html: data.html,
+        public_url: data.public_url,
+        has_pdf_attachment: data.has_pdf_attachment,
+        pdf_filename: data.pdf_filename,
+      })
+    } catch (e) {
+      setPreviewModal({ kind: 'error', message: e instanceof Error ? e.message : 'Preview failed' })
+    }
+  }
+
+  async function openResendPreview() {
+    if (!detail) return
+    // Pick channel based on what was originally used (sent_via_channel).
+    // If the invoice was sent via SMS, preview SMS; else preview email.
+    // 'both' previews email (the higher-bandwidth channel; admin can also
+    // hit the SMS button separately if they want a fresh SMS preview).
+    const wasSms = (detail.invoice as typeof detail.invoice & { sent_via_channel?: string | null }).sent_via_channel === 'sms'
+    if (wasSms) {
+      setPreviewResult(null)
+      setPreviewModal({ kind: 'sms', loading: true, intent: 'resend-sms' })
+      try {
+        const res = await fetch(`/api/admin/invoices/${id}/send-sms/preview`)
+        const data = await res.json()
+        if (!res.ok || data.ok === false) {
+          setPreviewModal({ kind: 'error', message: data.error ?? 'Preview failed' })
+          return
+        }
+        setPreviewModal({
+          kind: 'sms',
+          loading: false,
+          intent: 'resend-sms',
+          recipient: data.recipient,
+          message: data.message,
+          public_url: data.public_url,
+        })
+      } catch (e) {
+        setPreviewModal({ kind: 'error', message: e instanceof Error ? e.message : 'Preview failed' })
+      }
+    } else {
+      setPreviewResult(null)
+      setPreviewModal({ kind: 'email', loading: true, intent: 'resend-email' })
+      try {
+        const res = await fetch(`/api/admin/invoices/${id}/send-email/preview`)
+        const data = await res.json()
+        if (!res.ok || data.ok === false) {
+          setPreviewModal({ kind: 'error', message: data.error ?? 'Preview failed' })
+          return
+        }
+        setPreviewModal({
+          kind: 'email',
+          loading: false,
+          intent: 'resend-email',
+          recipient: data.recipient,
+          subject: data.subject,
+          text: data.text,
+          html: data.html,
+          public_url: data.public_url,
+          has_pdf_attachment: data.has_pdf_attachment,
+          pdf_filename: data.pdf_filename,
+        })
+      } catch (e) {
+        setPreviewModal({ kind: 'error', message: e instanceof Error ? e.message : 'Preview failed' })
+      }
+    }
+  }
+
+  async function confirmPreviewAndSend() {
+    if (!previewModal || previewModal.kind === 'error' || previewModal.loading) return
+    setPreviewSubmitting(true)
+    setPreviewResult(null)
+    try {
+      // Map intent → endpoint. send-email and resend-email both fire
+      // the email channel; send-sms and resend-sms both fire SMS. The
+      // distinction in the activity log is which button labelled the
+      // intent — both actually go through dispatchInvoice(Email|Sms).
+      const endpoint =
+        previewModal.intent === 'resend-email' || previewModal.intent === 'resend-sms'
+          ? `/api/admin/invoices/${id}/resend`
+          : previewModal.kind === 'email'
+            ? `/api/admin/invoices/${id}/send-email`
+            : `/api/admin/invoices/${id}/send-sms`
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setPreviewResult(`Failed: ${data.error ?? 'Send failed'}`)
+        return
+      }
+      setPreviewResult(
+        previewModal.kind === 'email'
+          ? `Email sent to ${previewModal.recipient}`
+          : `SMS sent to ${previewModal.recipient}`,
+      )
+      await load()
+    } catch (e) {
+      setPreviewResult(`Failed: ${e instanceof Error ? e.message : 'Send failed'}`)
+    } finally {
+      setPreviewSubmitting(false)
+    }
   }
 
   async function createPaymentLink() {
@@ -601,19 +750,6 @@ export default function InvoiceDetailPage({
     } finally {
       setRefundSubmitting(false)
     }
-  }
-
-  async function resend() {
-    setBusy(true)
-    const res = await fetch(`/api/admin/invoices/${id}/resend`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    })
-    const data = await res.json()
-    setBusy(false)
-    if (!res.ok) { alert(data.error ?? 'Resend failed'); return }
-    alert(`Resent via ${data.channel ?? 'email'}`)
-    load()
   }
 
   // Force-regenerate the cached invoice PDF in R2. Used for invoices
@@ -826,10 +962,10 @@ export default function InvoiceDetailPage({
 
         {isSentOrViewed && (
           <>
-            <button onClick={sendSms} disabled={busy} className="bg-blue-100 text-blue-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
+            <button onClick={openSendSmsPreview} disabled={busy} className="bg-blue-100 text-blue-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
               <MessageSquare className="w-3.5 h-3.5" /> SMS
             </button>
-            <button onClick={sendEmail} disabled={busy} className="bg-blue-100 text-blue-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
+            <button onClick={openSendEmailPreview} disabled={busy} className="bg-blue-100 text-blue-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
               <Mail className="w-3.5 h-3.5" /> Email
             </button>
             <button onClick={openScheduleModal} disabled={busy} className="bg-indigo-100 text-indigo-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
@@ -851,7 +987,7 @@ export default function InvoiceDetailPage({
         )}
 
         {invoice.sent_at && (
-          <button onClick={resend} disabled={busy} className="bg-blue-50 text-blue-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1 disabled:opacity-50">
+          <button onClick={openResendPreview} disabled={busy} className="bg-blue-50 text-blue-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1 disabled:opacity-50">
             <RefreshCw className="w-3.5 h-3.5" /> Resend
           </button>
         )}
@@ -1855,6 +1991,120 @@ export default function InvoiceDetailPage({
                   {voidSubmitting ? 'Voiding…' : voidModal.reissue ? 'Void & re-issue' : 'Void invoice'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview-before-send modal */}
+      {previewModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-bold">
+                  {previewModal.kind === 'error'
+                    ? 'Preview failed'
+                    : previewModal.kind === 'email'
+                      ? `Preview ${previewModal.intent === 'resend-email' ? 'resend' : 'email'} — review before sending`
+                      : `Preview ${previewModal.intent === 'resend-sms' ? 'resend' : 'SMS'} — review before sending`}
+                </h2>
+                <p className="text-sm text-slate-600">
+                  This is the exact message that will go out on confirm. Nothing has been sent yet.
+                </p>
+              </div>
+              <button onClick={() => { setPreviewModal(null); setPreviewResult(null) }} className="text-slate-400 hover:text-slate-600">
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            {previewModal.kind === 'error' ? (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-3 py-2">
+                {previewModal.message}
+              </div>
+            ) : 'loading' in previewModal && previewModal.loading ? (
+              <div className="flex items-center gap-2 text-sm text-slate-500 p-4">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Building preview…
+              </div>
+            ) : previewModal.kind === 'email' ? (
+              <div className="space-y-3 border-t border-slate-200 pt-4">
+                <div className="grid grid-cols-[100px_1fr] gap-2 text-sm">
+                  <div className="text-slate-500 font-medium">To:</div>
+                  <div className="font-mono">{previewModal.recipient}</div>
+                  <div className="text-slate-500 font-medium">Subject:</div>
+                  <div className="font-medium">{previewModal.subject}</div>
+                  <div className="text-slate-500 font-medium">Attachment:</div>
+                  <div>
+                    {previewModal.has_pdf_attachment
+                      ? <span className="text-emerald-700">📎 {previewModal.pdf_filename}</span>
+                      : <span className="text-slate-400">none</span>}
+                  </div>
+                </div>
+                <details open className="border border-slate-200 rounded">
+                  <summary className="px-3 py-2 bg-slate-50 cursor-pointer text-xs uppercase tracking-wide font-semibold text-slate-600">
+                    Email body (rendered)
+                  </summary>
+                  <iframe
+                    title="Email preview"
+                    sandbox=""
+                    srcDoc={previewModal.html}
+                    className="w-full bg-white border-0"
+                    style={{ minHeight: 360 }}
+                  />
+                </details>
+                <details className="border border-slate-200 rounded">
+                  <summary className="px-3 py-2 bg-slate-50 cursor-pointer text-xs uppercase tracking-wide font-semibold text-slate-600">
+                    Plain text fallback
+                  </summary>
+                  <pre className="p-4 bg-slate-50 text-xs whitespace-pre-wrap font-mono text-slate-700">{previewModal.text}</pre>
+                </details>
+                <div className="text-xs text-slate-500">
+                  Magic link: <code className="text-[10px]">{previewModal.public_url}</code>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3 border-t border-slate-200 pt-4">
+                <div className="grid grid-cols-[100px_1fr] gap-2 text-sm">
+                  <div className="text-slate-500 font-medium">To:</div>
+                  <div className="font-mono">{previewModal.recipient}</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide font-semibold text-slate-500 mb-1">SMS message</div>
+                  <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm font-mono whitespace-pre-wrap">
+                    {previewModal.message}
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1">
+                    {previewModal.message.length} / 160 chars{previewModal.message.length > 160 ? ' — will be sent as multipart SMS' : ''}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {previewResult && (
+              <div className={`text-sm rounded px-3 py-2 border ${previewResult.startsWith('Failed')
+                ? 'bg-red-50 border-red-200 text-red-700'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
+                {previewResult}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
+              <button
+                onClick={() => { setPreviewModal(null); setPreviewResult(null) }}
+                className="bg-slate-100 text-slate-700 rounded px-4 py-1.5 text-sm"
+              >
+                {previewResult && !previewResult.startsWith('Failed') ? 'Close' : 'Cancel'}
+              </button>
+              {previewModal.kind !== 'error' && !('loading' in previewModal && previewModal.loading) && !(previewResult && !previewResult.startsWith('Failed')) && (
+                <button
+                  onClick={confirmPreviewAndSend}
+                  disabled={previewSubmitting}
+                  className="text-white rounded px-4 py-1.5 text-sm font-semibold disabled:opacity-50 bg-blue-600"
+                >
+                  {previewSubmitting ? 'Sending…' : previewModal.kind === 'email' ? 'Send email' : 'Send SMS'}
+                </button>
+              )}
             </div>
           </div>
         </div>

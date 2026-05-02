@@ -20,7 +20,7 @@
 // callers (booking, contact, subscribe) — that's a wider cleanup.
 
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { sendInvoiceEmail } from '@/lib/invoice-email'
+import { sendInvoiceEmail, buildInvoiceEmail } from '@/lib/invoice-email'
 import { sendSms } from '@/lib/twilio-sms'
 import { trackLink } from '@/lib/track-link'
 import { getPrivateSignedUrl } from '@/lib/r2-storage'
@@ -344,5 +344,141 @@ export async function dispatchInvoiceSms(
     recipient: phone,
     message_id: result.message_id,
     error: result.error,
+  }
+}
+
+/* ── Preview helpers (no-send) ──────────────────────────────────────── */
+//
+// Resolve recipient + build the subject/body/URL that WOULD fire if
+// dispatch* were called. Used by the admin preview-before-send modal
+// so what's previewed is the exact bytes that go out on confirm — no
+// drift between preview and actual.
+
+export interface InvoiceEmailPreview {
+  ok: true
+  channel: 'email'
+  recipient: string
+  subject: string
+  text: string
+  html: string
+  public_url: string
+  has_pdf_attachment: boolean
+  pdf_filename: string | null
+}
+
+export interface InvoiceSmsPreview {
+  ok: true
+  channel: 'sms'
+  recipient: string
+  message: string
+  public_url: string
+}
+
+export interface InvoicePreviewError {
+  ok: false
+  error: string
+}
+
+export async function previewInvoiceEmail(
+  invoiceId: string,
+  overrideEmail?: string,
+): Promise<InvoiceEmailPreview | InvoicePreviewError> {
+  const { data: invoice, error } = await supabaseAdmin
+    .from('invoices')
+    .select('*, prospect:prospects(business_name, owner_name, owner_email, business_email)')
+    .eq('id', invoiceId)
+    .maybeSingle()
+
+  if (error) return { ok: false, error: error.message }
+  if (!invoice) return { ok: false, error: 'Invoice not found' }
+  if (!['sent', 'viewed', 'paid'].includes(invoice.status)) {
+    return { ok: false, error: `Cannot preview email for an invoice in status ${invoice.status}` }
+  }
+
+  const inv = invoice as InvoiceWithProspect
+  const billToEmail = (inv.bill_to as { email?: string | null } | null)?.email ?? null
+  const recipient =
+    overrideEmail ??
+    billToEmail ??
+    inv.prospect?.owner_email ??
+    inv.prospect?.business_email ??
+    null
+  if (!recipient) {
+    return {
+      ok: false,
+      error: 'No email on invoice bill_to, prospect.owner_email, or prospect.business_email',
+    }
+  }
+
+  const { subject, html, text, publicUrl } = buildInvoiceEmail(
+    inv,
+    {
+      business_name: inv.prospect?.business_name ?? undefined,
+      owner_email: inv.prospect?.owner_email ?? undefined,
+      owner_name: inv.prospect?.owner_name ?? undefined,
+    },
+  )
+
+  return {
+    ok: true,
+    channel: 'email',
+    recipient,
+    subject,
+    text,
+    html,
+    public_url: publicUrl,
+    has_pdf_attachment: !!inv.pdf_storage_path,
+    pdf_filename: inv.pdf_storage_path
+      ? `Invoice-${inv.invoice_number}.pdf`
+      : null,
+  }
+}
+
+export async function previewInvoiceSms(
+  invoiceId: string,
+  overridePhone?: string,
+): Promise<InvoiceSmsPreview | InvoicePreviewError> {
+  const { data: invoice, error } = await supabaseAdmin
+    .from('invoices')
+    .select('*, prospect:prospects(business_name, owner_phone, business_phone)')
+    .eq('id', invoiceId)
+    .maybeSingle()
+
+  if (error) return { ok: false, error: error.message }
+  if (!invoice) return { ok: false, error: 'Invoice not found' }
+  if (!['sent', 'viewed', 'paid'].includes(invoice.status)) {
+    return { ok: false, error: `Cannot preview SMS for an invoice in status ${invoice.status}` }
+  }
+
+  const inv = invoice as InvoiceWithProspect
+  const recipient =
+    overridePhone ??
+    inv.prospect?.owner_phone ??
+    inv.prospect?.business_phone ??
+    null
+  if (!recipient) {
+    return {
+      ok: false,
+      error: 'No phone on prospect.owner_phone or prospect.business_phone',
+    }
+  }
+
+  const businessName = inv.prospect?.business_name ?? 'your business'
+  const url = trackLink(
+    `https://demandsignals.co/invoice/${inv.invoice_number}/${inv.public_uuid}`,
+    { medium: 'sms', campaign: 'invoice', content: inv.invoice_number },
+  )
+  const totalStr =
+    inv.total_due_cents === 0
+      ? 'complimentary'
+      : `$${(inv.total_due_cents / 100).toFixed(2)}`
+  const message = `${businessName}: Your Demand Signals invoice ${inv.invoice_number} (${totalStr}) — ${url}`
+
+  return {
+    ok: true,
+    channel: 'sms',
+    recipient,
+    message,
+    public_url: url,
   }
 }
