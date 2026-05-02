@@ -917,131 +917,50 @@ export default function SowDetailPage({
         <ConvertButton sow={{ id: sow.id, status: sow.status }} />
       </div>
 
-      {/* Branded document — cover mirrors the PDF cover (dark slate + decorative circles) */}
+      {/* Branded document — on-page header matches invoice/receipt/credit-memo
+          (white + teal underline). The PDF cover is rendered separately by
+          src/lib/pdf/sow.ts and remains the dark slate cover with the editable
+          cover fields (eyebrow / title / tagline) shown in the "Cover content"
+          subsection below. */}
       <div
         className="max-w-3xl mx-auto my-8 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
         style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}
       >
-        {/* PDF-mirror dark cover page */}
+        {/* Document header */}
         <div
-          className="relative px-10 py-12 overflow-hidden"
-          style={{
-            background: '#3D4566',
-            color: '#ffffff',
-            minHeight: 380,
-            backgroundImage:
-              'radial-gradient(circle at 92% 12%, rgba(82,201,160,0.22) 0%, rgba(82,201,160,0) 38%), radial-gradient(circle at 8% 88%, rgba(242,100,25,0.18) 0%, rgba(242,100,25,0) 42%)',
-          }}
+          className="flex items-start justify-between px-10 py-8"
+          style={{ borderBottom: '3px solid #68c5ad' }}
         >
-          {/* Top strip: thin gradient bar */}
-          <div
-            className="absolute top-0 left-0 right-0 h-[5px]"
-            style={{ background: 'linear-gradient(90deg, #F26419 0%, #52C9A0 100%)' }}
-          />
-
-          {/* Logo + brand */}
-          <div className="flex items-start justify-between mb-10 relative z-10">
-            <div>
-              <Image
-                src="https://demandsignals.co/logo.png"
-                alt="Demand Signals"
-                width={160}
-                height={50}
-                className="h-10 w-auto object-contain"
-                unoptimized
-              />
-              <div className="text-xs mt-1.5 opacity-80">demandsignals.co</div>
+          <div>
+            <Image
+              src="https://demandsignals.co/logo.png"
+              alt="Demand Signals"
+              width={160}
+              height={50}
+              className="h-12 w-auto object-contain"
+              unoptimized
+            />
+            <div className="text-xs mt-1" style={{ color: '#5d6780' }}>
+              Demand Signals · demandsignals.co
             </div>
-            <div className="text-right">
-              <div className="font-mono text-xs opacity-80">{sow.sow_number}</div>
-              <div className="mt-1">
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold" style={{ color: '#1d2330' }}>Statement of Work</div>
+            <div className="font-mono text-sm mt-1" style={{ color: '#5d6780' }}>
+              {sow.sow_number}
+            </div>
+            <div className="mt-2 space-y-1">
+              <div className="flex items-center gap-2 justify-end text-sm">
+                <span className="text-xs" style={{ color: '#5d6780' }}>Issued</span>
                 <input
                   type="date"
                   value={sendDate}
                   onChange={(e) => { setSendDate(e.target.value); markDirty() }}
-                  className="bg-transparent border border-white/30 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:border-white/70"
-                  style={{ colorScheme: 'dark' }}
+                  className="border-0 border-b border-dashed border-slate-300 bg-transparent px-0 py-0.5 focus:outline-none focus:border-teal-400 text-sm text-right w-36"
                 />
               </div>
             </div>
           </div>
-
-          {/* Cover body — eyebrow + title + divider + tagline */}
-          <div className="relative z-10 space-y-4">
-            {p?.business_name && (
-              <div
-                className="italic"
-                style={{ fontFamily: 'Georgia, serif', fontSize: 28, lineHeight: 1.1 }}
-              >
-                For {p.business_name}
-              </div>
-            )}
-
-            {/* Editable eyebrow (default: "Statement of Work") */}
-            <input
-              value={coverEyebrow}
-              onChange={(e) => { setCoverEyebrow(e.target.value); markDirty() }}
-              placeholder="Statement of Work"
-              className="bg-transparent border border-white/20 hover:border-white/50 focus:border-white/80 rounded px-2 py-1 text-xs uppercase tracking-[0.18em] font-bold w-full max-w-xs focus:outline-none placeholder:text-white/60"
-              style={{ color: '#F26419' }}
-            />
-
-            {/* Editable title (large, like PDF) */}
-            <input
-              value={title}
-              onChange={(e) => { setTitle(e.target.value); markDirty() }}
-              placeholder="Project title"
-              className="bg-transparent border border-white/20 hover:border-white/50 focus:border-white/80 rounded px-2 py-1 text-3xl font-bold w-full focus:outline-none placeholder:text-white/40"
-              style={{ color: '#ffffff', letterSpacing: '-0.01em' }}
-            />
-
-            {/* Orange divider — same as PDF */}
-            <div className="h-[2px] w-16" style={{ background: '#F26419' }} />
-
-            {/* Editable tagline (default: "Prepared by Demand Signals — Digital Growth & Strategy") */}
-            <input
-              value={coverTagline}
-              onChange={(e) => { setCoverTagline(e.target.value); markDirty() }}
-              placeholder="Prepared by Demand Signals — Digital Growth & Strategy"
-              className="bg-transparent border border-white/20 hover:border-white/50 focus:border-white/80 rounded px-2 py-1 text-xs w-full focus:outline-none placeholder:text-white/60"
-              style={{ color: 'rgba(255,255,255,0.85)' }}
-            />
-          </div>
-
-          {/* Bottom meta band — mirrors PDF darkCoverMetaBand */}
-          <div
-            className="absolute bottom-0 left-0 right-0 grid grid-cols-3 text-[10px] uppercase tracking-wider px-10 py-3 border-t border-white/10"
-            style={{ background: 'rgba(0,0,0,0.18)' }}
-          >
-            <div>
-              <div className="opacity-60">Prepared for</div>
-              <div className="font-semibold mt-0.5">{p?.business_name ?? '—'}</div>
-            </div>
-            <div>
-              <div className="opacity-60">Prepared by</div>
-              <div className="font-semibold mt-0.5">Demand Signals</div>
-            </div>
-            <div>
-              <div className="opacity-60">Issued</div>
-              <div className="font-semibold mt-0.5">
-                {sendDate ? new Date(sendDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Interior page header — mirrors interiorPageHeader in PDF */}
-        <div
-          className="flex items-center justify-between px-10 py-3"
-          style={{
-            background: '#fafbfc',
-            borderBottom: '1px solid #e2e8f0',
-          }}
-        >
-          <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#3D4566' }}>
-            Project Brief
-          </div>
-          <div className="font-mono text-xs" style={{ color: '#5d6780' }}>{sow.sow_number}</div>
         </div>
 
         <div className="px-10 py-8 space-y-8" style={{ color: '#1d2330' }}>
@@ -1062,7 +981,57 @@ export default function SowDetailPage({
             </div>
           )}
 
-          {/* Scope (title now lives on the cover above) */}
+          {/* Project title — primary doc heading on the page + drives PDF cover */}
+          <section>
+            <div
+              className="text-xs uppercase tracking-wide font-semibold pb-1.5 mb-3"
+              style={{ color: '#5d6780', borderBottom: '1px solid #e2e8f0' }}
+            >
+              Project title
+            </div>
+            <input
+              value={title}
+              onChange={(e) => { setTitle(e.target.value); markDirty() }}
+              placeholder="Project title"
+              className="w-full text-2xl font-bold border-0 border-b border-dashed border-slate-300 bg-transparent px-0 py-1 focus:outline-none focus:border-teal-400"
+              style={{ color: '#1d2330', letterSpacing: '-0.01em' }}
+            />
+          </section>
+
+          {/* Cover content (PDF only) — eyebrow + tagline drive the dark
+              PDF cover but don't show on the on-page admin/client view.
+              Kept here so admin can edit them without needing to render
+              the PDF first. */}
+          <section className="rounded-lg p-4 border border-slate-200" style={{ background: '#fafbfc' }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-xs uppercase tracking-wide font-semibold" style={{ color: '#5d6780' }}>
+                Cover content
+              </div>
+              <div className="text-[10px] text-slate-400">PDF cover only</div>
+            </div>
+            <div className="space-y-3">
+              <label className="block text-xs">
+                <span className="text-slate-500">Eyebrow</span>
+                <input
+                  value={coverEyebrow}
+                  onChange={(e) => { setCoverEyebrow(e.target.value); markDirty() }}
+                  placeholder="Statement of Work"
+                  className="w-full border border-slate-200 rounded px-2 py-1 mt-1 text-sm"
+                />
+              </label>
+              <label className="block text-xs">
+                <span className="text-slate-500">Tagline</span>
+                <input
+                  value={coverTagline}
+                  onChange={(e) => { setCoverTagline(e.target.value); markDirty() }}
+                  placeholder="Prepared by Demand Signals — Digital Growth & Strategy"
+                  className="w-full border border-slate-200 rounded px-2 py-1 mt-1 text-sm"
+                />
+              </label>
+            </div>
+          </section>
+
+          {/* Scope */}
           <section>
             <div
               className="text-xs uppercase tracking-wide font-semibold pb-1.5 mb-3"
