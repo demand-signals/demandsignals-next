@@ -565,10 +565,12 @@ function investmentPage(sow: SowDocument): string {
 // Dark bg + circles + shared top/bottom chrome + centered Godin quote + CTA.
 
 function backCoverPage(prospect: SowProspect, issueDate: string, sow: SowDocument): string {
-  // Rotating motivational quote, deterministic per sow_number so the
-  // same SOW always renders the same quote across re-renders. Different
-  // SOWs naturally land on different quotes.
-  const quote = pickBackCoverQuote(sow.sow_number)
+  // Rotating motivational quote, deterministic per seed across re-renders.
+  // Default seed = sow_number (stable per SOW, naturally varied across
+  // SOWs). Admin can override via quote_seed (migration 044): a fresh
+  // UUID for "reroll" or 'quote:N' sentinel for "pick this exact one."
+  const seed = (sow as SowDocument & { quote_seed?: string | null }).quote_seed || sow.sow_number
+  const quote = pickBackCoverQuote(seed)
   return `
   <div style="
     position:relative;

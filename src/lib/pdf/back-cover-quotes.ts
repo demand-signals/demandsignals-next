@@ -91,9 +91,37 @@ function fnv1a(input: string): number {
 /**
  * Pick a back-cover quote for a SOW. Stable per seed (use sow_number)
  * so re-rendering the same SOW always shows the same quote.
+ *
+ * Sentinel: if seed matches `quote:N` (where N is a non-negative integer
+ * less than BACK_COVER_QUOTES.length), short-circuit the hash and return
+ * BACK_COVER_QUOTES[N] directly. Used by the admin SOW editor's "Pick a
+ * quote" modal to lock in a specific quote regardless of seed math.
+ *
+ * Out-of-range or malformed `quote:` sentinels fall through to the hash
+ * path so a typo never crashes the PDF render.
  */
 export function pickBackCoverQuote(seed: string): BackCoverQuote {
   if (!seed) return BACK_COVER_QUOTES[0]
+
+  // Direct-pick sentinel.
+  const m = seed.match(/^quote:(\d+)$/)
+  if (m) {
+    const n = parseInt(m[1], 10)
+    if (Number.isInteger(n) && n >= 0 && n < BACK_COVER_QUOTES.length) {
+      return BACK_COVER_QUOTES[n]
+    }
+    // Fall through on out-of-range.
+  }
+
   const idx = fnv1a(seed) % BACK_COVER_QUOTES.length
   return BACK_COVER_QUOTES[idx]
+}
+
+/**
+ * Reverse-lookup: given a quote object, find its index. Used by the
+ * admin SOW editor to show "Quote #N of M" labelling. Returns -1 if
+ * not in the catalog (shouldn't happen in practice).
+ */
+export function findBackCoverQuoteIndex(q: BackCoverQuote): number {
+  return BACK_COVER_QUOTES.findIndex((c) => c.text === q.text && c.author === q.author)
 }

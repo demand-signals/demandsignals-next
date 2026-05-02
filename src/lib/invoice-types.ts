@@ -297,6 +297,10 @@ export interface SowDocument {
   deposit_invoice_id: string | null
   trade_credit_cents?: number
   trade_credit_description?: string | null
+  // Back-cover quote seed (migration 044). NULL → use sow_number
+  // (default behavior). Plain string → FNV-1a hash to pick. 'quote:N'
+  // sentinel → direct index into BACK_COVER_QUOTES.
+  quote_seed?: string | null
   // Document-level discount (migration 036). One-time only. Stacks
   // with TIK on the same SOW. Auto-inherits to deposit + downstream
   // invoices at creation time, then editable per-invoice.

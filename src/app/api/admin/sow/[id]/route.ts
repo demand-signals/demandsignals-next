@@ -95,6 +95,11 @@ const patchBodySchema = z.object({
   discount_description: z.string().nullable().optional(),
   cover_eyebrow: z.string().nullable().optional(),
   cover_tagline: z.string().nullable().optional(),
+  // Back-cover quote seed (migration 044). NULL clears the override (PDF
+  // falls back to sow_number-derived quote). Any other string is hashed
+  // via FNV-1a to pick a quote, OR if it matches 'quote:N' it's a
+  // direct-index sentinel into BACK_COVER_QUOTES.
+  quote_seed: z.string().nullable().optional(),
 })
 
 function computeLineTotal(d: z.infer<typeof patchDeliverableSchema>): SowDeliverable {
@@ -167,6 +172,7 @@ export async function PATCH(
   if (fields.discount_description !== undefined) updates.discount_description = fields.discount_description
   if (fields.cover_eyebrow !== undefined) updates.cover_eyebrow = fields.cover_eyebrow
   if (fields.cover_tagline !== undefined) updates.cover_tagline = fields.cover_tagline
+  if (fields.quote_seed !== undefined) updates.quote_seed = fields.quote_seed
 
   const { error } = await supabaseAdmin
     .from('sow_documents')

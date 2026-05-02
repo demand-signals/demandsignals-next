@@ -27,6 +27,10 @@ import { CatalogPicker, type CatalogPickerItem } from '@/components/admin/catalo
 import ProspectContactEditor, { type ProspectContact } from '@/components/admin/ProspectContactEditor'
 import type { Cadence } from '@/lib/invoice-types'
 import { ConvertButton } from './ConvertButton'
+import {
+  BACK_COVER_QUOTES,
+  pickBackCoverQuote,
+} from '@/lib/pdf/back-cover-quotes'
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -311,6 +315,11 @@ export default function SowDetailPage({
   const [discountDescription, setDiscountDescription] = useState('')
   const [coverEyebrow, setCoverEyebrow] = useState('')
   const [coverTagline, setCoverTagline] = useState('')
+  // Back-cover quote seed (migration 044). NULL = use sow_number; any
+  // other string = override. Reroll writes a fresh UUID; Pick writes
+  // 'quote:N' sentinel.
+  const [quoteSeed, setQuoteSeed] = useState<string | null>(null)
+  const [quotePickerOpen, setQuotePickerOpen] = useState(false)
   const [dirty, setDirty] = useState(false)
 
   // Catalog picker state — "both" pricing_type items show a cadence modal before adding
@@ -387,6 +396,7 @@ export default function SowDetailPage({
     setDiscountDescription((s as DiscFields).discount_description ?? '')
     setCoverEyebrow((s as SowData & { cover_eyebrow?: string | null }).cover_eyebrow ?? '')
     setCoverTagline((s as SowData & { cover_tagline?: string | null }).cover_tagline ?? '')
+    setQuoteSeed((s as SowData & { quote_seed?: string | null }).quote_seed ?? null)
     setDirty(false)
   }
 
@@ -500,6 +510,7 @@ export default function SowDetailPage({
         discount_description: discountKind ? (discountDescription.trim() || null) : null,
         cover_eyebrow: coverEyebrow.trim() || null,
         cover_tagline: coverTagline.trim() || null,
+        quote_seed: quoteSeed,
       }
       if (forceEdit) body.force_edit = true
 
@@ -1066,6 +1077,75 @@ export default function SowDetailPage({
                 />
               </label>
             </div>
+          </section>
+
+          {/* Back-cover quote (PDF only) — picked by hash off quote_seed
+              (or sow_number when null). Reroll writes a fresh UUID;
+              Pick writes the quote:N sentinel for direct selection. */}
+          <section className="rounded-lg p-4 border border-slate-200" style={{ background: '#fafbfc' }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-xs uppercase tracking-wide font-semibold" style={{ color: '#5d6780' }}>
+                Back-cover quote
+              </div>
+              <div className="text-[10px] text-slate-400">PDF back cover only</div>
+            </div>
+            {(() => {
+              const effectiveSeed = quoteSeed || sow.sow_number
+              const currentQuote = pickBackCoverQuote(effectiveSeed)
+              const idx = BACK_COVER_QUOTES.findIndex(
+                (q) => q.text === currentQuote.text && q.author === currentQuote.author,
+              )
+              return (
+                <div className="space-y-3">
+                  <div className="rounded border border-slate-200 bg-white p-3 italic text-sm text-slate-700 leading-relaxed">
+                    “{currentQuote.text}”
+                    <div className="mt-1 not-italic text-xs uppercase tracking-wide text-teal-700">— {currentQuote.author}</div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
+                    <span>
+                      Quote {idx + 1} of {BACK_COVER_QUOTES.length}
+                      {quoteSeed
+                        ? quoteSeed.startsWith('quote:')
+                          ? <span className="ml-2 text-teal-700">· hand-picked</span>
+                          : <span className="ml-2 text-teal-700">· custom seed</span>
+                        : <span className="ml-2 text-slate-400">· default (seeded by SOW number)</span>}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuoteSeed(crypto.randomUUID())
+                          markDirty()
+                        }}
+                        className="px-3 py-1 rounded text-xs font-semibold bg-teal-500 text-white hover:bg-teal-600"
+                      >
+                        Reroll
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setQuotePickerOpen(true)}
+                        className="px-3 py-1 rounded text-xs font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50"
+                      >
+                        Pick…
+                      </button>
+                      {quoteSeed && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQuoteSeed(null)
+                            markDirty()
+                          }}
+                          className="px-3 py-1 rounded text-xs font-semibold bg-white border border-slate-300 text-slate-500 hover:bg-slate-50"
+                          title="Revert to the default quote derived from the SOW number"
+                        >
+                          Reset
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
           </section>
 
           {/* Scope */}
@@ -1956,6 +2036,63 @@ export default function SowDetailPage({
       )}
 
       {/* Preview-before-send modal */}
+      {/* Quote picker modal — pick a specific back-cover quote by index.
+          On confirm, writes 'quote:N' sentinel into quote_seed which the
+          PDF render path short-circuits to the exact quote chosen. */}
+      {quotePickerOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-bold">Pick a back-cover quote</h2>
+                <p className="text-sm text-slate-600">
+                  Selecting one locks it to this SOW. Reroll regenerates randomly; Reset reverts to the default seeded by SOW number.
+                </p>
+              </div>
+              <button onClick={() => setQuotePickerOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-2">
+              {BACK_COVER_QUOTES.map((q, i) => {
+                const sentinel = `quote:${i}`
+                const isCurrent = quoteSeed === sentinel
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      setQuoteSeed(sentinel)
+                      markDirty()
+                      setQuotePickerOpen(false)
+                    }}
+                    className={`w-full text-left rounded border p-3 text-sm transition-colors ${
+                      isCurrent
+                        ? 'bg-teal-50 border-teal-400'
+                        : 'bg-white border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="italic text-slate-700 leading-snug">“{q.text}”</div>
+                    <div className="mt-1 text-[10px] uppercase tracking-wide text-teal-700">
+                      — {q.author}
+                      <span className="ml-2 text-slate-400">#{i + 1}</span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+            <div className="flex justify-end pt-2 border-t border-slate-200">
+              <button
+                onClick={() => setQuotePickerOpen(false)}
+                className="bg-slate-100 text-slate-700 rounded px-4 py-1.5 text-sm"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {previewModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-6 max-w-2xl w-full space-y-4 max-h-[90vh] overflow-y-auto">
