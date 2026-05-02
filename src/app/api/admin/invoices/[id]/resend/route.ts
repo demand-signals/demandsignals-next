@@ -1,10 +1,14 @@
 // ── POST /api/admin/invoices/[id]/resend ─────────────────────────────
-// Resends an invoice via the same channel it was originally sent on.
-// Delegates to the existing send-email or send-sms endpoint.
+// Resends an invoice via the same channel it was originally sent on
+// (sent_via_channel). Calls the dispatch helpers directly — does NOT
+// internal-fetch /send-email or /send-sms, which would fail the
+// downstream requireAdmin() CSRF guard (server-to-server fetches don't
+// carry browser headers; see CLAUDE.md §12).
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { dispatchInvoiceEmail, dispatchInvoiceSms } from '@/lib/invoice-send'
 
 export async function POST(
   request: NextRequest,
@@ -22,17 +26,14 @@ export async function POST(
 
   if (!inv) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const path = inv.sent_via_channel === 'sms' ? 'send-sms' : 'send-email'
-  const base = request.nextUrl.origin
-  const res = await fetch(`${base}/api/admin/invoices/${id}/${path}`, {
-    method: 'POST',
-    headers: { cookie: request.headers.get('cookie') ?? '' },
-  })
-  const data = await res.json().catch(() => ({}))
+  const channel: 'email' | 'sms' = inv.sent_via_channel === 'sms' ? 'sms' : 'email'
+  const result = channel === 'sms'
+    ? await dispatchInvoiceSms(id, { createdBy: auth.user.id })
+    : await dispatchInvoiceEmail(id, { createdBy: auth.user.id })
 
-  if (!res.ok) {
-    return NextResponse.json({ error: data.error ?? 'Resend failed' }, { status: res.status })
+  if (!result.success) {
+    return NextResponse.json({ error: result.error ?? 'Resend failed' }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, channel: inv.sent_via_channel })
+  return NextResponse.json({ ok: true, channel, recipient: result.recipient, message_id: result.message_id })
 }
