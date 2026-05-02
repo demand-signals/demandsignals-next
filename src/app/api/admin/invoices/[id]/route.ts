@@ -31,6 +31,9 @@ const patchSchema = z.object({
   discount_value_bps: z.number().int().min(0).max(10000).optional(),
   discount_amount_cents: z.number().int().nonnegative().optional(),
   discount_description: z.string().nullable().optional(),
+  // Free-text payment terms (migration 040). Pass empty string to clear and
+  // re-trigger auto-generation on next save; pass non-empty to author manually.
+  payment_terms: z.string().nullable().optional(),
 })
 
 export async function GET(
@@ -131,6 +134,10 @@ export async function PATCH(
   if (body.discount_value_bps !== undefined) updates.discount_value_bps = body.discount_value_bps
   if (body.discount_amount_cents !== undefined) updates.discount_amount_cents = body.discount_amount_cents
   if (body.discount_description !== undefined) updates.discount_description = body.discount_description
+  // payment_terms: empty string from admin = "regenerate from current shape on next save".
+  // Non-empty = "keep as-is, admin authored". The auto-regen happens at save time
+  // in the UI before PATCH fires, so the server just stores whatever it receives.
+  if (body.payment_terms !== undefined) updates.payment_terms = body.payment_terms
 
   if (body.line_items !== undefined) {
     // Delete all existing line items and reinsert.

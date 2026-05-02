@@ -436,6 +436,23 @@ function projectBalanceBlock(project?: InvoiceProjectMeta): string {
   </div>`
 }
 
+// ── Payment terms ─────────────────────────────────────────────────────
+
+function paymentTermsSection(inv: InvoiceWithLineItems): string {
+  if (!inv.payment_terms) return ''
+  return `
+  <div style="
+    margin:16px 54px 0;
+    background:${T.VLT};
+    border-left:3px solid ${T.TEAL_S};
+    padding:14px 20px;
+    font-family:${FONT_STACK};
+  ">
+    <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.TEAL_S};margin-bottom:7px">PAYMENT TERMS</p>
+    <p style="font-size:12px;color:${T.BODY};line-height:1.7">${escNl(inv.payment_terms)}</p>
+  </div>`
+}
+
 // ── Notes ─────────────────────────────────────────────────────────────
 
 function notesSection(inv: InvoiceWithLineItems): string {
@@ -575,6 +592,7 @@ export async function renderInvoicePdf(
     ${totalsBlock(invoice, opts.paymentSummary)}
     ${projectBalanceBlock(opts.project)}
     ${paymentCard(invoice, opts.paymentSummary)}
+    ${paymentTermsSection(invoice)}
     ${notesSection(invoice)}
     <div style="flex:1"></div>
     ${interiorPageFooter()}

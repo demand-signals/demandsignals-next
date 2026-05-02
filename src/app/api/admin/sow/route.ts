@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
       timeline: timeline ?? [],
       phases: phases ?? null,
       pricing: finalPricing,
-      payment_terms: payment_terms ?? 'Net 30. 25% deposit on acceptance; remainder on delivery.',
+      payment_terms: payment_terms ?? null,
       guarantees: guarantees ?? null,
       notes: notes ?? null,
       computed_from_deliverables: computed_from_deliverables ?? null,

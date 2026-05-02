@@ -19,17 +19,14 @@ export async function GET(
   const key = request.nextUrl.searchParams.get('key')
   if (!key) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  // NOTE: invoices.payment_terms does NOT exist — that's a SOW column.
-  // Removing it from this SELECT was the fix for a 404 cascade where
-  // PostgREST aborted the entire query with code 42703 the moment the
-  // unknown column was referenced. Anything labelled payment_terms on
-  // the public invoice page should pull from the parent SOW (via
-  // project metadata) or from the invoice's notes field.
+  // payment_terms added in migration 040 (2026-05-01). Auto-generated from
+  // invoice shape at save time when admin leaves it blank, otherwise
+  // admin-authored. Magic-link page renders this in its own block.
   const SELECT = `
       id, invoice_number, public_uuid, kind, status, currency, prospect_id,
       subtotal_cents, discount_cents, total_due_cents,
       due_date, send_date, sent_at, paid_at, voided_at, void_reason,
-      notes, supersedes_invoice_id, superseded_by_invoice_id,
+      notes, payment_terms, supersedes_invoice_id, superseded_by_invoice_id,
       stripe_payment_link_url, public_viewed_count,
       late_fee_cents, late_fee_grace_days, late_fee_applied_at,
       trade_credit_cents, trade_credit_description,

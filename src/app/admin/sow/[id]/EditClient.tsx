@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Plus, Trash2, Loader2 } from 'lucide-react'
 import { formatCents } from '@/lib/format'
+import { buildSowPaymentTerms } from '@/lib/payment-terms'
 
 interface Deliverable {
   name: string
@@ -105,7 +106,11 @@ export default function EditClient({ sow, onSaved, onCancel }: Props) {
       const total_cents = computeFromDeliverables
         ? computedTotalCents
         : Math.round(parseFloat(totalDollars || '0') * 100)
-      const pct = parseFloat(depositPct) || 25
+      const parsedPct = Number.parseFloat(depositPct)
+      const pct =
+        depositPct.trim() === '' || !Number.isFinite(parsedPct)
+          ? 25
+          : Math.max(0, Math.min(100, parsedPct))
       const deposit_cents = Math.round(total_cents * pct / 100)
 
       const body: Record<string, unknown> = {
@@ -126,7 +131,18 @@ export default function EditClient({ sow, onSaved, onCancel }: Props) {
           description: p.description,
         })),
         pricing: { total_cents, deposit_cents, deposit_pct: pct },
-        payment_terms: paymentTerms,
+        payment_terms:
+          paymentTerms.trim() ||
+          buildSowPaymentTerms({
+            oneTimeCents: total_cents,
+            monthlyCents: 0,
+            quarterlyCents: 0,
+            annualCents: 0,
+            depositPct: pct,
+            depositCents: deposit_cents,
+            tradeCents: 0,
+            discountCents: 0,
+          }),
         guarantees,
         notes,
       }
@@ -344,11 +360,42 @@ export default function EditClient({ sow, onSaved, onCancel }: Props) {
 
       {/* Payment terms / guarantees / notes */}
       <label className="block">
-        <span className="text-xs font-medium text-slate-600">Payment terms</span>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-slate-600">Payment terms</span>
+          <button
+            type="button"
+            onClick={() => {
+              const total_cents = computeFromDeliverables
+                ? computedTotalCents
+                : Math.round(parseFloat(totalDollars || '0') * 100)
+              const parsedPct = Number.parseFloat(depositPct)
+              const pctVal =
+                depositPct.trim() === '' || !Number.isFinite(parsedPct)
+                  ? 25
+                  : Math.max(0, Math.min(100, parsedPct))
+              setPaymentTerms(
+                buildSowPaymentTerms({
+                  oneTimeCents: total_cents,
+                  monthlyCents: 0,
+                  quarterlyCents: 0,
+                  annualCents: 0,
+                  depositPct: pctVal,
+                  depositCents: Math.round((total_cents * pctVal) / 100),
+                  tradeCents: 0,
+                  discountCents: 0,
+                }),
+              )
+            }}
+            className="text-[10px] text-teal-600 hover:underline"
+          >
+            Auto-generate from terms
+          </button>
+        </div>
         <textarea
           value={paymentTerms}
           onChange={(e) => setPaymentTerms(e.target.value)}
-          rows={2}
+          rows={3}
+          placeholder="Auto-generated on save if left blank — click 'Auto-generate' to preview, then edit freely."
           className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
         />
       </label>

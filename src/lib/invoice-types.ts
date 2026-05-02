@@ -98,6 +98,10 @@ export interface Invoice {
   discount_value_bps: number
   discount_amount_cents: number
   discount_description: string | null
+  // Free-text payment terms (migration 040). Mirror of sow_documents.payment_terms.
+  // Auto-generated from invoice shape at save time when admin leaves it blank;
+  // otherwise admin-authored. Renders in its own block on the invoice PDF + magic-link page.
+  payment_terms: string | null
   created_by: string | null
   created_at: string
   updated_at: string

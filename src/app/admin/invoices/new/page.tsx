@@ -7,6 +7,7 @@ import { CatalogPicker, type CatalogPickerItem } from '@/components/admin/catalo
 import ProspectContactEditor, { type ProspectContact } from '@/components/admin/ProspectContactEditor'
 import DocumentPreview from '@/components/admin/DocumentPreview'
 import { formatCents } from '@/lib/format'
+import { buildInvoicePaymentTerms } from '@/lib/payment-terms'
 
 interface Prospect {
   id: string
@@ -82,6 +83,15 @@ function NewInvoiceForm() {
   const [tikCents, setTikCents] = useState(0)
   const [tikAmountInput, setTikAmountInput] = useState('0.00')
   const [tikDescription, setTikDescription] = useState('')
+  // Document-level discount (migration 036). Different from per-line-item
+  // discount_pct. Stacks with TIK. Order: subtotal − doc disc − TIK = total.
+  const [discountKind, setDiscountKind] = useState<'percent' | 'amount' | ''>('')
+  const [discountPctInput, setDiscountPctInput] = useState('0')
+  const [discountAmountInput, setDiscountAmountInput] = useState('0.00')
+  const [discountAmountCents, setDiscountAmountCents] = useState(0)
+  const [discountDescription, setDiscountDescription] = useState('')
+  // Free-text payment terms (migration 040). Empty on save = server auto-generates.
+  const [paymentTerms, setPaymentTerms] = useState('')
   const [busy, setBusy] = useState(false)
   const [previewBusy, setPreviewBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -151,12 +161,25 @@ function NewInvoiceForm() {
   }
 
   const subtotal = lines.reduce((s, l) => s + Math.max(0, l.unit_price_cents * l.quantity), 0) / 100
-  const lineTotal = lines.reduce((s, l) => {
+  const lineTotalCents = lines.reduce((s, l) => {
     const sub = l.unit_price_cents * l.quantity
     const disc = Math.round((sub * l.discount_pct) / 100)
     return s + (sub - disc)
-  }, 0) / 100
-  const total = Math.max(0, lineTotal - tikCents / 100)
+  }, 0)
+  const lineTotal = lineTotalCents / 100
+  // Document-level discount math — mirrors server route + SOW.
+  const docDiscountCents = (() => {
+    if (discountKind === 'percent') {
+      const pct = Math.max(0, Math.min(100, parseFloat(discountPctInput) || 0))
+      const bps = Math.round(pct * 100)
+      return Math.min(lineTotalCents, Math.round(lineTotalCents * bps / 10000))
+    }
+    if (discountKind === 'amount') {
+      return Math.min(lineTotalCents, Math.max(0, discountAmountCents))
+    }
+    return 0
+  })()
+  const total = Math.max(0, (lineTotalCents - docDiscountCents - tikCents) / 100)
 
   function buildPostBody() {
     const finalLines = lines.map((l) => ({
@@ -188,6 +211,27 @@ function NewInvoiceForm() {
 
     const lateFeeCents = Math.round(parseFloat(lateFeeDollars || '0') * 100)
 
+    // Document-level discount payload — only sent when admin chose a kind.
+    const discountFields: Record<string, unknown> = {}
+    if (discountKind === 'percent') {
+      const pct = Math.max(0, Math.min(100, parseFloat(discountPctInput) || 0))
+      discountFields.discount_kind = 'percent'
+      discountFields.discount_value_bps = Math.round(pct * 100)
+      discountFields.discount_amount_cents = 0
+      discountFields.discount_description = discountDescription || null
+    } else if (discountKind === 'amount') {
+      discountFields.discount_kind = 'amount'
+      discountFields.discount_value_bps = 0
+      discountFields.discount_amount_cents = Math.max(0, discountAmountCents)
+      discountFields.discount_description = discountDescription || null
+    } else {
+      // null = no discount; explicit so PATCH-style merging clears stale state.
+      discountFields.discount_kind = null
+      discountFields.discount_value_bps = 0
+      discountFields.discount_amount_cents = 0
+      discountFields.discount_description = null
+    }
+
     return {
       kind,
       prospect_id: prospectId || undefined,
@@ -200,6 +244,9 @@ function NewInvoiceForm() {
       category_hint: categoryHint,
       trade_credit_cents: tikCents > 0 ? tikCents : undefined,
       trade_credit_description: tikDescription || undefined,
+      ...discountFields,
+      // payment_terms: empty = server auto-generates from invoice shape at save.
+      payment_terms: paymentTerms.trim() || undefined,
     }
   }
 
@@ -479,6 +526,11 @@ function NewInvoiceForm() {
         <div className="flex justify-end text-sm space-y-1">
           <div className="text-right space-y-0.5">
             <div>Subtotal: {formatCents(Math.round(subtotal * 100))}</div>
+            {docDiscountCents > 0 && (
+              <div className="text-emerald-700">
+                Discount{discountDescription ? ` (${discountDescription})` : ''}: −{formatCents(docDiscountCents)}
+              </div>
+            )}
             {tikCents > 0 && (
               <div className="text-amber-700">
                 Trade-in-Kind credit: −{formatCents(tikCents)}
@@ -523,6 +575,72 @@ function NewInvoiceForm() {
               />
             </label>
           </div>
+        </div>
+
+        {/* Discount block — mirrors SOW. Stacks with TIK; doc discount applies first. */}
+        <div className="pt-4 border-t border-slate-100">
+          <div className="text-xs uppercase text-slate-500 font-semibold mb-1">
+            Discount
+          </div>
+          <p className="text-xs text-slate-400 mb-2">
+            Optional document-level discount on the total. Stacks with TIK. Different from per-line discount %.
+          </p>
+          <div className="grid grid-cols-[100px_1fr] gap-3 items-start">
+            <label className="text-xs">
+              Type
+              <select
+                value={discountKind}
+                onChange={(e) => setDiscountKind(e.target.value as 'percent' | 'amount' | '')}
+                className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+              >
+                <option value="">None</option>
+                <option value="percent">% off</option>
+                <option value="amount">$ off</option>
+              </select>
+            </label>
+            <label className="text-xs">
+              Description
+              <input
+                type="text"
+                value={discountDescription}
+                onChange={(e) => setDiscountDescription(e.target.value)}
+                placeholder="e.g. Loyalty discount, Friends & family"
+                className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+                disabled={discountKind === ''}
+              />
+            </label>
+          </div>
+          {discountKind === 'percent' && (
+            <label className="text-xs block mt-3 max-w-[180px]">
+              Percent off (%)
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={discountPctInput}
+                onChange={(e) => setDiscountPctInput(e.target.value)}
+                className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+              />
+            </label>
+          )}
+          {discountKind === 'amount' && (
+            <label className="text-xs block mt-3 max-w-[180px]">
+              Amount off ($)
+              <input
+                type="text"
+                inputMode="decimal"
+                value={discountAmountInput}
+                onChange={(e) => setDiscountAmountInput(e.target.value)}
+                onBlur={() => {
+                  const cents = Math.round(parseFloat(discountAmountInput || '0') * 100)
+                  setDiscountAmountCents(cents)
+                  setDiscountAmountInput((cents / 100).toFixed(2))
+                }}
+                className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+              />
+            </label>
+          )}
         </div>
       </section>
 
@@ -579,12 +697,44 @@ function NewInvoiceForm() {
         </div>
 
         <label className="block text-sm">
+          <div className="flex items-center justify-between mb-1">
+            <span>Payment terms</span>
+            <button
+              type="button"
+              onClick={() => {
+                const lateFeeCents = Math.round(parseFloat(lateFeeDollars || '0') * 100)
+                setPaymentTerms(
+                  buildInvoicePaymentTerms({
+                    totalCents: Math.round(total * 100),
+                    dueDate: dueDate || null,
+                    tradeCents: tikCents,
+                    discountCents: docDiscountCents,
+                    lateFeeCents: lateFeeCents > 0 ? lateFeeCents : 0,
+                    lateFeeGraceDays: parseInt(lateFeeGraceDays || '0') || 0,
+                  }),
+                )
+              }}
+              className="text-[10px] text-teal-600 hover:underline"
+            >
+              Auto-generate from terms
+            </button>
+          </div>
+          <textarea
+            value={paymentTerms}
+            onChange={(e) => setPaymentTerms(e.target.value)}
+            className="w-full border border-slate-200 rounded px-3 py-2"
+            rows={3}
+            placeholder="Auto-generated on save if left blank — click 'Auto-generate' to preview, then edit freely."
+          />
+        </label>
+        <label className="block text-sm">
           Notes
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             className="w-full border border-slate-200 rounded px-3 py-2 mt-1"
             rows={3}
+            placeholder="Internal notes or extra context shown to client (separate from payment terms)."
           />
         </label>
         <label className="block text-sm">

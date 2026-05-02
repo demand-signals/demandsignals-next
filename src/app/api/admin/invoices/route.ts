@@ -6,6 +6,7 @@ import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { CATALOG_VERSION } from '@/lib/quote-pricing'
 import { allocateDocNumber } from '@/lib/doc-numbering'
+import { buildInvoicePaymentTerms } from '@/lib/payment-terms'
 import type { InvoiceKind, CategoryHint } from '@/lib/invoice-types'
 
 interface CreateLineItem {
@@ -84,6 +85,7 @@ export async function POST(request: NextRequest) {
     discount_value_bps,
     discount_amount_cents,
     discount_description,
+    payment_terms,
   }: {
     kind?: InvoiceKind
     prospect_id?: string
@@ -103,6 +105,8 @@ export async function POST(request: NextRequest) {
     discount_value_bps?: number
     discount_amount_cents?: number
     discount_description?: string | null
+    // Free-text payment terms (migration 040). Empty/missing → server auto-generates.
+    payment_terms?: string | null
   } = body
 
   const effectiveKind: InvoiceKind = kind ?? (quote_session_id ? 'quote_driven' : 'business')
@@ -201,6 +205,19 @@ export async function POST(request: NextRequest) {
       discount_value_bps: discount_value_bps ?? 0,
       discount_amount_cents: discount_amount_cents ?? 0,
       discount_description: discount_description ?? null,
+      // Auto-generate payment terms from invoice shape if admin left it blank.
+      // Empty trim = "auto"; any non-blank value = "admin-authored, leave alone".
+      payment_terms:
+        payment_terms && payment_terms.trim()
+          ? payment_terms
+          : (buildInvoicePaymentTerms({
+              totalCents: totalDueCents,
+              dueDate: due_date ?? null,
+              tradeCents: tikCents,
+              discountCents: docDiscountCents,
+              lateFeeCents: late_fee_cents ?? 0,
+              lateFeeGraceDays: late_fee_grace_days ?? 0,
+            }) || null),
       created_by: auth.user.id,
     })
     .select('*')

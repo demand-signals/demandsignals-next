@@ -14,6 +14,7 @@ import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { allocateDocNumber } from '@/lib/doc-numbering'
 import { getServicesCatalog } from '@/lib/services-catalog'
+import { buildSowPaymentTerms } from '@/lib/payment-terms'
 import type { SowPhase, SowPhaseDeliverable, SowPricing } from '@/lib/invoice-types'
 
 interface Params { params: Promise<{ id: string }> }
@@ -156,7 +157,22 @@ export async function POST(request: NextRequest, { params }: Params) {
       deliverables: [],
       timeline: [],
       pricing,
-      payment_terms: 'Net 30. 25% deposit on acceptance; remainder on delivery.',
+      payment_terms: buildSowPaymentTerms({
+        oneTimeCents: totalCents,
+        monthlyCents: deliverables
+          .filter((d) => d.cadence === 'monthly')
+          .reduce((s, d) => s + (d.line_total_cents ?? 0), 0),
+        quarterlyCents: deliverables
+          .filter((d) => d.cadence === 'quarterly')
+          .reduce((s, d) => s + (d.line_total_cents ?? 0), 0),
+        annualCents: deliverables
+          .filter((d) => d.cadence === 'annual')
+          .reduce((s, d) => s + (d.line_total_cents ?? 0), 0),
+        depositPct,
+        depositCents,
+        tradeCents: 0,
+        discountCents: 0,
+      }),
       guarantees: null,
       notes: null,
       computed_from_deliverables: false,

@@ -18,6 +18,7 @@ import {
   ChevronUp,
 } from 'lucide-react'
 import { formatCents } from '@/lib/format'
+import { buildSowPaymentTerms } from '@/lib/payment-terms'
 import { CatalogPicker, type CatalogPickerItem } from '@/components/admin/catalog-picker'
 import ProspectContactEditor, { type ProspectContact } from '@/components/admin/ProspectContactEditor'
 import type { Cadence } from '@/lib/invoice-types'
@@ -390,7 +391,11 @@ export default function SowDetailPage({
     .filter((d) => d.cadence === 'annual')
     .reduce((s, d) => s + computeLineCents(d), 0)
 
-  const pct = parseFloat(depositPct) || 25
+  const parsedPct = Number.parseFloat(depositPct)
+  const pct =
+    depositPct.trim() === '' || !Number.isFinite(parsedPct)
+      ? 25
+      : Math.max(0, Math.min(100, parsedPct))
   // Discount math: order is subtotal → minus discount → minus TIK → cash.
   // Final clamped to 0. Same order applied in SOW PDF and public page.
   const discountCents = (() => {
@@ -435,7 +440,18 @@ export default function SowDetailPage({
           deposit_cents: depositCents,
           deposit_pct: pct,
         },
-        payment_terms: paymentTerms,
+        payment_terms:
+          paymentTerms.trim() ||
+          buildSowPaymentTerms({
+            oneTimeCents: oneTimeTotalCents,
+            monthlyCents: monthlyTotalCents,
+            quarterlyCents: quarterlyTotalCents,
+            annualCents: annualTotalCents,
+            depositPct: pct,
+            depositCents,
+            tradeCents,
+            discountCents,
+          }),
         guarantees,
         notes,
         send_date: sendDate || null,
@@ -1489,13 +1505,35 @@ export default function SowDetailPage({
               className="text-xs uppercase tracking-wide font-semibold pb-1.5 mb-3"
               style={{ color: '#5d6780', borderBottom: '1px solid #e2e8f0' }}
             >
-              Payment terms
+              <div className="flex items-center justify-between">
+                <span>Payment terms</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = buildSowPaymentTerms({
+                      oneTimeCents: oneTimeTotalCents,
+                      monthlyCents: monthlyTotalCents,
+                      quarterlyCents: quarterlyTotalCents,
+                      annualCents: annualTotalCents,
+                      depositPct: pct,
+                      depositCents,
+                      tradeCents,
+                      discountCents,
+                    })
+                    setPaymentTerms(next)
+                    markDirty()
+                  }}
+                  className="text-[10px] normal-case tracking-normal font-normal text-teal-600 hover:underline"
+                >
+                  Auto-generate from terms
+                </button>
+              </div>
             </div>
             <FieldTextarea
               value={paymentTerms}
               onChange={(v) => { setPaymentTerms(v); markDirty() }}
-              placeholder="e.g. 50% deposit due on signing; balance due on delivery..."
-              rows={2}
+              placeholder="Auto-generated on save if left blank — click 'Auto-generate' to preview, then edit freely."
+              rows={3}
             />
           </section>
 

@@ -330,6 +330,8 @@ ${clientBlockHtml(client)}
 
 ${inv.late_fee_cents > 0 && !inv.late_fee_applied_at ? `<p style="font-size:12px;color:#5d6780">Late fee of ${formatCents(inv.late_fee_cents)} applies if unpaid after ${inv.late_fee_grace_days} days past due.</p>` : ''}
 
+${inv.payment_terms ? `<section><h2>Payment Terms</h2><p>${escapeHtml(inv.payment_terms)}</p></section>` : ''}
+
 ${inv.notes ? `<section><h2>Notes</h2><p>${escapeHtml(inv.notes)}</p></section>` : ''}
 
 <footer>Demand Signals · DemandSignals@gmail.com · (916) 542-2423 · demandsignals.co</footer>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Plus, Trash2, Loader2, Sparkles, ChevronUp, ChevronDown } from 'lucide-react'
 import { CatalogPicker, type CatalogPickerItem } from '@/components/admin/catalog-picker'
 import { formatCents } from '@/lib/format'
+import { buildSowPaymentTerms } from '@/lib/payment-terms'
 import type { Cadence } from '@/lib/invoice-types'
 
 interface Prospect {
@@ -124,9 +125,7 @@ export default function NewSowPage() {
     { id: newId(), name: 'Phase 1', description: '', deliverables: [] },
   ])
   const [depositPct, setDepositPct] = useState('25')
-  const [paymentTerms, setPaymentTerms] = useState(
-    'Net 30. 25% deposit on acceptance; remainder on delivery.',
-  )
+  const [paymentTerms, setPaymentTerms] = useState('')
   const [guarantees, setGuarantees] = useState('')
   const [notes, setNotes] = useState('')
   const [tradeCents, setTradeCents] = useState(0)
@@ -295,7 +294,11 @@ export default function NewSowPage() {
     .filter((d) => d.cadence === 'annual')
     .reduce((s, d) => s + computeLineCents(d), 0)
 
-  const pct = parseInt(depositPct) || 25
+  const parsedPct = Number.parseFloat(depositPct)
+  const pct =
+    depositPct.trim() === '' || !Number.isFinite(parsedPct)
+      ? 25
+      : Math.max(0, Math.min(100, parsedPct))
   const cashTotalCents = Math.max(0, oneTimeTotalCents - tradeCents)
   const depositCents = Math.round((cashTotalCents * pct) / 100)
   const balanceCents = cashTotalCents - depositCents
@@ -331,7 +334,19 @@ export default function NewSowPage() {
             deposit_cents: depositCents,
             deposit_pct: pct,
           },
-          payment_terms: paymentTerms || undefined,
+          payment_terms:
+            paymentTerms.trim() ||
+            buildSowPaymentTerms({
+              oneTimeCents: oneTimeTotalCents,
+              monthlyCents: monthlyTotalCents,
+              quarterlyCents: quarterlyTotalCents,
+              annualCents: annualTotalCents,
+              depositPct: pct,
+              depositCents,
+              tradeCents,
+              discountCents: 0,
+            }) ||
+            undefined,
           guarantees: guarantees || undefined,
           notes: notes || undefined,
           computed_from_deliverables: true,
@@ -731,12 +746,35 @@ export default function NewSowPage() {
           </div>
         </div>
         <label className="block">
-          Payment terms
+          <div className="flex items-center justify-between mb-1">
+            <span>Payment terms</span>
+            <button
+              type="button"
+              onClick={() =>
+                setPaymentTerms(
+                  buildSowPaymentTerms({
+                    oneTimeCents: oneTimeTotalCents,
+                    monthlyCents: monthlyTotalCents,
+                    quarterlyCents: quarterlyTotalCents,
+                    annualCents: annualTotalCents,
+                    depositPct: pct,
+                    depositCents,
+                    tradeCents,
+                    discountCents: 0,
+                  }),
+                )
+              }
+              className="text-xs text-teal-600 hover:underline"
+            >
+              Auto-generate from terms
+            </button>
+          </div>
           <textarea
             value={paymentTerms}
             onChange={(e) => setPaymentTerms(e.target.value)}
-            rows={2}
-            className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
+            rows={3}
+            placeholder="Auto-generated on save if left blank — click 'Auto-generate' to preview, then edit freely."
+            className="w-full border border-slate-200 rounded px-2 py-1"
           />
         </label>
         <label className="block">
