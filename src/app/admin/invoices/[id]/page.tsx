@@ -1458,6 +1458,66 @@ export default function InvoiceDetailPage({
             </div>
           )}
 
+          {/* Magic-link preview — shown inline so admin can copy the URL
+              without rendering the PDF. For drafts, surfaces the gated
+              behavior so admin doesn't paste a 404-bound URL. */}
+          <div className="rounded-lg p-3 border border-slate-200 bg-slate-50/40">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase tracking-wide font-semibold text-slate-500">
+                Client magic link
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => navigator.clipboard.writeText(publicUrl)}
+                  className="text-xs text-teal-600 hover:underline"
+                  title="Copy URL"
+                >
+                  Copy
+                </button>
+                {!isDraft && (
+                  <a
+                    href={publicUrl}
+                    target="_blank"
+                    rel="noopener"
+                    className="text-xs text-teal-600 hover:underline"
+                  >
+                    Open ↗
+                  </a>
+                )}
+              </div>
+            </div>
+            <code className="block mt-1 text-[11px] text-slate-700 break-all">{publicUrl}</code>
+            {isDraft && (
+              <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                Draft — link returns 404 until the invoice is sent. Click <strong>Send</strong> to issue + activate the link.
+              </div>
+            )}
+          </div>
+
+          {/* Subscription disclosure — surfaces when invoice has recurring
+              lines so admin sees what will happen on Send (Stripe sub
+              auto-create). Hunter directive 2026-05-02: "nothing in the
+              invoice says subscription." */}
+          {invoice.subscription_intent === 'pending' && hasRecurringLines && (
+            <div className="rounded-lg p-3 border-2" style={{ borderColor: '#68c5ad', background: '#f0fdf9' }}>
+              <div className="text-xs uppercase tracking-wide font-semibold text-teal-700 mb-1">
+                Recurring subscription will be created
+              </div>
+              <div className="text-sm text-slate-700">
+                On payment of this invoice, a Stripe subscription auto-bills{' '}
+                <strong>{formatCents(monthlyDisplayCents)}/mo</strong>{' '}
+                to the same card{untilCancelled ? ' until cancelled' : termMonths ? ` for ${termMonths} months` : ''}.
+                The card from this invoice is saved and re-used. Card captured once, set and forget.
+              </div>
+            </div>
+          )}
+          {invoice.subscription_intent === 'created' && (
+            <div className="rounded-lg p-3 border border-emerald-200 bg-emerald-50 text-sm text-emerald-800">
+              <strong>Stripe subscription is live.</strong> Recurring cycles will auto-bill + auto-create receipts.
+              Manage at <Link href="/admin/subscriptions" className="underline">/admin/subscriptions</Link>.
+            </div>
+          )}
+
           {/* Client block */}
           {p && (
             <div className="rounded-lg p-4" style={{ background: '#f4f6f9' }}>

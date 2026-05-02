@@ -302,9 +302,31 @@ function totalsBlock(inv: InvoiceWithLineItems, paySummary?: PaymentSummary): st
 function paymentCard(inv: InvoiceWithLineItems, paySummary?: PaymentSummary): string {
   const isPaid = inv.status === 'paid'
   const isVoid = inv.status === 'void'
-  const isOutstanding = !isPaid && !isVoid && inv.total_due_cents > 0
+  const isDraft = inv.status === 'draft'
+  const isOutstanding = !isPaid && !isVoid && !isDraft && inv.total_due_cents > 0
   const baseUrl = 'https://demandsignals.co'
   const payUrl = `${baseUrl}/invoice/${encodeURIComponent(inv.invoice_number)}/${inv.public_uuid}`
+
+  if (isDraft) {
+    // Draft preview — never embed the magic-link URL because the public
+    // route gates drafts behind admin auth. Showing the link in the PDF
+    // would 404 when a non-admin (or any client) opens it. The PAYMENT
+    // section becomes a "preview-only" reminder until the invoice is
+    // sent. Once status flips to 'sent', the live Pay button appears.
+    return `
+    <div style="
+      margin:20px 54px 0;
+      background:${T.VLT};
+      border-left:3px solid ${T.ORANGE_S};
+      padding:14px 20px;
+      font-family:${FONT_STACK};
+    ">
+      <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.ORANGE_S};margin-bottom:7px">PAYMENT — DRAFT PREVIEW</p>
+      <p style="font-size:12px;color:${T.BODY};line-height:1.6">
+        This invoice is still in draft. The payment link will appear here once it is sent.
+      </p>
+    </div>`
+  }
 
   if (!isOutstanding) {
     // Paid/void/zero — describe accurately.

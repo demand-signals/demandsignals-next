@@ -964,6 +964,43 @@ export default function SowDetailPage({
         </div>
 
         <div className="px-10 py-8 space-y-8" style={{ color: '#1d2330' }}>
+          {/* Magic-link preview — inline so admin can copy/test the URL
+              without rendering the PDF. The SOW magic-link page is ALSO
+              the approval surface (Accept button lives there). For drafts,
+              the link 404s until the SOW is sent. */}
+          <div className="rounded-lg p-3 border border-slate-200 bg-slate-50/40">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase tracking-wide font-semibold text-slate-500">
+                Client magic link {!isDraft && <span className="text-slate-400 normal-case font-normal">— Accept button lives here</span>}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => navigator.clipboard.writeText(publicUrl)}
+                  className="text-xs text-teal-600 hover:underline"
+                  title="Copy URL"
+                >
+                  Copy
+                </button>
+                {!isDraft && (
+                  <a
+                    href={publicUrl}
+                    target="_blank"
+                    rel="noopener"
+                    className="text-xs text-teal-600 hover:underline"
+                  >
+                    Open ↗
+                  </a>
+                )}
+              </div>
+            </div>
+            <code className="block mt-1 text-[11px] text-slate-700 break-all">{publicUrl}</code>
+            {isDraft && (
+              <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                Draft — link returns 404 until the SOW is sent. Click <strong>Send</strong> to issue + activate the link (and the client&apos;s Accept button).
+              </div>
+            )}
+          </div>
+
           {/* Client block */}
           {p && (
             <div
@@ -1524,6 +1561,68 @@ export default function SowDetailPage({
                 ) : (
                   <div />
                 )}
+              </div>
+            </div>
+
+            {/* Three-column economics — admin-side at-a-glance breakdown.
+                One-Time = upfront cash (post discount + TIK).
+                Monthly = monthly recurring + (annual / 12) + (quarterly / 3)
+                  for comparable display. Quarterly is a SOW-only legacy
+                  cadence (invoices use one_time/monthly/annual only).
+                Total = first-cycle billable (one-time + first month/qtr/yr
+                  of each recurring line). After this, recurring runs on
+                  subscription. */}
+            <div className="grid grid-cols-3 gap-3 max-w-xl ml-auto mb-4">
+              <div className="rounded-lg p-3 border border-slate-200" style={{ background: '#fafbfc' }}>
+                <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">One-Time</div>
+                <div className="text-lg font-bold" style={{ color: '#1d2330' }}>
+                  {formatCents(cashTotalCents > 0 ? cashTotalCents : oneTimeTotalCents)}
+                </div>
+                <div className="text-[10px] text-slate-400 mt-0.5">
+                  {(tradeCents > 0 || discountCents > 0) ? 'after TIK + discount' : 'billed once'}
+                </div>
+              </div>
+              <div className="rounded-lg p-3 border border-slate-200" style={{ background: '#fafbfc' }}>
+                <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Monthly</div>
+                {(() => {
+                  const monthlyEquiv = monthlyTotalCents
+                    + Math.round((quarterlyTotalCents ?? 0) / 3)
+                    + Math.round((annualTotalCents ?? 0) / 12)
+                  const hasAny = monthlyEquiv > 0
+                  return (
+                    <>
+                      <div className="text-lg font-bold" style={{ color: '#1d2330' }}>
+                        {formatCents(monthlyEquiv)}
+                        {hasAny && <span className="text-xs text-slate-400 font-normal">/mo</span>}
+                      </div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">
+                        {!hasAny
+                          ? '—'
+                          : annualTotalCents > 0 && monthlyTotalCents === 0 && quarterlyTotalCents === 0
+                            ? `${formatCents(annualTotalCents)}/yr equiv`
+                            : (annualTotalCents > 0 || quarterlyTotalCents > 0)
+                              ? 'incl. annual/qtr equiv'
+                              : 'subscription'}
+                      </div>
+                    </>
+                  )
+                })()}
+              </div>
+              <div className="rounded-lg p-3 border-2" style={{ background: '#f0fdf9', borderColor: '#68c5ad' }}>
+                <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">First Cycle</div>
+                <div className="text-lg font-bold" style={{ color: '#1d2330' }}>
+                  {formatCents(
+                    (cashTotalCents > 0 ? cashTotalCents : oneTimeTotalCents)
+                    + monthlyTotalCents
+                    + quarterlyTotalCents
+                    + annualTotalCents,
+                  )}
+                </div>
+                <div className="text-[10px] text-slate-500 mt-0.5">
+                  {(monthlyTotalCents > 0 || quarterlyTotalCents > 0 || annualTotalCents > 0)
+                    ? 'one-time + first cycle'
+                    : 'one-time only'}
+                </div>
               </div>
             </div>
 

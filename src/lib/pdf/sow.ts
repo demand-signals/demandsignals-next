@@ -392,7 +392,27 @@ function investmentPage(sow: SowDocument): string {
   const hasCash       = totals.oneTime > 0
   const hasRecurring  = totals.monthly > 0 || totals.quarterly > 0 || totals.annual > 0
 
-  const bigNumber = hasReductions ? formatCents(cashOneTime) : formatCents(totals.oneTime)
+  // bigNumber semantics:
+  //   - cash + recurring → cash one-time (with TIK/discount applied if present)
+  //   - cash only → cash one-time
+  //   - recurring only → the dominant recurring rate (monthly first, then annual)
+  //     so the headline doesn't read "$0" when there's real money on the deal
+  let bigNumber: string
+  let bigNumberSuffix: string = ''
+  if (hasCash) {
+    bigNumber = hasReductions ? formatCents(cashOneTime) : formatCents(totals.oneTime)
+  } else if (totals.monthly > 0) {
+    bigNumber = formatCents(totals.monthly)
+    bigNumberSuffix = '/mo'
+  } else if (totals.annual > 0) {
+    bigNumber = formatCents(totals.annual)
+    bigNumberSuffix = '/yr'
+  } else if (totals.quarterly > 0) {
+    bigNumber = formatCents(totals.quarterly)
+    bigNumberSuffix = '/qtr'
+  } else {
+    bigNumber = '$0'
+  }
 
   const isAccepted  = !!sow.accepted_at && !!sow.accepted_signature
   const acceptedDate = isAccepted
@@ -484,11 +504,12 @@ function investmentPage(sow: SowDocument): string {
         line-height:1;
         margin-bottom:4px;
         font-variant-numeric:tabular-nums;
-      ">${bigNumber}</div>
+      ">${bigNumber}${bigNumberSuffix ? `<span style="font-size:24px;color:${T.GRAY};font-weight:400;letter-spacing:-0.01em">${bigNumberSuffix}</span>` : ''}</div>
       ${oDiv()}
 
       ${tikCents > 0 ? `<p style="font-size:12px;color:${T.BODY};margin-bottom:2px">cash project total (after ${formatCents(tikCents)} trade-in-kind credit)</p>` : ''}
-      ${hasRecurring ? `<p style="font-size:12px;color:${T.TEAL};margin-bottom:2px">+ recurring services as scheduled below</p>` : ''}
+      ${hasRecurring && hasCash ? `<p style="font-size:12px;color:${T.TEAL};margin-bottom:2px">+ recurring services as scheduled below</p>` : ''}
+      ${hasRecurring && !hasCash ? `<p style="font-size:12px;color:${T.GRAY};margin-bottom:2px">recurring service — no upfront cost</p>` : ''}
 
       <!-- Breakdown table -->
       <div style="max-width:460px;margin-top:20px;margin-bottom:20px">
