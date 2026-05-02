@@ -18,8 +18,11 @@ import {
   Send,
   RotateCcw,
   RefreshCw,
+  Clock,
+  X as XIcon,
 } from 'lucide-react'
 import { formatCents } from '@/lib/format'
+import { buildInvoicePaymentTerms } from '@/lib/payment-terms'
 import ProspectContactEditor, { type ProspectContact } from '@/components/admin/ProspectContactEditor'
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -183,6 +186,25 @@ export default function InvoiceDetailPage({
   const [saveError, setSaveError] = useState<string | null>(null)
   const [dirty, setDirty] = useState(false)
   const [sendModal, setSendModal] = useState<{ public_url: string; pay_url: string | null } | null>(null)
+  // Schedule-send state. scheduleModal=true opens the picker; scheduledRows
+  // is the list of pending+past schedules for this invoice (loaded via GET).
+  const [scheduleModal, setScheduleModal] = useState(false)
+  const [scheduledRows, setScheduledRows] = useState<Array<{
+    id: string
+    channel: 'email' | 'sms' | 'both'
+    send_at: string
+    status: 'scheduled' | 'fired' | 'cancelled' | 'failed'
+    fired_at: string | null
+    override_email: string | null
+    override_phone: string | null
+    error_message: string | null
+  }>>([])
+  const [scheduleAt, setScheduleAt] = useState('')
+  const [scheduleChannel, setScheduleChannel] = useState<'email' | 'sms' | 'both'>('email')
+  const [scheduleOverrideEmail, setScheduleOverrideEmail] = useState('')
+  const [scheduleOverridePhone, setScheduleOverridePhone] = useState('')
+  const [scheduleSubmitting, setScheduleSubmitting] = useState(false)
+  const [scheduleError, setScheduleError] = useState<string | null>(null)
 
   // Editable state
   const [lines, setLines] = useState<LineItem[]>([])
@@ -202,6 +224,8 @@ export default function InvoiceDetailPage({
   const [discountValueBps, setDiscountValueBps] = useState(0)
   const [discountAmountCents, setDiscountAmountCents] = useState(0)
   const [discountDescription, setDiscountDescription] = useState('')
+  // Free-text payment terms (migration 040). Empty on save = server auto-generates.
+  const [paymentTerms, setPaymentTerms] = useState('')
 
   function markDirty() {
     setDirty(true)
@@ -248,6 +272,9 @@ export default function InvoiceDetailPage({
     setDiscountPctInput((dbps / 100).toString())
     setDiscountAmountInput(centsToInput(damt))
     setDiscountDescription((d.invoice as DiscFields).discount_description ?? '')
+    // Payment terms (migration 040). Pre-fill from saved value; server auto-gen
+    // takes over only when admin explicitly leaves it blank on save.
+    setPaymentTerms((d.invoice as typeof d.invoice & { payment_terms?: string | null }).payment_terms ?? '')
     setDirty(false)
   }
 
@@ -310,6 +337,8 @@ export default function InvoiceDetailPage({
         discount_value_bps: discountKind === 'percent' ? discountValueBps : 0,
         discount_amount_cents: discountKind === 'amount' ? discountAmountCents : 0,
         discount_description: discountKind ? (discountDescription.trim() || null) : null,
+        // Empty trim = server keeps NULL until next auto-gen. Non-empty = admin-authored.
+        payment_terms: paymentTerms.trim() || null,
         line_items: lines
           .filter((l) => l.description.trim())
           .map((l) => ({
@@ -356,7 +385,10 @@ export default function InvoiceDetailPage({
   async function send() {
     if (!detail) return
     setBusy(true)
-    const res = await fetch(`/api/admin/invoices/${id}/send`, { method: 'POST' })
+    const res = await fetch(`/api/admin/invoices/${id}/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
     const data = await res.json()
     setBusy(false)
     if (!res.ok) { alert(data.error); return }
@@ -396,7 +428,10 @@ export default function InvoiceDetailPage({
 
   async function sendSms() {
     setBusy(true)
-    const res = await fetch(`/api/admin/invoices/${id}/send-sms`, { method: 'POST' })
+    const res = await fetch(`/api/admin/invoices/${id}/send-sms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
     const data = await res.json()
     setBusy(false)
     alert(res.ok ? `SMS sent (${data.message_id})` : `SMS failed: ${data.error}`)
@@ -405,7 +440,10 @@ export default function InvoiceDetailPage({
 
   async function sendEmail() {
     setBusy(true)
-    const res = await fetch(`/api/admin/invoices/${id}/send-email`, { method: 'POST' })
+    const res = await fetch(`/api/admin/invoices/${id}/send-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
     const data = await res.json()
     setBusy(false)
     alert(res.ok ? 'Email sent' : `Email failed: ${data.error}`)
@@ -414,7 +452,10 @@ export default function InvoiceDetailPage({
 
   async function createPaymentLink() {
     setBusy(true)
-    const res = await fetch(`/api/admin/invoices/${id}/payment-link`, { method: 'POST' })
+    const res = await fetch(`/api/admin/invoices/${id}/payment-link`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
     const data = await res.json()
     setBusy(false)
     if (res.ok) window.open(data.url, '_blank')
@@ -447,7 +488,10 @@ export default function InvoiceDetailPage({
 
   async function resend() {
     setBusy(true)
-    const res = await fetch(`/api/admin/invoices/${id}/resend`, { method: 'POST' })
+    const res = await fetch(`/api/admin/invoices/${id}/resend`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
     const data = await res.json()
     setBusy(false)
     if (!res.ok) { alert(data.error ?? 'Resend failed'); return }
@@ -463,12 +507,88 @@ export default function InvoiceDetailPage({
   async function regeneratePdf() {
     if (!confirm('Regenerate the PDF for this invoice? This re-renders against current state and replaces the file in R2.')) return
     setBusy(true)
-    const res = await fetch(`/api/admin/invoices/${id}/regenerate-pdf`, { method: 'POST' })
+    const res = await fetch(`/api/admin/invoices/${id}/regenerate-pdf`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
     const data = await res.json()
     setBusy(false)
     if (!res.ok) { alert(data.error ?? 'Regeneration failed'); return }
     alert('PDF regenerated. Reload the magic-link page or re-download to see fresh state.')
     load()
+  }
+
+  // ── Schedule-send helpers ─────────────────────────────────────────
+
+  async function loadScheduledRows() {
+    try {
+      const res = await fetch(`/api/admin/invoices/${id}/schedule-send`)
+      if (!res.ok) return
+      const data = await res.json()
+      setScheduledRows(data.data ?? [])
+    } catch {
+      /* silent — modal still usable */
+    }
+  }
+
+  function openScheduleModal() {
+    // Default to tomorrow 9 AM in the local zone (formatted for datetime-local).
+    const t = new Date()
+    t.setDate(t.getDate() + 1)
+    t.setHours(9, 0, 0, 0)
+    const tzOffsetMs = t.getTimezoneOffset() * 60_000
+    const localISO = new Date(t.getTime() - tzOffsetMs).toISOString().slice(0, 16)
+    setScheduleAt(localISO)
+    setScheduleChannel('email')
+    setScheduleOverrideEmail('')
+    setScheduleOverridePhone('')
+    setScheduleError(null)
+    setScheduleModal(true)
+    loadScheduledRows()
+  }
+
+  async function submitSchedule() {
+    setScheduleSubmitting(true)
+    setScheduleError(null)
+    try {
+      // datetime-local is interpreted as the user's local zone — convert to ISO UTC.
+      const sendAtIso = new Date(scheduleAt).toISOString()
+      const body: Record<string, string> = { send_at: sendAtIso, channel: scheduleChannel }
+      if (scheduleOverrideEmail) body.override_email = scheduleOverrideEmail
+      if (scheduleOverridePhone) body.override_phone = scheduleOverridePhone
+      const res = await fetch(`/api/admin/invoices/${id}/schedule-send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setScheduleError(data.error ?? 'Failed to schedule')
+        return
+      }
+      await loadScheduledRows()
+      // Clear the form so admin can queue another quickly.
+      setScheduleOverrideEmail('')
+      setScheduleOverridePhone('')
+    } catch (e) {
+      setScheduleError(e instanceof Error ? e.message : 'Failed to schedule')
+    } finally {
+      setScheduleSubmitting(false)
+    }
+  }
+
+  async function cancelSchedule(scheduleId: string) {
+    if (!confirm('Cancel this scheduled send?')) return
+    const res = await fetch(`/api/admin/invoices/${id}/schedule-send/${scheduleId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      alert(data.error ?? 'Cancel failed')
+      return
+    }
+    await loadScheduledRows()
   }
 
   // ── Line item helpers ─────────────────────────────────────────────
@@ -594,6 +714,9 @@ export default function InvoiceDetailPage({
             </button>
             <button onClick={sendEmail} disabled={busy} className="bg-blue-100 text-blue-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
               <Mail className="w-3.5 h-3.5" /> Email
+            </button>
+            <button onClick={openScheduleModal} disabled={busy} className="bg-indigo-100 text-indigo-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" /> Schedule
             </button>
             {invoice.total_due_cents > 0 && (
               <button onClick={createPaymentLink} disabled={busy} className="bg-emerald-100 text-emerald-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
@@ -1145,6 +1268,42 @@ export default function InvoiceDetailPage({
             )}
           </section>
 
+          {/* Payment terms (migration 040) */}
+          <section>
+            <div
+              className="text-xs uppercase tracking-wide font-semibold pb-1.5 mb-3"
+              style={{ color: '#5d6780', borderBottom: '1px solid #e2e8f0' }}
+            >
+              <div className="flex items-center justify-between">
+                <span>Payment terms</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = buildInvoicePaymentTerms({
+                      totalCents: totalDueCents,
+                      dueDate: dueDate || null,
+                      tradeCents: tikCents,
+                      discountCents: docDiscountCents,
+                      lateFeeCents: lateFeeCents,
+                      lateFeeGraceDays: lateFeeGraceDays,
+                    })
+                    setPaymentTerms(next)
+                    markDirty()
+                  }}
+                  className="text-[10px] normal-case tracking-normal font-normal text-teal-600 hover:underline"
+                >
+                  Auto-generate from terms
+                </button>
+              </div>
+            </div>
+            <FieldTextarea
+              value={paymentTerms}
+              onChange={(v) => { setPaymentTerms(v); markDirty() }}
+              placeholder="Auto-generated on save if left blank — click 'Auto-generate' to preview, then edit freely."
+              rows={3}
+            />
+          </section>
+
           {/* Notes */}
           <section>
             <div
@@ -1156,7 +1315,7 @@ export default function InvoiceDetailPage({
             <FieldTextarea
               value={notes}
               onChange={(v) => { setNotes(v); markDirty() }}
-              placeholder="Additional notes for the client..."
+              placeholder="Internal notes or extra context (separate from payment terms)."
               rows={2}
             />
           </section>
@@ -1219,6 +1378,138 @@ export default function InvoiceDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Schedule-send modal */}
+      {scheduleModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-bold">Schedule a send</h2>
+                <p className="text-sm text-slate-600">
+                  Queue a future email and/or SMS. Cron runs every 5 minutes — actual fire time may be up to 5 min after the scheduled minute.
+                </p>
+              </div>
+              <button onClick={() => setScheduleModal(false)} className="text-slate-400 hover:text-slate-600">
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 border-t border-slate-200 pt-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
+                  When (local time)
+                </label>
+                <input
+                  type="datetime-local"
+                  value={scheduleAt}
+                  onChange={(e) => setScheduleAt(e.target.value)}
+                  className="border border-slate-300 rounded px-2 py-1.5 text-sm w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
+                  Channel
+                </label>
+                <select
+                  value={scheduleChannel}
+                  onChange={(e) => setScheduleChannel(e.target.value as 'email' | 'sms' | 'both')}
+                  className="border border-slate-300 rounded px-2 py-1.5 text-sm"
+                >
+                  <option value="email">Email</option>
+                  <option value="sms">SMS</option>
+                  <option value="both">Both</option>
+                </select>
+              </div>
+              {(scheduleChannel === 'email' || scheduleChannel === 'both') && (
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
+                    Override email (optional)
+                  </label>
+                  <input
+                    type="email"
+                    value={scheduleOverrideEmail}
+                    onChange={(e) => setScheduleOverrideEmail(e.target.value)}
+                    placeholder={detail?.invoice.prospect?.owner_email ?? 'Defaults to prospect email'}
+                    className="border border-slate-300 rounded px-2 py-1.5 text-sm w-full"
+                  />
+                </div>
+              )}
+              {(scheduleChannel === 'sms' || scheduleChannel === 'both') && (
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
+                    Override phone (optional)
+                  </label>
+                  <input
+                    type="tel"
+                    value={scheduleOverridePhone}
+                    onChange={(e) => setScheduleOverridePhone(e.target.value)}
+                    placeholder={detail?.invoice.prospect?.owner_phone ?? 'Defaults to prospect phone'}
+                    className="border border-slate-300 rounded px-2 py-1.5 text-sm w-full"
+                  />
+                </div>
+              )}
+              {scheduleError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-3 py-2">
+                  {scheduleError}
+                </div>
+              )}
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setScheduleModal(false)}
+                  className="bg-slate-100 text-slate-700 rounded px-4 py-1.5 text-sm"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={submitSchedule}
+                  disabled={scheduleSubmitting || !scheduleAt}
+                  className="bg-indigo-600 text-white rounded px-4 py-1.5 text-sm font-semibold disabled:opacity-50"
+                >
+                  {scheduleSubmitting ? 'Scheduling…' : 'Schedule send'}
+                </button>
+              </div>
+            </div>
+
+            {scheduledRows.length > 0 && (
+              <div className="border-t border-slate-200 pt-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                  Existing schedules ({scheduledRows.length})
+                </h3>
+                <div className="space-y-2">
+                  {scheduledRows.map((s) => (
+                    <div key={s.id} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded px-3 py-2 text-sm">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium">
+                          {new Date(s.send_at).toLocaleString()} — <span className="text-slate-500">{s.channel}</span>
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          status: <span className={
+                            s.status === 'fired' ? 'text-emerald-600 font-semibold'
+                            : s.status === 'failed' ? 'text-red-600 font-semibold'
+                            : s.status === 'cancelled' ? 'text-slate-500'
+                            : 'text-indigo-600 font-semibold'
+                          }>{s.status}</span>
+                          {s.fired_at && ` · fired ${new Date(s.fired_at).toLocaleString()}`}
+                          {s.error_message && ` · ${s.error_message}`}
+                        </div>
+                      </div>
+                      {s.status === 'scheduled' && (
+                        <button
+                          onClick={() => cancelSchedule(s.id)}
+                          className="ml-3 text-red-600 hover:text-red-700 text-xs"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Send modal */}
       {sendModal && (

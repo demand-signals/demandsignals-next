@@ -15,23 +15,37 @@ const ALLOWED_ORIGINS = new Set<string>([
 ])
 
 export async function requireAdmin(request: NextRequest) {
-  // CSRF: validate origin on state-changing requests (POST/PATCH/DELETE/PUT).
-  // Modern browsers send Origin on all cross-origin state-changing requests
-  // per fetch spec. A missing Origin on a mutation is either server-to-server
-  // (no current admin caller does that) or a CSRF bypass attempt — deny.
+  // CSRF: validate on state-changing requests (POST/PATCH/DELETE/PUT).
+  //
+  // Tier 1: Origin header (preferred). Browsers send it on all cross-origin
+  //   state-changing requests per fetch spec. We exact-match against
+  //   ALLOWED_ORIGINS — never startsWith.
+  //
+  // Tier 2: Sec-Fetch-Site fallback. Chrome strips Origin on header-light
+  //   same-origin POSTs (no body, no Content-Type). Sec-Fetch-Site is a
+  //   Fetch-Metadata "forbidden" header — JS cannot set it. The browser
+  //   writes it after the fetch leaves the page context, so a cross-origin
+  //   attacker cannot forge it. 'same-origin' is what /admin -> /api calls
+  //   produce; 'none' is what address-bar / top-level navigations produce.
+  //   Both are CSRF-safe.
+  //
+  // Anything else (no Origin AND no acceptable Sec-Fetch-Site) is denied.
   if (request.method !== 'GET') {
     const origin = request.headers.get('origin')
-    if (!origin) {
+    const secFetchSite = request.headers.get('sec-fetch-site')
+
+    if (origin) {
+      let normalized: string
+      try {
+        normalized = new URL(origin).origin
+      } catch {
+        return { error: NextResponse.json({ error: 'Forbidden — invalid origin' }, { status: 403 }) }
+      }
+      if (!ALLOWED_ORIGINS.has(normalized)) {
+        return { error: NextResponse.json({ error: 'Forbidden — invalid origin' }, { status: 403 }) }
+      }
+    } else if (secFetchSite !== 'same-origin' && secFetchSite !== 'none') {
       return { error: NextResponse.json({ error: 'Forbidden — origin required' }, { status: 403 }) }
-    }
-    let normalized: string
-    try {
-      normalized = new URL(origin).origin
-    } catch {
-      return { error: NextResponse.json({ error: 'Forbidden — invalid origin' }, { status: 403 }) }
-    }
-    if (!ALLOWED_ORIGINS.has(normalized)) {
-      return { error: NextResponse.json({ error: 'Forbidden — invalid origin' }, { status: 403 }) }
     }
   }
 

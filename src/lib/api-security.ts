@@ -120,13 +120,27 @@ export function apiGuard(req: NextRequest): NextResponse | null {
 }
 
 // ── Admin API guard (origin + auth, for state-changing admin routes) ─────────
-// Use on POST/PATCH/DELETE admin endpoints for CSRF defense-in-depth
+// Use on POST/PATCH/DELETE admin endpoints for CSRF defense-in-depth.
+//
+// Tier 1: Origin header — exact-match against ALLOWED_ORIGINS (via isValidOrigin).
+// Tier 2: Sec-Fetch-Site fallback for header-light same-origin POSTs (Chrome
+//   strips Origin when there's no body and no Content-Type). Sec-Fetch-Site
+//   is a Fetch-Metadata "forbidden" header — JS can't set it, browser writes
+//   it after fetch leaves the page. 'same-origin' and 'none' are CSRF-safe.
+//
+// Mirror of the tiered check in admin-auth.ts requireAdmin(). Keep these in sync.
 export function adminOriginCheck(req: NextRequest): NextResponse | null {
-  if (req.method === 'GET') return null // GETs don't mutate, skip origin check
-  if (!isValidOrigin(req)) {
-    return NextResponse.json({ error: 'Forbidden — invalid origin' }, { status: 403 })
+  if (req.method === 'GET') return null
+  const origin = req.headers.get('origin')
+  if (origin) {
+    if (!isValidOrigin(req)) {
+      return NextResponse.json({ error: 'Forbidden — invalid origin' }, { status: 403 })
+    }
+    return null
   }
-  return null
+  const secFetchSite = req.headers.get('sec-fetch-site')
+  if (secFetchSite === 'same-origin' || secFetchSite === 'none') return null
+  return NextResponse.json({ error: 'Forbidden — origin required' }, { status: 403 })
 }
 
 // ── Safe error response ──────────────────────────────────────────────────────
