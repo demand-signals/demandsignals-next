@@ -16,7 +16,8 @@ import {
 export interface ReceiptData {
   id: string
   receipt_number: string
-  invoice_id: string
+  /** Null for TIK payments against a trade_credits ledger (no parent invoice). */
+  invoice_id: string | null
   prospect_id: string
   amount_cents: number
   currency: string
@@ -33,6 +34,20 @@ export interface ReceiptInvoiceData {
   send_date?: string | null
 }
 
+/**
+ * Optional TIK ledger context for TIK-payment receipts. When set, the
+ * receipt replaces the "Applied to invoice" section with a "Trade-in-Kind
+ * balance" section showing original / paid / remaining and the description
+ * of the TIK obligation (e.g., "Mechanic Services").
+ */
+export interface ReceiptTikLedgerContext {
+  description: string
+  original_amount_cents: number
+  remaining_cents: number
+  /** Optional SOW number for cross-reference. */
+  sow_number?: string | null
+}
+
 export interface ReceiptProspect {
   business_name: string
   client_code?: string | null
@@ -47,7 +62,10 @@ const METHOD_LABEL: Record<string, string> = {
   check:        'Check',
   wire:         'Wire Transfer',
   cash:         'Cash',
-  trade:        'Trade',
+  // 'trade' is the legacy label kept for back-compat. 'tik' is the
+  // canonical payment_method for trade-in-kind payments going forward.
+  trade:        'Trade-in-Kind',
+  tik:          'Trade-in-Kind',
   zero_balance: 'Zero Balance',
   other:        'Other',
 }
@@ -63,10 +81,12 @@ function formatDate(iso: string | null | undefined): string {
 
 function receiptBody(
   receipt: ReceiptData,
-  invoice: ReceiptInvoiceData,
+  invoice: ReceiptInvoiceData | null,
   prospect: ReceiptProspect,
+  tikLedger: ReceiptTikLedgerContext | null = null,
 ): string {
   const methodLabel = METHOD_LABEL[receipt.payment_method] ?? receipt.payment_method
+  const isTik = receipt.payment_method === 'tik' || receipt.payment_method === 'trade'
 
   return `
   <div style="
@@ -123,7 +143,7 @@ function receiptBody(
 
     <!-- Amount hero -->
     <div style="padding:28px 54px 24px;border-bottom:1px solid ${T.BORDER}">
-      <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px">AMOUNT PAID</p>
+      <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px">${isTik ? 'TRADE PAYMENT VALUE' : 'AMOUNT PAID'}</p>
       <div style="
         font-size:52px;
         font-weight:700;
@@ -132,7 +152,7 @@ function receiptBody(
         line-height:1;
         font-variant-numeric:tabular-nums;
       ">${formatCents(receipt.amount_cents)}</div>
-      <p style="font-size:11px;color:${T.GRAY};margin-top:5px">${receipt.currency.toUpperCase()}</p>
+      <p style="font-size:11px;color:${T.GRAY};margin-top:5px">${isTik ? 'IN-KIND VALUE · USD' : receipt.currency.toUpperCase()}</p>
     </div>
 
     <!-- Bill to + details columns -->
@@ -163,7 +183,29 @@ function receiptBody(
       </div>
     </div>
 
-    <!-- Applied to invoice -->
+    <!-- Context section: TIK ledger card OR linked invoice OR nothing.
+         TIK takes priority — when this is a trade-in-kind payment we show
+         the running balance on the underlying obligation so the client
+         knows how much is left on their TIK. -->
+    ${tikLedger ? `
+    <div style="padding:18px 54px;border-bottom:1px solid ${T.BORDER}">
+      <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:8px">APPLIED TO TRADE-IN-KIND BALANCE</p>
+      <p style="font-size:13px;font-weight:600;color:${T.SLATE};margin-bottom:10px">${esc(tikLedger.description)}${tikLedger.sow_number ? ` <span style="color:${T.BODY};font-weight:500;font-family:monospace;font-size:11px">· ${esc(tikLedger.sow_number)}</span>` : ''}</p>
+      <div style="display:flex;gap:0">
+        <div style="flex:1;padding-right:16px;border-right:1px solid ${T.BORDER}">
+          <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:3px">ORIGINAL TIK</p>
+          <p style="font-size:13px;font-weight:600;color:${T.SLATE};font-variant-numeric:tabular-nums">${formatCents(tikLedger.original_amount_cents)}</p>
+        </div>
+        <div style="flex:1;padding:0 16px;border-right:1px solid ${T.BORDER}">
+          <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:3px">THIS PAYMENT</p>
+          <p style="font-size:13px;font-weight:600;color:${T.TEAL_S};font-variant-numeric:tabular-nums">${formatCents(receipt.amount_cents)}</p>
+        </div>
+        <div style="flex:1;padding-left:16px">
+          <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:3px">TIK REMAINING</p>
+          <p style="font-size:13px;font-weight:600;color:${tikLedger.remaining_cents === 0 ? T.TEAL_S : T.SLATE};font-variant-numeric:tabular-nums">${formatCents(tikLedger.remaining_cents)}${tikLedger.remaining_cents === 0 ? ' ✓' : ''}</p>
+        </div>
+      </div>
+    </div>` : invoice ? `
     <div style="padding:18px 54px;border-bottom:1px solid ${T.BORDER};display:flex;justify-content:space-between;align-items:center">
       <div>
         <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:4px">APPLIED TO INVOICE</p>
@@ -174,7 +216,7 @@ function receiptBody(
         <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:4px">INVOICE TOTAL</p>
         <p style="font-size:13px;font-weight:600;color:${T.SLATE};font-variant-numeric:tabular-nums">${formatCents(invoice.total_due_cents)}</p>
       </div>
-    </div>
+    </div>` : ''}
 
     ${receipt.notes ? `
     <div style="
@@ -183,13 +225,13 @@ function receiptBody(
       border-left:3px solid ${T.TEAL};
       padding:14px 18px;
     ">
-      <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.TEAL};margin-bottom:7px">NOTES</p>
+      <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.TEAL};margin-bottom:7px">${isTik ? 'SERVICES DELIVERED' : 'NOTES'}</p>
       <p style="font-size:12px;color:${T.BODY};line-height:1.6">${esc(receipt.notes)}</p>
     </div>` : ''}
 
     <!-- Thank you -->
     <div style="padding:28px 54px 0;text-align:center">
-      <p style="font-size:16px;font-weight:700;color:${T.SLATE};margin-bottom:7px">Thank you for your payment!</p>
+      <p style="font-size:16px;font-weight:700;color:${T.SLATE};margin-bottom:7px">${isTik ? 'Thank you for the trade!' : 'Thank you for your payment!'}</p>
       <p style="font-size:12px;color:${T.BODY};margin-bottom:16px">Questions? Contact us at DemandSignals@gmail.com or (916) 542-2423.</p>
     </div>
 
@@ -204,15 +246,23 @@ function receiptBody(
 /**
  * Render a premium receipt PDF and return the raw Buffer.
  * Single-page interior layout with v2 spec header + footer.
+ *
+ * @param invoice  Pass the invoice this receipt was applied to, OR null
+ *                 for TIK payments that don't have a parent invoice.
+ * @param tikLedger When set, renders a "Trade-in-Kind balance" card
+ *                  (original / this payment / remaining) instead of the
+ *                  invoice-linked context. Only meaningful when
+ *                  payment_method='tik'.
  */
 export async function renderReceiptPdf(
   receipt: ReceiptData,
-  invoice: ReceiptInvoiceData,
+  invoice: ReceiptInvoiceData | null,
   prospect: ReceiptProspect,
+  tikLedger: ReceiptTikLedgerContext | null = null,
 ): Promise<Buffer> {
   const html = docShell(
     `Receipt ${receipt.receipt_number} — ${prospect.business_name}`,
-    receiptBody(receipt, invoice, prospect),
+    receiptBody(receipt, invoice, prospect, tikLedger),
   )
   return htmlToPdfBuffer(html, { format: 'Legal', printBackground: true })
 }

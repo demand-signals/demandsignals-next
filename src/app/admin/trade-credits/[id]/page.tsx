@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use, useCallback } from 'react'
 import Link from 'next/link'
-import { Loader2, Trash2, Coins } from 'lucide-react'
+import { Loader2, Trash2, Coins, FileText } from 'lucide-react'
 import { formatCents } from '@/lib/format'
 import type { TradeCreditStatus } from '@/lib/invoice-types'
 
@@ -31,6 +31,14 @@ interface Drawdown {
   created_at: string
 }
 
+// Result shape returned by the trade-payment endpoint after recording.
+interface TradePaymentResult {
+  receipt: { id: string; receipt_number: string } | null
+  send_channel: 'email' | 'sms' | 'both' | 'none'
+  email: { success: boolean; error?: string } | null
+  sms: { success: boolean; error?: string } | null
+}
+
 const STATUS_BADGE: Record<TradeCreditStatus, string> = {
   outstanding: 'bg-amber-100 text-amber-800',
   partial: 'bg-blue-100 text-blue-800',
@@ -49,7 +57,9 @@ export default function TradeCreditDetailPage({
   const [drawdowns, setDrawdowns] = useState<Drawdown[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Record drawdown form state
+  // Record-trade-payment form state. The DB row is still called a
+  // "drawdown" — UI copy reflects the canonical model: client paying
+  // their TIK balance with services/labor/goods.
   const [ddAmountInput, setDdAmountInput] = useState('0.00')
   const [ddAmountCents, setDdAmountCents] = useState(0)
   const [ddDescription, setDdDescription] = useState('')
@@ -57,8 +67,10 @@ export default function TradeCreditDetailPage({
     new Date().toISOString().slice(0, 10),
   )
   const [ddNotes, setDdNotes] = useState('')
+  const [ddSendChannel, setDdSendChannel] = useState<'email' | 'sms' | 'both' | 'none'>('both')
   const [ddBusy, setDdBusy] = useState(false)
   const [ddError, setDdError] = useState<string | null>(null)
+  const [ddResult, setDdResult] = useState<TradePaymentResult | null>(null)
 
   // Write-off state
   const [writeOffBusy, setWriteOffBusy] = useState(false)
@@ -78,14 +90,15 @@ export default function TradeCreditDetailPage({
     load()
   }, [load])
 
-  async function recordDrawdown(e: React.FormEvent) {
+  async function recordTradePayment(e: React.FormEvent) {
     e.preventDefault()
     if (!ddDescription || ddAmountCents <= 0) {
-      setDdError('Description and amount are required.')
+      setDdError('Description and value are required.')
       return
     }
     setDdBusy(true)
     setDdError(null)
+    setDdResult(null)
     try {
       const res = await fetch(`/api/admin/trade-credits/${id}/drawdowns`, {
         method: 'POST',
@@ -95,11 +108,18 @@ export default function TradeCreditDetailPage({
           description: ddDescription,
           delivered_on: ddDeliveredOn,
           notes: ddNotes || null,
+          send_channel: ddSendChannel,
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed')
-      // Reset form
+      setDdResult({
+        receipt: data.receipt ?? null,
+        send_channel: data.send_channel ?? 'none',
+        email: data.email ?? null,
+        sms: data.sms ?? null,
+      })
+      // Reset form (keep delivered_on at today and channel as-is)
       setDdAmountInput('0.00')
       setDdAmountCents(0)
       setDdDescription('')
@@ -114,7 +134,7 @@ export default function TradeCreditDetailPage({
   }
 
   async function deleteDrawdown(drawdownId: string) {
-    if (!confirm('Undo this draw-down? The amount will be added back to remaining.')) return
+    if (!confirm('Undo this trade payment? The amount will be added back to the TIK balance. The associated receipt is NOT auto-voided — handle that separately if needed.')) return
     const res = await fetch(`/api/admin/trade-credits/${id}/drawdowns/${drawdownId}`, {
       method: 'DELETE',
     })
@@ -201,7 +221,7 @@ export default function TradeCreditDetailPage({
             <div className="font-bold text-lg">{formatCents(tc.original_amount_cents)}</div>
           </div>
           <div>
-            <div className="text-xs uppercase text-slate-400 font-semibold mb-1">Drawn down</div>
+            <div className="text-xs uppercase text-slate-400 font-semibold mb-1">Paid by trade</div>
             <div className="font-bold text-lg text-emerald-700">
               {drawnDown > 0 ? formatCents(drawnDown) : '—'}
             </div>
@@ -250,11 +270,11 @@ export default function TradeCreditDetailPage({
         )}
       </div>
 
-      {/* Drawdown history */}
+      {/* Trade payment history */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
-        <h2 className="font-semibold text-slate-900">Trade deliveries</h2>
+        <h2 className="font-semibold text-slate-900">Trade payments</h2>
         {drawdowns.length === 0 ? (
-          <p className="text-sm text-slate-400">No deliveries recorded yet.</p>
+          <p className="text-sm text-slate-400">No trade payments recorded yet.</p>
         ) : (
           <table className="w-full text-sm">
             <thead>
@@ -290,7 +310,7 @@ export default function TradeCreditDetailPage({
                     <button
                       onClick={() => deleteDrawdown(dd.id)}
                       className="text-slate-300 hover:text-red-500"
-                      title="Undo this delivery"
+                      title="Undo this trade payment"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -302,25 +322,31 @@ export default function TradeCreditDetailPage({
         )}
       </div>
 
-      {/* Record delivery form */}
+      {/* Record trade payment form */}
       {isActive && (
         <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-          <h2 className="font-semibold text-slate-900">Record trade delivery</h2>
-          <form onSubmit={recordDrawdown} className="space-y-3 text-sm">
+          <div>
+            <h2 className="font-semibold text-slate-900">Record trade payment</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              The client paid down their TIK balance with services, labor, or goods.
+              We&apos;ll mint a receipt and send it to them.
+            </p>
+          </div>
+          <form onSubmit={recordTradePayment} className="space-y-3 text-sm">
             <div className="grid grid-cols-[1fr_160px] gap-3">
               <label>
-                <span className="text-xs uppercase font-semibold text-slate-400">Description</span>
+                <span className="text-xs uppercase font-semibold text-slate-400">What did the client deliver?</span>
                 <input
                   type="text"
                   value={ddDescription}
                   onChange={(e) => setDdDescription(e.target.value)}
-                  placeholder="What did the client deliver?"
+                  placeholder="e.g. Mechanic services on team van — 3 hrs labor"
                   className="w-full border border-slate-200 rounded px-2 py-1.5 mt-1"
                   required
                 />
               </label>
               <label>
-                <span className="text-xs uppercase font-semibold text-slate-400">Amount ($)</span>
+                <span className="text-xs uppercase font-semibold text-slate-400">In-kind value ($)</span>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -347,17 +373,65 @@ export default function TradeCreditDetailPage({
                 />
               </label>
               <label>
-                <span className="text-xs uppercase font-semibold text-slate-400">Notes (optional)</span>
-                <input
-                  type="text"
-                  value={ddNotes}
-                  onChange={(e) => setDdNotes(e.target.value)}
-                  className="w-full border border-slate-200 rounded px-2 py-1.5 mt-1"
-                />
+                <span className="text-xs uppercase font-semibold text-slate-400">Send receipt via</span>
+                <select
+                  value={ddSendChannel}
+                  onChange={(e) => setDdSendChannel(e.target.value as 'email' | 'sms' | 'both' | 'none')}
+                  className="w-full border border-slate-200 rounded px-2 py-1.5 mt-1 bg-white"
+                >
+                  <option value="both">Email + SMS</option>
+                  <option value="email">Email only</option>
+                  <option value="sms">SMS only</option>
+                  <option value="none">Don&apos;t send (record only)</option>
+                </select>
               </label>
             </div>
+            <label className="block">
+              <span className="text-xs uppercase font-semibold text-slate-400">Internal notes (optional)</span>
+              <input
+                type="text"
+                value={ddNotes}
+                onChange={(e) => setDdNotes(e.target.value)}
+                placeholder="Anything for the file — not shown to client"
+                className="w-full border border-slate-200 rounded px-2 py-1.5 mt-1"
+              />
+            </label>
 
             {ddError && <div className="text-red-600 text-sm">{ddError}</div>}
+
+            {ddResult && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm space-y-1.5">
+                {ddResult.receipt && (
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-emerald-700" />
+                    <Link
+                      href={`/admin/receipts/${ddResult.receipt.id}`}
+                      className="font-semibold text-emerald-800 hover:underline"
+                    >
+                      {ddResult.receipt.receipt_number}
+                    </Link>
+                    <span className="text-emerald-700">issued</span>
+                  </div>
+                )}
+                {ddResult.email && (
+                  <div className="text-xs text-emerald-700">
+                    Email: {ddResult.email.success
+                      ? '✓ sent'
+                      : <span className="text-red-600">failed — {ddResult.email.error}</span>}
+                  </div>
+                )}
+                {ddResult.sms && (
+                  <div className="text-xs text-emerald-700">
+                    SMS: {ddResult.sms.success
+                      ? '✓ sent'
+                      : <span className="text-red-600">failed — {ddResult.sms.error}</span>}
+                  </div>
+                )}
+                {ddResult.send_channel === 'none' && (
+                  <div className="text-xs text-slate-500">No send dispatched (record-only).</div>
+                )}
+              </div>
+            )}
 
             <div className="flex items-center gap-3">
               <button
@@ -366,7 +440,7 @@ export default function TradeCreditDetailPage({
                 className="bg-teal-500 text-white rounded-lg px-4 py-2 font-semibold hover:bg-teal-600 disabled:opacity-50 flex items-center gap-2"
               >
                 {ddBusy && <Loader2 className="w-4 h-4 animate-spin" />}
-                Record delivery
+                Record trade payment
               </button>
               <span className="text-xs text-slate-400">
                 Max: {formatCents(tc.remaining_cents)}
@@ -389,7 +463,7 @@ export default function TradeCreditDetailPage({
           </button>
           <p className="text-xs text-slate-400 mt-1">
             Use this if the trade is no longer expected — marks the credit as written_off
-            without recording a delivery.
+            without recording a trade payment. No receipt is sent.
           </p>
         </div>
       )}

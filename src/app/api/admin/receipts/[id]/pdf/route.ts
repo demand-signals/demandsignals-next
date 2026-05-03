@@ -28,7 +28,65 @@ export async function GET(
   if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const p = (data as any).prospects ?? {}
-  const inv = (data as any).invoices ?? {}
+  const inv = (data as any).invoices ?? null
+  const isTik = data.payment_method === 'tik' || data.payment_method === 'trade'
+
+  // For TIK receipts, look up the parent trade_credits row via the
+  // payment_reference (we stamp 'TIK-<short-id>' or 'trade_credit:<uuid>'
+  // when minting). Fall back to matching via the most recent drawdown.
+  let tikLedger: {
+    description: string
+    original_amount_cents: number
+    remaining_cents: number
+    sow_number?: string | null
+  } | null = null
+
+  if (isTik) {
+    let creditId: string | null = null
+    const ref = (data.payment_reference ?? '') as string
+    if (ref.startsWith('trade_credit:')) {
+      creditId = ref.slice('trade_credit:'.length)
+    } else {
+      // Heuristic: find the most recent drawdown matching this receipt's
+      // amount + same prospect + paid_at within 1 minute. Best-effort —
+      // PDF still renders fine without the ledger context.
+      const { data: dd } = await supabaseAdmin
+        .from('trade_credit_drawdowns')
+        .select('trade_credit_id, trade_credits!inner(prospect_id)')
+        .eq('amount_cents', data.amount_cents)
+        .eq('trade_credits.prospect_id', data.prospect_id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      const dd1 = dd as { trade_credit_id: string } | null
+      creditId = dd1?.trade_credit_id ?? null
+    }
+
+    if (creditId) {
+      const { data: tc } = await supabaseAdmin
+        .from('trade_credits')
+        .select('description, original_amount_cents, remaining_cents, sow_document_id')
+        .eq('id', creditId)
+        .maybeSingle()
+      if (tc) {
+        let sowNumber: string | null = null
+        if (tc.sow_document_id) {
+          const { data: sow } = await supabaseAdmin
+            .from('sow_documents')
+            .select('sow_number')
+            .eq('id', tc.sow_document_id)
+            .maybeSingle()
+          sowNumber = sow?.sow_number ?? null
+        }
+        tikLedger = {
+          description: tc.description,
+          original_amount_cents: tc.original_amount_cents,
+          remaining_cents: tc.remaining_cents,
+          sow_number: sowNumber,
+        }
+      }
+    }
+  }
 
   try {
     const pdfBuffer = await renderReceiptPdf(
@@ -45,17 +103,20 @@ export async function GET(
         notes: data.notes ?? null,
         created_at: data.created_at,
       },
-      {
-        invoice_number: inv.invoice_number ?? '—',
-        total_due_cents: inv.total_due_cents ?? 0,
-        send_date: inv.send_date ?? null,
-      },
+      inv
+        ? {
+            invoice_number: inv.invoice_number ?? '—',
+            total_due_cents: inv.total_due_cents ?? 0,
+            send_date: inv.send_date ?? null,
+          }
+        : null,
       {
         business_name: p.business_name ?? 'Client',
         client_code: p.client_code ?? null,
         owner_name: p.owner_name ?? null,
         owner_email: p.owner_email ?? null,
       },
+      tikLedger,
     )
 
     return new Response(new Uint8Array(pdfBuffer), {

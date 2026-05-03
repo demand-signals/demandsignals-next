@@ -74,7 +74,7 @@ export default function TradeCreditsPage() {
             Trade Credits
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Trade-in-kind ledgers. Each credit tracks original value, remaining balance, and drawdowns over time.
+            Trade-in-Kind balances clients owe us. Each ledger tracks original value, remaining balance, and the trade payments (services, labor, goods) clients deliver against it.
           </p>
         </div>
         <Link
@@ -89,7 +89,7 @@ export default function TradeCreditsPage() {
       <div className="grid grid-cols-3 gap-3">
         <SummaryCard label="Outstanding balance" value={formatCents(totalOutstandingCents)} accent="text-amber-700" />
         <SummaryCard label="Active ledgers" value={String(activeCount)} accent="text-slate-800" />
-        <SummaryCard label="Total drawn (all time)" value={formatCents(totalDrawnCents)} accent="text-slate-800" />
+        <SummaryCard label="Paid by trade (all time)" value={formatCents(totalDrawnCents)} accent="text-slate-800" />
       </div>
 
       {/* Status filter pills */}
