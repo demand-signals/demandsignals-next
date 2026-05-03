@@ -1,18 +1,20 @@
-// ── /api/admin/invoices/[id]/schedule-send ──────────────────────────
+// ── /api/admin/sow/[id]/schedule-send ───────────────────────────────
 //
-// POST: queue a future send. Body: { send_at, channel, override_email?,
-//   override_phone? }. Returns { id, send_at }.
-// GET:  list scheduled rows for this invoice (default: status='scheduled').
+// POST: queue a future SOW send. Body: { send_at, channel, kind?,
+//   override_email?, override_phone? }. kind defaults to 'send' for
+//   already-issued SOWs and 'issue_and_send' for drafts.
+// GET:  list scheduled rows for this SOW.
 //
-// The cron at /api/cron/scheduled-sends fires due rows every 5 minutes.
+// Mirrors invoice schedule-send route. The cron at
+// /api/cron/scheduled-sends fires due rows from both tables every 5 min.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { logInvoiceScheduledActivity } from '@/lib/invoice-send'
+import { logSowScheduledActivity } from '@/lib/sow-send'
 
 const VALID_CHANNELS = new Set(['email', 'sms', 'both'])
-const VALID_KINDS = new Set(['send', 'reminder', 'issue_and_send'])
+const VALID_KINDS = new Set(['send', 'issue_and_send'])
 const MIN_LEAD_SECONDS = 60
 
 export async function POST(
@@ -24,13 +26,12 @@ export async function POST(
   const { id } = await params
 
   const body = await request.json().catch(() => ({}))
-  const { send_at, channel, override_email, override_phone, kind, reminder_label } = body as {
+  const { send_at, channel, override_email, override_phone, kind } = body as {
     send_at?: string
     channel?: string
     override_email?: string
     override_phone?: string
-    kind?: 'send' | 'reminder' | 'issue_and_send'
-    reminder_label?: string
+    kind?: 'send' | 'issue_and_send'
   }
 
   if (!send_at || !channel) {
@@ -39,13 +40,8 @@ export async function POST(
   if (!VALID_CHANNELS.has(channel)) {
     return NextResponse.json({ error: `channel must be one of: ${Array.from(VALID_CHANNELS).join(', ')}` }, { status: 400 })
   }
-  // Default kind = 'send' (resend). 'issue_and_send' is for draft invoices
-  // queued for future issuance. 'reminder' is the pre/post-due nudge path.
-  const rowKind: 'send' | 'reminder' | 'issue_and_send' =
+  const rowKind: 'send' | 'issue_and_send' =
     kind && VALID_KINDS.has(kind) ? kind : 'send'
-  if (rowKind === 'reminder' && !reminder_label) {
-    return NextResponse.json({ error: 'reminder_label is required when kind=reminder' }, { status: 400 })
-  }
   const sendAtDate = new Date(send_at)
   if (isNaN(sendAtDate.getTime())) {
     return NextResponse.json({ error: 'send_at is not a valid timestamp' }, { status: 400 })
@@ -58,61 +54,66 @@ export async function POST(
     )
   }
 
-  const { data: invoice, error: invErr } = await supabaseAdmin
-    .from('invoices')
-    .select('id, invoice_number, status, prospect_id')
+  const { data: sow, error: sowErr } = await supabaseAdmin
+    .from('sow_documents')
+    .select('id, sow_number, status, prospect_id')
     .eq('id', id)
     .maybeSingle()
-  if (invErr) return NextResponse.json({ error: invErr.message }, { status: 500 })
-  if (!invoice) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
+  if (sowErr) return NextResponse.json({ error: sowErr.message }, { status: 500 })
+  if (!sow) return NextResponse.json({ error: 'SOW not found' }, { status: 404 })
 
   // Status gate depends on kind:
-  //   issue_and_send → must be draft (we'll issue at fire time)
-  //   send/reminder  → must already be issued (sent/viewed/paid)
+  //   issue_and_send → must be draft
+  //   send           → must be sent or accepted (already issued)
   if (rowKind === 'issue_and_send') {
-    if (invoice.status !== 'draft') {
+    if (sow.status !== 'draft') {
       return NextResponse.json(
-        { error: `Cannot schedule issue_and_send on a ${invoice.status} invoice — it's already been issued. Use Schedule (kind=send) to queue a resend.` },
+        { error: `Cannot schedule issue_and_send on a ${sow.status} SOW — it's already been issued. Use Schedule (kind=send) to queue a resend.` },
         { status: 409 },
       )
     }
   } else {
-    if (!['sent', 'viewed', 'paid'].includes(invoice.status)) {
+    if (!['sent', 'viewed', 'accepted'].includes(sow.status)) {
       return NextResponse.json(
-        { error: `Cannot schedule a send on an invoice in status ${invoice.status}` },
+        { error: `Cannot schedule a send on a SOW in status ${sow.status}` },
         { status: 409 },
       )
     }
   }
 
   const { data: row, error: insErr } = await supabaseAdmin
-    .from('invoice_scheduled_sends')
+    .from('sow_scheduled_sends')
     .insert({
-      invoice_id: id,
+      sow_id: id,
       channel,
       send_at: sendAtDate.toISOString(),
       override_email: override_email ?? null,
       override_phone: override_phone ?? null,
       kind: rowKind,
-      reminder_label: rowKind === 'reminder' ? reminder_label : null,
       created_by: auth.user.id,
     })
-    .select('id, send_at, channel, status, kind, reminder_label')
+    .select('id, send_at, channel, status, kind')
     .single()
 
   if (insErr || !row) {
     return NextResponse.json({ error: insErr?.message ?? 'Insert failed' }, { status: 500 })
   }
 
-  await logInvoiceScheduledActivity({
-    invoice: { id: invoice.id, invoice_number: invoice.invoice_number, prospect_id: invoice.prospect_id },
+  await logSowScheduledActivity({
+    sow: { id: sow.id, sow_number: sow.sow_number, prospect_id: sow.prospect_id },
     channel: channel as 'email' | 'sms' | 'both',
     sendAt: sendAtDate.toISOString(),
     recipient: override_email ?? override_phone ?? null,
     createdBy: auth.user.id,
   })
 
-  return NextResponse.json({ id: row.id, send_at: row.send_at, channel: row.channel, status: row.status })
+  return NextResponse.json({
+    id: row.id,
+    send_at: row.send_at,
+    channel: row.channel,
+    status: row.status,
+    kind: row.kind,
+  })
 }
 
 export async function GET(
@@ -124,12 +125,12 @@ export async function GET(
   const { id } = await params
 
   const { searchParams } = new URL(request.url)
-  const statusFilter = searchParams.get('status') // optional
+  const statusFilter = searchParams.get('status')
 
   let query = supabaseAdmin
-    .from('invoice_scheduled_sends')
-    .select('id, channel, send_at, status, fired_at, override_email, override_phone, error_message, created_at, created_by, kind, reminder_label')
-    .eq('invoice_id', id)
+    .from('sow_scheduled_sends')
+    .select('id, channel, send_at, status, fired_at, override_email, override_phone, error_message, created_at, created_by, kind')
+    .eq('sow_id', id)
     .order('send_at', { ascending: true })
 
   if (statusFilter) query = query.eq('status', statusFilter)

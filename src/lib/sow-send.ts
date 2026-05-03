@@ -97,6 +97,55 @@ async function logSowActivity(args: {
   }
 }
 
+/** Logs a "scheduled" activity row when an admin schedules a future SOW send. */
+export async function logSowScheduledActivity(args: {
+  sow: { id: string; sow_number: string; prospect_id?: string | null }
+  channel: 'email' | 'sms' | 'both'
+  sendAt: string
+  recipient?: string | null
+  createdBy?: string
+}) {
+  if (!args.sow.prospect_id) return
+  try {
+    await supabaseAdmin.from('activities').insert({
+      prospect_id: args.sow.prospect_id,
+      type: 'note',
+      channel: args.channel === 'both' ? 'email' : args.channel,
+      direction: 'outbound',
+      subject: `SOW ${args.sow.sow_number} scheduled to send via ${args.channel} at ${args.sendAt}`,
+      body: args.recipient ? `Recipient: ${args.recipient}` : null,
+      status: 'scheduled',
+      created_by: args.createdBy ?? 'system',
+    })
+  } catch (e) {
+    console.error('[sow-send] schedule activity log failed:', e instanceof Error ? e.message : e)
+  }
+}
+
+/** Logs a "scheduled send cancelled" activity row for SOWs. */
+export async function logSowScheduleCancelledActivity(args: {
+  sow: { sow_number: string; prospect_id?: string | null }
+  channel: 'email' | 'sms' | 'both'
+  sendAt: string
+  createdBy?: string
+}) {
+  if (!args.sow.prospect_id) return
+  try {
+    await supabaseAdmin.from('activities').insert({
+      prospect_id: args.sow.prospect_id,
+      type: 'note',
+      channel: args.channel === 'both' ? 'email' : args.channel,
+      direction: 'outbound',
+      subject: `SOW ${args.sow.sow_number} scheduled send cancelled (was ${args.sendAt})`,
+      body: null,
+      status: 'cancelled',
+      created_by: args.createdBy ?? 'system',
+    })
+  } catch (e) {
+    console.error('[sow-send] schedule-cancel activity log failed:', e instanceof Error ? e.message : e)
+  }
+}
+
 /* ── Email dispatch ─────────────────────────────────────────────────── */
 
 export async function dispatchSowEmail(

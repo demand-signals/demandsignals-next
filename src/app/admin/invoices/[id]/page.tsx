@@ -908,6 +908,9 @@ export default function InvoiceDetailPage({
       // datetime-local is interpreted as the user's local zone — convert to ISO UTC.
       const sendAtIso = new Date(scheduleAt).toISOString()
       const body: Record<string, string> = { send_at: sendAtIso, channel: scheduleChannel }
+      // For drafts, schedule the issue + dispatch path. For sent invoices,
+      // schedule a resend (default kind='send').
+      if (detail?.invoice.status === 'draft') body.kind = 'issue_and_send'
       if (scheduleOverrideEmail) body.override_email = scheduleOverrideEmail
       if (scheduleOverridePhone) body.override_phone = scheduleOverridePhone
       const res = await fetch(`/api/admin/invoices/${id}/schedule-send`, {
@@ -1298,6 +1301,14 @@ export default function InvoiceDetailPage({
             </button>
             <button onClick={openSendEmailPreview} disabled={busy} className="bg-blue-100 text-blue-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1">
               <Mail className="w-3.5 h-3.5" /> Email
+            </button>
+            <button
+              onClick={openScheduleModal}
+              disabled={busy || dirty}
+              className="bg-indigo-100 text-indigo-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1 disabled:opacity-50"
+              title={dirty ? 'Save the draft first, then schedule' : 'Pick a date + time — invoice issues + auto-fires email/SMS at that moment'}
+            >
+              <Clock className="w-3.5 h-3.5" /> Schedule
             </button>
             <button
               onClick={send}
@@ -2531,9 +2542,14 @@ export default function InvoiceDetailPage({
           <div className="bg-white rounded-xl p-6 max-w-2xl w-full space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-lg font-bold">Schedule a send</h2>
+                <h2 className="text-lg font-bold">
+                  {isDraft ? 'Schedule issue & send' : 'Schedule a send'}
+                </h2>
                 <p className="text-sm text-slate-600">
-                  Queue a future email and/or SMS. Cron runs every 5 minutes — actual fire time may be up to 5 min after the scheduled minute.
+                  {isDraft
+                    ? 'Pick a future date and time. The invoice stays a draft until then — at the scheduled moment it issues, the PDF renders, and email/SMS auto-fire to whoever is on file.'
+                    : 'Queue a future email and/or SMS resend.'}
+                  {' '}Cron runs every 5 minutes, so actual fire time may be up to 5 min after the scheduled minute.
                 </p>
               </div>
               <button onClick={() => setScheduleModal(false)} className="text-slate-400 hover:text-slate-600">
@@ -2544,7 +2560,7 @@ export default function InvoiceDetailPage({
             <div className="space-y-3 border-t border-slate-200 pt-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
-                  When (local time)
+                  Date &amp; time <span className="text-slate-400 normal-case font-normal">— your local zone</span>
                 </label>
                 <input
                   type="datetime-local"
@@ -2552,6 +2568,22 @@ export default function InvoiceDetailPage({
                   onChange={(e) => setScheduleAt(e.target.value)}
                   className="border border-slate-300 rounded px-2 py-1.5 text-sm w-full"
                 />
+                {scheduleAt && !isNaN(new Date(scheduleAt).getTime()) && (
+                  <div className="text-xs text-slate-500 mt-1">
+                    Will fire on{' '}
+                    <span className="font-semibold text-slate-700">
+                      {new Date(scheduleAt).toLocaleString(undefined, {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        timeZoneName: 'short',
+                      })}
+                    </span>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">

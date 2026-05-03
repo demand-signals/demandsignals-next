@@ -17,20 +17,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { verifyBearerSecret } from '@/lib/bearer-auth'
-import { dispatchInvoiceEmail, dispatchInvoiceSms } from '@/lib/invoice-send'
+import { dispatchInvoiceEmail, dispatchInvoiceSms, issueInvoice } from '@/lib/invoice-send'
+import { dispatchSowEmail, dispatchSowSms, issueSow } from '@/lib/sow-send'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
-interface ScheduledRow {
+interface InvoiceScheduledRow {
   id: string
   invoice_id: string
   channel: 'email' | 'sms' | 'both'
   send_at: string
   override_email: string | null
   override_phone: string | null
-  kind?: 'send' | 'reminder'
+  kind?: 'send' | 'reminder' | 'issue_and_send'
   reminder_label?: string | null
+}
+
+interface SowScheduledRow {
+  id: string
+  sow_id: string
+  channel: 'email' | 'sms' | 'both'
+  send_at: string
+  override_email: string | null
+  override_phone: string | null
+  kind?: 'send' | 'issue_and_send'
 }
 
 /**
@@ -57,113 +68,224 @@ export async function GET(request: NextRequest) {
 
   const now = new Date().toISOString()
 
-  const { data: due, error } = await supabaseAdmin
-    .from('invoice_scheduled_sends')
-    .select('id, invoice_id, channel, send_at, override_email, override_phone, kind, reminder_label')
-    .eq('status', 'scheduled')
-    .lte('send_at', now)
-    .limit(50) // safety cap per tick — drains in subsequent runs
+  // ── Pull due rows from both queues in parallel ─────────────────────
+  const [invoiceQ, sowQ] = await Promise.all([
+    supabaseAdmin
+      .from('invoice_scheduled_sends')
+      .select('id, invoice_id, channel, send_at, override_email, override_phone, kind, reminder_label')
+      .eq('status', 'scheduled')
+      .lte('send_at', now)
+      .limit(50),
+    supabaseAdmin
+      .from('sow_scheduled_sends')
+      .select('id, sow_id, channel, send_at, override_email, override_phone, kind')
+      .eq('status', 'scheduled')
+      .lte('send_at', now)
+      .limit(50),
+  ])
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (invoiceQ.error) {
+    return NextResponse.json({ error: `invoice queue: ${invoiceQ.error.message}` }, { status: 500 })
+  }
+  if (sowQ.error) {
+    return NextResponse.json({ error: `sow queue: ${sowQ.error.message}` }, { status: 500 })
   }
 
-  const results: Array<{
-    id: string
-    channel: string
-    ok: boolean
-    error?: string
-  }> = []
+  const invoiceResults: Array<{ id: string; channel: string; ok: boolean; error?: string }> = []
+  const sowResults: Array<{ id: string; channel: string; ok: boolean; error?: string }> = []
 
-  for (const row of (due as ScheduledRow[] | null) ?? []) {
-    // Race guard: take the row by flipping status off 'scheduled' first.
-    // If another worker already took it, the UPDATE matches zero rows and
-    // we skip dispatch entirely. The UPDATE → dispatch ordering means we
-    // only mark 'fired' AFTER successful dispatch (final UPDATE below).
-    const { data: claim, error: claimErr } = await supabaseAdmin
-      .from('invoice_scheduled_sends')
-      .update({ status: 'failed', fired_at: new Date().toISOString() }) // tentatively failed; flip to fired on success
-      .eq('id', row.id)
-      .eq('status', 'scheduled')
-      .select('id')
-      .maybeSingle()
+  // ── Invoice queue ──────────────────────────────────────────────────
+  for (const row of (invoiceQ.data as InvoiceScheduledRow[] | null) ?? []) {
+    const result = await processInvoiceRow(row)
+    invoiceResults.push(result)
+  }
 
-    if (claimErr || !claim) {
-      // Another worker won the race, or the row was cancelled in between.
-      results.push({ id: row.id, channel: row.channel, ok: false, error: 'race_lost_or_cancelled' })
-      continue
-    }
+  // ── SOW queue ──────────────────────────────────────────────────────
+  for (const row of (sowQ.data as SowScheduledRow[] | null) ?? []) {
+    const result = await processSowRow(row)
+    sowResults.push(result)
+  }
 
-    let emailOk = true
-    let smsOk = true
-    let combinedError: string | undefined
+  return NextResponse.json({
+    ran_at: now,
+    invoices: { found: invoiceQ.data?.length ?? 0, results: invoiceResults },
+    sows: { found: sowQ.data?.length ?? 0, results: sowResults },
+  })
+}
 
-    // Reminders use the reminder-flavored template; sends use the
-    // standard issuance template. Same wire path otherwise.
-    const reminder = row.kind === 'reminder' && row.reminder_label
-      ? { label: row.reminder_label, tone: inferReminderTone(row.reminder_label) }
-      : undefined
+/**
+ * Process a single invoice queue row. Race-guards via UPDATE-then-claim,
+ * then either runs issue+dispatch (for kind='issue_and_send' on a draft)
+ * or just dispatches (for kind='send'/'reminder' on already-issued).
+ */
+async function processInvoiceRow(
+  row: InvoiceScheduledRow,
+): Promise<{ id: string; channel: string; ok: boolean; error?: string }> {
+  // Race guard: take the row by flipping status off 'scheduled' first.
+  // If another worker already took it, the UPDATE matches zero rows and
+  // we skip dispatch entirely.
+  const { data: claim, error: claimErr } = await supabaseAdmin
+    .from('invoice_scheduled_sends')
+    .update({ status: 'failed', fired_at: new Date().toISOString() })
+    .eq('id', row.id)
+    .eq('status', 'scheduled')
+    .select('id')
+    .maybeSingle()
 
-    if (row.channel === 'email' || row.channel === 'both') {
-      const r = await dispatchInvoiceEmail(row.invoice_id, {
-        overrideEmail: row.override_email ?? undefined,
-        scheduledSendId: row.id,
-        scheduledFor: row.send_at,
-        createdBy: 'system',
-        reminder,
-      })
-      emailOk = r.success
-      if (!r.success) combinedError = `email: ${r.error}`
-    }
+  if (claimErr || !claim) {
+    return { id: row.id, channel: row.channel, ok: false, error: 'race_lost_or_cancelled' }
+  }
 
-    if (row.channel === 'sms' || row.channel === 'both') {
-      const r = await dispatchInvoiceSms(row.invoice_id, {
-        overridePhone: row.override_phone ?? undefined,
-        scheduledSendId: row.id,
-        scheduledFor: row.send_at,
-        createdBy: 'system',
-        reminder,
-      })
-      smsOk = r.success
-      if (!r.success) {
-        combinedError = combinedError
-          ? `${combinedError}; sms: ${r.error}`
-          : `sms: ${r.error}`
-      }
-    }
-
-    const finalOk = emailOk && smsOk
-    if (finalOk) {
-      await supabaseAdmin
-        .from('invoice_scheduled_sends')
-        .update({
-          status: 'fired',
-          fired_at: new Date().toISOString(),
-          error_message: null,
-        })
-        .eq('id', row.id)
-    } else {
+  // ── kind='issue_and_send': issue the draft, then auto-fire dispatch.
+  // The issuance helper handles PDF render, R2 upload, and status flip.
+  // After issue, fall through to dispatch on the requested channel(s).
+  if (row.kind === 'issue_and_send') {
+    const issued = await issueInvoice(row.invoice_id, { createdBy: 'system' })
+    if (!issued.success) {
       await supabaseAdmin
         .from('invoice_scheduled_sends')
         .update({
           status: 'failed',
           fired_at: new Date().toISOString(),
-          error_message: combinedError ?? 'unknown dispatch error',
+          error_message: `issue: ${issued.error ?? 'unknown'}`,
         })
         .eq('id', row.id)
+      return { id: row.id, channel: row.channel, ok: false, error: `issue: ${issued.error}` }
     }
-
-    results.push({
-      id: row.id,
-      channel: row.channel,
-      ok: finalOk,
-      error: combinedError,
-    })
+    // Zero-balance invoices auto-pay on issue — no dispatch needed.
+    if (issued.is_zero) {
+      await supabaseAdmin
+        .from('invoice_scheduled_sends')
+        .update({ status: 'fired', fired_at: new Date().toISOString(), error_message: null })
+        .eq('id', row.id)
+      return { id: row.id, channel: row.channel, ok: true }
+    }
   }
 
-  return NextResponse.json({
-    ran_at: now,
-    found: due?.length ?? 0,
-    results,
-  })
+  // ── Dispatch path (used by 'send', 'reminder', and post-issue 'issue_and_send').
+  let emailOk = true
+  let smsOk = true
+  let combinedError: string | undefined
+
+  // Reminder template only applies when kind='reminder'.
+  const reminder = row.kind === 'reminder' && row.reminder_label
+    ? { label: row.reminder_label, tone: inferReminderTone(row.reminder_label) }
+    : undefined
+
+  if (row.channel === 'email' || row.channel === 'both') {
+    const r = await dispatchInvoiceEmail(row.invoice_id, {
+      overrideEmail: row.override_email ?? undefined,
+      scheduledSendId: row.id,
+      scheduledFor: row.send_at,
+      createdBy: 'system',
+      reminder,
+    })
+    emailOk = r.success
+    if (!r.success) combinedError = `email: ${r.error}`
+  }
+
+  if (row.channel === 'sms' || row.channel === 'both') {
+    const r = await dispatchInvoiceSms(row.invoice_id, {
+      overridePhone: row.override_phone ?? undefined,
+      scheduledSendId: row.id,
+      scheduledFor: row.send_at,
+      createdBy: 'system',
+      reminder,
+    })
+    smsOk = r.success
+    if (!r.success) {
+      combinedError = combinedError
+        ? `${combinedError}; sms: ${r.error}`
+        : `sms: ${r.error}`
+    }
+  }
+
+  const finalOk = emailOk && smsOk
+  await supabaseAdmin
+    .from('invoice_scheduled_sends')
+    .update({
+      status: finalOk ? 'fired' : 'failed',
+      fired_at: new Date().toISOString(),
+      error_message: finalOk ? null : combinedError ?? 'unknown dispatch error',
+    })
+    .eq('id', row.id)
+
+  return { id: row.id, channel: row.channel, ok: finalOk, error: combinedError }
+}
+
+/**
+ * Process a single SOW queue row. Same race-guard + issue/dispatch
+ * structure as invoices. SOW has no reminder kind.
+ */
+async function processSowRow(
+  row: SowScheduledRow,
+): Promise<{ id: string; channel: string; ok: boolean; error?: string }> {
+  const { data: claim, error: claimErr } = await supabaseAdmin
+    .from('sow_scheduled_sends')
+    .update({ status: 'failed', fired_at: new Date().toISOString() })
+    .eq('id', row.id)
+    .eq('status', 'scheduled')
+    .select('id')
+    .maybeSingle()
+
+  if (claimErr || !claim) {
+    return { id: row.id, channel: row.channel, ok: false, error: 'race_lost_or_cancelled' }
+  }
+
+  if (row.kind === 'issue_and_send') {
+    const issued = await issueSow(row.sow_id, { createdBy: 'system' })
+    if (!issued.success) {
+      await supabaseAdmin
+        .from('sow_scheduled_sends')
+        .update({
+          status: 'failed',
+          fired_at: new Date().toISOString(),
+          error_message: `issue: ${issued.error ?? 'unknown'}`,
+        })
+        .eq('id', row.id)
+      return { id: row.id, channel: row.channel, ok: false, error: `issue: ${issued.error}` }
+    }
+  }
+
+  let emailOk = true
+  let smsOk = true
+  let combinedError: string | undefined
+
+  if (row.channel === 'email' || row.channel === 'both') {
+    const r = await dispatchSowEmail(row.sow_id, {
+      overrideEmail: row.override_email ?? undefined,
+      scheduledSendId: row.id,
+      scheduledFor: row.send_at,
+      createdBy: 'system',
+    })
+    emailOk = r.success
+    if (!r.success) combinedError = `email: ${r.error}`
+  }
+
+  if (row.channel === 'sms' || row.channel === 'both') {
+    const r = await dispatchSowSms(row.sow_id, {
+      overridePhone: row.override_phone ?? undefined,
+      scheduledSendId: row.id,
+      scheduledFor: row.send_at,
+      createdBy: 'system',
+    })
+    smsOk = r.success
+    if (!r.success) {
+      combinedError = combinedError
+        ? `${combinedError}; sms: ${r.error}`
+        : `sms: ${r.error}`
+    }
+  }
+
+  const finalOk = emailOk && smsOk
+  await supabaseAdmin
+    .from('sow_scheduled_sends')
+    .update({
+      status: finalOk ? 'fired' : 'failed',
+      fired_at: new Date().toISOString(),
+      error_message: finalOk ? null : combinedError ?? 'unknown dispatch error',
+    })
+    .eq('id', row.id)
+
+  return { id: row.id, channel: row.channel, ok: finalOk, error: combinedError }
 }

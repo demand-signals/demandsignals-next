@@ -16,6 +16,7 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
+  Clock,
   Mail,
   MessageSquare,
   RefreshCw,
@@ -293,6 +294,28 @@ export default function SowDetailPage({
   const [previewModal, setPreviewModal] = useState<SowPreviewState | null>(null)
   const [previewSubmitting, setPreviewSubmitting] = useState(false)
   const [previewResult, setPreviewResult] = useState<string | null>(null)
+
+  // Schedule-send modal state — mirror of invoice page. Lets admin queue
+  // a draft for issuance + dispatch (kind='issue_and_send') or a resend
+  // for an already-sent SOW (kind='send').
+  const [scheduleModal, setScheduleModal] = useState(false)
+  const [scheduledRows, setScheduledRows] = useState<Array<{
+    id: string
+    channel: 'email' | 'sms' | 'both'
+    send_at: string
+    status: 'scheduled' | 'fired' | 'cancelled' | 'failed'
+    fired_at: string | null
+    override_email: string | null
+    override_phone: string | null
+    error_message: string | null
+    kind: 'send' | 'issue_and_send'
+  }>>([])
+  const [scheduleAt, setScheduleAt] = useState('')
+  const [scheduleChannel, setScheduleChannel] = useState<'email' | 'sms' | 'both'>('email')
+  const [scheduleOverrideEmail, setScheduleOverrideEmail] = useState('')
+  const [scheduleOverridePhone, setScheduleOverridePhone] = useState('')
+  const [scheduleSubmitting, setScheduleSubmitting] = useState(false)
+  const [scheduleError, setScheduleError] = useState<string | null>(null)
 
   // Editable field state
   const [title, setTitle] = useState('')
@@ -654,6 +677,77 @@ export default function SowDetailPage({
     }
   }
 
+  // ── Schedule-send helpers ────────────────────────────────────────
+  // Mirror of the invoice page schedule-send flow. The modal is the
+  // canonical entry point; cron at /api/cron/scheduled-sends fires due
+  // rows from sow_scheduled_sends every 5 minutes.
+
+  async function loadScheduledSowRows() {
+    try {
+      const res = await fetch(`/api/admin/sow/${id}/schedule-send`)
+      if (!res.ok) return
+      const data = await res.json()
+      setScheduledRows(data.data ?? [])
+    } catch {
+      /* silent — modal still usable */
+    }
+  }
+
+  function openScheduleModal() {
+    // Default to tomorrow 9 AM in the user's local zone.
+    const t = new Date()
+    t.setDate(t.getDate() + 1)
+    t.setHours(9, 0, 0, 0)
+    const tzOffsetMs = t.getTimezoneOffset() * 60_000
+    const localISO = new Date(t.getTime() - tzOffsetMs).toISOString().slice(0, 16)
+    setScheduleAt(localISO)
+    setScheduleChannel('email')
+    setScheduleOverrideEmail('')
+    setScheduleOverridePhone('')
+    setScheduleError(null)
+    setScheduleModal(true)
+    loadScheduledSowRows()
+  }
+
+  async function submitSchedule() {
+    setScheduleSubmitting(true)
+    setScheduleError(null)
+    try {
+      const sendAtIso = new Date(scheduleAt).toISOString()
+      const body: Record<string, string> = { send_at: sendAtIso, channel: scheduleChannel }
+      // Drafts: schedule the issue + dispatch path. Sent SOWs: schedule a resend.
+      if (sow?.status === 'draft') body.kind = 'issue_and_send'
+      if (scheduleOverrideEmail) body.override_email = scheduleOverrideEmail
+      if (scheduleOverridePhone) body.override_phone = scheduleOverridePhone
+      const res = await fetch(`/api/admin/sow/${id}/schedule-send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setScheduleError(data.error ?? 'Failed to schedule')
+        return
+      }
+      await loadScheduledSowRows()
+      setScheduleOverrideEmail('')
+      setScheduleOverridePhone('')
+    } catch (e) {
+      setScheduleError(e instanceof Error ? e.message : 'Failed to schedule')
+    } finally {
+      setScheduleSubmitting(false)
+    }
+  }
+
+  async function cancelSchedule(scheduleId: string) {
+    if (!confirm('Cancel this scheduled send?')) return
+    const res = await fetch(`/api/admin/sow/${id}/schedule-send/${scheduleId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    if (res.ok) await loadScheduledSowRows()
+  }
+
   // ── Phase helpers ─────────────────────────────────────────────────
 
   function addPhase() {
@@ -865,10 +959,11 @@ export default function SowDetailPage({
           <FileText className="w-3.5 h-3.5" /> Preview PDF
         </a>
 
-        {/* Send / Email / SMS — draft toolbar. Email and SMS each open
-            the preview modal; confirming the preview issues the SOW
-            (renders PDF, uploads to R2, flips draft→sent) and
-            dispatches in one server hop. */}
+        {/* Send / Email / SMS / Schedule — draft toolbar. Email and SMS
+            each open the preview modal; confirming the preview issues the
+            SOW (renders PDF, uploads to R2, flips draft→sent) and
+            dispatches in one server hop. Schedule queues the same flow
+            for a future moment via sow_scheduled_sends + cron. */}
         {isDraft && (
           <>
             <button
@@ -885,6 +980,14 @@ export default function SowDetailPage({
               <Mail className="w-3.5 h-3.5" /> Email
             </button>
             <button
+              onClick={openScheduleModal}
+              disabled={busy || dirty}
+              className="bg-indigo-100 text-indigo-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1 disabled:opacity-50"
+              title={dirty ? 'Save the draft first, then schedule' : 'Pick a date + time — SOW issues + auto-fires email/SMS at that moment'}
+            >
+              <Clock className="w-3.5 h-3.5" /> Schedule
+            </button>
+            <button
               onClick={send}
               disabled={busy}
               className="inline-flex items-center gap-1.5 bg-blue-600 text-white rounded px-3 py-1.5 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
@@ -896,7 +999,8 @@ export default function SowDetailPage({
         )}
 
         {/* Manual sends — non-draft. Each opens a preview-before-send
-            modal; admin confirms before the actual POST fires. */}
+            modal; admin confirms before the actual POST fires. Schedule
+            queues a future resend via the same dispatch helpers. */}
         {!isDraft && (
           <>
             <button
@@ -912,6 +1016,14 @@ export default function SowDetailPage({
               className="bg-blue-100 text-blue-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1"
             >
               <MessageSquare className="w-3.5 h-3.5" /> SMS
+            </button>
+            <button
+              onClick={openScheduleModal}
+              disabled={busy}
+              className="bg-indigo-100 text-indigo-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1"
+              title="Schedule a resend for a future moment"
+            >
+              <Clock className="w-3.5 h-3.5" /> Schedule
             </button>
             <a
               href={publicUrl}
@@ -2202,6 +2314,164 @@ export default function SowDetailPage({
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule-send modal */}
+      {scheduleModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-bold">
+                  {isDraft ? 'Schedule issue & send' : 'Schedule a send'}
+                </h2>
+                <p className="text-sm text-slate-600">
+                  {isDraft
+                    ? 'Pick a future date and time. The SOW stays a draft until then — at the scheduled moment it issues, the PDF renders, and email/SMS auto-fire to whoever is on file.'
+                    : 'Queue a future email and/or SMS resend.'}
+                  {' '}Cron runs every 5 minutes, so actual fire time may be up to 5 min after the scheduled minute.
+                </p>
+              </div>
+              <button onClick={() => setScheduleModal(false)} className="text-slate-400 hover:text-slate-600">
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 border-t border-slate-200 pt-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
+                  Date &amp; time <span className="text-slate-400 normal-case font-normal">— your local zone</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  value={scheduleAt}
+                  onChange={(e) => setScheduleAt(e.target.value)}
+                  className="border border-slate-300 rounded px-2 py-1.5 text-sm w-full"
+                />
+                {scheduleAt && !isNaN(new Date(scheduleAt).getTime()) && (
+                  <div className="text-xs text-slate-500 mt-1">
+                    Will fire on{' '}
+                    <span className="font-semibold text-slate-700">
+                      {new Date(scheduleAt).toLocaleString(undefined, {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        timeZoneName: 'short',
+                      })}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
+                  Channel
+                </label>
+                <select
+                  value={scheduleChannel}
+                  onChange={(e) => setScheduleChannel(e.target.value as 'email' | 'sms' | 'both')}
+                  className="border border-slate-300 rounded px-2 py-1.5 text-sm"
+                >
+                  <option value="email">Email</option>
+                  <option value="sms">SMS</option>
+                  <option value="both">Both</option>
+                </select>
+              </div>
+              {(scheduleChannel === 'email' || scheduleChannel === 'both') && (
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
+                    Override email (optional)
+                  </label>
+                  <input
+                    type="email"
+                    value={scheduleOverrideEmail}
+                    onChange={(e) => setScheduleOverrideEmail(e.target.value)}
+                    placeholder={p?.owner_email ?? 'Defaults to prospect email'}
+                    className="border border-slate-300 rounded px-2 py-1.5 text-sm w-full"
+                  />
+                </div>
+              )}
+              {(scheduleChannel === 'sms' || scheduleChannel === 'both') && (
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
+                    Override phone (optional)
+                  </label>
+                  <input
+                    type="tel"
+                    value={scheduleOverridePhone}
+                    onChange={(e) => setScheduleOverridePhone(e.target.value)}
+                    placeholder={p?.owner_phone ?? 'Defaults to prospect phone'}
+                    className="border border-slate-300 rounded px-2 py-1.5 text-sm w-full"
+                  />
+                </div>
+              )}
+              {scheduleError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-3 py-2">
+                  {scheduleError}
+                </div>
+              )}
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setScheduleModal(false)}
+                  className="bg-slate-100 text-slate-700 rounded px-4 py-1.5 text-sm"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={submitSchedule}
+                  disabled={scheduleSubmitting || !scheduleAt}
+                  className="bg-indigo-600 text-white rounded px-4 py-1.5 text-sm font-semibold disabled:opacity-50"
+                >
+                  {scheduleSubmitting ? 'Scheduling…' : 'Schedule send'}
+                </button>
+              </div>
+            </div>
+
+            {scheduledRows.length > 0 && (
+              <div className="border-t border-slate-200 pt-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                  Scheduled sends
+                </div>
+                <div className="space-y-1.5">
+                  {scheduledRows.map((s) => (
+                    <div key={s.id} className="flex items-center justify-between text-sm bg-slate-50 rounded px-2 py-1.5">
+                      <div className="flex-1 truncate">
+                        <span
+                          className={
+                            s.status === 'scheduled'
+                              ? 'text-slate-700'
+                              : s.status === 'fired'
+                                ? 'text-emerald-700'
+                                : s.status === 'cancelled'
+                                  ? 'text-slate-400 line-through'
+                                  : 'text-red-600'
+                          }
+                        >
+                          {new Date(s.send_at).toLocaleString()} — <span className="text-slate-500">{s.channel}</span>
+                          {s.kind === 'issue_and_send' && <span className="ml-1 text-indigo-600">(issue + send)</span>}
+                        </span>
+                        {s.error_message && (
+                          <span className="ml-2 text-xs text-red-500">{s.error_message}</span>
+                        )}
+                      </div>
+                      <span className="text-xs text-slate-500 mr-3">{s.status}</span>
+                      {s.status === 'scheduled' && (
+                        <button
+                          onClick={() => cancelSchedule(s.id)}
+                          className="text-red-600 hover:text-red-700 text-xs"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
