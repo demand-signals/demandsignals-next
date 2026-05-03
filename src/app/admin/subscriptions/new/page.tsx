@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
+import { ProspectPicker, type ProspectPickerOption } from '@/components/admin/prospect-picker'
 
-interface Prospect {
+interface Prospect extends ProspectPickerOption {
   id: string
   business_name: string
   owner_email: string | null
@@ -71,19 +72,13 @@ export default function NewSubscriptionPage() {
       <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3 text-sm">
         <label className="block">
           Prospect
-          <select
+          <ProspectPicker
+            options={prospects}
             value={prospectId}
-            onChange={(e) => setProspectId(e.target.value)}
-            className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
-          >
-            <option value="">— select —</option>
-            {prospects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.business_name}
-                {p.owner_email ? ` (${p.owner_email})` : ''}
-              </option>
-            ))}
-          </select>
+            onChange={setProspectId}
+            placeholder="Search by name, owner, code, or city…"
+            required
+          />
         </label>
 
         <label className="block">

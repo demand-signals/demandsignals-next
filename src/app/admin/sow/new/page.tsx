@@ -4,11 +4,15 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, Loader2, Sparkles, ChevronUp, ChevronDown } from 'lucide-react'
 import { CatalogPicker, type CatalogPickerItem } from '@/components/admin/catalog-picker'
+import { ProspectPicker, type ProspectPickerOption } from '@/components/admin/prospect-picker'
 import { formatCents } from '@/lib/format'
 import { buildSowPaymentTerms } from '@/lib/payment-terms'
 import type { Cadence } from '@/lib/invoice-types'
 
-interface Prospect {
+// Carries the extra fields ProspectPicker uses to filter (owner_name,
+// client_code, city). The /api/admin/prospects endpoint returns them
+// with select('*'), so no API change needed.
+interface Prospect extends ProspectPickerOption {
   id: string
   business_name: string
 }
@@ -377,18 +381,12 @@ export default function NewSowPage() {
         <h2 className="font-semibold">Basics</h2>
         <label className="block">
           Prospect
-          <select
+          <ProspectPicker
+            options={prospects}
             value={prospectId}
-            onChange={(e) => setProspectId(e.target.value)}
-            className="w-full border border-slate-200 rounded px-2 py-1 mt-1"
-          >
-            <option value="">— none —</option>
-            {prospects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.business_name}
-              </option>
-            ))}
-          </select>
+            onChange={setProspectId}
+            placeholder="Search by name, owner, code, or city…"
+          />
         </label>
         <label className="block">
           Title

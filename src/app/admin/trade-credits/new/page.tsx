@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
+import { ProspectPicker, type ProspectPickerOption } from '@/components/admin/prospect-picker'
 
-interface Prospect {
+interface Prospect extends ProspectPickerOption {
   id: string
   business_name: string
 }
@@ -65,19 +66,13 @@ export default function NewTradeCreditPage() {
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-xl p-5 space-y-4 text-sm">
         <label className="block">
           <span className="text-xs font-semibold text-slate-500 uppercase">Client</span>
-          <select
+          <ProspectPicker
+            options={prospects}
             value={prospectId}
-            onChange={(e) => setProspectId(e.target.value)}
-            className="w-full border border-slate-200 rounded px-2 py-1.5 mt-1"
+            onChange={setProspectId}
+            placeholder="Search by name, owner, code, or city…"
             required
-          >
-            <option value="">— select prospect —</option>
-            {prospects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.business_name}
-              </option>
-            ))}
-          </select>
+          />
         </label>
 
         <label className="block">

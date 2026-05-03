@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Plus, Trash2, Loader2, Sparkles, Eye } from 'lucide-react'
 import { CatalogPicker, type CatalogPickerItem } from '@/components/admin/catalog-picker'
+import { ProspectPicker } from '@/components/admin/prospect-picker'
 import ProspectContactEditor, { type ProspectContact } from '@/components/admin/ProspectContactEditor'
 import DocumentPreview from '@/components/admin/DocumentPreview'
 import { formatCents } from '@/lib/format'
@@ -321,19 +322,12 @@ function NewInvoiceForm() {
         <h2 className="font-semibold">Client + Kind</h2>
         <label className="block text-sm">
           Prospect
-          <select
+          <ProspectPicker
+            options={prospects}
             value={prospectId}
-            onChange={(e) => setProspectId(e.target.value)}
-            className="w-full border border-slate-200 rounded px-3 py-2 mt-1"
-          >
-            <option value="">— none (ad-hoc) —</option>
-            {prospects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.business_name}
-                {p.owner_email ? ` (${p.owner_email})` : ''}
-              </option>
-            ))}
-          </select>
+            onChange={setProspectId}
+            placeholder="Search by name, owner, code, or city — or leave blank for ad-hoc"
+          />
         </label>
 
         {/* ProspectContactEditor — shown when a prospect is selected */}
