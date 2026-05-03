@@ -1,6 +1,10 @@
 # Demand Signals — Next.js Site — Claude Code Reference
 
-> **Read this entire file before making any changes.** It contains architecture decisions, known issues, credentials, and hard constraints that prevent regressions.
+> **READ FIRST: the DSIG root constitution at `Y:\CLAUDE.md`.** It is the source of truth for memory architecture, file conventions, naming rules, build/run topology (Y:/GitHub/D:\dev\), credential handling, and behavioral defaults. THIS file is a project-scoped supplement — it can ADD to or SPECIALIZE root rules but cannot WEAKEN them. If a project-level rule below conflicts with the root, the root wins; surface the conflict and ask before acting.
+>
+> **Also read this entire file before making any changes.** It contains architecture decisions, known issues, credentials, and hard constraints that prevent regressions.
+
+**Memory for this project:** the canonical project memory file is `Y:\DSIG\demandsignals-next\MEMORY.md` (in this repo, committed to git) — NOT `Y:\.claude-memory\demandsignals-next\memory\MEMORY.md`. The `/handoff` slash command must update the in-repo MEMORY.md alongside `Y:\.claude-memory\` cross-cutting files; it must NOT create a duplicate at the `.claude-memory\<project>\memory\` path. Sessions discovered violating this on 2026-05-04 — see root `Y:\.claude-memory\decisions.md` for the canonical resolution.
 
 **For everything else** — runbooks, specs, plans, history — see [`docs/INDEX.md`](docs/INDEX.md).
 

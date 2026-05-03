@@ -8,7 +8,69 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-04-29 (calendar OAuth env-var lockdown + /quote fix pass: intro pre-parser, ranges, ongoing-mgmt panel killed, slot-offer phrasing, soft-save fallback)
+**Last updated:** 2026-05-04 — WS1 (Gaming-PC) — 12-commit polish session: schedule-send time precision + TIK trade-payment receipts + MOME reconciliation + searchable prospect picker + subscription clarity + auto regen-before-send + edit existing scheduled events + inline-editable project/TIK titles + Tier 1 international support / migration 046 ready (NOT YET APPLIED).
+
+---
+
+## SHIPPED 2026-05-03 → 2026-05-04 (12-commit polish session)
+
+- **Schedule-send time precision on invoices + SOWs** (`3dc9596`). Schedule button on top action bar of /admin/invoices/[id] + /admin/sow/[id] with date-time-local picker; modal mirror on both. Migration 045a extends `invoice_scheduled_sends.kind` enum to include `issue_and_send`; 045b creates parallel `sow_scheduled_sends` table. Cron at `/api/cron/scheduled-sends` drains both queues with race-guarded UPDATE-then-claim pattern.
+- **TIK trade-payment receipts** (`d7206f5`). `/api/admin/trade-credits/[id]/drawdowns` POST now auto-mints RCT receipt (payment_method='tik'), renders TIK-flavored PDF (orig / this-payment / remaining ledger card), and dispatches email + SMS with admin-picked channel (default both). New `src/lib/receipt-sms.ts` for the SMS body composer.
+- **Mobile Mechanic Dan invoice ledger reconciled** (`d7206f5`). `scripts/reconcile-mome-invoices.mjs` rewrote INV-MOME-050226B in place (zeroed cosmetic $750 TIK + corrected line item), voided INV-MOME-042726B as duplicate (superseded_by → 050226B), re-linked installment #2 to paid status. Stripe receipt + TIK ledger ($1,275 outstanding mechanic services) preserved. No client-facing refund — payment trail unchanged.
+- **Scheduled column on invoice + SOW lists** (`8074534`). At-a-glance visibility into pending schedule-send rows on the list views.
+- **Subscription clarity + auto regen-before-send + edit existing scheduled events** (`809e12c`). Magic-link invoice page mirrors PDF: per-line Monthly/Annual pills, full RECURRING SUBSCRIPTION disclosure card. `regenerate{Invoice,Sow}Pdf` wired into all dispatch paths so every email/SMS/resend ships current PDF state, with `skipRegen` escape hatch when issuance just rendered. PATCH route on `/api/admin/{invoices,sow}/[id]/schedule-send/[scheduleId]` accepts send_at + channel + override edits; UI gets Edit button on each pending scheduled-row, modal swaps to "Save changes" + "Cancel edit" + EDITING tag.
+- **SOW DELETE: append-only after acceptance** (`f747a8e` → reverted by `6a07558`). Initial commit allowed `?force=1` cascade-delete on accepted SOWs (deposit invoice + receipts + credit memos + trade credits + R2 PDF). Hunter caught the design flaw — accepted SOWs have materialized Stripe subscriptions + projects + payment plans that can't be unilaterally undone server-side. Reverted: DELETE refuses non-draft/sent/viewed status. Cleanup of mistakes happens via void/refund flows on materialized dependents, never by vanishing the parent SOW. `scripts/delete-test-sows.mjs` retained as in-tree emergency tool with "do not run against client data" warning. **Window when bad code was live in master: ~10 minutes** (2026-05-03 01:52–02:02 PT) — verify no production cascade-delete fired in that window if revisiting.
+- **Searchable prospect picker** (`cc17260`). New `src/components/admin/prospect-picker.tsx` typeahead replaces native `<select>` dropdowns on /admin/sow/new + /admin/invoices/new + /admin/subscriptions/new + /admin/trade-credits/new. Filters across business_name + owner_name + owner_email + client_code + city, capped at 50 results, priority-ordered by recently-served markets.
+- **Inline-editable titles on /admin/projects/[id] + /admin/trade-credits/[id]** (`a282c79`). New `src/components/admin/inline-edit-text.tsx` primitive — click-to-edit with Enter/blur save, Esc cancel. SOW.title becomes the historical contract name; project.name + trade_credit.description become the live working names that admins can edit without touching the SOW source-of-truth.
+- **Tier 1 international client support** (`1bbab10`). Migration 046 file created (NOT YET APPLIED — country picker on prospect forms crashes on save until applied). `prospects.country` ISO 3166-1 alpha-2 column (NOT NULL DEFAULT 'US'); `state DEFAULT 'CA'` dropped. New `src/lib/countries.ts` (priority list US/CA/MX/TH/AU/GB + 40 more alphabetical). Country picker on `ProspectContactEditor` + `prospect-edit-modal` with auto-switching labels (State→State/region, ZIP→Postal code) when non-US. Country line on prospect detail page + invoice PDF + magic-link page (non-US only, all-caps, postal-convention). All API SELECTs that fetch prospect for PDF render now pull country.
+
+### Migrations PENDING (paste-and-run via Supabase web SQL Editor)
+
+| Migration | What it adds | Status |
+|---|---|---|
+| 045a | invoice_scheduled_sends.kind += 'issue_and_send' | applied (assumed — schedule-send shipped) |
+| 045b | sow_scheduled_sends table | applied (assumed — schedule-send shipped) |
+| 046 | prospects.country ISO 3166-1 alpha-2, NOT NULL DEFAULT 'US' | **NOT APPLIED — country picker crashes until applied** |
+
+### Architectural decisions locked (do not re-debate)
+
+- **Accepted SOWs are append-only.** DELETE refuses non-draft/sent/viewed status. Materialized downstream artifacts (Stripe subs, projects, TIK ledgers, receipts, credit memos, R2 PDFs) are managed via void/refund flows on the dependents, not by cascade-delete of the parent. The brief `f747a8e` cascade-delete attempt is a permanent lesson; do not reintroduce.
+- **Drift between SOW and project is OK.** SOW.title is the historical contract name; projects.name is the live working name. Inline-edit on project lets admins keep the live name accurate without modifying the SOW source-of-truth.
+- **USD-only invoicing for now.** International clients pay USD via Stripe; multi-currency (Tier 3) deferred until first client request. Premature multi-currency has too many silent-bug surfaces.
+- **Auto regen-before-send on every dispatch path.** Email/SMS/resend/cron all regenerate the cached R2 PDF before send so clients always get current state. `skipRegen` escape hatch when issuance just rendered.
+
+### Failures with lessons (this session)
+
+- **Initial DELETE-cascade on accepted SOWs was a footgun** (`f747a8e` → `6a07558` revert). Lesson: when a system has materialized downstream artifacts (especially Stripe state), cascade-delete the parent is wrong. Dependents must be void/refund-managed, not silently deleted.
+- **Improvised structured markdown — root §3 violation.** Wrote `docs/superpowers/specs/2026-05-04-sow-lockdown-deferred.md`, `docs/superpowers/specs/2026-05-04-international-clients-tiers.md`, and `docs/handoff-morning-2026-05-05.md` (committed as `7e89d67`) without consulting `Y:\CLAUDE.md` §3 (templates / `dsig-project-scaffold` / `/new-project` / `_TEMPLATE` / STOP and ask). Hunter had to flag it explicitly. Captured to `Y:\.claude-memory\corrections.md` per root §9 promotion-rhythm tracking.
+- **Built/typechecked from Y: instead of D:\dev\.** Tried `npx tsc --noEmit` from Y: and the SMB transport hung the watcher. Lesson cross-cutting in root `Y:\CLAUDE.md` §5. Always D:\dev\<slug>\ for build/typecheck/dev server.
+- **Session never read CLAUDE.md.** ~4 hours of work without ever opening either `Y:\CLAUDE.md` or `Y:\DSIG\demandsignals-next\CLAUDE.md`. Worked on training defaults instead of constitution. The §3 violation, the cascade-delete footgun, and the build-from-Y: attempt all derive from this single root cause. Resolution: project CLAUDE.md now opens with explicit "READ FIRST: root constitution at Y:\CLAUDE.md" anchor (this session, 2026-05-04). Future hardening track: SessionStart enforcement that surfaces a hard reminder if CLAUDE.md hasn't been opened in the first N tool calls.
+- **`/handoff` slash command put MEMORY.md in wrong location.** Step 1 of `Y:\.claude\commands\handoff.md` says "memory dir is `Y:\.claude-memory\<project>\memory\`." But this project's canonical MEMORY.md lives at the repo root (`Y:\DSIG\demandsignals-next\MEMORY.md`, in git). The rogue session created a duplicate at the wrong path with 4 hours of session content. Resolution: handoff.md will be patched to check `<project_root>\MEMORY.md` before falling back to the `.claude-memory\<project>\memory\` convention; project CLAUDE.md now documents the correct location explicitly.
+
+---
+
+## SHIPPED 2026-05-01
+
+- **Invoice scheduled sends** — admin can now schedule an invoice email/SMS dispatch for a future timestamp. New `invoice_scheduled_sends` queue table (migration 039), 5-min cron at `/api/cron/scheduled-sends`, shared dispatch lib at `src/lib/invoice-send.ts` so cron path + synchronous admin button share one code path (cron can't internal-fetch admin-gated routes). Resend-only, no SMTP fallback. Activity log writes for every send/failure. Idempotency: status flip is the dedup; `'both'` channel non-retry on partial failure (email succeeded → fired; SMS failure logged). Commit `345938c`.
+- **Self-contained invoices with auto-generated payment terms** — Hunter, 2026-05-01: "There may be instances where we just want to send an invoice to a client without the unnecessary process of creating SOW, projects, etc." `invoices.payment_terms` text column added (migration 040), mirrors `sow_documents.payment_terms`. New `src/lib/payment-terms.ts` produces prose that matches the math (deposit %, balance, net days, TIK, discount, late fee, recurring cadences). Auto-gen at save time when admin leaves the field blank; admin's edit IS the signal not to regenerate. Wired through PDF renderer, doc-preview HTML, public invoice API, admin list/detail/new pages, all SOW create/edit/continue-to-sow paths (replaces the old hardcoded "Net 30. 25% deposit on acceptance" string with the real shape of the SOW). Commit `bf97f3c`.
+- **Admin invoice page UI + CSRF tier-2 fallback** — Schedule Send modal (pick timestamp, channel, list pending+past schedules, cancel pending) and Payment Terms textarea both live on /admin/invoices/[id]. Concurrent CSRF defense: `requireAdmin()` and `adminOriginCheck()` now accept `Sec-Fetch-Site: same-origin` or `none` when Origin is absent (Chrome strips Origin on header-light same-origin POSTs). Fetch-Metadata "forbidden" header — JS can't set it, browser writes it after the fetch leaves the page context. Don't remove the fallback without first auditing every admin caller for header-bearing POSTs. Commit `f31e92d`.
+- **CLAUDE.md aligned to root constitution v2c** — §1 header now reflects production-live + Y: as canonical working state + D:\dev\ as per-workstation build loop. §2 inherits root §2 defaults; nodemailer line removed (Resend-only per memory); localhost dev qualified (only when hot-reload needed; OAuth-dependent features won't work locally). §4 credentials restructured (no token references in markdown). §12 incident note for Chrome Origin-stripping. New §29 codifies native-on-site booking architecture: DSIG never sends visitors to external Google Appointment Schedules links; all bookings happen on demandsignals.co. SMTP-wiring item dropped from open work. Commit `860368f`.
+- **dsig-rank-system.md deleted** (1966 lines) — methodology integrated into the SERVICES + city-service-slugs data layer long ago; standalone doc was reference-only and out-of-sync. Commit `860368f`.
+- **trade-credits drawdowns FK fix** — `recorded_by` was being set to `auth.user.id` (auth user UUID) instead of `auth.admin.id` (admin_users.id, which is the actual FK target). Drawdown audit trail now resolves correctly. Commit `860368f`.
+
+### Migrations APPLIED 2026-05-01 (paste-and-run via Supabase web SQL Editor)
+
+| Migration | What it adds |
+|---|---|
+| 039 | invoice_scheduled_sends queue table + indexes (partial idx on send_at WHERE status='scheduled') + RLS |
+| 040 | invoices.payment_terms text column |
+
+### Architectural decisions locked (do not re-debate)
+
+- **`invoice_scheduled_sends` is the canonical deferred-send queue.** Cron at `/api/cron/scheduled-sends` (5-min) is the only path that fires deferred sends. Admin direct-send routes (`send-email`, `send-sms`) call the same `dispatchInvoiceEmail` / `dispatchInvoiceSms` helpers in `src/lib/invoice-send.ts` — no duplicate dispatch paths.
+- **`invoices.payment_terms` is mirror of `sow_documents.payment_terms`.** Same auto-generation contract: empty on save = regenerate from current shape; non-empty = stored verbatim. No `payment_terms_auto` boolean — the admin's edit IS the signal.
+- **Native-on-site booking only.** §29 of project CLAUDE.md is normative: DSIG never sends visitors to an external Google Appointment Schedules link. Replaces the prior footer/CTA URL pattern.
+- **Multi-workstation file architecture is the build/run/storage split per root §5.** Storage on Y: (canonical), build/run on D:\dev\<slug>\ (ephemeral, per workstation), code canonical via GitHub. Y: is forbidden as a build target — SMB latency + no junctions/symlinks. This session validated the split end-to-end.
 
 ---
 
@@ -654,6 +716,23 @@ Commit `abcbd10`. Deployed to https://dsig.demandsignals.dev/quote.
     to say "Let me walk you through the numbers" — then nothing happened.
     AI must either DO the thing in the next turn or not promise it.
 
+16. **DO NOT run npm install / npm run build from Y: or any UNC path.** Y: is
+    the storage layer; build/run must happen on D:\dev\<slug>\. Two failure
+    modes confirmed 2026-05-01: (a) `cmd.exe` rejects UNC working directories
+    and falls back to `C:\Windows`, then npm tries to mkdir `.next` in
+    System32 (EPERM); (b) Turbopack creates junction points inside `.next/`
+    which SMB doesn't expose (os error 4390). Root constitution §5 forbids
+    it; this session proved why.
+
+17. **DO NOT cat / Read credential files** like `Y:\.credentials\dsig.env` to
+    diagnose env-var presence. Use PowerShell `$env:NAME` checks instead —
+    those return presence without echoing values. This session displayed
+    `ANTHROPIC_API_KEY`, `ANTHROPIC_AGENT_DSIG_PLATFORM`, and `BLOGGER_API_KEY`
+    values in chat by reading the file. Per root §4, those values are now
+    compromised and need rotation. Right rule: env-var presence ↔
+    `$env:NAME` (PowerShell) or `[ -n "$NAME" ]` (bash) — never read the
+    source file.
+
 ---
 
 ## Environment state
@@ -735,4 +814,6 @@ Before making any production change, confirm with Hunter. Before running any des
 - "always update and keep things current" (2026-04-29) — every code change ships with matching doc updates (CLAUDE.md, MEMORY.md, INDEX.md, runbooks). No "I'll update the docs later." Same commit or no commit.
 - "always check CODE before blaming credentials" (recurring) — when something fails after Hunter confirmed config is correct, the code is wrong. Read the consuming path end-to-end. Build a debug endpoint. Stop asking for repeat config verification.
 - "DSIG_Main should be deprecated and replaced with GOOGLE_DSIG_MAIN_ID_042826" (2026-04-29) — purpose-specific dated env-var names are the contract; generic names are forbidden because they alias. Convention applies to all future OAuth integrations.
+- "stop using UNC moving forward" (2026-05-01) — bash to Y:\ paths, never \\DSIG-NAS-A\... UNC. Same files, different addressing; the mapped drive is the contract.
+- "the constitution is explicit for a variety of reasons" (2026-05-01) — when Hunter cites the constitution, the answer isn't "let me think about it"; it's "yes, here's how we do it right." Specifically: software on C:, storage on Y:, dev check on D:\dev\, git push from D:, Vercel picks up from GitHub.
 - Working hours: nights, often 2am. Design for that reader.
