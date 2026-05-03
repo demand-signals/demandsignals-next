@@ -36,6 +36,7 @@ Start here to find every artifact in the DSIG Next.js project.
 | [`docs/superpowers/specs/2026-04-29-client-sms-notifications-design.md`](superpowers/specs/2026-04-29-client-sms-notifications-design.md) | 2026-04-29 | DRAFT | Client-facing SMS notifications |
 | [`docs/superpowers/specs/2026-04-29-quote-existing-client-match-design.md`](superpowers/specs/2026-04-29-quote-existing-client-match-design.md) | 2026-04-29 | SHIPPED | Existing-client match during /quote research |
 | [`docs/superpowers/specs/2026-04-29-quote-to-booked-meeting-design.md`](superpowers/specs/2026-04-29-quote-to-booked-meeting-design.md) | 2026-04-29 | SHIPPED | /quote → real Google Calendar booking + Meet + SMS reminders |
+| [`docs/superpowers/specs/2026-05-04-sow-lockdown-deferred.md`](superpowers/specs/2026-05-04-sow-lockdown-deferred.md) | 2026-05-04 | DEFERRED | Lock down accepted SOWs + hide from default views — premature at 1-operator scale, revisit on team growth |
 
 ---
 

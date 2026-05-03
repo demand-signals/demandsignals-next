@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Loader2, Trash2, Coins, FileText } from 'lucide-react'
 import { formatCents } from '@/lib/format'
 import type { TradeCreditStatus } from '@/lib/invoice-types'
+import { InlineEditText } from '@/components/admin/inline-edit-text'
 
 interface TradeCredit {
   id: string
@@ -146,6 +147,21 @@ export default function TradeCreditDetailPage({
     await load()
   }
 
+  async function saveDescription(description: string) {
+    const res = await fetch(`/api/admin/trade-credits/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description }),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error(data.error ?? 'Update failed')
+    }
+    // Optimistic local update so the title renders the new name immediately.
+    setTc((prev) => (prev ? { ...prev, description } : prev))
+    load()
+  }
+
   async function writeOff() {
     if (!confirm('Write off the remaining balance? This marks the credit as written_off.')) return
     setWriteOffBusy(true)
@@ -184,7 +200,15 @@ export default function TradeCreditDetailPage({
             ← Trade Credits
           </Link>
           <Coins className="w-5 h-5 text-amber-500" />
-          <h1 className="text-xl font-bold text-slate-900">{tc.description}</h1>
+          {/* Description is the live working name. SOW's trade_credit_description
+              is the snapshot at acceptance — they can drift, that's fine. */}
+          <InlineEditText
+            as="h1"
+            className="text-xl font-bold text-slate-900"
+            value={tc.description}
+            onSave={saveDescription}
+            placeholder="Untitled trade credit"
+          />
         </div>
         <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${STATUS_BADGE[tc.status]}`}>
           {tc.status}

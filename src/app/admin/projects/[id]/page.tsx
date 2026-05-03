@@ -8,6 +8,7 @@ import { formatCents } from '@/lib/format'
 import type { ProjectRow, ProjectPhase, ProjectPhaseDeliverable } from '@/lib/invoice-types'
 import { OutstandingObligations } from './OutstandingObligations'
 import { TimeEntriesPanel } from './TimeEntriesPanel'
+import { InlineEditText } from '@/components/admin/inline-edit-text'
 
 // Extended with joined prospect data
 interface ProjectDetail extends ProjectRow {
@@ -248,6 +249,23 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
 
   useEffect(() => { load() }, [load])
 
+  async function updateProjectName(name: string) {
+    const res = await fetch(`/api/admin/projects/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error(data.error ?? 'Update failed')
+    }
+    // Optimistic local update so the title renders the new name without
+    // waiting for the full project reload. load() still fires for the
+    // canonical refresh.
+    setProject((prev) => (prev ? { ...prev, name } : prev))
+    load()
+  }
+
   async function updatePhase(phaseId: string, status: ProjectPhase['status']) {
     const res = await fetch(`/api/admin/projects/${id}/phases/${phaseId}`, {
       method: 'PATCH',
@@ -308,10 +326,18 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
         <span>{project.name}</span>
       </div>
 
-      {/* Header */}
+      {/* Header — name is inline-editable. The SOW's title is the
+          original contract name (snapshot at acceptance); this is the
+          live working name for execution + display on docs/admin. */}
       <div className="flex items-start gap-4">
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-slate-900">{project.name}</h1>
+          <InlineEditText
+            as="h1"
+            className="text-2xl font-bold text-slate-900"
+            value={project.name}
+            onSave={updateProjectName}
+            placeholder="Untitled project"
+          />
           {project.notes && (
             <p className="text-sm text-slate-500 mt-1">{project.notes}</p>
           )}
