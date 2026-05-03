@@ -591,6 +591,36 @@ export default function SowDetailPage({
     router.push('/admin/sow')
   }
 
+  // Force-delete a non-draft SOW + its dependent rows. Strong confirm
+  // because this is irreversible and removes real client doc artifacts
+  // (deposit invoice, receipts, credit memos, trade credits, R2 PDF).
+  // Confirm requires typing the SOW number — accidental click protection.
+  async function deleteForce() {
+    if (!sow) return
+    const expected = sow.sow_number
+    const typed = window.prompt(
+      `⚠️  HARD DELETE — this is irreversible.\n\nDeleting ${expected} will also remove:\n  • its deposit invoice + any receipts + credit memos\n  • all trade credits attached to this SOW + their payment history\n  • the R2 PDF\n\nType the SOW number to confirm:`,
+    )
+    if (typed !== expected) {
+      if (typed !== null) alert(`Did not match "${expected}". Nothing deleted.`)
+      return
+    }
+    setBusy(true)
+    try {
+      const res = await fetch(`/api/admin/sow/${id}?force=1`, { method: 'DELETE' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        alert(`Delete failed: ${data.error ?? res.statusText}`)
+        setBusy(false)
+        return
+      }
+      router.push('/admin/sow')
+    } catch (e) {
+      alert(`Delete failed: ${e instanceof Error ? e.message : String(e)}`)
+      setBusy(false)
+    }
+  }
+
   // ── Preview-before-send helpers ───────────────────────────────────
   // Mirrors invoice page pattern. Manual sends (Email / SMS / Resend)
   // open a preview modal first; admin confirms; the actual POST fires.
@@ -1076,6 +1106,17 @@ export default function SowDetailPage({
             >
               <ExternalLink className="w-3.5 h-3.5" /> Client view
             </a>
+            {/* Hard delete — last resort. Confirms via prompt() that the
+                admin types the SOW number; cascades the deposit invoice,
+                receipts, credit memos, trade credits, and the R2 PDF. */}
+            <button
+              onClick={deleteForce}
+              disabled={busy}
+              className="bg-red-100 text-red-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1 hover:bg-red-200 disabled:opacity-50"
+              title="Hard delete this SOW + its deposit invoice, receipts, credit memos, trade credits, and R2 PDF"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Delete
+            </button>
           </>
         )}
 

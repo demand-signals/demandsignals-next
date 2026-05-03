@@ -70,8 +70,9 @@ export default function AdminProjectsPage() {
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-xs text-slate-500 uppercase">
               <tr>
-                <th className="text-left px-4 py-3">Project</th>
+                {/* Hunter directive 2026-05-04: Client first, then Project. */}
                 <th className="text-left px-4 py-3">Client</th>
+                <th className="text-left px-4 py-3">Project</th>
                 <th className="text-left px-4 py-3">Status</th>
                 <th className="text-right px-4 py-3">Invoiced / Paid</th>
                 <th className="text-right px-4 py-3">Monthly</th>
@@ -81,11 +82,6 @@ export default function AdminProjectsPage() {
             <tbody>
               {projects.map((p) => (
                 <tr key={p.id} className="border-t border-slate-100 hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium">
-                    <Link href={`/admin/projects/${p.id}`} className="text-teal-600 hover:underline">
-                      {p.name}
-                    </Link>
-                  </td>
                   <td className="px-4 py-3 text-slate-700">
                     {p.prospects?.business_name ?? '—'}
                     {p.prospects?.is_client && (
@@ -93,6 +89,11 @@ export default function AdminProjectsPage() {
                         CLIENT
                       </span>
                     )}
+                  </td>
+                  <td className="px-4 py-3 font-medium">
+                    <Link href={`/admin/projects/${p.id}`} className="text-teal-600 hover:underline">
+                      {p.name}
+                    </Link>
                   </td>
                   <td className="px-4 py-3">
                     <span
