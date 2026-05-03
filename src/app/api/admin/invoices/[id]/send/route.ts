@@ -35,7 +35,7 @@ export async function POST(
 
   const { data: invoice, error: fetchErr } = await supabaseAdmin
     .from('invoices')
-    .select('*, prospect:prospects(business_name, owner_name, owner_email, business_email, owner_phone, business_phone, address, city, state, zip)')
+    .select('*, prospect:prospects(business_name, owner_name, owner_email, business_email, owner_phone, business_phone, address, city, state, zip, country)')
     .eq('id', id)
     .maybeSingle()
 
@@ -82,6 +82,7 @@ export async function POST(
         city:          invoice.prospect?.city ?? null,
         state:         invoice.prospect?.state ?? null,
         zip:           invoice.prospect?.zip ?? null,
+        country:       invoice.prospect?.country ?? 'US',
       },
       project,
       paymentSummary,

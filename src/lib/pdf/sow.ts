@@ -27,6 +27,9 @@ export interface SowProspect {
   city?: string | null
   state?: string | null
   zip?: string | null
+  // ISO 3166-1 alpha-2 (migration 046a). Renders on its own line,
+  // all-caps, only when non-US.
+  country?: string | null
 }
 
 // ── Cadence helpers ───────────────────────────────────────────────────

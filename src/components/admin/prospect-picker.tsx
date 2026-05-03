@@ -25,6 +25,7 @@ export interface ProspectPickerOption {
   owner_email?: string | null
   client_code?: string | null
   city?: string | null
+  country?: string | null  // ISO 3166-1 alpha-2 (migration 046a)
 }
 
 interface Props {

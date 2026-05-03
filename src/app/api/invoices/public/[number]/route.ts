@@ -32,7 +32,7 @@ export async function GET(
       trade_credit_cents, trade_credit_description,
       discount_kind, discount_value_bps, discount_amount_cents, discount_description,
       term_months, until_cancelled, subscription_intent,
-      prospect:prospects(business_name, owner_name, owner_email, address, city, state, zip)
+      prospect:prospects(business_name, owner_name, owner_email, address, city, state, zip, country)
     `
 
   let { data: invoice } = await supabaseAdmin

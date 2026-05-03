@@ -6,6 +6,7 @@ import { X, Save, Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { STAGES, STAGE_LABELS, INDUSTRIES } from '@/types/database'
 import type { Prospect, Demo, Deal } from '@/types/database'
+import { countriesForPicker, isInternational } from '@/lib/countries'
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -53,6 +54,7 @@ export function ProspectEditModal({ prospect, onClose }: ProspectEditModalProps)
     city: prospect.city || '',
     state: prospect.state || '',
     zip: prospect.zip || '',
+    country: (prospect as { country?: string | null }).country || 'US',
     owner_name: prospect.owner_name || '',
     owner_email: prospect.owner_email || '',
     owner_phone: prospect.owner_phone || '',
@@ -107,6 +109,7 @@ export function ProspectEditModal({ prospect, onClose }: ProspectEditModalProps)
         city: form.city || null,
         state: form.state || null,
         zip: form.zip || null,
+        country: form.country || 'US',
         owner_name: form.owner_name || null,
         owner_email: form.owner_email || null,
         owner_phone: form.owner_phone || null,
@@ -234,11 +237,35 @@ export function ProspectEditModal({ prospect, onClose }: ProspectEditModalProps)
               <Field label="City">
                 <input className={inputClass} value={form.city} onChange={e => set('city', e.target.value)} />
               </Field>
-              <Field label="State">
-                <input className={inputClass} value={form.state} onChange={e => set('state', e.target.value)} maxLength={2} placeholder="CA" />
+              <Field label={isInternational(form.country) ? 'State / region' : 'State'}>
+                {/* maxLength only applies to US 2-letter codes; international
+                    regions (Bangkok, Queensland, etc.) need full text. */}
+                <input
+                  className={inputClass}
+                  value={form.state}
+                  onChange={e => set('state', e.target.value)}
+                  maxLength={isInternational(form.country) ? undefined : 2}
+                  placeholder={isInternational(form.country) ? '' : 'CA'}
+                />
               </Field>
-              <Field label="ZIP">
-                <input className={inputClass} value={form.zip} onChange={e => set('zip', e.target.value)} maxLength={10} />
+              <Field label={isInternational(form.country) ? 'Postal code' : 'ZIP'}>
+                <input
+                  className={inputClass}
+                  value={form.zip}
+                  onChange={e => set('zip', e.target.value)}
+                  maxLength={isInternational(form.country) ? undefined : 10}
+                />
+              </Field>
+              <Field label="Country">
+                <select
+                  className={selectClass}
+                  value={form.country}
+                  onChange={e => set('country', e.target.value)}
+                >
+                  {countriesForPicker().map(c => (
+                    <option key={c.code} value={c.code}>{c.name}</option>
+                  ))}
+                </select>
               </Field>
               <Field label="Source">
                 <input className={inputClass} value={form.source} onChange={e => set('source', e.target.value)} />

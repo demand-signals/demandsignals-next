@@ -6,6 +6,7 @@
 import { formatCents } from '@/lib/format'
 import type { InvoiceWithLineItems } from '@/lib/invoice-types'
 import { BUSINESS_ADDRESS } from '@/lib/constants'
+import { countryName } from '@/lib/countries'
 import { htmlToPdfBuffer } from './render'
 import {
   T, FONT_STACK,
@@ -23,6 +24,10 @@ export interface InvoiceProspect {
   city?: string | null
   state?: string | null
   zip?: string | null
+  // ISO 3166-1 alpha-2 (migration 046a). Defaults to 'US' when omitted;
+  // the bill-to block renders the country on its own line, all-caps,
+  // only when the prospect is international (per postal convention).
+  country?: string | null
 }
 
 export interface InvoiceProjectMeta {
@@ -105,6 +110,12 @@ function invoiceMeta(inv: InvoiceWithLineItems, project?: InvoiceProjectMeta): s
 function billToBlock(inv: InvoiceWithLineItems, prospect: InvoiceProspect): string {
   const bt = inv.bill_to
   const cityLine = [prospect.city, prospect.state, prospect.zip].filter(Boolean).join(', ')
+  // Country line: only render for non-US prospects, all-caps per
+  // international postal convention.
+  const countryLine =
+    prospect.country && prospect.country !== 'US'
+      ? countryName(prospect.country).toUpperCase()
+      : ''
 
   return `
   <div style="display:flex;gap:0;padding:20px 54px;border-bottom:1px solid ${T.BORDER};font-family:${FONT_STACK}">
@@ -115,6 +126,7 @@ function billToBlock(inv: InvoiceWithLineItems, prospect: InvoiceProspect): stri
       ${bt.contact_name || prospect.owner_name ? `<p style="font-size:12px;color:${T.BODY};margin-top:2px">${esc(bt.contact_name ?? prospect.owner_name ?? '')}</p>` : ''}
       ${prospect.address ? `<p style="font-size:12px;color:${T.BODY};margin-top:2px">${esc(prospect.address)}</p>` : ''}
       ${cityLine          ? `<p style="font-size:12px;color:${T.BODY}">${esc(cityLine)}</p>` : ''}
+      ${countryLine       ? `<p style="font-size:12px;color:${T.BODY};font-weight:600;letter-spacing:0.05em">${esc(countryLine)}</p>` : ''}
       ${bt.email || prospect.owner_email ? `<p style="font-size:12px;color:${T.BODY}">${esc(bt.email ?? prospect.owner_email ?? '')}</p>` : ''}
     </div>
 

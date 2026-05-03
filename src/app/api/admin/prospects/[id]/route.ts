@@ -13,6 +13,10 @@ const patchSchema = z.object({
   city: z.string().nullable().optional(),
   state: z.string().nullable().optional(),
   zip: z.string().nullable().optional(),
+  // ISO 3166-1 alpha-2 (migration 046a). 2 chars, uppercase. Empty
+  // string normalizes to 'US' on the client; we accept null too in
+  // case admin clears it explicitly.
+  country: z.string().regex(/^[A-Z]{2}$/, 'country must be ISO 3166-1 alpha-2').nullable().optional(),
   client_code: z
     .string()
     .regex(/^[A-Z]{4}$/, 'client_code must be exactly 4 uppercase letters')

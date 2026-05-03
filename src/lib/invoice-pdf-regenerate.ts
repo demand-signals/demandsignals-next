@@ -42,7 +42,7 @@ export async function regenerateInvoicePdf(invoiceId: string): Promise<{
         trade_credit_cents, trade_credit_description,
         discount_kind, discount_value_bps, discount_amount_cents, discount_description,
         pdf_version,
-        prospect:prospects(business_name, owner_name, owner_email, address, city, state, zip)
+        prospect:prospects(business_name, owner_name, owner_email, address, city, state, zip, country)
       `)
       .eq('id', invoiceId)
       .maybeSingle()
@@ -65,6 +65,7 @@ export async function regenerateInvoicePdf(invoiceId: string): Promise<{
       city?: string | null
       state?: string | null
       zip?: string | null
+      country?: string | null
     } | null
 
     const renderInput = {
@@ -91,6 +92,7 @@ export async function regenerateInvoicePdf(invoiceId: string): Promise<{
         city:          prospect?.city ?? null,
         state:         prospect?.state ?? null,
         zip:           prospect?.zip ?? null,
+        country:       prospect?.country ?? 'US',
       },
       project,
       paymentSummary,

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
+import { countriesForPicker, countryName, isInternational } from '@/lib/countries'
 
 export interface ProspectContact {
   id: string
@@ -14,6 +15,7 @@ export interface ProspectContact {
   city: string | null
   state: string | null
   zip: string | null
+  country?: string | null
 }
 
 interface Props {
@@ -44,6 +46,7 @@ export default function ProspectContactEditor({ prospect, onSaved }: Props) {
           city: state.city,
           state: state.state,
           zip: state.zip,
+          country: state.country,
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -63,11 +66,17 @@ export default function ProspectContactEditor({ prospect, onSaved }: Props) {
 
   if (!editing) {
     const cityLine = [state.city, state.state, state.zip].filter(Boolean).join(', ')
+    // International postal convention: country on its own line, all-caps,
+    // only when non-US. US prospects stay on the existing 2-line format.
+    const showCountry = isInternational(state.country)
     return (
       <div className="text-sm space-y-0.5">
         {state.owner_name && <div>{state.owner_name}</div>}
         {state.address && <div>{state.address}</div>}
         {cityLine && <div>{cityLine}</div>}
+        {showCountry && (
+          <div className="uppercase tracking-wide">{countryName(state.country)}</div>
+        )}
         {(state.owner_email || state.business_email) && <div>{state.owner_email ?? state.business_email}</div>}
         {(state.owner_phone || state.business_phone) && <div>{state.owner_phone ?? state.business_phone}</div>}
         <button onClick={() => setEditing(true)} className="text-xs text-teal-600 hover:underline mt-1">
@@ -95,17 +104,34 @@ export default function ProspectContactEditor({ prospect, onSaved }: Props) {
         <label className="block"><span className="text-xs text-slate-500">Business phone</span>
           <input value={state.business_phone ?? ''} onChange={(e) => update('business_phone', e.target.value || null)} className="w-full border border-slate-200 rounded px-2 py-1" />
         </label>
-        <label className="block"><span className="text-xs text-slate-500">Address</span>
+        <label className="block col-span-2"><span className="text-xs text-slate-500">Address</span>
           <input value={state.address ?? ''} onChange={(e) => update('address', e.target.value || null)} className="w-full border border-slate-200 rounded px-2 py-1" />
         </label>
         <label className="block"><span className="text-xs text-slate-500">City</span>
           <input value={state.city ?? ''} onChange={(e) => update('city', e.target.value || null)} className="w-full border border-slate-200 rounded px-2 py-1" />
         </label>
-        <label className="block"><span className="text-xs text-slate-500">State</span>
+        <label className="block">
+          <span className="text-xs text-slate-500">
+            {isInternational(state.country) ? 'State / region' : 'State'}
+          </span>
           <input value={state.state ?? ''} onChange={(e) => update('state', e.target.value || null)} className="w-full border border-slate-200 rounded px-2 py-1" />
         </label>
-        <label className="block col-span-2"><span className="text-xs text-slate-500">ZIP</span>
-          <input value={state.zip ?? ''} onChange={(e) => update('zip', e.target.value || null)} className="w-full border border-slate-200 rounded px-2 py-1 max-w-32" />
+        <label className="block">
+          <span className="text-xs text-slate-500">
+            {isInternational(state.country) ? 'Postal code' : 'ZIP'}
+          </span>
+          <input value={state.zip ?? ''} onChange={(e) => update('zip', e.target.value || null)} className="w-full border border-slate-200 rounded px-2 py-1" />
+        </label>
+        <label className="block"><span className="text-xs text-slate-500">Country</span>
+          <select
+            value={state.country ?? 'US'}
+            onChange={(e) => update('country', e.target.value || null)}
+            className="w-full border border-slate-200 rounded px-2 py-1 bg-white"
+          >
+            {countriesForPicker().map((c) => (
+              <option key={c.code} value={c.code}>{c.name}</option>
+            ))}
+          </select>
         </label>
       </div>
       {err && <div className="text-red-600 text-xs">{err}</div>}

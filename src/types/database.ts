@@ -6,6 +6,7 @@ export type Prospect = {
   city: string | null
   state: string | null
   zip: string | null
+  country: string | null  // ISO 3166-1 alpha-2; defaults to 'US' (migration 046a)
   owner_name: string | null
   owner_email: string | null
   owner_phone: string | null

@@ -5,6 +5,7 @@
 import { notFound } from 'next/navigation'
 import { formatCents } from '@/lib/format'
 import { BUSINESS_ADDRESS } from '@/lib/constants'
+import { countryName } from '@/lib/countries'
 import ClientTracker from '@/components/ClientTracker'
 
 // ── Brand tokens (mirrored from src/lib/pdf/_shared.ts) ───────────────
@@ -51,6 +52,7 @@ interface PublicProspect {
   city: string | null
   state: string | null
   zip: string | null
+  country: string | null  // ISO 3166-1 alpha-2 (migration 046a)
 }
 
 interface PublicInvoice {
@@ -533,6 +535,13 @@ export default async function PublicInvoicePage({
               )}
               {cityLine && (
                 <p style={{ fontSize: 13, color: T.slate, marginBottom: 2 }}>{cityLine}</p>
+              )}
+              {/* Country line — non-US only, all-caps per international
+                  postal convention. Mirrors the PDF bill-to block. */}
+              {prospect?.country && prospect.country !== 'US' && (
+                <p style={{ fontSize: 13, color: T.slate, marginBottom: 2, fontWeight: 600, letterSpacing: '0.05em' }}>
+                  {countryName(prospect.country).toUpperCase()}
+                </p>
               )}
               {prospect?.owner_email && (
                 <p style={{ fontSize: 13, color: T.slate }}>{prospect.owner_email}</p>

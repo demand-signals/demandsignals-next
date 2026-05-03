@@ -22,6 +22,7 @@ import { ProspectMap } from '@/components/admin/prospect-map'
 import { STAGES, STAGE_LABELS } from '@/types/database'
 import type { Prospect, Demo, Activity } from '@/types/database'
 import { cn } from '@/lib/utils'
+import { countryName } from '@/lib/countries'
 
 const STAGE_BADGE_COLORS: Record<string, string> = {
   researched: 'bg-slate-500/10 border-slate-300 text-slate-600',
@@ -357,9 +358,16 @@ export default function ProspectDetailPage() {
     )
   }
 
-  const addressLine = [prospect.address, prospect.city, prospect.state, prospect.zip]
-    .filter(Boolean)
-    .join(', ')
+  // Address line includes country only when non-US, per international
+  // postal convention (country last, all-caps in PDFs; here we just
+  // append the country name).
+  const prospectCountry = (prospect as { country?: string | null }).country ?? 'US'
+  const addressParts = [prospect.address, prospect.city, prospect.state, prospect.zip].filter(Boolean)
+  const addressLine = addressParts.join(', ')
+  const addressLineWithCountry =
+    prospectCountry && prospectCountry !== 'US'
+      ? [addressLine, countryName(prospectCountry)].filter(Boolean).join(', ')
+      : addressLine
 
   const locationLine = [prospect.city, prospect.state].filter(Boolean).join(', ')
 
@@ -570,7 +578,7 @@ export default function ProspectDetailPage() {
               <InfoRow icon={Phone} label="Owner Phone" value={prospect.owner_phone} />
               <InfoRow icon={Phone} label="Business Phone" value={prospect.business_phone} />
               <InfoRow icon={Mail} label="Business Email" value={prospect.business_email} />
-              <InfoRow icon={MapPin} label="Address" value={addressLine || null} />
+              <InfoRow icon={MapPin} label="Address" value={addressLineWithCountry || null} />
             </div>
           </Card>
 
