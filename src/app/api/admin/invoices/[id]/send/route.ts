@@ -165,7 +165,10 @@ export async function POST(
     const ownerPhone = invoice.prospect?.owner_phone ?? invoice.prospect?.business_phone ?? null
 
     if (ownerEmail) {
-      autoEmailResult = await dispatchInvoiceEmail(id, { createdBy: auth.user.id }).catch(
+      // skipRegen: the issuance step above already rendered + uploaded
+      // a fresh PDF to R2. Re-rendering inside dispatch would be a
+      // redundant ~1s work for the same bytes.
+      autoEmailResult = await dispatchInvoiceEmail(id, { createdBy: auth.user.id, skipRegen: true }).catch(
         (e: unknown) => ({
           success: false,
           error: `auto-email threw: ${e instanceof Error ? e.message : String(e)}`,
@@ -173,7 +176,7 @@ export async function POST(
       )
     }
     if (ownerPhone) {
-      autoSmsResult = await dispatchInvoiceSms(id, { createdBy: auth.user.id }).catch(
+      autoSmsResult = await dispatchInvoiceSms(id, { createdBy: auth.user.id, skipRegen: true }).catch(
         (e: unknown) => ({
           success: false,
           error: `auto-sms threw: ${e instanceof Error ? e.message : String(e)}`,

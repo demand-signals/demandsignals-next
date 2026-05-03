@@ -222,6 +222,10 @@ export default function InvoiceDetailPage({
   const [scheduleOverridePhone, setScheduleOverridePhone] = useState('')
   const [scheduleSubmitting, setScheduleSubmitting] = useState(false)
   const [scheduleError, setScheduleError] = useState<string | null>(null)
+  // Edit mode: when set, the form is editing an existing scheduled row
+  // instead of creating a new one. Holds the row's id so submit goes to
+  // PATCH instead of POST. Null = create-new mode (default).
+  const [scheduleEditingId, setScheduleEditingId] = useState<string | null>(null)
 
   // Reminders modal state. Pre-due offsets fire BEFORE due_date (preemptive
   // nudges); post-due offsets fire AFTER due_date (chase reminders).
@@ -885,8 +889,8 @@ export default function InvoiceDetailPage({
     }
   }
 
-  function openScheduleModal() {
-    // Default to tomorrow 9 AM in the local zone (formatted for datetime-local).
+  // Form-reset helper — sets defaults for create-new mode.
+  function resetScheduleForm() {
     const t = new Date()
     t.setDate(t.getDate() + 1)
     t.setHours(9, 0, 0, 0)
@@ -897,8 +901,36 @@ export default function InvoiceDetailPage({
     setScheduleOverrideEmail('')
     setScheduleOverridePhone('')
     setScheduleError(null)
+    setScheduleEditingId(null)
+  }
+
+  function openScheduleModal() {
+    resetScheduleForm()
     setScheduleModal(true)
     loadScheduledRows()
+  }
+
+  // Convert an ISO timestamp (UTC) to the local-zone string the
+  // datetime-local input expects (`YYYY-MM-DDTHH:mm`).
+  function isoToLocalDateTimeInput(iso: string): string {
+    const d = new Date(iso)
+    const tzOffsetMs = d.getTimezoneOffset() * 60_000
+    return new Date(d.getTime() - tzOffsetMs).toISOString().slice(0, 16)
+  }
+
+  // Load a scheduled row's values into the form for editing. Scrolls
+  // the form into view so admin sees what they're editing.
+  function startEditSchedule(row: typeof scheduledRows[number]) {
+    setScheduleEditingId(row.id)
+    setScheduleAt(isoToLocalDateTimeInput(row.send_at))
+    setScheduleChannel(row.channel)
+    setScheduleOverrideEmail(row.override_email ?? '')
+    setScheduleOverridePhone(row.override_phone ?? '')
+    setScheduleError(null)
+  }
+
+  function cancelEditSchedule() {
+    resetScheduleForm()
   }
 
   async function submitSchedule() {
@@ -907,26 +939,46 @@ export default function InvoiceDetailPage({
     try {
       // datetime-local is interpreted as the user's local zone — convert to ISO UTC.
       const sendAtIso = new Date(scheduleAt).toISOString()
-      const body: Record<string, string> = { send_at: sendAtIso, channel: scheduleChannel }
-      // For drafts, schedule the issue + dispatch path. For sent invoices,
-      // schedule a resend (default kind='send').
-      if (detail?.invoice.status === 'draft') body.kind = 'issue_and_send'
-      if (scheduleOverrideEmail) body.override_email = scheduleOverrideEmail
-      if (scheduleOverridePhone) body.override_phone = scheduleOverridePhone
-      const res = await fetch(`/api/admin/invoices/${id}/schedule-send`, {
-        method: 'POST',
+      // Use null (not undefined) for override clears so the API treats
+      // it as "set to null" rather than "leave unchanged".
+      const editing = scheduleEditingId !== null
+      const body: Record<string, unknown> = {
+        send_at: sendAtIso,
+        channel: scheduleChannel,
+        override_email: editing
+          ? (scheduleOverrideEmail || null)
+          : (scheduleOverrideEmail || undefined),
+        override_phone: editing
+          ? (scheduleOverridePhone || null)
+          : (scheduleOverridePhone || undefined),
+      }
+      // Strip undefined so we don't send empty fields on create. Edit
+      // path keeps explicit null to clear an existing override.
+      if (!editing) {
+        for (const k of Object.keys(body)) {
+          if (body[k] === undefined) delete body[k]
+        }
+        // For drafts on the create path, schedule issue + dispatch.
+        if (detail?.invoice.status === 'draft') body.kind = 'issue_and_send'
+      }
+
+      const url = editing
+        ? `/api/admin/invoices/${id}/schedule-send/${scheduleEditingId}`
+        : `/api/admin/invoices/${id}/schedule-send`
+      const res = await fetch(url, {
+        method: editing ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
       const data = await res.json()
       if (!res.ok) {
-        setScheduleError(data.error ?? 'Failed to schedule')
+        setScheduleError(data.error ?? (editing ? 'Failed to update' : 'Failed to schedule'))
         return
       }
       await loadScheduledRows()
-      // Clear the form so admin can queue another quickly.
-      setScheduleOverrideEmail('')
-      setScheduleOverridePhone('')
+      // Always reset to create-new mode after a successful save so the
+      // admin can queue another or just close.
+      resetScheduleForm()
     } catch (e) {
       setScheduleError(e instanceof Error ? e.message : 'Failed to schedule')
     } finally {
@@ -2543,12 +2595,16 @@ export default function InvoiceDetailPage({
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-lg font-bold">
-                  {isDraft ? 'Schedule issue & send' : 'Schedule a send'}
+                  {scheduleEditingId
+                    ? 'Edit scheduled send'
+                    : isDraft ? 'Schedule issue & send' : 'Schedule a send'}
                 </h2>
                 <p className="text-sm text-slate-600">
-                  {isDraft
-                    ? 'Pick a future date and time. The invoice stays a draft until then — at the scheduled moment it issues, the PDF renders, and email/SMS auto-fire to whoever is on file.'
-                    : 'Queue a future email and/or SMS resend.'}
+                  {scheduleEditingId
+                    ? 'Adjust the date, time, channel, or recipient overrides for this still-pending send. Cannot change the kind of send (issue-and-send vs resend) — cancel and re-create if needed.'
+                    : isDraft
+                      ? 'Pick a future date and time. The invoice stays a draft until then — at the scheduled moment it issues, the PDF renders, and email/SMS auto-fire to whoever is on file.'
+                      : 'Queue a future email and/or SMS resend.'}
                   {' '}Cron runs every 5 minutes, so actual fire time may be up to 5 min after the scheduled minute.
                 </p>
               </div>
@@ -2633,6 +2689,15 @@ export default function InvoiceDetailPage({
                 </div>
               )}
               <div className="flex justify-end gap-2">
+                {scheduleEditingId && (
+                  <button
+                    onClick={cancelEditSchedule}
+                    className="bg-slate-100 text-slate-700 rounded px-4 py-1.5 text-sm"
+                    title="Discard changes and return to create-new mode"
+                  >
+                    Cancel edit
+                  </button>
+                )}
                 <button
                   onClick={() => setScheduleModal(false)}
                   className="bg-slate-100 text-slate-700 rounded px-4 py-1.5 text-sm"
@@ -2644,7 +2709,9 @@ export default function InvoiceDetailPage({
                   disabled={scheduleSubmitting || !scheduleAt}
                   className="bg-indigo-600 text-white rounded px-4 py-1.5 text-sm font-semibold disabled:opacity-50"
                 >
-                  {scheduleSubmitting ? 'Scheduling…' : 'Schedule send'}
+                  {scheduleSubmitting
+                    ? (scheduleEditingId ? 'Saving…' : 'Scheduling…')
+                    : (scheduleEditingId ? 'Save changes' : 'Schedule send')}
                 </button>
               </div>
             </div>
@@ -2655,33 +2722,52 @@ export default function InvoiceDetailPage({
                   Existing schedules ({scheduledRows.length})
                 </h3>
                 <div className="space-y-2">
-                  {scheduledRows.map((s) => (
-                    <div key={s.id} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded px-3 py-2 text-sm">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium">
-                          {new Date(s.send_at).toLocaleString()} — <span className="text-slate-500">{s.channel}</span>
+                  {scheduledRows.map((s) => {
+                    const isBeingEdited = scheduleEditingId === s.id
+                    return (
+                      <div
+                        key={s.id}
+                        className={`flex items-center justify-between border rounded px-3 py-2 text-sm ${
+                          isBeingEdited
+                            ? 'bg-indigo-50 border-indigo-300'
+                            : 'bg-slate-50 border-slate-200'
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium">
+                            {new Date(s.send_at).toLocaleString()} — <span className="text-slate-500">{s.channel}</span>
+                            {isBeingEdited && <span className="ml-2 text-xs text-indigo-700 font-semibold">EDITING</span>}
+                          </div>
+                          <div className="text-xs text-slate-500">
+                            status: <span className={
+                              s.status === 'fired' ? 'text-emerald-600 font-semibold'
+                              : s.status === 'failed' ? 'text-red-600 font-semibold'
+                              : s.status === 'cancelled' ? 'text-slate-500'
+                              : 'text-indigo-600 font-semibold'
+                            }>{s.status}</span>
+                            {s.fired_at && ` · fired ${new Date(s.fired_at).toLocaleString()}`}
+                            {s.error_message && ` · ${s.error_message}`}
+                          </div>
                         </div>
-                        <div className="text-xs text-slate-500">
-                          status: <span className={
-                            s.status === 'fired' ? 'text-emerald-600 font-semibold'
-                            : s.status === 'failed' ? 'text-red-600 font-semibold'
-                            : s.status === 'cancelled' ? 'text-slate-500'
-                            : 'text-indigo-600 font-semibold'
-                          }>{s.status}</span>
-                          {s.fired_at && ` · fired ${new Date(s.fired_at).toLocaleString()}`}
-                          {s.error_message && ` · ${s.error_message}`}
-                        </div>
+                        {s.status === 'scheduled' && !isBeingEdited && (
+                          <div className="ml-3 flex items-center gap-3">
+                            <button
+                              onClick={() => startEditSchedule(s)}
+                              className="text-indigo-600 hover:text-indigo-700 text-xs font-semibold"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => cancelSchedule(s.id)}
+                              className="text-red-600 hover:text-red-700 text-xs"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      {s.status === 'scheduled' && (
-                        <button
-                          onClick={() => cancelSchedule(s.id)}
-                          className="ml-3 text-red-600 hover:text-red-700 text-xs"
-                        >
-                          Cancel
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}

@@ -37,6 +37,10 @@ interface PublicLineItem {
   discount_label: string | null
   line_total_cents: number
   sort_order: number
+  // Cadence (migration 043). Drives the per-line "Monthly"/"Annual" pill
+  // on the magic-link page so clients see at a glance which lines are
+  // recurring vs one-time. Defaults to 'one_time' if missing.
+  cadence?: 'one_time' | 'monthly' | 'annual' | null
 }
 
 interface PublicProspect {
@@ -84,6 +88,14 @@ interface PublicInvoice {
   // type safety in case a future schema adds it; render path is
   // conditional so undefined just hides the block.
   payment_terms?: string | null
+  // Subscription term (migration 043). When the invoice has any recurring
+  // line items, term_months governs how long Stripe auto-bills, OR
+  // until_cancelled=true means open-ended. Surfaced in the "Recurring
+  // subscription" disclosure card on the magic-link page so clients
+  // understand what they're committing to before paying.
+  term_months?: number | null
+  until_cancelled?: boolean | null
+  subscription_intent?: 'none' | 'pending' | 'created' | null
   prospect: PublicProspect | null
 }
 
@@ -251,6 +263,22 @@ export default async function PublicInvoicePage({
 
   // Sort line items
   const sortedItems = [...line_items].sort((a, b) => a.sort_order - b.sort_order)
+
+  // Aggregate recurring lines for the subscription disclosure card.
+  // Mirrors src/lib/pdf/invoice.ts subscriptionDisclosure() so the magic-link
+  // page and the PDF tell the same story.
+  const recurringMonthlyCents = sortedItems
+    .filter((li) => li.cadence === 'monthly')
+    .reduce((s, li) => s + (li.line_total_cents ?? 0), 0)
+  const recurringAnnualCents = sortedItems
+    .filter((li) => li.cadence === 'annual')
+    .reduce((s, li) => s + (li.line_total_cents ?? 0), 0)
+  const hasRecurring = recurringMonthlyCents > 0 || recurringAnnualCents > 0
+  const subscriptionTermPhrase = invoice.until_cancelled
+    ? 'until cancelled'
+    : invoice.term_months
+      ? `for ${invoice.term_months} months`
+      : 'for the contract term'
 
   return (
     <div
@@ -599,6 +627,26 @@ export default async function PublicInvoicePage({
                         <td style={{ padding: '13px 12px', verticalAlign: 'top' }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: T.dark }}>
                             {li.description}
+                            {(li.cadence === 'monthly' || li.cadence === 'annual') && (
+                              <span
+                                style={{
+                                  display: 'inline-block',
+                                  marginLeft: 8,
+                                  fontSize: 9,
+                                  fontWeight: 700,
+                                  letterSpacing: '0.08em',
+                                  textTransform: 'uppercase',
+                                  background: '#e8f7f1',
+                                  color: '#0f8a6d',
+                                  border: '1px solid #0f8a6d',
+                                  borderRadius: 3,
+                                  padding: '1px 6px',
+                                  verticalAlign: 1,
+                                }}
+                              >
+                                {li.cadence === 'monthly' ? 'Monthly' : 'Annual'}
+                              </span>
+                            )}
                           </div>
                           {li.discount_label && (
                             <div style={{ fontSize: 11, color: T.orange, marginTop: 3 }}>
@@ -625,6 +673,59 @@ export default async function PublicInvoicePage({
               </table>
             </div>
           </div>
+
+          {/* ── Recurring subscription disclosure ─────────────────────
+              Only renders when at least one line item is monthly/annual.
+              Mirrors the PDF's subscriptionDisclosure() so the magic-link
+              page and the PDF read identically. The point: client cannot
+              miss that they are signing up for a subscription. */}
+          {hasRecurring && (
+            <div style={{ padding: '20px 48px 0' }}>
+              <div
+                style={{
+                  background: T.tealSoft,
+                  border: `1px solid ${T.teal}`,
+                  borderRadius: 6,
+                  padding: '16px 20px',
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: T.tealDark,
+                    margin: '0 0 8px',
+                  }}
+                >
+                  Recurring Subscription
+                </p>
+                <p style={{ fontSize: 13, color: T.slate, lineHeight: 1.55, margin: '0 0 10px' }}>
+                  This invoice covers <strong>cycle 1</strong> of an ongoing subscription.
+                  After payment, the same card auto-bills the recurring portion {subscriptionTermPhrase}:
+                </p>
+                <ul style={{ fontSize: 13, color: T.slate, lineHeight: 1.65, margin: '0 0 10px 18px', padding: 0 }}>
+                  {recurringMonthlyCents > 0 && (
+                    <li>
+                      <strong>{formatCents(recurringMonthlyCents)}/mo</strong> — auto-charges every month
+                    </li>
+                  )}
+                  {recurringAnnualCents > 0 && (
+                    <li>
+                      <strong>{formatCents(recurringAnnualCents)}/yr</strong> — auto-charges every year
+                    </li>
+                  )}
+                </ul>
+                <p style={{ fontSize: 11, color: T.slateSoft, lineHeight: 1.55, margin: 0 }}>
+                  Card captured once on this invoice — you will not be sent monthly invoices to chase.{' '}
+                  {invoice.until_cancelled
+                    ? 'You can cancel anytime by contacting Demand Signals.'
+                    : 'The subscription stops automatically at the end of the term.'}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* ── 4. Totals block ──────────────────────────────────── */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '24px 48px 0' }}>

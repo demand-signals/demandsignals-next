@@ -172,6 +172,12 @@ async function processInvoiceRow(
     ? { label: row.reminder_label, tone: inferReminderTone(row.reminder_label) }
     : undefined
 
+  // For issue_and_send rows we just rendered fresh inside issueInvoice
+  // above — skip the redundant regen-in-dispatcher step. Pure 'send' /
+  // 'reminder' rows leave skipRegen unset so the dispatcher refreshes
+  // R2 before the email/SMS goes out.
+  const skipRegen = row.kind === 'issue_and_send'
+
   if (row.channel === 'email' || row.channel === 'both') {
     const r = await dispatchInvoiceEmail(row.invoice_id, {
       overrideEmail: row.override_email ?? undefined,
@@ -179,6 +185,7 @@ async function processInvoiceRow(
       scheduledFor: row.send_at,
       createdBy: 'system',
       reminder,
+      skipRegen,
     })
     emailOk = r.success
     if (!r.success) combinedError = `email: ${r.error}`
@@ -191,6 +198,7 @@ async function processInvoiceRow(
       scheduledFor: row.send_at,
       createdBy: 'system',
       reminder,
+      skipRegen,
     })
     smsOk = r.success
     if (!r.success) {
@@ -251,12 +259,19 @@ async function processSowRow(
   let smsOk = true
   let combinedError: string | undefined
 
+  // Same skipRegen optimization as the invoice path: when this row was
+  // an issue_and_send draft, issueSow already rendered fresh — no need
+  // for the dispatcher to redundantly regen. Pure resend rows refresh
+  // before each dispatch.
+  const skipRegen = row.kind === 'issue_and_send'
+
   if (row.channel === 'email' || row.channel === 'both') {
     const r = await dispatchSowEmail(row.sow_id, {
       overrideEmail: row.override_email ?? undefined,
       scheduledSendId: row.id,
       scheduledFor: row.send_at,
       createdBy: 'system',
+      skipRegen,
     })
     emailOk = r.success
     if (!r.success) combinedError = `email: ${r.error}`
@@ -268,6 +283,7 @@ async function processSowRow(
       scheduledSendId: row.id,
       scheduledFor: row.send_at,
       createdBy: 'system',
+      skipRegen,
     })
     smsOk = r.success
     if (!r.success) {

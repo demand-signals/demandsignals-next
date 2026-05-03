@@ -31,6 +31,7 @@ export async function GET(
       late_fee_cents, late_fee_grace_days, late_fee_applied_at,
       trade_credit_cents, trade_credit_description,
       discount_kind, discount_value_bps, discount_amount_cents, discount_description,
+      term_months, until_cancelled, subscription_intent,
       prospect:prospects(business_name, owner_name, owner_email, address, city, state, zip)
     `
 
@@ -94,7 +95,7 @@ export async function GET(
 
   const { data: lineItems } = await supabaseAdmin
     .from('invoice_line_items')
-    .select('description, quantity, unit_price_cents, discount_cents, discount_label, line_total_cents, sort_order')
+    .select('description, quantity, unit_price_cents, discount_cents, discount_label, line_total_cents, sort_order, cadence')
     .eq('invoice_id', invoice.id)
     .order('sort_order', { ascending: true })
 

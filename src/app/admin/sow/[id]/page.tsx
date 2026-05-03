@@ -316,6 +316,9 @@ export default function SowDetailPage({
   const [scheduleOverridePhone, setScheduleOverridePhone] = useState('')
   const [scheduleSubmitting, setScheduleSubmitting] = useState(false)
   const [scheduleError, setScheduleError] = useState<string | null>(null)
+  // Edit mode: holds the scheduled row id when editing instead of
+  // creating-new. Mirror of the invoice page.
+  const [scheduleEditingId, setScheduleEditingId] = useState<string | null>(null)
 
   // Editable field state
   const [title, setTitle] = useState('')
@@ -693,8 +696,8 @@ export default function SowDetailPage({
     }
   }
 
-  function openScheduleModal() {
-    // Default to tomorrow 9 AM in the user's local zone.
+  // Form-reset helper — sets defaults for create-new mode.
+  function resetScheduleForm() {
     const t = new Date()
     t.setDate(t.getDate() + 1)
     t.setHours(9, 0, 0, 0)
@@ -705,8 +708,32 @@ export default function SowDetailPage({
     setScheduleOverrideEmail('')
     setScheduleOverridePhone('')
     setScheduleError(null)
+    setScheduleEditingId(null)
+  }
+
+  function openScheduleModal() {
+    resetScheduleForm()
     setScheduleModal(true)
     loadScheduledSowRows()
+  }
+
+  function isoToLocalDateTimeInput(iso: string): string {
+    const d = new Date(iso)
+    const tzOffsetMs = d.getTimezoneOffset() * 60_000
+    return new Date(d.getTime() - tzOffsetMs).toISOString().slice(0, 16)
+  }
+
+  function startEditSchedule(row: typeof scheduledRows[number]) {
+    setScheduleEditingId(row.id)
+    setScheduleAt(isoToLocalDateTimeInput(row.send_at))
+    setScheduleChannel(row.channel)
+    setScheduleOverrideEmail(row.override_email ?? '')
+    setScheduleOverridePhone(row.override_phone ?? '')
+    setScheduleError(null)
+  }
+
+  function cancelEditSchedule() {
+    resetScheduleForm()
   }
 
   async function submitSchedule() {
@@ -714,24 +741,40 @@ export default function SowDetailPage({
     setScheduleError(null)
     try {
       const sendAtIso = new Date(scheduleAt).toISOString()
-      const body: Record<string, string> = { send_at: sendAtIso, channel: scheduleChannel }
-      // Drafts: schedule the issue + dispatch path. Sent SOWs: schedule a resend.
-      if (sow?.status === 'draft') body.kind = 'issue_and_send'
-      if (scheduleOverrideEmail) body.override_email = scheduleOverrideEmail
-      if (scheduleOverridePhone) body.override_phone = scheduleOverridePhone
-      const res = await fetch(`/api/admin/sow/${id}/schedule-send`, {
-        method: 'POST',
+      const editing = scheduleEditingId !== null
+      const body: Record<string, unknown> = {
+        send_at: sendAtIso,
+        channel: scheduleChannel,
+        override_email: editing
+          ? (scheduleOverrideEmail || null)
+          : (scheduleOverrideEmail || undefined),
+        override_phone: editing
+          ? (scheduleOverridePhone || null)
+          : (scheduleOverridePhone || undefined),
+      }
+      if (!editing) {
+        for (const k of Object.keys(body)) {
+          if (body[k] === undefined) delete body[k]
+        }
+        // Drafts: schedule issue + dispatch.
+        if (sow?.status === 'draft') body.kind = 'issue_and_send'
+      }
+
+      const url = editing
+        ? `/api/admin/sow/${id}/schedule-send/${scheduleEditingId}`
+        : `/api/admin/sow/${id}/schedule-send`
+      const res = await fetch(url, {
+        method: editing ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
       const data = await res.json()
       if (!res.ok) {
-        setScheduleError(data.error ?? 'Failed to schedule')
+        setScheduleError(data.error ?? (editing ? 'Failed to update' : 'Failed to schedule'))
         return
       }
       await loadScheduledSowRows()
-      setScheduleOverrideEmail('')
-      setScheduleOverridePhone('')
+      resetScheduleForm()
     } catch (e) {
       setScheduleError(e instanceof Error ? e.message : 'Failed to schedule')
     } finally {
@@ -2325,12 +2368,16 @@ export default function SowDetailPage({
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-lg font-bold">
-                  {isDraft ? 'Schedule issue & send' : 'Schedule a send'}
+                  {scheduleEditingId
+                    ? 'Edit scheduled send'
+                    : isDraft ? 'Schedule issue & send' : 'Schedule a send'}
                 </h2>
                 <p className="text-sm text-slate-600">
-                  {isDraft
-                    ? 'Pick a future date and time. The SOW stays a draft until then — at the scheduled moment it issues, the PDF renders, and email/SMS auto-fire to whoever is on file.'
-                    : 'Queue a future email and/or SMS resend.'}
+                  {scheduleEditingId
+                    ? 'Adjust the date, time, channel, or recipient overrides for this still-pending send. Cannot change the kind of send (issue-and-send vs resend) — cancel and re-create if needed.'
+                    : isDraft
+                      ? 'Pick a future date and time. The SOW stays a draft until then — at the scheduled moment it issues, the PDF renders, and email/SMS auto-fire to whoever is on file.'
+                      : 'Queue a future email and/or SMS resend.'}
                   {' '}Cron runs every 5 minutes, so actual fire time may be up to 5 min after the scheduled minute.
                 </p>
               </div>
@@ -2415,6 +2462,15 @@ export default function SowDetailPage({
                 </div>
               )}
               <div className="flex justify-end gap-2">
+                {scheduleEditingId && (
+                  <button
+                    onClick={cancelEditSchedule}
+                    className="bg-slate-100 text-slate-700 rounded px-4 py-1.5 text-sm"
+                    title="Discard changes and return to create-new mode"
+                  >
+                    Cancel edit
+                  </button>
+                )}
                 <button
                   onClick={() => setScheduleModal(false)}
                   className="bg-slate-100 text-slate-700 rounded px-4 py-1.5 text-sm"
@@ -2426,7 +2482,9 @@ export default function SowDetailPage({
                   disabled={scheduleSubmitting || !scheduleAt}
                   className="bg-indigo-600 text-white rounded px-4 py-1.5 text-sm font-semibold disabled:opacity-50"
                 >
-                  {scheduleSubmitting ? 'Scheduling…' : 'Schedule send'}
+                  {scheduleSubmitting
+                    ? (scheduleEditingId ? 'Saving…' : 'Scheduling…')
+                    : (scheduleEditingId ? 'Save changes' : 'Schedule send')}
                 </button>
               </div>
             </div>
@@ -2437,38 +2495,55 @@ export default function SowDetailPage({
                   Scheduled sends
                 </div>
                 <div className="space-y-1.5">
-                  {scheduledRows.map((s) => (
-                    <div key={s.id} className="flex items-center justify-between text-sm bg-slate-50 rounded px-2 py-1.5">
-                      <div className="flex-1 truncate">
-                        <span
-                          className={
-                            s.status === 'scheduled'
-                              ? 'text-slate-700'
-                              : s.status === 'fired'
-                                ? 'text-emerald-700'
-                                : s.status === 'cancelled'
-                                  ? 'text-slate-400 line-through'
-                                  : 'text-red-600'
-                          }
-                        >
-                          {new Date(s.send_at).toLocaleString()} — <span className="text-slate-500">{s.channel}</span>
-                          {s.kind === 'issue_and_send' && <span className="ml-1 text-indigo-600">(issue + send)</span>}
-                        </span>
-                        {s.error_message && (
-                          <span className="ml-2 text-xs text-red-500">{s.error_message}</span>
+                  {scheduledRows.map((s) => {
+                    const isBeingEdited = scheduleEditingId === s.id
+                    return (
+                      <div
+                        key={s.id}
+                        className={`flex items-center justify-between text-sm rounded px-2 py-1.5 ${
+                          isBeingEdited ? 'bg-indigo-50 border border-indigo-300' : 'bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex-1 truncate">
+                          <span
+                            className={
+                              s.status === 'scheduled'
+                                ? 'text-slate-700'
+                                : s.status === 'fired'
+                                  ? 'text-emerald-700'
+                                  : s.status === 'cancelled'
+                                    ? 'text-slate-400 line-through'
+                                    : 'text-red-600'
+                            }
+                          >
+                            {new Date(s.send_at).toLocaleString()} — <span className="text-slate-500">{s.channel}</span>
+                            {s.kind === 'issue_and_send' && <span className="ml-1 text-indigo-600">(issue + send)</span>}
+                            {isBeingEdited && <span className="ml-2 text-xs text-indigo-700 font-semibold">EDITING</span>}
+                          </span>
+                          {s.error_message && (
+                            <span className="ml-2 text-xs text-red-500">{s.error_message}</span>
+                          )}
+                        </div>
+                        <span className="text-xs text-slate-500 mr-3">{s.status}</span>
+                        {s.status === 'scheduled' && !isBeingEdited && (
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => startEditSchedule(s)}
+                              className="text-indigo-600 hover:text-indigo-700 text-xs font-semibold"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => cancelSchedule(s.id)}
+                              className="text-red-600 hover:text-red-700 text-xs"
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         )}
                       </div>
-                      <span className="text-xs text-slate-500 mr-3">{s.status}</span>
-                      {s.status === 'scheduled' && (
-                        <button
-                          onClick={() => cancelSchedule(s.id)}
-                          className="text-red-600 hover:text-red-700 text-xs"
-                        >
-                          Cancel
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}

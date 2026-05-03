@@ -30,6 +30,13 @@ interface DispatchEmailOptions {
   scheduledFor?: string
   /** Who triggered this — 'system' for cron, admin user id otherwise. */
   createdBy?: string
+  /**
+   * Skip the auto regen-before-dispatch step. Set this when the caller
+   * has already rendered a fresh PDF in the same request (e.g. issueSow
+   * inside the /send handler). Other callers should leave it off so
+   * every dispatch ships current state.
+   */
+  skipRegen?: boolean
 }
 
 interface DispatchSmsOptions {
@@ -37,6 +44,8 @@ interface DispatchSmsOptions {
   scheduledSendId?: string
   scheduledFor?: string
   createdBy?: string
+  /** See DispatchEmailOptions.skipRegen. */
+  skipRegen?: boolean
 }
 
 interface DispatchResult {
@@ -178,6 +187,26 @@ export async function dispatchSowEmail(
     return { success: false, error: `Cannot email an SOW in status ${sow.status}. Issue the draft first.` }
   }
 
+  // Regenerate cached PDF in R2 BEFORE we attach it. Hunter directive
+  // 2026-05-03: every send serves current state, never a stale snapshot.
+  // skipRegen: set by callers that already rendered fresh in the same
+  // request (issueSow → /send handler).
+  // Best-effort — failure logs and we fall through to the existing R2
+  // PDF (or no attachment if there isn't one).
+  if (!options.skipRegen) {
+    try {
+      const { regenerateSowPdf } = await import('@/lib/sow-pdf-regenerate')
+      const r = await regenerateSowPdf(sowId)
+      if (!r.ok) {
+        console.warn(`[dispatchSowEmail] PDF regen failed: ${r.error}`)
+      } else if (r.pdf_storage_path) {
+        ;(sow as { pdf_storage_path?: string | null }).pdf_storage_path = r.pdf_storage_path
+      }
+    } catch (e) {
+      console.warn('[dispatchSowEmail] PDF regen threw:', e instanceof Error ? e.message : e)
+    }
+  }
+
   const email =
     options.overrideEmail ??
     sow.prospect?.owner_email ??
@@ -255,6 +284,23 @@ export async function dispatchSowSms(
 
   if (!['sent', 'viewed', 'accepted', 'declined'].includes(sow.status)) {
     return { success: false, error: `Cannot SMS an SOW in status ${sow.status}. Issue the draft first.` }
+  }
+
+  // Regenerate cached PDF in R2 BEFORE the SMS goes out. The SMS body
+  // doesn't carry an attachment, but the link in the SMS leads to the
+  // magic-link page where the Download PDF button pulls from R2 — same
+  // freshness guarantee as the email path. skipRegen: caller already
+  // rendered fresh in the same request.
+  if (!options.skipRegen) {
+    try {
+      const { regenerateSowPdf } = await import('@/lib/sow-pdf-regenerate')
+      const r = await regenerateSowPdf(sowId)
+      if (!r.ok) {
+        console.warn(`[dispatchSowSms] PDF regen failed: ${r.error}`)
+      }
+    } catch (e) {
+      console.warn('[dispatchSowSms] PDF regen threw:', e instanceof Error ? e.message : e)
+    }
   }
 
   const phone =

@@ -38,6 +38,14 @@ interface DispatchEmailOptions {
   /** Who triggered this — 'system' for cron, admin user id otherwise. */
   createdBy?: string
   /**
+   * Skip the auto regen-before-dispatch step. The /send handler already
+   * renders + uploads a fresh PDF as part of the draft→sent issuance,
+   * then auto-fires email/SMS in the same request — passing skipRegen
+   * avoids a redundant second render. All other callers should leave
+   * this off so every dispatch ships current state.
+   */
+  skipRegen?: boolean
+  /**
    * If set, dispatch uses the reminder-flavored email template instead
    * of the standard issuance template. Only the cron path passes this
    * (when kind='reminder' on the queue row).
@@ -53,6 +61,8 @@ interface DispatchSmsOptions {
   scheduledSendId?: string
   scheduledFor?: string
   createdBy?: string
+  /** See DispatchEmailOptions.skipRegen. */
+  skipRegen?: boolean
   reminder?: {
     label: string
     tone: 'preemptive' | 'past_due' | 'day_of'
@@ -196,6 +206,33 @@ export async function dispatchInvoiceEmail(
     return { success: false, error: `Cannot email an invoice in status ${invoice.status}` }
   }
 
+  // Regenerate the cached PDF in R2 BEFORE we fetch it for attachment.
+  // Hunter directive 2026-05-03: "before an invoice is sent, it must be
+  // automatically regenerated and saved to R2." This guarantees the
+  // attached PDF + the magic-link Download button both serve current
+  // state — no stale snapshots from when the invoice was first issued.
+  //
+  // Skipped for:
+  //   - reminders (nudges, not re-issuances; intentionally no PDF)
+  //   - skipRegen callers (the /send handler already rendered fresh
+  //     during the same request — no need to re-render)
+  //
+  // Best-effort: a regen failure logs but doesn't block dispatch.
+  if (!options.reminder && !options.skipRegen) {
+    try {
+      const { regenerateInvoicePdf } = await import('@/lib/invoice-pdf-regenerate')
+      const r = await regenerateInvoicePdf(invoiceId)
+      if (!r.ok) {
+        console.warn(`[dispatchInvoiceEmail] PDF regen failed: ${r.error}`)
+      } else if (r.pdf_storage_path) {
+        // Refresh in-memory copy so the R2 fetch below uses the new key.
+        ;(invoice as { pdf_storage_path?: string | null }).pdf_storage_path = r.pdf_storage_path
+      }
+    } catch (e) {
+      console.warn('[dispatchInvoiceEmail] PDF regen threw:', e instanceof Error ? e.message : e)
+    }
+  }
+
   const inv = invoice as InvoiceWithProspect
   const billToEmail = (inv.bill_to as { email?: string | null } | null)?.email ?? null
   const email =
@@ -301,6 +338,24 @@ export async function dispatchInvoiceSms(
   if (!invoice) return { success: false, error: 'Invoice not found' }
   if (!['sent', 'viewed', 'paid'].includes(invoice.status)) {
     return { success: false, error: `Cannot SMS an invoice in status ${invoice.status}` }
+  }
+
+  // Regenerate cached PDF before SMS goes out. The SMS body itself does
+  // not attach a PDF, but the link in the SMS lands the client on the
+  // magic-link page where the Download PDF button + Pay button both pull
+  // from R2. Same Hunter directive 2026-05-03 — clients always get the
+  // most current PDF. Skipped for reminders and for skipRegen callers
+  // (the /send handler renders fresh as part of issuance).
+  if (!options.reminder && !options.skipRegen) {
+    try {
+      const { regenerateInvoicePdf } = await import('@/lib/invoice-pdf-regenerate')
+      const r = await regenerateInvoicePdf(invoiceId)
+      if (!r.ok) {
+        console.warn(`[dispatchInvoiceSms] PDF regen failed: ${r.error}`)
+      }
+    } catch (e) {
+      console.warn('[dispatchInvoiceSms] PDF regen threw:', e instanceof Error ? e.message : e)
+    }
   }
 
   const inv = invoice as InvoiceWithProspect
