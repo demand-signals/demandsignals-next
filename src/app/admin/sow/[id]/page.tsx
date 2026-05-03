@@ -584,32 +584,23 @@ export default function SowDetailPage({
     await load()
   }
 
-  async function deleteDraft() {
-    if (!confirm('Delete this draft?')) return
-    setBusy(true)
-    await fetch(`/api/admin/sow/${id}`, { method: 'DELETE' })
-    router.push('/admin/sow')
-  }
-
-  // Force-delete a non-draft SOW + its dependent rows. Strong confirm
-  // because this is irreversible and removes real client doc artifacts
-  // (deposit invoice, receipts, credit memos, trade credits, R2 PDF).
-  // Confirm requires typing the SOW number — accidental click protection.
-  async function deleteForce() {
+  // Delete a SOW that hasn't been accepted yet. Allowed for draft / sent /
+  // viewed — no downstream artifacts have been generated. Once a SOW is
+  // accepted the system materializes deposit invoice + Stripe subscription +
+  // payment schedule + project + TIK ledger; deletion is no longer safe and
+  // the API blocks it.
+  async function deleteSow() {
     if (!sow) return
-    const expected = sow.sow_number
-    const typed = window.prompt(
-      `⚠️  HARD DELETE — this is irreversible.\n\nDeleting ${expected} will also remove:\n  • its deposit invoice + any receipts + credit memos\n  • all trade credits attached to this SOW + their payment history\n  • the R2 PDF\n\nType the SOW number to confirm:`,
-    )
-    if (typed !== expected) {
-      if (typed !== null) alert(`Did not match "${expected}". Nothing deleted.`)
-      return
-    }
+    const isPostDraft = sow.status === 'sent' || sow.status === 'viewed'
+    const msg = isPostDraft
+      ? `Delete ${sow.sow_number}? This SOW has been sent. Any pending scheduled-sends will be cancelled and the R2 PDF removed. Client magic-link will 404.`
+      : `Delete this draft (${sow.sow_number})?`
+    if (!confirm(msg)) return
     setBusy(true)
     try {
-      const res = await fetch(`/api/admin/sow/${id}?force=1`, { method: 'DELETE' })
-      const data = await res.json().catch(() => ({}))
+      const res = await fetch(`/api/admin/sow/${id}`, { method: 'DELETE' })
       if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
         alert(`Delete failed: ${data.error ?? res.statusText}`)
         setBusy(false)
         return
@@ -1040,7 +1031,7 @@ export default function SowDetailPage({
         {isDraft && (
           <>
             <button
-              onClick={deleteDraft}
+              onClick={deleteSow}
               disabled={busy}
               className="bg-red-100 text-red-700 rounded px-3 py-1.5 text-sm"
             >
@@ -1106,17 +1097,22 @@ export default function SowDetailPage({
             >
               <ExternalLink className="w-3.5 h-3.5" /> Client view
             </a>
-            {/* Hard delete — last resort. Confirms via prompt() that the
-                admin types the SOW number; cascades the deposit invoice,
-                receipts, credit memos, trade credits, and the R2 PDF. */}
-            <button
-              onClick={deleteForce}
-              disabled={busy}
-              className="bg-red-100 text-red-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1 hover:bg-red-200 disabled:opacity-50"
-              title="Hard delete this SOW + its deposit invoice, receipts, credit memos, trade credits, and R2 PDF"
-            >
-              <Trash2 className="w-3.5 h-3.5" /> Delete
-            </button>
+            {/* Delete — only allowed pre-acceptance. Sent/viewed SOWs have
+                no downstream artifacts (no deposit invoice yet, no project,
+                no Stripe sub) so they're safe to wipe. The cascade just
+                clears any pending sow_scheduled_sends + the R2 PDF.
+                Once a client accepts, the SOW becomes append-only — clean
+                up mistakes via the void/refund flows on the dependents. */}
+            {(sow.status === 'sent' || sow.status === 'viewed') && (
+              <button
+                onClick={deleteSow}
+                disabled={busy}
+                className="bg-red-100 text-red-700 rounded px-3 py-1.5 text-sm inline-flex items-center gap-1 hover:bg-red-200 disabled:opacity-50"
+                title="Delete this SOW — only allowed before client acceptance"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete
+              </button>
+            )}
           </>
         )}
 

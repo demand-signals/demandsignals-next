@@ -1,6 +1,14 @@
 // One-shot: delete the two test SOWs Hunter flagged + all their dependent
 // rows + R2 PDFs.
 //
+// IMPORTANT — this script bypasses the API safety rule that accepted SOWs
+// are append-only. It exists as an emergency hand-cleanup tool for test
+// data on the self-prospect (DSIG → DSIG). DO NOT use against real
+// client SOWs. The DELETE /api/admin/sow/[id] route correctly refuses
+// to touch accepted/declined/void SOWs through the UI; if you find
+// yourself wanting to run this script against client data, that's a
+// signal to use the void/refund flows on the dependents instead.
+//
 // Targets (DSIG → DSIG self-prospect, all $1 test data):
 //   SOW-DSIG-042726A  (sow_id=5ae16ea1-...)  — accepted
 //   SOW-DSIG-042826A  (sow_id=6c3b6a61-...)  — accepted

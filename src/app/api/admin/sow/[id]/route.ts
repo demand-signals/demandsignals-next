@@ -191,132 +191,73 @@ export async function DELETE(
   if ('error' in auth) return auth.error
   const { id } = await params
 
-  // ?force=1 unlocks deletion of non-draft SOWs along with their dependent
-  // rows (deposit invoice, receipts, credit_memos, trade_credits + drawdowns,
-  // R2 PDF). Required because non-draft SOWs are usually real client docs;
-  // delete is destructive and irreversible. UI must double-confirm before
-  // setting force=1.
+  // Hunter directive 2026-05-04: accepted SOWs are append-only. Once a
+  // client accepts, the system has generated a deposit invoice, possibly
+  // a payment plan + Stripe subscription + Stripe customer + project +
+  // trade_credits ledger + R2 PDF. Cascading-delete those is genuinely
+  // dangerous — Stripe subscriptions can't be unilaterally undone server
+  // side, and dependent receipts/credit memos lose their audit trail.
   //
-  // Cascade order matches scripts/delete-test-sows.mjs (verified against
-  // migrations 011/012d/019/025/032):
-  //   1. credit_memos → invoice (RESTRICT)
-  //   2. receipts → invoice (RESTRICT)
-  //   3. trade_credit_drawdowns → trade_credit (CASCADE; explicit anyway)
-  //   4. trade_credits → sow (would SET NULL but we want them gone)
-  //   5. invoices (cascades line_items, delivery_log, email_log,
-  //      scheduled_sends; sets sow_documents.deposit_invoice_id NULL)
-  //   6. sow_documents (cascades sow_scheduled_sends, payment_schedules)
-  //   7. R2 PDF (best-effort)
-  const force = request.nextUrl.searchParams.get('force') === '1'
+  // Allowed: draft, sent, viewed (no acceptance fired yet → no
+  //   downstream artifacts → safe to wipe).
+  //   - sent/viewed cascades through:
+  //     - sow_scheduled_sends (CASCADE)
+  //     - R2 PDF (best-effort cleanup)
+  //   - drafts cascade through nothing.
+  //
+  // Blocked: accepted, declined, void.
+  //   - These are permanent records. Cleanup of mistakes happens via
+  //     the existing void/refund flows on the dependent rows (void the
+  //     deposit invoice, refund through Stripe, etc.) — never by
+  //     vanishing the parent SOW.
+  //
+  // The previous ?force=1 path is removed entirely. If you genuinely
+  // need to nuke an accepted SOW (test data only), use a one-shot
+  // script with eyes-on like scripts/delete-test-sows.mjs.
 
   const { data: existing } = await supabaseAdmin
     .from('sow_documents')
-    .select('id, status, sow_number, deposit_invoice_id, pdf_storage_path')
+    .select('id, status, sow_number, pdf_storage_path')
     .eq('id', id)
     .maybeSingle()
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  if (existing.status !== 'draft' && !force) {
+  const DELETABLE_STATUSES = ['draft', 'sent', 'viewed']
+  if (!DELETABLE_STATUSES.includes(existing.status)) {
     return NextResponse.json(
-      { error: 'Can only delete drafts. Pass ?force=1 to delete a non-draft SOW (this also removes its deposit invoice, receipts, credit memos, and trade credits).' },
+      {
+        error: `Cannot delete a ${existing.status} SOW. Once a client accepts, the system has generated a deposit invoice, possibly a payment plan + Stripe subscription + project + trade credits — cascading-delete those is destructive and would orphan Stripe state. Use the void/refund flows on the dependent rows to clean up mistakes instead.`,
+      },
       { status: 409 },
     )
   }
 
-  // For drafts we can use the simple path — no dependents in play yet.
-  if (existing.status === 'draft' && !force) {
-    const { error } = await supabaseAdmin.from('sow_documents').delete().eq('id', id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ ok: true })
-  }
+  // Delete the SOW row first. FK cascades clean up sow_scheduled_sends
+  // (CASCADE per migration 045b) and any payment_schedules attached to
+  // it (CASCADE per 025a). projects.sow_document_id, email_engagement,
+  // and page_visits all SET NULL — they retain their rows for audit.
+  // For draft/sent/viewed there should be no payment_schedules or
+  // projects, but if a stray exists we don't want to break audit trails.
+  const { error: sowErr } = await supabaseAdmin
+    .from('sow_documents')
+    .delete()
+    .eq('id', id)
+  if (sowErr) return NextResponse.json({ error: sowErr.message }, { status: 500 })
 
-  // Force-delete cascade. Each stage is best-effort within the transaction
-  // semantics PostgREST gives us — if any FK fails, we surface the error so
-  // the admin can inspect manually.
-  const cleanup = {
-    credit_memos: 0,
-    receipts: 0,
-    trade_credit_drawdowns: 0,
-    trade_credits: 0,
-    invoice_deleted: false,
-    sow_deleted: false,
-    r2_deleted: false,
-    r2_error: null as string | null,
-  }
-
-  // Resolve trade credits attached to this SOW (need them to delete drawdowns).
-  const { data: tcs } = await supabaseAdmin
-    .from('trade_credits')
-    .select('id')
-    .eq('sow_document_id', id)
-  const tcIds = (tcs ?? []).map((t) => t.id)
-
-  if (existing.deposit_invoice_id) {
-    // 1. credit_memos
-    const { data: memos, error: memoErr } = await supabaseAdmin
-      .from('credit_memos')
-      .delete()
-      .eq('invoice_id', existing.deposit_invoice_id)
-      .select('id')
-    if (memoErr) return NextResponse.json({ error: `credit_memos: ${memoErr.message}` }, { status: 500 })
-    cleanup.credit_memos = memos?.length ?? 0
-
-    // 2. receipts
-    const { data: rcts, error: rctErr } = await supabaseAdmin
-      .from('receipts')
-      .delete()
-      .eq('invoice_id', existing.deposit_invoice_id)
-      .select('id')
-    if (rctErr) return NextResponse.json({ error: `receipts: ${rctErr.message}` }, { status: 500 })
-    cleanup.receipts = rcts?.length ?? 0
-  }
-
-  if (tcIds.length > 0) {
-    // 3. drawdowns (explicit even though CASCADE would handle them)
-    const { data: dds, error: ddErr } = await supabaseAdmin
-      .from('trade_credit_drawdowns')
-      .delete()
-      .in('trade_credit_id', tcIds)
-      .select('id')
-    if (ddErr) return NextResponse.json({ error: `trade_credit_drawdowns: ${ddErr.message}` }, { status: 500 })
-    cleanup.trade_credit_drawdowns = dds?.length ?? 0
-
-    // 4. trade_credits
-    const { data: delTc, error: tcErr } = await supabaseAdmin
-      .from('trade_credits')
-      .delete()
-      .in('id', tcIds)
-      .select('id')
-    if (tcErr) return NextResponse.json({ error: `trade_credits: ${tcErr.message}` }, { status: 500 })
-    cleanup.trade_credits = delTc?.length ?? 0
-  }
-
-  // 5. invoice (sets sow.deposit_invoice_id = NULL via FK)
-  if (existing.deposit_invoice_id) {
-    const { error: invErr } = await supabaseAdmin
-      .from('invoices')
-      .delete()
-      .eq('id', existing.deposit_invoice_id)
-    if (invErr) return NextResponse.json({ error: `invoice: ${invErr.message}` }, { status: 500 })
-    cleanup.invoice_deleted = true
-  }
-
-  // 6. SOW
-  const { error: sowErr } = await supabaseAdmin.from('sow_documents').delete().eq('id', id)
-  if (sowErr) return NextResponse.json({ error: `sow: ${sowErr.message}` }, { status: 500 })
-  cleanup.sow_deleted = true
-
-  // 7. R2 PDF (best-effort — orphan blob is cheap, never roll back over it)
+  // Best-effort R2 PDF cleanup. Orphan blob is cheap; never block the row
+  // delete over it.
+  let r2_deleted = false
+  let r2_error: string | null = null
   if (existing.pdf_storage_path) {
     try {
       const { deletePrivate } = await import('@/lib/r2-storage')
       await deletePrivate(existing.pdf_storage_path)
-      cleanup.r2_deleted = true
+      r2_deleted = true
     } catch (e) {
-      cleanup.r2_error = e instanceof Error ? e.message : String(e)
-      console.warn(`[DELETE sow ${existing.sow_number}] R2 delete failed:`, cleanup.r2_error)
+      r2_error = e instanceof Error ? e.message : String(e)
+      console.warn(`[DELETE sow ${existing.sow_number}] R2 cleanup failed:`, r2_error)
     }
   }
 
-  return NextResponse.json({ ok: true, cleanup })
+  return NextResponse.json({ ok: true, r2_deleted, r2_error })
 }
