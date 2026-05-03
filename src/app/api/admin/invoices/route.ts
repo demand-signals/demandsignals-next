@@ -88,6 +88,31 @@ export async function GET(request: NextRequest) {
     const qty = li.quantity ?? 1
     return Math.round(unit * qty)
   }
+  // Pull the next pending scheduled-send per invoice in one shot. Soonest
+  // send_at wins. We're only listing a page of invoices at a time so this
+  // stays cheap. Filtered to status='scheduled' (still queued, not yet
+  // fired/cancelled/failed).
+  const invoiceIds = (data ?? []).map((r) => (r as { id: string }).id)
+  const nextScheduled: Record<string, { send_at: string; channel: string; kind: string }> = {}
+  if (invoiceIds.length > 0) {
+    const { data: schedRows } = await supabaseAdmin
+      .from('invoice_scheduled_sends')
+      .select('invoice_id, send_at, channel, kind')
+      .in('invoice_id', invoiceIds)
+      .eq('status', 'scheduled')
+      .order('send_at', { ascending: true })
+    for (const s of schedRows ?? []) {
+      // Order ASC + first-write-wins gives us the soonest send per invoice.
+      if (!nextScheduled[s.invoice_id]) {
+        nextScheduled[s.invoice_id] = {
+          send_at: s.send_at,
+          channel: s.channel,
+          kind: s.kind,
+        }
+      }
+    }
+  }
+
   const enriched = (data ?? []).map((row) => {
     const lines = (row as unknown as { invoice_line_items?: LineRow[] }).invoice_line_items ?? []
     const tikCents = (row as unknown as { trade_credit_cents?: number }).trade_credit_cents ?? 0
@@ -99,12 +124,17 @@ export async function GET(request: NextRequest) {
       else oneTimeCents += v
     }
     const totalCents = oneTimeCents + recurringCents + tikCents
+    const invoiceId = (row as { id: string }).id
+    const nextS = nextScheduled[invoiceId] ?? null
     return {
       ...row,
       project_cents: oneTimeCents,
       subscriptions_cents: recurringCents,
       tik_cents: tikCents,
       computed_total_cents: totalCents,
+      next_scheduled_send_at: nextS?.send_at ?? null,
+      next_scheduled_send_channel: nextS?.channel ?? null,
+      next_scheduled_send_kind: nextS?.kind ?? null,
     }
   })
 

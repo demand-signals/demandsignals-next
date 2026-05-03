@@ -32,6 +32,11 @@ interface InvoiceRow {
   subscriptions_cents: number
   tik_cents: number
   computed_total_cents: number
+  // Soonest pending scheduled-send for this invoice (status='scheduled').
+  // Null when no future send is queued.
+  next_scheduled_send_at: string | null
+  next_scheduled_send_channel: 'email' | 'sms' | 'both' | null
+  next_scheduled_send_kind: 'send' | 'reminder' | 'issue_and_send' | null
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -45,6 +50,19 @@ const STATUS_COLORS: Record<string, string> = {
 function fmtDate(iso: string | null): string {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString()
+}
+
+// "May 5 9:00 AM" — date + time, compact. The Scheduled column wants
+// time precision (admin schedules at 9 AM, not "Tuesday").
+function fmtSchedule(iso: string | null): string {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  return d.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
 }
 
 export default function AdminInvoicesPage() {
@@ -138,6 +156,7 @@ export default function AdminInvoicesPage() {
                 <th className="text-right px-4 py-3">$ TIK</th>
                 <th className="text-right px-4 py-3">$ Total</th>
                 <th className="text-left px-4 py-3">Status</th>
+                <th className="text-left px-4 py-3">Scheduled</th>
                 <th className="text-left px-4 py-3">Sent</th>
                 <th className="text-left px-4 py-3">Last Viewed</th>
               </tr>
@@ -191,6 +210,25 @@ export default function AdminInvoicesPage() {
                     >
                       {inv.status}
                     </span>
+                  </td>
+                  {/* Scheduled — highlighted indigo pill when a future
+                      send is queued. Shows date+time + channel hint
+                      (E/S/E+S). issue_and_send (draft → fire later) is
+                      tagged for clarity. */}
+                  <td className="px-4 py-3 text-xs">
+                    {inv.next_scheduled_send_at ? (
+                      <span
+                        className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-800 border border-indigo-200 rounded px-2 py-0.5 font-medium tabular-nums"
+                        title={`Channel: ${inv.next_scheduled_send_channel ?? '—'} · ${inv.next_scheduled_send_kind === 'issue_and_send' ? 'Issue + send (draft)' : inv.next_scheduled_send_kind === 'reminder' ? 'Reminder' : 'Resend'}`}
+                      >
+                        {fmtSchedule(inv.next_scheduled_send_at)}
+                        <span className="text-[10px] text-indigo-500">
+                          {inv.next_scheduled_send_channel === 'email' ? 'E' : inv.next_scheduled_send_channel === 'sms' ? 'S' : inv.next_scheduled_send_channel === 'both' ? 'E+S' : ''}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-slate-300">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-500">{fmtDate(inv.sent_at)}</td>
                   <td className="px-4 py-3 text-xs text-slate-500">{fmtDate(inv.viewed_at)}</td>

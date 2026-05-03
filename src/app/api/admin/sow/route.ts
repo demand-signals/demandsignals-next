@@ -78,6 +78,28 @@ export async function GET(request: NextRequest) {
     const qty = d.quantity ?? d.hours ?? 1
     return Math.round(unit * qty)
   }
+  // Pull the next pending scheduled-send per SOW in one shot. Mirrors
+  // the invoice list endpoint pattern. Filtered to status='scheduled'.
+  const sowIds = (data ?? []).map((r) => (r as { id: string }).id)
+  const nextScheduled: Record<string, { send_at: string; channel: string; kind: string }> = {}
+  if (sowIds.length > 0) {
+    const { data: schedRows } = await supabaseAdmin
+      .from('sow_scheduled_sends')
+      .select('sow_id, send_at, channel, kind')
+      .in('sow_id', sowIds)
+      .eq('status', 'scheduled')
+      .order('send_at', { ascending: true })
+    for (const s of schedRows ?? []) {
+      if (!nextScheduled[s.sow_id]) {
+        nextScheduled[s.sow_id] = {
+          send_at: s.send_at,
+          channel: s.channel,
+          kind: s.kind,
+        }
+      }
+    }
+  }
+
   const enriched = (data ?? []).map((row) => {
     const phases = ((row as unknown as { phases?: Phase[] | null }).phases ?? []) as Phase[]
     const tikCents = (row as unknown as { trade_credit_cents?: number }).trade_credit_cents ?? 0
@@ -102,12 +124,17 @@ export async function GET(request: NextRequest) {
       oneTimeCents = pricing?.total_cents ?? 0
     }
     const totalCents = oneTimeCents + recurringCents + tikCents
+    const sowId = (row as { id: string }).id
+    const nextS = nextScheduled[sowId] ?? null
     return {
       ...row,
       project_cents: oneTimeCents,
       subscriptions_cents: recurringCents,
       tik_cents: tikCents,
       computed_total_cents: totalCents,
+      next_scheduled_send_at: nextS?.send_at ?? null,
+      next_scheduled_send_channel: nextS?.channel ?? null,
+      next_scheduled_send_kind: nextS?.kind ?? null,
     }
   })
 
