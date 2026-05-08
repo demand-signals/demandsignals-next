@@ -160,7 +160,7 @@ export default function ManageClientsPage() {
               {filtered.map((c) => (
                 <tr key={c.id} className="border-t border-slate-100 hover:bg-slate-50">
                   <td className="px-4 py-3">
-                    <Link href={`/admin/prospects/${c.id}`} className="font-medium text-teal-600 hover:underline">
+                    <Link href={`/admin/clients/${c.id}`} className="font-medium text-teal-600 hover:underline">
                       {c.business_name}
                     </Link>
                     {(c.city || c.state) && (
