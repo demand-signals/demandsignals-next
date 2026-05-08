@@ -123,7 +123,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
       .from('projects')
       .select('id', { count: 'exact', head: true })
       .eq('prospect_id', id)
-      .in('status', ['planning', 'in_progress']),
+      .in('status', ['active', 'planning', 'in_progress']),
     // Active subscriptions for MRR tile
     supabaseAdmin
       .from('subscriptions')
@@ -225,7 +225,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
       .range(subsOffset, subsOffset + PAGE_SIZE - 1),
     supabaseAdmin
       .from('invoices')
-      .select('id, invoice_number, total_due_cents, status, paid_at, due_at, created_at')
+      .select('id, invoice_number, total_due_cents, status, paid_at, sent_at, created_at')
       .eq('prospect_id', id)
       .order('created_at', { ascending: false })
       .range(invoicesOffset, invoicesOffset + PAGE_SIZE - 1),
@@ -635,8 +635,8 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
                       </div>
                       <div className="text-xs text-slate-500 mt-0.5">
                         <StatusPill status={inv.status} />
-                        {inv.due_at && (
-                          <span className="ml-2">due {new Date(inv.due_at).toLocaleDateString()}</span>
+                        {inv.sent_at && (
+                          <span className="ml-2">sent {new Date(inv.sent_at).toLocaleDateString()}</span>
                         )}
                         {inv.paid_at && (
                           <span className="ml-2 text-emerald-600">paid {new Date(inv.paid_at).toLocaleDateString()}</span>
