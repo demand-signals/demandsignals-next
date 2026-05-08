@@ -83,15 +83,20 @@ export default async function ClientDetailPage({ params }: PageProps) {
   ])
 
   const projects = projectsRes.data ?? []
-  const subscriptions = (subsRes.data ?? []) as Array<{
+  // PostgREST shapes the subscription_plans join as an array even for the
+  // one-to-one rel; existing call-sites cast through `any` for the same reason
+  // (e.g. /api/admin/clients/route.ts). We model it as an array and read [0].
+  type SubscriptionPlanLink = { name: string; price_cents: number; billing_interval: string }
+  type SubscriptionRow = {
     id: string
     status: string
     override_monthly_amount_cents: number | null
     started_at: string | null
     paused_until: string | null
     end_date: string | null
-    plan: { name: string; price_cents: number; billing_interval: string } | null
-  }>
+    plan: SubscriptionPlanLink[] | SubscriptionPlanLink | null
+  }
+  const subscriptions = (subsRes.data ?? []) as unknown as SubscriptionRow[]
   const invoices = invoicesRes.data ?? []
   const receipts = receiptsRes.data ?? []
   const upcomingBooking = bookingRes.data ?? null
@@ -101,11 +106,17 @@ export default async function ClientDetailPage({ params }: PageProps) {
     (p) => p.status === 'in_progress' || p.status === 'planning',
   )
 
-  function monthlyContribution(s: (typeof subscriptions)[number]): number {
+  function planOf(s: SubscriptionRow): SubscriptionPlanLink | null {
+    if (!s.plan) return null
+    return Array.isArray(s.plan) ? (s.plan[0] ?? null) : s.plan
+  }
+
+  function monthlyContribution(s: SubscriptionRow): number {
     if (s.override_monthly_amount_cents != null) return s.override_monthly_amount_cents
-    if (!s.plan) return 0
-    const interval = s.plan.billing_interval ?? 'month'
-    const price = s.plan.price_cents ?? 0
+    const plan = planOf(s)
+    if (!plan) return 0
+    const interval = plan.billing_interval ?? 'month'
+    const price = plan.price_cents ?? 0
     if (interval === 'month') return price
     if (interval === 'quarter') return Math.round(price / 3)
     if (interval === 'year') return Math.round(price / 12)
@@ -328,7 +339,7 @@ export default async function ClientDetailPage({ params }: PageProps) {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="font-medium text-slate-900 truncate">
-                        {s.plan?.name ?? 'Custom subscription'}
+                        {planOf(s)?.name ?? 'Custom subscription'}
                       </div>
                       <div className="text-xs text-slate-500 mt-0.5 capitalize">
                         {s.status}
