@@ -86,10 +86,26 @@ export async function POST(request: NextRequest) {
     (input.claude_minutes ?? 0) > 0 ||
     input.source === 'handoff'
   ) {
+    // Also populate `hours` (decimal) so the legacy timekeeping UIs
+    // (/admin/timekeeping + /admin/projects/[id] TimeEntriesPanel)
+    // can display handoff-sourced entries. hours = (hunter+claude)/60.
+    const totalMinutes = (input.hunter_minutes ?? 0) + (input.claude_minutes ?? 0)
+    const hoursDecimal = totalMinutes > 0
+      ? Math.round((totalMinutes / 60) * 100) / 100
+      : null
+    // logged_at = session_ended_at's calendar date if available, else today.
+    const loggedAt = input.session_ended_at
+      ? new Date(input.session_ended_at).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10)
+
     const { error: teErr } = await supabaseAdmin.from('project_time_entries').insert({
       project_id: project.id,
       prospect_id: project.prospect_id,
       project_note_id: note.id,
+      hours: hoursDecimal,
+      logged_at: loggedAt,
+      logged_by: auth.user?.email ?? null,
+      billable: true,
       hunter_minutes: input.hunter_minutes ?? 0,
       claude_minutes: input.claude_minutes ?? 0,
       session_started_at: input.session_started_at ?? null,

@@ -8,11 +8,71 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-05-07 — WS1 (Gaming-PC) — Client portal v1 shipped end-to-end. Auth (magic-link + Google OAuth), Account/Invoices/Projects pages, project notes timeline, /handoff-fed daily 9am PT digest with email + SMS teaser. Build + tsc + tests all green. Migrations 047 + 048 applied. Commit `1497bf0` on master.
+**Last updated:** 2026-05-08 — WS1 (Gaming-PC) — Client portal v1 PIVOTED mid-session. Initial parallel-auth build (magic-link + dedicated DSIG Portal OAuth + dsig_portal cookie + 2 dedicated tables) was scrapped after Hunter pushback that admin-login already exists and should be unified. Final shipped state: ONE Google OAuth client (`219907120133-...`, Supabase-managed) + ONE Supabase Auth session + role resolution at request time + role-aware header dropdown (Admin Portal / Client Portal / Sign out for admins; direct /portal link for clients) + admin "view as client" override on /admin/clients. Two real bugs caught + fixed: (1) auth callback was mutating NextResponse.redirect location header losing cookies on early-return paths; (2) `<Link href="/auth/signout">` caused Next.js RSC prefetch to silently sign user out in the background. Migration 049 dropped the orphan parallel-auth tables. Pending cleanup: stale dsig.demandsignals.dev redirect, orphan Vercel envvars (PORTAL_MAGIC_LINK_SECRET, GOOGLE_PORTAL_*), unused "DSIG Portal" GCP OAuth client. 9 commits pushed (1497bf0 → 9a90b95).
 
 ---
 
-## SHIPPED 2026-05-07 — Client portal v1 (1 commit, planned)
+## SHIPPED 2026-05-08 — Client portal v1 (final shipped state after pivot)
+
+The starting commit `1497bf0` (yesterday-night) shipped a parallel auth stack. Today's session pivoted that to the unified architecture. Final shipped state below; original parallel-auth notes preserved further down for archaeology.
+
+### What's live in production now (commit `9a90b95`)
+
+- **Unified login at `demandsignals.co/login`** — Google OAuth via Supabase Auth (`signInWithOAuth({ provider: 'google' })`). One OAuth client (`219907120133-...`), one Supabase session for everyone (admin, client, or both).
+- **Role-aware header button:**
+  - Logged out → "Client Portal" → `/login`
+  - Logged-in admin → first name + ▾ → dropdown: Admin Portal · Client Portal · Sign out
+  - Logged-in client → first name → direct link to `/portal` (no dropdown)
+- **Auth callback at `/auth/callback`** — exchanges code, resolves role via `admin_users` + `prospects WHERE owner_email = ? AND is_client = true`, routes to `/admin` (admin), `/portal` (client only), `/admin` (both), `/unauthorized` (neither).
+- **Middleware (`src/middleware.ts`)** — gates `/portal/*` and `/admin/*` on a Supabase session; bounces unauthed to `/login?redirect=<path>`.
+- **Portal pages** — `/portal` (dashboard) + `/portal/account` (read-only) + `/portal/invoices` + `/portal/invoices/[number]` (with Pay button via `/api/portal/invoices/[number]/pay` reverse-proxy to existing `/api/invoices/public/[number]/pay?key=<uuid>` flow) + `/portal/projects` + `/portal/projects/[id]` (phases + deliverables + payment schedule + notes timeline).
+- **Admin "view as client"** — eye icon on `/admin/clients` rows hits `/api/admin/portal-view-as/[id]` → sets `dsig_portal_view_as` cookie → `/portal` renders that client's view with amber "Viewing as client" banner. "Stop viewing as" link clears the cookie.
+- **`/api/me`** — returns `{ authenticated, isAdmin, isClient, email }` from current Supabase session, used by Header.tsx to render the right button.
+- **Admin notes panel** mounted on `/admin/projects/[id]` — Add Note modal (title + markdown body + visibility radio + Hunter/Claude minutes) + timeline with badges. Locked once `client_sent_at IS NOT NULL`.
+- **`/handoff` slash command extension (v1c)** at `Y:\.claude\commands\handoff.md` — Step 11.D POSTs CLIENT UPDATE + TIME TRACKING to `/api/admin/project-notes` after Hunter approves. Hunter time = full wall-clock span; Claude time = processing only.
+- **Daily digest cron** at `/api/cron/portal-digest` — Vercel cron 16:00 UTC = 9am PT. Pools client-visible non-suppressed `project_notes` from prior 24h per client. Empty pool = silent. Race-safe via `portal_digests UNIQUE(prospect_id, period_start_at)`. Email = full digest. SMS = teaser link.
+- **Email plumbing** — new `portal@demandsignals.co` alias (`portal_digest` EmailKind only — `portal_signin` killed in pivot since unified login uses Supabase). Reply-to `DemandSignals@gmail.com` for ALL client-facing kinds (Hunter explicitly: "we never stipulated hunter@demandsignals.co EVER" — applied to invoice/sow/receipt/credit_memo too).
+
+### Migrations APPLIED
+
+| Migration | What it does | Applied to project |
+|---|---|---|
+| 047 | client_portal_sessions + client_portal_login_attempts tables (DROPPED in 049 below) | uoekjqkawssbskfkziwz (DSIG Portal Supabase project) |
+| 048 | project_notes + portal_digests + project_time_entries EXTENSION + General Support backfill + portal_digest_enabled kill switch | uoekjqkawssbskfkziwz |
+| 049 | DROP client_portal_sessions, client_portal_login_attempts (orphan after auth unified onto Supabase Auth) | uoekjqkawssbskfkziwz |
+
+### Architectural decisions LOCKED (do not re-debate)
+
+- **One Google OAuth client for portal + admin login.** Supabase Auth manages it. The two-OAuth-client framing I argued for early today was wrong; got rejected; do NOT reintroduce.
+- **Magic-link for portal sign-in is DEAD.** Magic-links are ONLY for unauthed document URLs (SOW / invoice / receipt / quote). Sign-in is Google OAuth via Supabase, full stop.
+- **Auth-callback cookie pattern:** never mutate `NextResponse.redirect`'s location header after construction. Collect cookies in `setAll()` into a local array; build a fresh `NextResponse.redirect(target)` at every return path; write each collected cookie onto it with its original options. The "mutate location" pattern silently drops cookies on early-return paths.
+- **Side-effect routes use `<a>` not `<Link>`.** `<Link href="/auth/signout">` caused Next.js RSC prefetch to invisibly sign the user out. Any route with side effects (signout, destructive emulators, anything that mutates state on GET) must be plain anchor tags. Promote to project CLAUDE.md if pattern recurs.
+- **Hunter time = full session wall-clock span; Claude time = processing only.** Both integer minutes on `project_time_entries`.
+- **Notes are append-only after sent.** Edits return 409 once `client_sent_at IS NOT NULL`. Corrections happen via follow-up notes.
+- **`EMAIL_REPLY_TO = 'DemandSignals@gmail.com'`** for all client-facing email kinds. Never `hunter@demandsignals.co`.
+- **Apex path `/portal` (not subdomain).** No dedicated cookie; shared Supabase session with admin via path-blind cookie. Role resolution at request time.
+
+### Failures with lessons (this session — durable)
+
+- **Built parallel auth before checking what existed.** /admin-login already had Google OAuth via Supabase — I built a magic-link + dedicated OAuth client + dedicated session table architecture without consulting it. Hunter caught it with "this is a dual login for both admin and client portals." Six hours of work scrapped. **Lesson:** before designing an auth flow, list every existing auth surface in the project and check whether one of them already does what's being asked.
+- **Auth callback was silently dropping session cookies.** Pattern: created `NextResponse.redirect(/admin)` up front, told Supabase to write cookies onto it via setAll, tried to mutate `response.headers.set('location', target)` at end after role resolution. The mutation either didn't take or the early-return paths returned brand-new redirects with NO cookies. Result: sign-in completed, cookies never reached browser, every subsequent request bounced to /login. **Lesson:** Supabase SSR auth callback pattern requires collect-into-array + fresh-redirect-at-end. Codify as project rule.
+- **`<Link href="/auth/signout">` triggered RSC prefetch** which called `supabase.auth.signOut()` in the background, clearing cookies. Net effect: clicking from /admin to /portal silently signed user out before the navigation completed. **Lesson:** side-effect GET routes (signout especially) MUST use plain `<a>` tags. Project rule candidate.
+- **Speculated for hours on wrong-Supabase-project / wrong-OAuth-client / wrong-env-vars when the real bug was code I wrote.** Hunter pushed back: "STOP TRYING TO BLAME ME, BLAME TOKENS. YOU NEED TO BLAME YOUR CODE." That correction unblocked finding the real bug in 10 minutes. **Lesson:** when Hunter says external state is correct, BELIEVE him. Read my own code first, not the env vars or dashboard.
+- **Got Hunter time-tracking definition wrong on first pass** ("active engagement only"). Hunter corrected to "full wall-clock span." Fixed in handoff.md v1c.
+- **Used hunter@demandsignals.co as reply-to without authorization.** Caught + corrected.
+- **Worktree path was a no-op (again).** Session opened at worktree path; edits all targeted the canonical Y: tree. Same pattern as last session. Recorded.
+
+### Pending Hunter actions (post-session cleanup, not blocking)
+
+- **Find + kill the stale `dsig.demandsignals.dev` redirect** that intercepted `/auth/signout?_rsc=...`. Likely in `vercel.json`, Cloudflare DNS, or a stale page rule.
+- **Drop orphan Vercel env vars**: `PORTAL_MAGIC_LINK_SECRET`, `GOOGLE_PORTAL_CLIENT_ID`, `GOOGLE_PORTAL_CLIENT_SECRET`, `GOOGLE_PORTAL_CALLBACK_URI`. No code reads them.
+- **Drop unused GCP "DSIG Portal" OAuth client** if you created one earlier today — never wired into anything.
+- **Smoke-test daily digest cron** — first 9am PT firing should auto-run; check `portal_digests` for a row.
+- **Add a real `is_client=true` test prospect with your own owner_email** so you can validate the client-only auth path (currently you only see admin-routed flow).
+
+---
+
+## SHIPPED 2026-05-07 — Client portal v1 ORIGINAL parallel-auth build (LARGELY OVERWRITTEN by 2026-05-08 pivot above; preserved here for archaeology)
 
 - **Auth lib + middleware + 5 API routes** — magic-link (jose HS256, 15-min TTL, jti consumed in `client_portal_sessions.jti UNIQUE` for replay defense) + Google OAuth via NEW DSIG Portal GCP client (dated env vars per §12). Random 32-byte server-side session tokens, instant revocation. Logout revokes ALL active sessions for the prospect. `dsig_portal` cookie scoped `Path=/portal` — browser-enforced isolation from admin + attribution cookies. Edge-runtime safe (uses `globalThis.crypto`, NOT `node:crypto`, since middleware imports portal-auth).
 - **Portal pages** — `/portal/login` (magic-link form + Google button) + `/portal/login/sent` + `/portal` dashboard (welcome + outstanding balance + active project + recent invoices) + `/portal/account` (read-only contact info, "Request a change" mailto) + `/portal/invoices` (list) + `/portal/invoices/[number]` (detail + Pay button) + `/portal/projects` (list) + `/portal/projects/[id]` (phases + deliverables + payment schedule + notes timeline).

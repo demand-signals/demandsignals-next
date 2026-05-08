@@ -10,7 +10,7 @@ export interface TimeEntry {
   project_id: string
   phase_id: string | null
   deliverable_id: string | null
-  hours: number
+  hours: number | null              // null on handoff-sourced rows; populated by route on insert
   description: string | null
   billable: boolean
   hourly_rate_cents: number | null
@@ -18,6 +18,13 @@ export interface TimeEntry {
   logged_by: string | null
   created_at: string
   updated_at: string
+  // Migration 048 additions for /handoff-sourced entries
+  hunter_minutes: number | null
+  claude_minutes: number | null
+  session_started_at: string | null
+  session_ended_at: string | null
+  source: 'handoff' | 'manual' | null
+  project_note_id: string | null
 }
 
 export interface TimeRollup {
@@ -31,11 +38,13 @@ export interface TimeRollup {
 }
 
 export async function listProjectTimeEntries(projectId: string): Promise<TimeEntry[]> {
+  // Order by session_ended_at when present (handoff entries), else logged_at,
+  // then created_at as the tiebreaker.
   const { data } = await supabaseAdmin
     .from('project_time_entries')
     .select('*')
     .eq('project_id', projectId)
-    .order('logged_at', { ascending: false })
+    .order('logged_at', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
   return (data as TimeEntry[]) ?? []
 }
@@ -46,7 +55,18 @@ export function rollupTimeEntries(entries: TimeEntry[]): TimeRollup {
   const byPhase: Record<string, number> = {}
   let last: string | null = null
   for (const e of entries) {
-    const h = Number(e.hours)
+    // Prefer `hours` if present (manual entries + handoff entries written
+    // by /api/admin/project-notes which mirrors hunter+claude minutes).
+    // Fall back to computing from minute split for any handoff rows that
+    // pre-date the mirror.
+    let h: number
+    if (e.hours != null) {
+      h = Number(e.hours)
+    } else if ((e.hunter_minutes ?? 0) + (e.claude_minutes ?? 0) > 0) {
+      h = ((e.hunter_minutes ?? 0) + (e.claude_minutes ?? 0)) / 60
+    } else {
+      h = 0
+    }
     total += h
     if (e.billable) billable += h
     if (e.phase_id) byPhase[e.phase_id] = (byPhase[e.phase_id] ?? 0) + h

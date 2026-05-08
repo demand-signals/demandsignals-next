@@ -41,11 +41,13 @@ export async function GET(request: NextRequest) {
   const offset = Math.max(parseInt(sp.get('offset') || '0', 10) || 0, 0)
 
   // Base query — include project + prospect for client column on the table.
+  // Migration 048 added hunter_minutes / claude_minutes / source / project_note_id.
   let q = supabaseAdmin
     .from('project_time_entries')
     .select(
       `id, project_id, phase_id, deliverable_id, hours, description, billable,
        hourly_rate_cents, logged_at, logged_by, created_at,
+       hunter_minutes, claude_minutes, source, project_note_id,
        project:projects!inner(id, name, prospect_id, prospects:prospects!inner(business_name))`,
       { count: 'exact' },
     )
