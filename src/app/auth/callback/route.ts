@@ -4,34 +4,43 @@ import { createServerClient } from '@supabase/ssr'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 // Unified Google OAuth callback. Exchanges the code for a Supabase
-// session, resolves role (admin / client / both / neither), then
-// routes accordingly.
+// session, resolves role (admin / client / both / neither), routes
+// accordingly.
 //
-// Routing:
-//   ?redirect=<path>  → honored (e.g. middleware bouncing a user)
-//   admin only        → /admin
-//   client only       → /portal
-//   both              → /admin (admin can switch via header dropdown)
-//   neither           → /unauthorized
+// Implementation pattern (Supabase SSR docs):
+//   1. Collect cookies from setAll() into a local array
+//   2. Run exchangeCodeForSession + role lookup
+//   3. Build a fresh redirect response and explicitly write each
+//      collected cookie onto it with its original options
 //
-// Implementation note: a SINGLE NextResponse object is created up
-// front and supabase writes session cookies directly onto it via
-// setAll(). The location header is mutated AFTER role resolution to
-// point at the correct target. Forwarding cookies between separate
-// response objects loses scoping options and breaks the session.
+// This avoids the broken pattern of mutating a NextResponse.redirect
+// after construction (which doesn't reliably persist headers).
+
+interface CookieToSet {
+  name: string
+  value: string
+  options: Parameters<NextResponse['cookies']['set']>[2]
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const explicitRedirect = searchParams.get('redirect')
 
-  if (!code) {
-    return NextResponse.redirect(new URL('/login?error=auth', origin))
+  // Collect cookies that supabase wants to write
+  const collectedCookies: CookieToSet[] = []
+
+  function buildRedirect(target: string): NextResponse {
+    const res = NextResponse.redirect(new URL(target, origin))
+    for (const c of collectedCookies) {
+      res.cookies.set(c.name, c.value, c.options)
+    }
+    return res
   }
 
-  // Single response — supabase mutates this object directly. We'll
-  // overwrite the location header at the end.
-  const response = NextResponse.redirect(new URL('/admin', origin))
+  if (!code) {
+    return buildRedirect('/login?error=auth')
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,10 +51,18 @@ export async function GET(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
-            response.cookies.set(name, value, options)
-          })
+          for (const c of cookiesToSet) {
+            // Mirror to incoming-request cookies so subsequent
+            // supabase calls (getUser) within this request see the
+            // refreshed token.
+            request.cookies.set(c.name, c.value)
+            // Stash for outbound write
+            collectedCookies.push({
+              name: c.name,
+              value: c.value,
+              options: c.options,
+            })
+          }
         },
       },
     },
@@ -53,12 +70,12 @@ export async function GET(request: NextRequest) {
 
   const { error: exchangeErr } = await supabase.auth.exchangeCodeForSession(code)
   if (exchangeErr) {
-    return NextResponse.redirect(new URL('/login?error=auth', origin))
+    return buildRedirect('/login?error=auth')
   }
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || !user.email) {
-    return NextResponse.redirect(new URL('/login?error=auth', origin))
+    return buildRedirect('/login?error=auth')
   }
 
   const email = user.email.toLowerCase()
@@ -80,7 +97,7 @@ export async function GET(request: NextRequest) {
   const isClient = !!clientRes.data
 
   if (!isAdmin && !isClient) {
-    return NextResponse.redirect(new URL('/unauthorized', origin))
+    return buildRedirect('/unauthorized')
   }
 
   let target: string
@@ -92,9 +109,5 @@ export async function GET(request: NextRequest) {
     target = '/portal'
   }
 
-  // Mutate the location header on the existing response. This
-  // preserves all session cookies supabase wrote via setAll() with
-  // their original options (path, sameSite, secure, etc.).
-  response.headers.set('location', new URL(target, origin).toString())
-  return response
+  return buildRedirect(target)
 }
