@@ -4,6 +4,26 @@ Append-only log of working sessions. Newest at top.
 
 ---
 
+## 2026-05-08 (late) — WS1 (Gaming-PC) — Hunter — CLI tokens
+
+- **CLI bearer-token auth shipped end-to-end** for `/handoff` Step 11.D platform writes. Spec → plan → build executed cleanly in one pass.
+- **Migration 050** — `cli_tokens` (bcrypt cost 10, prefix + last4 display, optional `expires_at`, `created_by` audit) + `cli_token_audit` (every bearer-auth attempt logged, drives 60/hr rate limit). Both RLS-locked to service-role.
+- **Token format `dsigcli_<43-char-base64url>`** — 256-bit entropy, fixed prefix for visual identification + env-file regex matching.
+- **`src/lib/cli-auth.ts`** — `generateCliToken()`, `authenticateCliRequest()` (extract Bearer → prefix lookup → bcrypt-compare → expiry → rate-limit → ALWAYS audit), `checkCliRateLimit()`. Edge-runtime safe.
+- **`src/lib/notes-and-time.ts`** — extracted shared `createNoteAndTimeEntry()` so the existing admin route + new CLI route write through identical code paths. `client_code` resolution to most-recently-updated active project. Hours-mirror logic preserved.
+- **`/api/cli/handoff/project-notes`** — Bearer-authed; only CLI route in v1 (default-deny on the surface).
+- **Admin UI at `/admin/account/cli-tokens`** — list (multi-admin shared visibility — every admin sees + revokes every token), generate modal (one-time plaintext display with copy + paste-into-dsig.env instructions, optional auto-expiry), per-token audit page.
+- **`/handoff` v1f** — Step 11.D reads `process.env.DSIG_CLI_TOKEN`, POSTs with Bearer header. 401 / 429 / 404 each have specific recovery paths; all non-200 fall back to display-artifacts-for-paste at `/admin/timekeeping`.
+- **Hunter generated "DSIG shared CLI" token** at `/admin/account/cli-tokens` (no expiry) and stored value in `Y:\.credentials\dsig.env` as `DSIG_CLI_TOKEN`. Live and ready for next /handoff.
+- **Project CLAUDE.md §4** documents the new envvar.
+- **Build:** clean. tsc clean. 9/9 cli-auth tests pass.
+- **Commit `5228afc`** on master.
+- **Decisions locked:** one CLI route in v1 (default-deny); multi-admin shared visibility (matches dsig.env shared-NAS reality); bcrypt cost 10; plaintext shown ONCE; auto-expiry opt-in.
+- **Time:** Hunter ~2h + Claude ~1h = 180m total billable.
+- **Next session priority:** smoke-test /handoff Step 11.D from a real session and confirm the "Note written" message replaces the paste-fallback. Drop the now-truly-orphan envvars from earlier today (PORTAL_MAGIC_LINK_SECRET, GOOGLE_PORTAL_*).
+
+---
+
 ## 2026-05-08 — WS1 (Gaming-PC) — Hunter
 
 - **Client portal v1 PIVOTED mid-session.** The 2026-05-07 build (`1497bf0`) shipped a parallel-auth architecture (magic-link + dedicated DSIG Portal OAuth client + dsig_portal cookie + 2 dedicated session/audit tables). Hunter rejected: "this is a dual login for both admin and client portals" — wanted ONE unified login at the existing `/admin-login`, not a separate one. Tore down the parallel stack, rebuilt unified.

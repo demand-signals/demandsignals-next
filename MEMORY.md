@@ -8,7 +8,46 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-05-08 — WS1 (Gaming-PC) — Client portal v1 PIVOTED mid-session. Initial parallel-auth build (magic-link + dedicated DSIG Portal OAuth + dsig_portal cookie + 2 dedicated tables) was scrapped after Hunter pushback that admin-login already exists and should be unified. Final shipped state: ONE Google OAuth client (`219907120133-...`, Supabase-managed) + ONE Supabase Auth session + role resolution at request time + role-aware header dropdown (Admin Portal / Client Portal / Sign out for admins; direct /portal link for clients) + admin "view as client" override on /admin/clients. Two real bugs caught + fixed: (1) auth callback was mutating NextResponse.redirect location header losing cookies on early-return paths; (2) `<Link href="/auth/signout">` caused Next.js RSC prefetch to silently sign user out in the background. Migration 049 dropped the orphan parallel-auth tables. Pending cleanup: stale dsig.demandsignals.dev redirect, orphan Vercel envvars (PORTAL_MAGIC_LINK_SECRET, GOOGLE_PORTAL_*), unused "DSIG Portal" GCP OAuth client. 9 commits pushed (1497bf0 → 9a90b95).
+**Last updated:** 2026-05-08 (late) — WS1 (Gaming-PC) — CLI tokens shipped end-to-end. Migration 050 applied; "DSIG shared CLI" token generated in admin UI and stored in `Y:\.credentials\dsig.env` as `DSIG_CLI_TOKEN`. /handoff command bumped to v1f and now POSTs to `/api/cli/handoff/project-notes` with Bearer auth — both project_notes (with daily-digest gating) AND project_time_entries (with hours-mirror for legacy timekeeping UIs) populated in one request. Multi-admin shared visibility, optional auto-expiry, revocable, rate-limited 60/hr/token, full audit log at `/admin/account/cli-tokens/[id]`. Plus the earlier portal pivot in this same session.
+
+---
+
+## SHIPPED 2026-05-08 (late) — CLI tokens for /handoff platform writes
+
+- **Migration 050** — `cli_tokens` (bcrypt-hashed token, name + prefix + last4, optional expires_at, created_by/revoked_by audit) + `cli_token_audit` (every bearer-auth attempt logs a row, drives 60/hr rate limit). Both RLS-locked to service-role.
+- **`src/lib/cli-auth.ts`** — `generateCliToken()` (256-bit entropy, `dsigcli_<43>` format), `authenticateCliRequest()` (extract Bearer → prefix lookup → bcrypt-compare → expiry check → rate-limit check → ALWAYS write audit row), `checkCliRateLimit()`. Edge-runtime safe (`globalThis.crypto`, no `node:crypto`).
+- **`src/lib/notes-and-time.ts`** — extracted shared `createNoteAndTimeEntry()` so the existing admin route + new CLI route share one code path. `client_code` resolution to most-recently-updated active project. Hours-mirror logic preserved.
+- **`/api/cli/handoff/project-notes`** — Bearer-authed CLI endpoint. The ONLY CLI route in v1; default-deny for any future paths.
+- **Admin UI at `/admin/account/cli-tokens`** — list, generate (one-time plaintext display with copy + paste-into-dsig.env instructions), per-token audit log, revoke. Multi-admin shared visibility — every admin sees + revokes every token.
+- **`/handoff` v1f** — Step 11.D reads `process.env.DSIG_CLI_TOKEN`, POSTs with Bearer header. 401/429/404 each have specific recovery paths; all non-200 fall back to display-artifacts-for-paste at `/admin/timekeeping`.
+- **Project CLAUDE.md §4** updated to document the new env var.
+- **9/9 cli-auth unit tests pass.** Build clean. Commit `5228afc` on master.
+
+### Architectural decisions LOCKED (do not re-debate)
+
+- **One CLI route in v1.** Default-deny on the CLI surface. New `/api/cli/*` routes require spec amendment, not a code patch.
+- **Multi-admin shared token visibility.** Matches the shared `Y:\.credentials\dsig.env` reality — any admin can list, audit, or revoke any token. `created_by` is for audit only.
+- **bcrypt cost 10 (~50ms).** Acceptable for /handoff throughput; do not lower.
+- **Plaintext shown ONCE.** Token regen requires generating a new one + revoking the old. Never recoverable from the DB after creation.
+- **Token format `dsigcli_<43-char-base64url>`.** Fixed prefix for visual identification + regex matching in env files; 256 bits of entropy; stable.
+- **Auto-expiry is opt-in** (Never / 7d / 30d / 90d / Custom). Default = never.
+- **The CLI endpoint mirrors the admin endpoint** via the shared `createNoteAndTimeEntry()` helper. No CLI-specific logic; same DB shape; `logged_by = 'cli:<token-name>'` distinguishes source on display.
+
+### Failures with lessons (this session — durable)
+
+- **`admin_users.display_name` not `full_name`.** Caught by reading the migration before shipping. Routine schema-confidence check; still worth recording.
+- **(Earlier in same session — portal pivot lessons preserved below.)**
+
+### Pending Hunter follow-up
+
+- Smoke-test `/handoff` Step 11.D from a real session: run handoff, confirm `Note written → /admin/projects/<id> · time entry created` message appears (instead of the paste-fallback). Audit log at `/admin/account/cli-tokens/<id>` should show a 200 row.
+- (Optional) Drop the now-truly-orphan envvars from earlier today — `PORTAL_MAGIC_LINK_SECRET`, `GOOGLE_PORTAL_*`. They're not read by any deployed code.
+
+---
+
+## SHIPPED 2026-05-08 — Client portal v1 PIVOTED mid-session
+
+Initial parallel-auth build (magic-link + dedicated DSIG Portal OAuth + dsig_portal cookie + 2 dedicated tables) was scrapped after Hunter pushback that admin-login already exists and should be unified. Final shipped state: ONE Google OAuth client (`219907120133-...`, Supabase-managed) + ONE Supabase Auth session + role resolution at request time + role-aware header dropdown (Admin Portal / Client Portal / Sign out for admins; direct /portal link for clients) + admin "view as client" override on /admin/clients. Two real bugs caught + fixed: (1) auth callback was mutating NextResponse.redirect location header losing cookies on early-return paths; (2) `<Link href="/auth/signout">` caused Next.js RSC prefetch to silently sign user out in the background. Migration 049 dropped the orphan parallel-auth tables. Pending cleanup: stale dsig.demandsignals.dev redirect, orphan Vercel envvars (PORTAL_MAGIC_LINK_SECRET, GOOGLE_PORTAL_*), unused "DSIG Portal" GCP OAuth client. 9 commits pushed (1497bf0 → 9a90b95).
 
 ---
 
