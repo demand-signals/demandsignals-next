@@ -34,7 +34,7 @@ interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-const PAGE_SIZE = 50
+const PAGE_SIZE = 10
 
 export const dynamic = 'force-dynamic'
 
