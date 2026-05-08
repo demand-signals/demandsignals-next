@@ -203,13 +203,13 @@ export function Header() {
                       Client Portal
                     </Link>
                     <div style={{ borderTop: '1px solid #f1f5f9', margin: '4px 0' }} />
-                    <Link
+                    <a
                       href="/auth/signout"
                       onClick={() => setUserMenuOpen(false)}
                       style={{ display: 'block', padding: '8px 14px', fontSize: 14, color: '#5d6780', textDecoration: 'none' }}
                     >
                       Sign out
-                    </Link>
+                    </a>
                   </div>
                 )}
               </div>
