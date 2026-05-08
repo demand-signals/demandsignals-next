@@ -47,7 +47,11 @@ export async function middleware(request: NextRequest) {
   const isPortalPage = pathname.startsWith('/portal')
   const isPortalApi = pathname.startsWith('/api/portal/')
   if (isPortalPage || isPortalApi) {
-    let response = NextResponse.next({ request: { headers: requestHeaders } })
+    // Single response — supabase mutates this object directly via
+    // setAll() so refreshed session cookies are preserved into the
+    // downstream request. (Reassigning `response` inside setAll loses
+    // earlier writes when getUser triggers a token refresh.)
+    const response = NextResponse.next({ request: { headers: requestHeaders } })
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -56,11 +60,10 @@ export async function middleware(request: NextRequest) {
         cookies: {
           getAll() { return request.cookies.getAll() },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-            response = NextResponse.next({ request: { headers: requestHeaders } })
-            cookiesToSet.forEach(({ name, value, options }) =>
-              response.cookies.set(name, value, options),
-            )
+            cookiesToSet.forEach(({ name, value, options }) => {
+              request.cookies.set(name, value)
+              response.cookies.set(name, value, options)
+            })
           },
         },
       },
@@ -80,7 +83,9 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith('/admin')) {
-    let response = NextResponse.next({ request: { headers: requestHeaders } })
+    // Single response — supabase writes session cookies directly via
+    // setAll(). Same fix as the portal block above.
+    const response = NextResponse.next({ request: { headers: requestHeaders } })
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -91,13 +96,10 @@ export async function middleware(request: NextRequest) {
             return request.cookies.getAll()
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value }) =>
+            cookiesToSet.forEach(({ name, value, options }) => {
               request.cookies.set(name, value)
-            )
-            response = NextResponse.next({ request: { headers: requestHeaders } })
-            cookiesToSet.forEach(({ name, value, options }) =>
               response.cookies.set(name, value, options)
-            )
+            })
           },
         },
       }
@@ -105,7 +107,8 @@ export async function middleware(request: NextRequest) {
 
     const { data: { user } } = await supabase.auth.getUser()
 
-    // Allow the login page itself without auth
+    // (Dead — pathname can't both startsWith('/admin') AND === '/login'.
+    // Left as a no-op safety net.)
     if (pathname === '/login') {
       return response
     }

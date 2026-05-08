@@ -8,11 +8,17 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 // routes accordingly.
 //
 // Routing:
-//   ?redirect=<path>  → honored (e.g. middleware bouncing a portal-bound user)
+//   ?redirect=<path>  → honored (e.g. middleware bouncing a user)
 //   admin only        → /admin
 //   client only       → /portal
 //   both              → /admin (admin can switch via header dropdown)
 //   neither           → /unauthorized
+//
+// Implementation note: a SINGLE NextResponse object is created up
+// front and supabase writes session cookies directly onto it via
+// setAll(). The location header is mutated AFTER role resolution to
+// point at the correct target. Forwarding cookies between separate
+// response objects loses scoping options and breaks the session.
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -23,27 +29,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/login?error=auth', origin))
   }
 
-  // We need to determine the redirect target BEFORE creating the
-  // response, because Supabase's setAll() writes onto the response
-  // object — so the cookies-setting closure has to capture the FINAL
-  // response. We build a placeholder, exchange the code, resolve the
-  // role, then mutate the response.url.
-  //
-  // Pattern: do the role resolution against a temp NextResponse.next(),
-  // then build the redirect with the same cookies forwarded.
-  let cookieResponse = NextResponse.next()
+  // Single response — supabase mutates this object directly. We'll
+  // overwrite the location header at the end.
+  const response = NextResponse.redirect(new URL('/admin', origin))
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() { return request.cookies.getAll() },
+        getAll() {
+          return request.cookies.getAll()
+        },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          cookieResponse = NextResponse.next()
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieResponse.cookies.set(name, value, options),
-          )
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value)
+            response.cookies.set(name, value, options)
+          })
         },
       },
     },
@@ -90,21 +92,9 @@ export async function GET(request: NextRequest) {
     target = '/portal'
   }
 
-  // Build the redirect, forwarding the auth cookies that supabase set
-  // on cookieResponse during exchangeCodeForSession + getUser.
-  const finalRedirect = NextResponse.redirect(new URL(target, origin))
-  for (const cookie of cookieResponse.cookies.getAll()) {
-    finalRedirect.cookies.set({
-      name: cookie.name,
-      value: cookie.value,
-      domain: cookie.domain,
-      path: cookie.path,
-      maxAge: cookie.maxAge,
-      expires: cookie.expires,
-      httpOnly: cookie.httpOnly,
-      secure: cookie.secure,
-      sameSite: cookie.sameSite,
-    })
-  }
-  return finalRedirect
+  // Mutate the location header on the existing response. This
+  // preserves all session cookies supabase wrote via setAll() with
+  // their original options (path, sameSite, secure, etc.).
+  response.headers.set('location', new URL(target, origin).toString())
+  return response
 }
