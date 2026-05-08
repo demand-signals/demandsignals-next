@@ -99,7 +99,7 @@ export function MobileMenu({ onClose }: Props) {
           onClick={onClose}
           className={`${headerStyles.btnOutline} ${styles.ctaFlex}`}
         >
-          Client Login
+          Client Portal
         </Link>
         <a
           href={BOOKING_URL}

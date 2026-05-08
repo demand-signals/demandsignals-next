@@ -160,7 +160,7 @@ export function Header() {
           <div className={styles.ctaGroup}>
             {!userName ? (
               <Link href="/login" className={styles.btnOutline}>
-                Login
+                Client Portal
               </Link>
             ) : isAdmin ? (
               <div data-user-menu style={{ position: 'relative' }}>
