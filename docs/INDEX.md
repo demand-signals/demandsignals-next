@@ -39,6 +39,7 @@ Start here to find every artifact in the DSIG Next.js project.
 | [`docs/superpowers/specs/2026-05-04-sow-lockdown-deferred.md`](superpowers/specs/2026-05-04-sow-lockdown-deferred.md) | 2026-05-04 | DEFERRED | Lock down accepted SOWs + hide from default views — premature at 1-operator scale, revisit on team growth |
 | [`docs/superpowers/specs/2026-05-04-international-clients-tiers.md`](superpowers/specs/2026-05-04-international-clients-tiers.md) | 2026-05-04 | TIER 1 SHIPPED | International client support — Tier 1 (country column + non-US display) shipped; Tier 2 (locale labels, address_line_2) and Tier 3 (multi-currency, VAT/GST) deferred |
 | [`docs/superpowers/specs/2026-05-07-client-portal-v1-design.md`](superpowers/specs/2026-05-07-client-portal-v1-design.md) | 2026-05-07 | CODE SHIPPED | Client portal v1 — Account, Invoices, Projects + project notes timeline + 9am PT daily digest. Magic-link + Google OAuth, apex path /portal, dsig_portal cookie isolated by Path. Pending: Hunter sets GCP OAuth client + Vercel env vars + Cloudflare email routing for portal@ → live |
+| [`docs/superpowers/specs/2026-05-08-cli-tokens-design.md`](superpowers/specs/2026-05-08-cli-tokens-design.md) | 2026-05-08 | DRAFT | CLI bearer tokens for /handoff Step 11.D — admin generates token in /admin/account/cli-tokens, pastes into Y:\.credentials\dsig.env as DSIG_CLI_TOKEN, /handoff POSTs to /api/cli/handoff/project-notes with Bearer auth. bcrypt-hashed, revocable, rate-limited 60/hr/token, audit log. |
 
 ---
 
