@@ -14,12 +14,18 @@ interface ProspectOption {
   is_client: boolean
 }
 
-export function NewProjectModal({ onClose }: { onClose: () => void }) {
+export function NewProjectModal({
+  onClose,
+  defaultProspectId = '',
+}: {
+  onClose: () => void
+  defaultProspectId?: string
+}) {
   const router = useRouter()
   const [prospects, setProspects] = useState<ProspectOption[]>([])
   const [form, setForm] = useState({
     name: '',
-    prospect_id: '',
+    prospect_id: defaultProspectId,
     type: 'website' as (typeof TYPES)[number],
     status: 'planning' as (typeof STATUSES)[number],
     start_date: new Date().toISOString().slice(0, 10),
