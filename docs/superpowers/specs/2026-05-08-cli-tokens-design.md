@@ -1,7 +1,7 @@
 # CLI Tokens for /handoff Platform Writes
 
 **Date:** 2026-05-08
-**Status:** Draft → ready for review
+**Status:** v1.1 LOCKED → ready for implementation plan
 
 ## Problem
 
@@ -23,9 +23,14 @@ We want a clean automated path with strong security properties: revocable, scope
 
 - **No SSO replacement.** Admins still sign into the browser portal via Supabase Google OAuth. CLI tokens are an additional credential, not a substitute.
 - **No general-purpose API.** This is not a public API; it's a CLI-side bearer specifically for `/handoff` and similar Hunter-controlled tooling.
-- **No per-token expiry / scope drift.** v1 tokens are long-lived (until revoked). All v1 tokens have the same scope (the CLI allowlist below). Per-scope tokens or auto-expiry can come in v2 if the surface grows.
+- **No scope drift.** All tokens have the same scope (the CLI allowlist below). Per-scope tokens can come in v2 if the surface grows.
 - **No auto-rotation.** Admin manually rotates if they think a token is compromised. (No clean way to deliver a rotated token back to `dsig.env` without manual intervention anyway.)
 - **No browser-session bridging.** This token does NOT impersonate the admin's browser session. CLI calls authenticate as `cli:<token-name>`; the audit log shows that, not the admin's email.
+
+**Locked decisions (per Hunter, 2026-05-08):**
+- **Tokens are shared across the admin team.** Y: is a multi-workstation NAS. `Y:\.credentials\dsig.env` is shared, so any admin running `/handoff` from any workstation reads the same `DSIG_CLI_TOKEN`. Per-creator visibility filtering would create a false ownership model. **All admins see ALL tokens** in `/admin/account/cli-tokens`. Anyone can revoke any token.
+- **Auto-expiry is opt-in.** New optional `expires_at` field at token creation (nullable timestamptz). Default = no expiry. Admin can choose 7 / 30 / 90 days / custom date if they want a self-destructing token.
+- **Token-per-workstation is a non-issue.** The shared `dsig.env` means a single token serves every workstation. The `name` field is purely descriptive ("DSIG shared CLI", "CI runner", etc.) — does not gate visibility or routing.
 
 ## Architecture
 
@@ -90,15 +95,16 @@ We want a clean automated path with strong security properties: revocable, scope
 CREATE TABLE IF NOT EXISTS cli_tokens (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   -- Display fields
-  name text NOT NULL,                       -- admin-chosen, e.g. "Hunter's WS1"
+  name text NOT NULL,                       -- admin-chosen, e.g. "DSIG shared CLI"
   prefix text NOT NULL,                     -- first 12 chars of token, for display
   last4 text NOT NULL,                      -- last 4 chars, for display
   -- Auth
   token_hash text NOT NULL,                 -- bcrypt(token), cost=10
-  -- Who created it
+  -- Who created it (audit only — does NOT gate visibility, all admins see all tokens)
   created_by uuid NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
   -- State
   created_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz,                   -- optional auto-expiry; null = never expires
   last_used_at timestamptz,
   revoked_at timestamptz,
   revoked_by uuid REFERENCES admin_users(id),
@@ -109,11 +115,12 @@ CREATE INDEX IF NOT EXISTS idx_cli_tokens_active
   ON cli_tokens(prefix)
   WHERE revoked_at IS NULL;
 
-CREATE INDEX IF NOT EXISTS idx_cli_tokens_creator
-  ON cli_tokens(created_by, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cli_tokens_expiry_sweep
+  ON cli_tokens(expires_at)
+  WHERE expires_at IS NOT NULL AND revoked_at IS NULL;
 
 COMMENT ON TABLE cli_tokens IS
-  'CLI bearer tokens for /handoff and similar Hunter-controlled tooling. Plaintext value bcrypt-hashed; only prefix + last4 shown after creation.';
+  'CLI bearer tokens for /handoff and similar tooling. Plaintext value bcrypt-hashed; only prefix + last4 shown after creation. Shared across admin team — all admins can list, audit, and revoke any token (matches Y:\.credentials\dsig.env shared-across-workstations model). expires_at is optional; null = never expires.';
 
 -- Audit log. Every CLI bearer-auth attempt logs a row, success or
 -- failure. Drives rate limiting + suspicious-activity tracking.
@@ -239,9 +246,13 @@ Each row's ⋮ menu: View audit log · Revoke (active rows only).
 
 #### Create flow
 
-Click "Generate new token" → modal asks for `name` (required, e.g. "Hunter's Gaming-PC") → POST `/api/admin/cli-tokens` → modal swaps to display the FULL token in a copy-button card with bold instructions:
+Click "Generate new token" → modal asks for:
+- `name` (required, e.g. "DSIG shared CLI" or "Token rotation 2026-Q3")
+- `expires_at` (optional dropdown: Never · 7 days · 30 days · 90 days · Custom date)
 
-> **This is your only chance to copy this token.** Paste it into `Y:\.credentials\dsig.env` as `DSIG_CLI_TOKEN=<paste-here>`. After you close this dialog, only the prefix + last-4 will be visible.
+→ POST `/api/admin/cli-tokens` → modal swaps to display the FULL token in a copy-button card with bold instructions:
+
+> **This is your only chance to copy this token.** Paste it into `Y:\.credentials\dsig.env` as `DSIG_CLI_TOKEN=<paste-here>`. The token is shared across all admin workstations via the NAS — all admins can use it; all admins can revoke it. After you close this dialog, only the prefix + last-4 will be visible.
 
 Single "I've copied it" confirmation button to dismiss.
 
@@ -257,12 +268,12 @@ Click "Revoke" → confirm dialog ("Are you sure? This token will be denied imme
 
 ```
 POST   /api/admin/cli-tokens              — create new (returns plaintext once)
-GET    /api/admin/cli-tokens              — list current admin's own tokens
+GET    /api/admin/cli-tokens              — list ALL tokens across the admin team
 GET    /api/admin/cli-tokens/[id]/audit   — paginated audit log for one token
-POST   /api/admin/cli-tokens/[id]/revoke  — mark revoked
+POST   /api/admin/cli-tokens/[id]/revoke  — mark revoked (any active admin)
 ```
 
-Token visibility: by default admins see ONLY tokens they themselves created (`created_by = current admin_id`). Super-admins (TBD; not in v1) could see all.
+Token visibility: ALL active admins see ALL tokens. Matches the shared-`dsig.env` reality — no false ownership model. The `created_by` field is preserved for audit ("who issued this") but does not gate any read or write.
 
 ### 7. `/handoff` Step 11.D update
 
@@ -311,9 +322,13 @@ Vercel does NOT need this set — the Vercel runtime is the SERVER side, it veri
 9. **Test flow** — generate token in admin UI, paste into local `dsig.env`, run `/handoff` against demandsignals-next project, verify row appears in `project_notes` + `project_time_entries` + `cli_token_audit`
 10. **Update CLAUDE.md §4** — document the new env var DSIG_CLI_TOKEN and the credential surface
 
-## Open questions
+## Open questions (resolved 2026-05-08)
 
-1. **Per-admin token visibility vs. global.** Should one admin see another admin's tokens? Default v1: no (each admin only sees tokens they created). Reasonable for current single-admin reality. Revisit when DSIG has multiple admin-team members.
-2. **Token expiry.** Should v1 tokens auto-expire after, say, 90 days? Default v1: no. Manual revocation is the model. If the team grows, add expiry.
-3. **One token per workstation OR one token per role?** Default v1: admin chooses. The `name` field is descriptive ("Hunter's Gaming-PC", "Hunter's MacBook", "CI runner"). Revoke + re-issue per device when a workstation is decommissioned.
-4. **Logging the token VALUE in `cli_token_audit`?** No, never. The hash never appears in audit. Only `cli_token_id` (which links back to `cli_tokens` for the prefix/last4 display).
+1. **Multi-admin visibility:** ALL admins see ALL tokens. Matches the shared-`dsig.env` reality.
+2. **Auto-expiry:** Optional opt-in field at creation; default = never expires. Choices in UI: Never / 7d / 30d / 90d / Custom.
+3. **Token-per-workstation:** Moot — single shared token via `dsig.env` works for every admin on every workstation. The `name` field is purely descriptive.
+4. **Token VALUE in audit log:** Never logged. Only `cli_token_id` for back-reference to display fields.
+
+## Expiry enforcement
+
+The auth helper (`authenticateCliRequest`) checks both `revoked_at IS NULL` AND `(expires_at IS NULL OR expires_at > now())`. Expired tokens 401 with `failure_reason='token_expired'`. A small daily cron (or just lazy enforcement on next use) can also auto-set `revoked_at = expires_at` and `revoked_reason = 'auto_expired'` for cleaner reporting — that's a small follow-up after v1 ships.
