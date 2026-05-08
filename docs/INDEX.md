@@ -38,7 +38,7 @@ Start here to find every artifact in the DSIG Next.js project.
 | [`docs/superpowers/specs/2026-04-29-quote-to-booked-meeting-design.md`](superpowers/specs/2026-04-29-quote-to-booked-meeting-design.md) | 2026-04-29 | SHIPPED | /quote → real Google Calendar booking + Meet + SMS reminders |
 | [`docs/superpowers/specs/2026-05-04-sow-lockdown-deferred.md`](superpowers/specs/2026-05-04-sow-lockdown-deferred.md) | 2026-05-04 | DEFERRED | Lock down accepted SOWs + hide from default views — premature at 1-operator scale, revisit on team growth |
 | [`docs/superpowers/specs/2026-05-04-international-clients-tiers.md`](superpowers/specs/2026-05-04-international-clients-tiers.md) | 2026-05-04 | TIER 1 SHIPPED | International client support — Tier 1 (country column + non-US display) shipped; Tier 2 (locale labels, address_line_2) and Tier 3 (multi-currency, VAT/GST) deferred |
-| [`docs/superpowers/specs/2026-05-07-client-portal-v1-design.md`](superpowers/specs/2026-05-07-client-portal-v1-design.md) | 2026-05-07 | DRAFT | Client portal v1 — Account, Invoices, Projects. Magic-link + Google OAuth, apex path /portal, dsig_portal cookie isolated by Path scope |
+| [`docs/superpowers/specs/2026-05-07-client-portal-v1-design.md`](superpowers/specs/2026-05-07-client-portal-v1-design.md) | 2026-05-07 | CODE SHIPPED | Client portal v1 — Account, Invoices, Projects + project notes timeline + 9am PT daily digest. Magic-link + Google OAuth, apex path /portal, dsig_portal cookie isolated by Path. Pending: Hunter sets GCP OAuth client + Vercel env vars + Cloudflare email routing for portal@ → live |
 
 ---
 
@@ -60,7 +60,7 @@ Start here to find every artifact in the DSIG Next.js project.
 | [`docs/superpowers/plans/2026-04-27-resend-email-tracking-plan.md`](superpowers/plans/2026-04-27-resend-email-tracking-plan.md) | 2026-04-27 | SHIPPED | various | Resend email + tracking infrastructure |
 | [`docs/superpowers/plans/2026-04-29-quote-existing-client-match-plan.md`](superpowers/plans/2026-04-29-quote-existing-client-match-plan.md) | 2026-04-29 | SHIPPED | various | /quote existing-client match |
 | [`docs/superpowers/plans/2026-04-29-quote-to-booked-meeting-plan.md`](superpowers/plans/2026-04-29-quote-to-booked-meeting-plan.md) | 2026-04-29 | SHIPPED | various | /quote → real Calendar booking |
-| [`docs/superpowers/plans/2026-05-07-client-portal-v1-plan.md`](superpowers/plans/2026-05-07-client-portal-v1-plan.md) | 2026-05-07 | READY | — | Client portal v1 — auth, account, invoices, projects, notes, daily digest |
+| [`docs/superpowers/plans/2026-05-07-client-portal-v1-plan.md`](superpowers/plans/2026-05-07-client-portal-v1-plan.md) | 2026-05-07 | CODE SHIPPED | 1497bf0 | Client portal v1 — auth, account, invoices, projects, notes, daily digest. Tasks 1–14 complete; 15–16 pending Hunter env-var setup |
 
 ---
 

@@ -8,7 +8,54 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-05-04 — WS1 (Gaming-PC) — 12-commit polish session: schedule-send time precision + TIK trade-payment receipts + MOME reconciliation + searchable prospect picker + subscription clarity + auto regen-before-send + edit existing scheduled events + inline-editable project/TIK titles + Tier 1 international support / migration 046 ready (NOT YET APPLIED).
+**Last updated:** 2026-05-07 — WS1 (Gaming-PC) — Client portal v1 shipped end-to-end. Auth (magic-link + Google OAuth), Account/Invoices/Projects pages, project notes timeline, /handoff-fed daily 9am PT digest with email + SMS teaser. Build + tsc + tests all green. Migrations 047 + 048 applied. Commit `1497bf0` on master.
+
+---
+
+## SHIPPED 2026-05-07 — Client portal v1 (1 commit, planned)
+
+- **Auth lib + middleware + 5 API routes** — magic-link (jose HS256, 15-min TTL, jti consumed in `client_portal_sessions.jti UNIQUE` for replay defense) + Google OAuth via NEW DSIG Portal GCP client (dated env vars per §12). Random 32-byte server-side session tokens, instant revocation. Logout revokes ALL active sessions for the prospect. `dsig_portal` cookie scoped `Path=/portal` — browser-enforced isolation from admin + attribution cookies. Edge-runtime safe (uses `globalThis.crypto`, NOT `node:crypto`, since middleware imports portal-auth).
+- **Portal pages** — `/portal/login` (magic-link form + Google button) + `/portal/login/sent` + `/portal` dashboard (welcome + outstanding balance + active project + recent invoices) + `/portal/account` (read-only contact info, "Request a change" mailto) + `/portal/invoices` (list) + `/portal/invoices/[number]` (detail + Pay button) + `/portal/projects` (list) + `/portal/projects/[id]` (phases + deliverables + payment schedule + notes timeline).
+- **Pay flow unchanged** — portal Pay button hits `/api/portal/invoices/[number]/pay` which asserts `invoice.prospect_id === session.prospectId` then 302s to existing `/api/invoices/public/[number]/pay?key=<uuid>`. Zero new Stripe code.
+- **Admin notes panel + 3 API routes** mounted on `/admin/projects/[id]` — Add Note modal (title + markdown body + visibility radio + Hunter/Claude minutes) + timeline with badges (Internal/Client, Pending/Sent/Suppressed, Source). Edit + suppress + delete actions, locked once `client_sent_at IS NOT NULL`.
+- **`/handoff` slash command extension (v1c)** — Step 11.D POSTs CLIENT UPDATE + TIME TRACKING to `/api/admin/project-notes` after Hunter approves. Time-tracking definition CORRECTED: Hunter time = full session wall-clock span (prompt time + Claude processing), NOT "active engagement only." Stored as integer minutes. Project resolution from cwd with confirmation prompt; DSIG-internal sessions route to a synthetic `DSIG Internal` project.
+- **Daily digest cron** — `/api/cron/portal-digest` Vercel cron at 16:00 UTC = 9am PT. Pools client-visible non-suppressed `project_notes` from prior 24h per client. Empty pool = silent. Race-safe via `portal_digests UNIQUE(prospect_id, period_start_at)`. Email = full digest grouped by project. SMS = "Demand Signals committed Xh Ym of progress towards your account, click this link to read the update: https://demandsignals.co/portal/projects". Kill switch `quote_config.portal_digest_enabled` (JSONB dual-format read).
+- **Email plumbing** — new `portal@demandsignals.co` alias, two new `EmailKind` values (`portal_signin`, `portal_digest`), reply-to `DemandSignals@gmail.com` (Hunter explicitly: "we never stipulated hunter@demandsignals.co EVER"). Existing reply-to entries for invoice/sow/receipt/credit_memo also corrected from `hunter@` to `DemandSignals@gmail.com`.
+- **Verify scripts** — `scripts/verify-portal-auth.mjs` (rate-limit, jti replay, revoke-all) + `scripts/verify-portal-digest.mjs` (empty pool silent, notes flip on send, internal/suppressed never sent, second-run dedup). Both run against test Supabase project.
+- **Build** — 979 static pages, tsc clean, 14/14 vitest pass. Commit `1497bf0` on master, pushed.
+
+### Migrations APPLIED 2026-05-07
+
+| Migration | What it adds |
+|---|---|
+| 047 | client_portal_sessions + client_portal_login_attempts (auth + audit + rate-limit) |
+| 048 | project_notes + portal_digests + project_time_entries EXTENSION (handoff-flow columns added; legacy `hours numeric` retained for manual entries) + General Support backfill + portal_digest_enabled kill-switch seed |
+
+### Architectural decisions locked (do not re-debate)
+
+- **Apex path `/portal` over subdomain.** Cookie `Path=/portal` is the isolation mechanism; browser cannot leak `dsig_portal` to admin/marketing routes or vice-versa.
+- **Magic-link AND Google OAuth, both land on the same `dsig_portal` cookie + session row.** Login method recorded for audit; UX uniform.
+- **`prospects.owner_email` is the v1 identity.** No `client_portal_users` table until first multi-stakeholder request.
+- **Pay flow unchanged.** Portal Pay button proxies to existing public pay route. Never built new Stripe code.
+- **Read-only v1.** Edit-account = mailto to admin. Self-service preferences and proofing modal deferred.
+- **Hunter time = full wall-clock span; Claude time = processing only.** Both integer minutes. Stored on `project_time_entries` (canonical billable record); also denormalized on note panel for display.
+- **Notes are locked once sent to client.** Edits return 409. Corrections happen via a follow-up note, never by mutating the original.
+- **Empty digest pool = silent.** Asymmetric communication contract: we tell clients when there's something, never ping when there isn't.
+- **`project_time_entries` schema EXTENDED, not replaced.** Migration 030's columns (hours, billable, hourly_rate_cents, logged_at) remain for manual time-log entries. Handoff-source rows use the new minute-split columns. `hours` is now nullable.
+- **Edge-runtime safety.** `portal-auth.ts` uses `globalThis.crypto` (Web Crypto API) so middleware (which calls `getPortalSession()`) compiles for Edge. NEVER reintroduce `node:crypto` to that module.
+
+### Failures with lessons (this session)
+
+- **First migration 048 failed because `project_time_entries` already existed from migration 030.** My CREATE TABLE IF NOT EXISTS was skipped, then CREATE INDEX hit the legacy schema. Lesson: when adding a table, grep migrations first for prior CREATE TABLE on the same name. Resolution: rewrote 048 to ALTER TABLE ADD COLUMN IF NOT EXISTS instead.
+- **First Build failed with `node:crypto` not supported in Edge Runtime.** Middleware imports `portal-auth.ts` which had `import crypto from 'node:crypto'`. Lesson: any module reachable from `middleware.ts` must be Edge-safe. Use `globalThis.crypto` (Web Crypto API) — works in Node 19+ AND Edge.
+- **Worktree path was a no-op.** Session opened at `Y:\DSIG\demandsignals-next\.claude\worktrees\pensive-gagarin-8785ea` per the system prompt, but Read/Write/Edit calls all used `Y:\DSIG\demandsignals-next\src\...` paths — bypassing the worktree. Work landed on master directly. Acceptable outcome (clean build, all gates green, root §13 standing authorization covers commit + push) but worth noting: if worktree isolation is desired in future, paths in tool calls must point INTO the worktree, not the parent canonical tree.
+
+### Pending Hunter actions (Tasks 15–16, not blocking the commit)
+
+- Set Vercel env vars: `PORTAL_MAGIC_LINK_SECRET` (32-byte hex), `GOOGLE_DSIG_PORTAL_ID_050726`, `GOOGLE_DSIG_PORTAL_SECRET_050726`
+- Create new GCP OAuth client `DSIG Portal` in project `demand-signals-489406` with redirect URI `https://demandsignals.co/api/portal/login/google/callback`, scope `openid email`
+- Add Cloudflare Email Routing rule: `portal@demandsignals.co` → `DemandSignals@gmail.com`
+- After deploy: smoke-test login flow with a real client account; trigger digest manually via `curl -H "Authorization: Bearer $CRON_SECRET" https://demandsignals.co/api/cron/portal-digest`
 
 ---
 
