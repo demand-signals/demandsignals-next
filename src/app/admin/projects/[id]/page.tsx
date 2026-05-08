@@ -9,6 +9,7 @@ import type { ProjectRow, ProjectPhase, ProjectPhaseDeliverable } from '@/lib/in
 import { OutstandingObligations } from './OutstandingObligations'
 import { TimeEntriesPanel } from './TimeEntriesPanel'
 import { InlineEditText } from '@/components/admin/inline-edit-text'
+import { ProjectNotesPanel } from '@/components/admin/ProjectNotesPanel'
 
 // Extended with joined prospect data
 interface ProjectDetail extends ProjectRow {
@@ -621,6 +622,9 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
 
       {/* Time Entries */}
       <TimeEntriesPanel projectId={project.id} phases={phases} />
+
+      {/* Project Notes */}
+      <ProjectNotesPanel projectId={project.id} />
     </div>
   )
 }
