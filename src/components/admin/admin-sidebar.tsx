@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, Upload, Bot, LogOut,
   Target, MapPin, FileText, BarChart3, Layers, LineChart,
-  Newspaper, Receipt, CreditCard, Repeat, ScrollText, Settings,
+  Newspaper, Receipt, CreditCard, Repeat, ScrollText, Settings, Key,
   FolderKanban, FileCheck, FileMinus, Coins, UserCheck, MessageSquare, Zap,
   Clock, UserCog, Shield, Eye, ExternalLink, Bell, Plug,
   ChevronRight, ChevronDown,
@@ -114,6 +114,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/admin/messages', label: 'System Messages', icon: Bell },
       { href: '/admin/integrations/google', label: 'Integrations', icon: Plug },
+      { href: '/admin/account/cli-tokens', label: 'CLI Tokens', icon: Key },
       { href: '/admin/users', label: 'Users', icon: UserCog, soon: true },
       { href: '/admin/settings', label: 'Settings', icon: Settings },
       { href: '/admin/security', label: 'Security', icon: Shield, soon: true },

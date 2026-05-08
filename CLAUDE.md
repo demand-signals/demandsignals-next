@@ -84,6 +84,7 @@ CTA button orange: `#FF6B2B` (used in most places, slight variation from `--oran
 | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | R2 buckets, DNS |
 | `SUPABASE_ACCESS_TOKEN` | Supabase CLI (migrations, project mgmt) |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` | SMS dispatch (§23) |
+| `DSIG_CLI_TOKEN` | CLI bearer token for `/handoff` Step 11.D platform writes. Issued at `https://demandsignals.co/admin/account/cli-tokens`, copied ONCE at creation. Shared across admin team via the NAS-shared `dsig.env`. Revocable + audit-logged; spec: `docs/superpowers/specs/2026-05-08-cli-tokens-design.md`. |
 
 **Project-specific Vercel identifiers (not secrets — IDs only):**
 - **Team ID:** `team_jPyeNYJSdDRpqSdsw3WD3AiQ`
