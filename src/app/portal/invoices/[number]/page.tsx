@@ -34,7 +34,7 @@ export default async function PortalInvoiceDetailPage({ params }: PageProps) {
   const cookieStore = await cookies()
   const overrideProspectId = cookieStore.get('dsig_portal_view_as')?.value ?? null
   const ctx = await resolvePortalContext(overrideProspectId)
-  if (!ctx) redirect('/admin-login')
+  if (!ctx) redirect('/login')
 
   const { number } = await params
   const invoice = await getInvoiceByNumberForProspect(ctx.prospectId, number)

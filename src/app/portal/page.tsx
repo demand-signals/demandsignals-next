@@ -30,7 +30,7 @@ export default async function PortalDashboardPage() {
   const cookieStore = await cookies()
   const overrideProspectId = cookieStore.get('dsig_portal_view_as')?.value ?? null
   const ctx = await resolvePortalContext(overrideProspectId)
-  if (!ctx) redirect('/admin-login')
+  if (!ctx) redirect('/login')
   const prospectId = ctx.prospectId
 
   const { data: prospect } = await supabaseAdmin
@@ -39,7 +39,7 @@ export default async function PortalDashboardPage() {
     .eq('id', prospectId)
     .maybeSingle()
 
-  if (!prospect) redirect('/admin-login')
+  if (!prospect) redirect('/login')
 
   // Outstanding balance — sum total_due_cents across open invoices
   const { data: openInvoices } = await supabaseAdmin

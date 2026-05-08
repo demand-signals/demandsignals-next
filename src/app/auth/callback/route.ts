@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   const explicitRedirect = searchParams.get('redirect')
 
   if (!code) {
-    return NextResponse.redirect(new URL('/admin-login?error=auth', origin))
+    return NextResponse.redirect(new URL('/login?error=auth', origin))
   }
 
   // We need to determine the redirect target BEFORE creating the
@@ -51,12 +51,12 @@ export async function GET(request: NextRequest) {
 
   const { error: exchangeErr } = await supabase.auth.exchangeCodeForSession(code)
   if (exchangeErr) {
-    return NextResponse.redirect(new URL('/admin-login?error=auth', origin))
+    return NextResponse.redirect(new URL('/login?error=auth', origin))
   }
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || !user.email) {
-    return NextResponse.redirect(new URL('/admin-login?error=auth', origin))
+    return NextResponse.redirect(new URL('/login?error=auth', origin))
   }
 
   const email = user.email.toLowerCase()

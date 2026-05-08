@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Unified login URL (renamed 2026-05-07)
+      { source: '/admin-login', destination: '/login', permanent: true },
       // Old service URLs → new structure
       { source: '/services/wordpress',      destination: '/websites-apps/wordpress-development',           permanent: true },
       { source: '/services/nextjs-webapps', destination: '/websites-apps/react-next-webapps',              permanent: true },

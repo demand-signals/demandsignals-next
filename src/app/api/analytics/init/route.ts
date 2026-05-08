@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAdmin(req)
     if ('error' in auth) {
       return NextResponse.json(
-        { error: 'Unauthorized — log in at /admin-login or pass CRON_SECRET as Bearer token' },
+        { error: 'Unauthorized — log in at /login or pass CRON_SECRET as Bearer token' },
         { status: 401 }
       )
     }

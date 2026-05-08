@@ -40,10 +40,10 @@ export async function middleware(request: NextRequest) {
   // ============================================================
   // /portal/* and /api/portal/* run on the SAME Supabase Auth
   // session as /admin/*. There is one Google OAuth flow at
-  // /admin-login. Role resolution (admin/client/both) happens at
+  // /login. Role resolution (admin/client/both) happens at
   // request time inside route handlers via portal-session.ts —
   // middleware only verifies that A session exists. If not,
-  // redirect to /admin-login.
+  // redirect to /login.
   const isPortalPage = pathname.startsWith('/portal')
   const isPortalApi = pathname.startsWith('/api/portal/')
   if (isPortalPage || isPortalApi) {
@@ -71,7 +71,7 @@ export async function middleware(request: NextRequest) {
       if (isPortalApi) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
-      const redirectUrl = new URL('/admin-login', request.url)
+      const redirectUrl = new URL('/login', request.url)
       redirectUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(redirectUrl)
     }
@@ -106,13 +106,13 @@ export async function middleware(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     // Allow the login page itself without auth
-    if (pathname === '/admin-login') {
+    if (pathname === '/login') {
       return response
     }
 
     // No session at all → redirect to login
     if (!user) {
-      const redirectUrl = new URL('/admin-login', request.url)
+      const redirectUrl = new URL('/login', request.url)
       redirectUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(redirectUrl)
     }

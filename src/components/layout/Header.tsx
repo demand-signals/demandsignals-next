@@ -159,7 +159,7 @@ export function Header() {
 
           <div className={styles.ctaGroup}>
             {!userName ? (
-              <Link href="/admin-login" className={styles.btnOutline}>
+              <Link href="/login" className={styles.btnOutline}>
                 Login
               </Link>
             ) : isAdmin ? (
@@ -218,7 +218,7 @@ export function Header() {
                 {userName}
               </Link>
             ) : (
-              <Link href="/admin-login" className={styles.btnOutline}>
+              <Link href="/login" className={styles.btnOutline}>
                 {userName}
               </Link>
             )}

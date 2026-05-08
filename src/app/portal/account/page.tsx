@@ -16,9 +16,9 @@ export default async function PortalAccountPage() {
   const cookieStore = await cookies()
   const overrideProspectId = cookieStore.get('dsig_portal_view_as')?.value ?? null
   const ctx = await resolvePortalContext(overrideProspectId)
-  if (!ctx) redirect('/admin-login')
+  if (!ctx) redirect('/login')
   const prospect = await getProspectById(ctx.prospectId)
-  if (!prospect) redirect('/admin-login')
+  if (!prospect) redirect('/login')
 
   const requestEmail = `mailto:DemandSignals@gmail.com?subject=${encodeURIComponent(
     `Account update request${prospect.client_code ? ` — ${prospect.client_code}` : ''}`,

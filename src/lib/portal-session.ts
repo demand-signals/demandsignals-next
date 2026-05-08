@@ -1,7 +1,7 @@
 // ── portal-session.ts ──────────────────────────────────────────────
 // Unified session helper. Both /admin/* and /portal/* run on the
 // SAME Supabase Auth session — there is one Google OAuth flow at
-// /admin-login that mints a Supabase session for everyone (admin,
+// /login that mints a Supabase session for everyone (admin,
 // client, or both). This helper resolves the role from the session.
 //
 // Identity resolution from the Supabase user.email:

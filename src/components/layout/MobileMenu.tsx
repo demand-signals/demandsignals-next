@@ -95,7 +95,7 @@ export function MobileMenu({ onClose }: Props) {
 
       <div className={styles.ctaRow}>
         <Link
-          href="/admin-login"
+          href="/login"
           onClick={onClose}
           className={`${headerStyles.btnOutline} ${styles.ctaFlex}`}
         >

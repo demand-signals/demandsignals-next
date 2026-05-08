@@ -5,7 +5,7 @@ import { resolvePortalContext } from '@/lib/portal-session'
 import { PortalNav } from '@/components/portal/PortalNav'
 
 // Server component layout for /portal/*. Auth is the unified Supabase
-// session set by /auth/callback after Google OAuth at /admin-login.
+// session set by /auth/callback after Google OAuth at /login.
 // Role resolution happens in resolvePortalContext():
 //   - client → views their own prospect_id
 //   - admin with ?as=<prospect_id> cookie → views as that client
