@@ -62,6 +62,7 @@ Start here to find every artifact in the DSIG Next.js project.
 | [`docs/superpowers/plans/2026-04-29-quote-existing-client-match-plan.md`](superpowers/plans/2026-04-29-quote-existing-client-match-plan.md) | 2026-04-29 | SHIPPED | various | /quote existing-client match |
 | [`docs/superpowers/plans/2026-04-29-quote-to-booked-meeting-plan.md`](superpowers/plans/2026-04-29-quote-to-booked-meeting-plan.md) | 2026-04-29 | SHIPPED | various | /quote → real Calendar booking |
 | [`docs/superpowers/plans/2026-05-07-client-portal-v1-plan.md`](superpowers/plans/2026-05-07-client-portal-v1-plan.md) | 2026-05-07 | CODE SHIPPED | 1497bf0 | Client portal v1 — auth, account, invoices, projects, notes, daily digest. Tasks 1–14 complete; 15–16 pending Hunter env-var setup |
+| [`docs/superpowers/plans/2026-05-08-cli-tokens-plan.md`](superpowers/plans/2026-05-08-cli-tokens-plan.md) | 2026-05-08 | READY | — | CLI bearer tokens for /handoff platform writes — migration, auth lib, admin UI, /handoff Step 11.D wiring |
 
 ---
 
