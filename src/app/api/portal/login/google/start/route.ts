@@ -18,13 +18,14 @@ const SCOPES = ['openid', 'email']
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://demandsignals.co'
 
 function clientId(): string {
-  const v = process.env.GOOGLE_DSIG_PORTAL_ID_050726
-  if (!v) throw new Error('GOOGLE_DSIG_PORTAL_ID_050726 not configured')
+  const v = process.env.GOOGLE_PORTAL_CLIENT_ID
+  if (!v) throw new Error('GOOGLE_PORTAL_CLIENT_ID not configured')
   return v
 }
 
 function redirectUri(): string {
-  return `${SITE_URL}/api/portal/login/google/callback`
+  return process.env.GOOGLE_PORTAL_CALLBACK_URI
+    ?? `${SITE_URL}/api/portal/login/google/callback`
 }
 
 export async function GET(_request: NextRequest) {

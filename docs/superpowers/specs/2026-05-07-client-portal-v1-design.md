@@ -462,10 +462,11 @@ Both sent via existing `sendEmail()` helper. Logged in `email_engagement` automa
 - Application type: Web application
 - Authorized redirect URI: `https://demandsignals.co/api/portal/login/google/callback`
 - Scope: `openid email` (no calendar, no drive — minimum viable)
-- Env vars (per CLAUDE.md §12 dated-name convention, no generic `GOOGLE_CLIENT_*`):
-  - `GOOGLE_DSIG_PORTAL_ID_050726`
-  - `GOOGLE_DSIG_PORTAL_SECRET_050726`
-- Code reads ONLY these dated names. Generic env names are NOT consulted (per the §12 collision history).
+- Env vars (set by Hunter 2026-05-07 — names are immutable once configured):
+  - `GOOGLE_PORTAL_CLIENT_ID`
+  - `GOOGLE_PORTAL_CLIENT_SECRET`
+  - `GOOGLE_PORTAL_CALLBACK_URI` — full URL (e.g. `https://demandsignals.co/api/portal/login/google/callback`)
+- These names are **purpose-specific** (`GOOGLE_PORTAL_*`, not the generic `GOOGLE_CLIENT_*` that aliased to the wrong client twice per §12). Even without the date suffix, the `_PORTAL_` infix prevents collision with the existing Calendar OAuth client.
 
 ### 8. Daily digest cron — `src/app/api/cron/portal-digest/route.ts`
 
@@ -563,8 +564,9 @@ Future cards (deferred per scope cuts above): bookings, subscriptions, document 
 
 ```
 PORTAL_MAGIC_LINK_SECRET=<32-byte hex; rotate by adding new + reading both for grace period>
-GOOGLE_DSIG_PORTAL_ID_050726=<DSIG Portal OAuth client ID>
-GOOGLE_DSIG_PORTAL_SECRET_050726=<DSIG Portal OAuth client secret>
+GOOGLE_PORTAL_CLIENT_ID=<DSIG Portal OAuth client ID>
+GOOGLE_PORTAL_CLIENT_SECRET=<DSIG Portal OAuth client secret>
+GOOGLE_PORTAL_CALLBACK_URI=https://demandsignals.co/api/portal/login/google/callback
 ```
 
 `SITE_URL=https://demandsignals.co`, `CRON_SECRET`, `RESEND_API_KEY`, `TWILIO_*` already set.

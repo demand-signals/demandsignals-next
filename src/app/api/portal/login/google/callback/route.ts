@@ -21,14 +21,18 @@ const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://demandsignals.co'
 
 function clientId(): string {
-  const v = process.env.GOOGLE_DSIG_PORTAL_ID_050726
-  if (!v) throw new Error('GOOGLE_DSIG_PORTAL_ID_050726 not configured')
+  const v = process.env.GOOGLE_PORTAL_CLIENT_ID
+  if (!v) throw new Error('GOOGLE_PORTAL_CLIENT_ID not configured')
   return v
 }
 function clientSecret(): string {
-  const v = process.env.GOOGLE_DSIG_PORTAL_SECRET_050726
-  if (!v) throw new Error('GOOGLE_DSIG_PORTAL_SECRET_050726 not configured')
+  const v = process.env.GOOGLE_PORTAL_CLIENT_SECRET
+  if (!v) throw new Error('GOOGLE_PORTAL_CLIENT_SECRET not configured')
   return v
+}
+function redirectUri(): string {
+  return process.env.GOOGLE_PORTAL_CALLBACK_URI
+    ?? `${SITE_URL}/api/portal/login/google/callback`
 }
 
 function loginErrorRedirect(reason: string): NextResponse {
@@ -85,7 +89,7 @@ export async function GET(request: NextRequest) {
         code,
         client_id: clientId(),
         client_secret: clientSecret(),
-        redirect_uri: `${SITE_URL}/api/portal/login/google/callback`,
+        redirect_uri: redirectUri(),
         grant_type: 'authorization_code',
       }),
     })

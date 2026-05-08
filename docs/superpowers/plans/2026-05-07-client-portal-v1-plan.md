@@ -17,7 +17,7 @@
 - [ ] **Verify worktree state.** Currently on `claude/pensive-gagarin-8785ea` worktree at `Y:\DSIG\demandsignals-next\.claude\worktrees\pensive-gagarin-8785ea`. Confirm clean working tree before starting.
 - [ ] **Confirm Hunter has set up the GCP OAuth client `DSIG Portal`** with redirect URI `https://demandsignals.co/api/portal/login/google/callback` and scope `openid email`. Hunter provides the client ID and secret values for env vars.
 - [ ] **Confirm Cloudflare Email Routing extended** — `portal@demandsignals.co` → `DemandSignals@gmail.com`.
-- [ ] **Confirm Vercel env vars set** before deploy (not before code): `PORTAL_MAGIC_LINK_SECRET` (32-byte hex), `GOOGLE_DSIG_PORTAL_ID_050726`, `GOOGLE_DSIG_PORTAL_SECRET_050726`.
+- [ ] **Confirm Vercel env vars set** before deploy (not before code): `PORTAL_MAGIC_LINK_SECRET` (32-byte hex), `GOOGLE_PORTAL_CLIENT_ID`, `GOOGLE_PORTAL_CLIENT_SECRET`, `GOOGLE_PORTAL_CALLBACK_URI`.
 
 ---
 
