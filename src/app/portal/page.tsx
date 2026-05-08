@@ -1,8 +1,9 @@
-import { headers } from 'next/headers'
+import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { ArrowRight, CheckCircle2 } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { resolvePortalContext } from '@/lib/portal-session'
 import { formatCents } from '@/lib/format'
 
 // Portal dashboard: welcome + outstanding balance + active project +
@@ -26,9 +27,11 @@ function shortDate(iso: string | null): string {
 }
 
 export default async function PortalDashboardPage() {
-  const h = await headers()
-  const prospectId = h.get('x-dsig-portal-prospect-id')
-  if (!prospectId) redirect('/portal/login')
+  const cookieStore = await cookies()
+  const overrideProspectId = cookieStore.get('dsig_portal_view_as')?.value ?? null
+  const ctx = await resolvePortalContext(overrideProspectId)
+  if (!ctx) redirect('/admin-login')
+  const prospectId = ctx.prospectId
 
   const { data: prospect } = await supabaseAdmin
     .from('prospects')
@@ -36,7 +39,7 @@ export default async function PortalDashboardPage() {
     .eq('id', prospectId)
     .maybeSingle()
 
-  if (!prospect) redirect('/portal/login')
+  if (!prospect) redirect('/admin-login')
 
   // Outstanding balance — sum total_due_cents across open invoices
   const { data: openInvoices } = await supabaseAdmin

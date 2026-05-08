@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { Loader2, UserCheck, Search, Plus, UserMinus, Trash2 } from 'lucide-react'
+import { Loader2, UserCheck, Search, Plus, UserMinus, Trash2, Eye } from 'lucide-react'
 import { formatCents } from '@/lib/format'
 import { NewClientModal } from './NewClientModal'
 
@@ -234,6 +234,13 @@ export default function ManageClientsPage() {
                       </div>
                     ) : (
                       <div className="inline-flex items-center gap-1">
+                        <a
+                          href={`/api/admin/portal-view-as/${c.id}`}
+                          className="inline-flex items-center justify-center w-7 h-7 rounded text-slate-400 hover:text-teal-600 hover:bg-teal-50"
+                          title="View their client portal"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </a>
                         <button
                           onClick={() => handleDemote(c.id)}
                           disabled={busyId === c.id}

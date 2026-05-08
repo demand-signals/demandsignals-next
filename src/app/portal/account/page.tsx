@@ -1,7 +1,8 @@
-import { headers } from 'next/headers'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Mail } from 'lucide-react'
 import { getProspectById } from '@/lib/portal-data'
+import { resolvePortalContext } from '@/lib/portal-session'
 
 // Read-only account info. v1 has no edit-account. "Request a change"
 // button below opens an email to admin.
@@ -12,11 +13,12 @@ import { getProspectById } from '@/lib/portal-data'
 export const dynamic = 'force-dynamic'
 
 export default async function PortalAccountPage() {
-  const h = await headers()
-  const prospectId = h.get('x-dsig-portal-prospect-id')
-  if (!prospectId) redirect('/portal/login')
-  const prospect = await getProspectById(prospectId)
-  if (!prospect) redirect('/portal/login')
+  const cookieStore = await cookies()
+  const overrideProspectId = cookieStore.get('dsig_portal_view_as')?.value ?? null
+  const ctx = await resolvePortalContext(overrideProspectId)
+  if (!ctx) redirect('/admin-login')
+  const prospect = await getProspectById(ctx.prospectId)
+  if (!prospect) redirect('/admin-login')
 
   const requestEmail = `mailto:DemandSignals@gmail.com?subject=${encodeURIComponent(
     `Account update request${prospect.client_code ? ` — ${prospect.client_code}` : ''}`,

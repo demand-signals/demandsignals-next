@@ -1,8 +1,9 @@
-import { headers } from 'next/headers'
+import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
 import { getInvoiceByNumberForProspect } from '@/lib/portal-data'
+import { resolvePortalContext } from '@/lib/portal-session'
 import { formatCents } from '@/lib/format'
 
 // Spec: docs/superpowers/specs/2026-05-07-client-portal-v1-design.md §13
@@ -30,12 +31,13 @@ const STATUS_TINTS: Record<string, string> = {
 }
 
 export default async function PortalInvoiceDetailPage({ params }: PageProps) {
-  const h = await headers()
-  const prospectId = h.get('x-dsig-portal-prospect-id')
-  if (!prospectId) redirect('/portal/login')
+  const cookieStore = await cookies()
+  const overrideProspectId = cookieStore.get('dsig_portal_view_as')?.value ?? null
+  const ctx = await resolvePortalContext(overrideProspectId)
+  if (!ctx) redirect('/admin-login')
 
   const { number } = await params
-  const invoice = await getInvoiceByNumberForProspect(prospectId, number)
+  const invoice = await getInvoiceByNumberForProspect(ctx.prospectId, number)
   if (!invoice) notFound()
 
   const isPayable = PAYABLE_STATUSES.has(invoice.status) && invoice.total_due_cents > 0

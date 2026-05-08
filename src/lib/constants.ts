@@ -129,7 +129,6 @@ export const EMAIL_FROM = {
   weekly_analytics:  'Demand Signals <reports@demandsignals.co>',
   quote_alert:       'Demand Signals Alerts <alerts@demandsignals.co>',
   system_alert:      'Demand Signals Alerts <alerts@demandsignals.co>',
-  portal_signin:     'Demand Signals <portal@demandsignals.co>',
   portal_digest:     'Demand Signals <portal@demandsignals.co>',
 } as const
 
@@ -143,7 +142,6 @@ export const EMAIL_REPLY_TO: Partial<Record<EmailKind, string>> = {
   sow:           'DemandSignals@gmail.com',
   receipt:       'DemandSignals@gmail.com',
   credit_memo:   'DemandSignals@gmail.com',
-  portal_signin: 'DemandSignals@gmail.com',
   portal_digest: 'DemandSignals@gmail.com',
 }
 
@@ -156,7 +154,6 @@ export const CLIENT_FACING_KINDS: ReadonlySet<EmailKind> = new Set<EmailKind>([
   'sow',
   'receipt',
   'credit_memo',
-  'portal_signin',
   'portal_digest',
 ])
 

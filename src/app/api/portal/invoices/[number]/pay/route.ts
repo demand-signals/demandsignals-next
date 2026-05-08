@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { resolvePortalContext } from '@/lib/portal-session'
 
 // GET /api/portal/invoices/[number]/pay
 // Authed reverse-proxy to /api/invoices/public/[number]/pay.
 //
 // The public pay route authenticates via ?key=<public_uuid>. The
-// portal Pay button has no UUID; instead it has a session cookie.
-// This route asserts ownership (invoice.prospect_id === session
-// prospect_id from middleware header), then 302s to the public
-// route with the matching uuid. Zero new payment code.
+// portal Pay button has no UUID; instead it relies on the unified
+// Supabase Auth session. This route asserts ownership (invoice
+// belongs to the resolved portal-context prospect), then 302s to
+// the public route with the matching uuid. Zero new payment code.
 //
 // Spec: docs/superpowers/specs/2026-05-07-client-portal-v1-design.md §5
 // Plan: docs/superpowers/plans/2026-05-07-client-portal-v1-plan.md Task 7
@@ -21,11 +23,13 @@ export async function GET(
 ) {
   const { number } = await params
 
-  // Middleware sets this header when the dsig_portal session is valid.
-  const prospectId = request.headers.get('x-dsig-portal-prospect-id')
-  if (!prospectId) {
+  const cookieStore = await cookies()
+  const overrideProspectId = cookieStore.get('dsig_portal_view_as')?.value ?? null
+  const ctx = await resolvePortalContext(overrideProspectId)
+  if (!ctx) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  const prospectId = ctx.prospectId
 
   const { data: invoice } = await supabaseAdmin
     .from('invoices')

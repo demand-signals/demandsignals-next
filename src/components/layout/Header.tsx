@@ -35,46 +35,60 @@ export function Header() {
   const [scrolled,   setScrolled]   = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userName,   setUserName]   = useState<string | null>(null)
+  const [isAdmin,    setIsAdmin]    = useState(false)
+  const [isClient,   setIsClient]   = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const currentPath = usePathname()
   useEffect(() => { setOpen(null); setMobileOpen(false) }, [currentPath])
 
-  // Check auth state
+  // Check auth state. Resolves both user metadata (first name) and
+  // role flags (admin/client) so the button renders the right way.
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        // Extract first name from user metadata or email
-        const meta = user.user_metadata
-        const firstName = meta?.full_name?.split(' ')[0]
-          || meta?.name?.split(' ')[0]
-          || meta?.given_name
-          || user.email?.split('@')[0]
-          || 'Admin'
-        setUserName(firstName)
-      } else {
-        setUserName(null)
-      }
-    })
 
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        const meta = session.user.user_metadata
-        const firstName = meta?.full_name?.split(' ')[0]
-          || meta?.name?.split(' ')[0]
-          || meta?.given_name
-          || session.user.email?.split('@')[0]
-          || 'Admin'
-        setUserName(firstName)
-      } else {
+    function setFromUser(user: { user_metadata?: Record<string, unknown>; email?: string | null } | null) {
+      if (!user) {
         setUserName(null)
+        setIsAdmin(false)
+        setIsClient(false)
+        return
       }
-    })
+      const meta = (user.user_metadata ?? {}) as Record<string, string | undefined>
+      const firstName = meta?.full_name?.split(' ')[0]
+        || meta?.name?.split(' ')[0]
+        || meta?.given_name
+        || user.email?.split('@')[0]
+        || 'Account'
+      setUserName(firstName)
+      // Resolve role flags via API. Done lazily after we know there's a user.
+      fetch('/api/me')
+        .then((r) => r.json())
+        .then((d) => {
+          setIsAdmin(!!d.isAdmin)
+          setIsClient(!!d.isClient)
+        })
+        .catch(() => { setIsAdmin(false); setIsClient(false) })
+    }
 
+    supabase.auth.getUser().then(({ data: { user } }) => setFromUser(user))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) =>
+      setFromUser(session?.user ?? null),
+    )
     return () => subscription.unsubscribe()
   }, [])
+
+  // Close user dropdown on outside click
+  useEffect(() => {
+    if (!userMenuOpen) return
+    const onClick = (e: MouseEvent) => {
+      const t = e.target as HTMLElement
+      if (!t.closest('[data-user-menu]')) setUserMenuOpen(false)
+    }
+    document.addEventListener('click', onClick)
+    return () => document.removeEventListener('click', onClick)
+  }, [userMenuOpen])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10)
@@ -144,13 +158,68 @@ export function Header() {
           </nav>
 
           <div className={styles.ctaGroup}>
-            {userName ? (
-              <Link href="/admin" className={styles.btnOutline}>
+            {!userName ? (
+              <Link href="/admin-login" className={styles.btnOutline}>
+                Login
+              </Link>
+            ) : isAdmin ? (
+              <div data-user-menu style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  onClick={() => setUserMenuOpen((o) => !o)}
+                  className={styles.btnOutline}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  {userName}
+                  <span style={{ fontSize: 10, opacity: 0.7 }}>▾</span>
+                </button>
+                {userMenuOpen && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 8px)',
+                      right: 0,
+                      minWidth: 180,
+                      background: '#fff',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: 8,
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                      padding: '6px 0',
+                      zIndex: 100,
+                    }}
+                  >
+                    <Link
+                      href="/admin"
+                      onClick={() => setUserMenuOpen(false)}
+                      style={{ display: 'block', padding: '8px 14px', fontSize: 14, color: '#3D4566', textDecoration: 'none' }}
+                    >
+                      Admin Portal
+                    </Link>
+                    <Link
+                      href="/portal"
+                      onClick={() => setUserMenuOpen(false)}
+                      style={{ display: 'block', padding: '8px 14px', fontSize: 14, color: '#3D4566', textDecoration: 'none' }}
+                    >
+                      Client Portal
+                    </Link>
+                    <div style={{ borderTop: '1px solid #f1f5f9', margin: '4px 0' }} />
+                    <Link
+                      href="/auth/signout"
+                      onClick={() => setUserMenuOpen(false)}
+                      style={{ display: 'block', padding: '8px 14px', fontSize: 14, color: '#5d6780', textDecoration: 'none' }}
+                    >
+                      Sign out
+                    </Link>
+                  </div>
+                )}
+              </div>
+            ) : isClient ? (
+              <Link href="/portal" className={styles.btnOutline}>
                 {userName}
               </Link>
             ) : (
               <Link href="/admin-login" className={styles.btnOutline}>
-                Client Login
+                {userName}
               </Link>
             )}
             <Link href="/contact" className={styles.btnPrimary}>

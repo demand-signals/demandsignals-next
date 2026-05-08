@@ -1,8 +1,9 @@
-import { headers } from 'next/headers'
+import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { ArrowRight } from 'lucide-react'
 import { getProjectsForProspect } from '@/lib/portal-data'
+import { resolvePortalContext } from '@/lib/portal-session'
 import { formatCents } from '@/lib/format'
 
 // Spec: docs/superpowers/specs/2026-05-07-client-portal-v1-design.md §13
@@ -24,11 +25,12 @@ function shortDate(iso: string | null): string {
 }
 
 export default async function PortalProjectsPage() {
-  const h = await headers()
-  const prospectId = h.get('x-dsig-portal-prospect-id')
-  if (!prospectId) redirect('/portal/login')
+  const cookieStore = await cookies()
+  const overrideProspectId = cookieStore.get('dsig_portal_view_as')?.value ?? null
+  const ctx = await resolvePortalContext(overrideProspectId)
+  if (!ctx) redirect('/admin-login')
 
-  const projects = await getProjectsForProspect(prospectId)
+  const projects = await getProjectsForProspect(ctx.prospectId)
 
   return (
     <div className="space-y-6">

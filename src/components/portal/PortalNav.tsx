@@ -36,7 +36,7 @@ export function PortalNav({ businessName, ownerName }: PortalNavProps) {
             </div>
           )}
           <a
-            href="/api/portal/logout"
+            href="/auth/signout"
             className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50"
           >
             <LogOut className="w-3.5 h-3.5" />

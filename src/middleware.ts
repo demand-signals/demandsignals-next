@@ -1,19 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
-import { getPortalSession, PORTAL_COOKIE_NAME } from '@/lib/portal-auth'
-
-// Portal paths reachable without an active dsig_portal session.
-// Login pages + auth callbacks must always be public; everything else
-// under /portal redirects to /portal/login when unauthenticated.
-const PUBLIC_PORTAL_PATHS = new Set<string>([
-  '/portal/login',
-  '/portal/login/sent',
-])
-const PUBLIC_PORTAL_API_PREFIXES = [
-  '/api/portal/login/',
-  '/api/portal/logout',
-]
 
 // Service slugs for all 23 services
 const SERVICE_SLUGS = new Set([
@@ -51,35 +38,45 @@ export async function middleware(request: NextRequest) {
   // ============================================================
   // PORTAL ROUTE PROTECTION
   // ============================================================
-  // /portal/* and /api/portal/* require the dsig_portal session
-  // cookie EXCEPT for the login pages and login/logout API routes.
-  // Cookie scope (Path=/portal) means the browser does not send
-  // dsig_portal to /admin or marketing routes, and does not send
-  // dsig_admin / Supabase auth cookies here. Cross-cookie auth
-  // confusion is structurally impossible.
+  // /portal/* and /api/portal/* run on the SAME Supabase Auth
+  // session as /admin/*. There is one Google OAuth flow at
+  // /admin-login. Role resolution (admin/client/both) happens at
+  // request time inside route handlers via portal-session.ts —
+  // middleware only verifies that A session exists. If not,
+  // redirect to /admin-login.
   const isPortalPage = pathname.startsWith('/portal')
   const isPortalApi = pathname.startsWith('/api/portal/')
   if (isPortalPage || isPortalApi) {
-    const isPublicPage = isPortalPage && PUBLIC_PORTAL_PATHS.has(pathname)
-    const isPublicApi = isPortalApi && PUBLIC_PORTAL_API_PREFIXES.some((p) => pathname.startsWith(p))
+    let response = NextResponse.next({ request: { headers: requestHeaders } })
 
-    if (isPublicPage || isPublicApi) {
-      return NextResponse.next({ request: { headers: requestHeaders } })
-    }
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return request.cookies.getAll() },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+            response = NextResponse.next({ request: { headers: requestHeaders } })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options),
+            )
+          },
+        },
+      },
+    )
 
-    const cookieToken = request.cookies.get(PORTAL_COOKIE_NAME)?.value
-    const session = await getPortalSession(cookieToken)
-    if (!session) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
       if (isPortalApi) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
-      const redirectUrl = new URL('/portal/login', request.url)
+      const redirectUrl = new URL('/admin-login', request.url)
+      redirectUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(redirectUrl)
     }
 
-    requestHeaders.set('x-dsig-portal-prospect-id', session.prospectId)
-    requestHeaders.set('x-dsig-portal-session-id', session.sessionId)
-    return NextResponse.next({ request: { headers: requestHeaders } })
+    return response
   }
 
   if (pathname.startsWith('/admin')) {

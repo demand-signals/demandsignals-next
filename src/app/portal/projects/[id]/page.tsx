@@ -1,4 +1,4 @@
-import { headers } from 'next/headers'
+import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
 import { ArrowLeft, CheckCircle2, Circle, Clock } from 'lucide-react'
@@ -6,6 +6,7 @@ import {
   getProjectByIdForProspect,
   getPaymentInstallmentsForProject,
 } from '@/lib/portal-data'
+import { resolvePortalContext } from '@/lib/portal-session'
 import { ProjectNotesTimeline } from '@/components/portal/ProjectNotesTimeline'
 import { formatCents } from '@/lib/format'
 
@@ -47,12 +48,13 @@ function PhaseStatusIcon({ status }: { status?: string }) {
 }
 
 export default async function PortalProjectDetailPage({ params }: PageProps) {
-  const h = await headers()
-  const prospectId = h.get('x-dsig-portal-prospect-id')
-  if (!prospectId) redirect('/portal/login')
+  const cookieStore = await cookies()
+  const overrideProspectId = cookieStore.get('dsig_portal_view_as')?.value ?? null
+  const ctx = await resolvePortalContext(overrideProspectId)
+  if (!ctx) redirect('/admin-login')
 
   const { id } = await params
-  const project = await getProjectByIdForProspect(prospectId, id)
+  const project = await getProjectByIdForProspect(ctx.prospectId, id)
   if (!project) notFound()
 
   const phases = (project.phases ?? []) as ProjectPhase[]
