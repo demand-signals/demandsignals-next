@@ -45,6 +45,14 @@ export async function POST(
   // Resolve admin email for audit
   const adminEmail = (auth as any).user?.email ?? null
 
+  // Optional category + coverage refs. Default = 'billable'. The DB
+  // CHECK constraint enforces consistency between the two; we trust it.
+  const validCategories = ['billable', 'non_billable', 'bulk_payment', 'services_contract', 'internal'] as const
+  const category =
+    typeof body.category === 'string' && (validCategories as readonly string[]).includes(body.category)
+      ? (body.category as typeof validCategories[number])
+      : undefined
+
   try {
     const entry = await createTimeEntry({
       project_id:        id,
@@ -53,6 +61,11 @@ export async function POST(
       hours,
       description:       typeof body.description === 'string' ? body.description.slice(0, 1000) : null,
       billable:          body.billable !== false,
+      category,
+      covered_by_invoice_id:
+        typeof body.covered_by_invoice_id === 'string' ? body.covered_by_invoice_id : null,
+      covered_by_subscription_id:
+        typeof body.covered_by_subscription_id === 'string' ? body.covered_by_subscription_id : null,
       hourly_rate_cents: typeof body.hourly_rate_cents === 'number' ? body.hourly_rate_cents : null,
       logged_at:         typeof body.logged_at === 'string' ? body.logged_at : undefined,
       logged_by:         adminEmail,

@@ -4,6 +4,34 @@ import { useEffect, useState, useCallback } from 'react'
 import { Loader2, Clock, Plus, Trash2, X, Clipboard, Pencil, Check } from 'lucide-react'
 import type { ProjectPhase } from '@/lib/invoice-types'
 
+type TimeEntryCategory =
+  | 'billable'
+  | 'non_billable'
+  | 'bulk_payment'
+  | 'services_contract'
+  | 'internal'
+
+const CATEGORY_OPTIONS: ReadonlyArray<{ value: TimeEntryCategory; label: string }> = [
+  { value: 'billable', label: 'Billable' },
+  { value: 'non_billable', label: 'Non-billable' },
+  { value: 'bulk_payment', label: 'Bulk payment' },
+  { value: 'services_contract', label: 'Services contract' },
+  { value: 'internal', label: 'Internal' },
+]
+
+const CATEGORY_BADGE: Record<TimeEntryCategory, { label: string; className: string }> = {
+  billable: { label: 'Billable', className: 'bg-emerald-100 text-emerald-700' },
+  non_billable: { label: 'Non-billable', className: 'bg-amber-100 text-amber-700' },
+  bulk_payment: { label: 'Bulk payment', className: 'bg-sky-100 text-sky-700' },
+  services_contract: { label: 'Services contract', className: 'bg-indigo-100 text-indigo-700' },
+  internal: { label: 'Internal', className: 'bg-slate-100 text-slate-600' },
+}
+
+interface CoverageRefOption {
+  id: string
+  label: string
+}
+
 interface TimeEntry {
   id: string
   project_id: string
@@ -12,6 +40,9 @@ interface TimeEntry {
   hours: number | null
   description: string | null
   billable: boolean
+  category: TimeEntryCategory | null
+  covered_by_invoice_id: string | null
+  covered_by_subscription_id: string | null
   hourly_rate_cents: number | null
   logged_at: string
   logged_by: string | null
@@ -43,6 +74,7 @@ interface Rollup {
   billable_hours: number
   non_billable_hours: number
   by_phase: Record<string, number>
+  by_category?: Record<TimeEntryCategory, number>
   entry_count: number
   last_entry_date: string | null
 }
@@ -68,7 +100,14 @@ export function TimeEntriesPanel({
   const [editClaudeStr, setEditClaudeStr] = useState('')
   const [editHoursStr, setEditHoursStr] = useState('')
   const [editDesc, setEditDesc] = useState('')
+  const [editCategory, setEditCategory] = useState<TimeEntryCategory>('billable')
+  const [editInvoiceId, setEditInvoiceId] = useState<string>('')
+  const [editSubscriptionId, setEditSubscriptionId] = useState<string>('')
   const [editBusy, setEditBusy] = useState(false)
+  const [coverageOptions, setCoverageOptions] = useState<{
+    invoices: CoverageRefOption[]
+    subscriptions: CoverageRefOption[]
+  } | null>(null)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -104,6 +143,17 @@ export function TimeEntriesPanel({
     return mins
   }
 
+  async function loadCoverageOptionsIfNeeded() {
+    if (coverageOptions) return
+    const r = await fetch(`/api/admin/projects/${projectId}/coverage-options`)
+    if (!r.ok) return
+    const j = await r.json()
+    setCoverageOptions({
+      invoices: j.invoices ?? [],
+      subscriptions: j.subscriptions ?? [],
+    })
+  }
+
   function startEditEntry(e: TimeEntry) {
     setEditingId(e.id)
     setEditHunterStr(e.hunter_minutes ? fmtMinutes(e.hunter_minutes) : '')
@@ -112,6 +162,11 @@ export function TimeEntriesPanel({
     const hasMinutes = (e.hunter_minutes ?? 0) > 0 || (e.claude_minutes ?? 0) > 0
     setEditHoursStr(hasMinutes ? '' : (e.hours != null ? String(e.hours) : ''))
     setEditDesc(e.description ?? '')
+    setEditCategory((e.category ?? (e.billable ? 'billable' : 'non_billable')) as TimeEntryCategory)
+    setEditInvoiceId(e.covered_by_invoice_id ?? '')
+    setEditSubscriptionId(e.covered_by_subscription_id ?? '')
+    // Pre-fetch coverage options in case the user switches to bulk_payment / services_contract
+    void loadCoverageOptionsIfNeeded()
   }
   function cancelEditEntry() {
     setEditingId(null)
@@ -119,12 +174,36 @@ export function TimeEntriesPanel({
     setEditClaudeStr('')
     setEditHoursStr('')
     setEditDesc('')
+    setEditCategory('billable')
+    setEditInvoiceId('')
+    setEditSubscriptionId('')
   }
   async function saveEditEntry(entryId: string) {
     setEditBusy(true)
     const payload: Record<string, unknown> = {
       description: editDesc.trim() || null,
+      category: editCategory,
     }
+
+    // Coverage refs: only send the relevant one for the chosen category.
+    // The server clears the other one regardless, but being explicit
+    // makes the request log cleaner.
+    if (editCategory === 'bulk_payment') {
+      if (!editInvoiceId) {
+        alert('Bulk payment requires selecting an invoice to attach to.')
+        setEditBusy(false)
+        return
+      }
+      payload.covered_by_invoice_id = editInvoiceId
+    } else if (editCategory === 'services_contract') {
+      if (!editSubscriptionId) {
+        alert('Services contract requires selecting a subscription to attach to.')
+        setEditBusy(false)
+        return
+      }
+      payload.covered_by_subscription_id = editSubscriptionId
+    }
+
     const hMin = parseTimeInputToMinutes(editHunterStr)
     const cMin = parseTimeInputToMinutes(editClaudeStr)
     const hasMinuteEdits =
@@ -175,8 +254,13 @@ export function TimeEntriesPanel({
             <span className="text-xs text-slate-500">
               · <span className="font-semibold text-slate-700 tabular-nums">{data.rollup.total_hours.toFixed(2)}h</span>
               <span className="text-slate-400"> total</span>
-              {data.rollup.non_billable_hours > 0 && (
-                <span className="ml-1 text-slate-400">({data.rollup.billable_hours.toFixed(2)}h billable)</span>
+              {data.rollup.by_category && (
+                <span className="ml-1 text-slate-400">
+                  ({(['billable', 'bulk_payment', 'services_contract', 'non_billable', 'internal'] as TimeEntryCategory[])
+                    .filter((k) => (data.rollup.by_category?.[k] ?? 0) > 0)
+                    .map((k) => `${(data.rollup.by_category?.[k] ?? 0).toFixed(2)}h ${CATEGORY_BADGE[k].label.toLowerCase()}`)
+                    .join(' · ')})
+                </span>
               )}
             </span>
           )}
@@ -221,6 +305,10 @@ export function TimeEntriesPanel({
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(input),
             })
+            if (!res.ok) {
+              const j = await res.json().catch(() => ({}))
+              alert(j.error ?? 'Save failed')
+            }
             return res.ok
           }}
         />
@@ -252,9 +340,17 @@ export function TimeEntriesPanel({
                     {phaseName(e.phase_id) && (
                       <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">{phaseName(e.phase_id)}</span>
                     )}
-                    {!e.billable && (
-                      <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">non-billable</span>
-                    )}
+                    {(() => {
+                      const cat = (e.category ?? (e.billable ? 'billable' : 'non_billable')) as TimeEntryCategory
+                      // Default 'billable' is the implicit positive case — don't badge it (saves visual noise)
+                      if (cat === 'billable') return null
+                      const b = CATEGORY_BADGE[cat]
+                      return (
+                        <span className={`px-1.5 py-0.5 rounded font-medium ${b.className}`}>
+                          {b.label}
+                        </span>
+                      )
+                    })()}
                     {e.logged_by && (
                       <span className="text-slate-400 truncate">· {e.logged_by}</span>
                     )}
@@ -291,6 +387,54 @@ export function TimeEntriesPanel({
                             placeholder="2.5"
                             className="w-full mt-0.5 px-2 py-1 border border-slate-200 rounded text-sm"
                           />
+                        </label>
+                      )}
+                      <label className="text-[11px] text-slate-600 block">
+                        Category
+                        <select
+                          value={editCategory}
+                          onChange={(ev) => setEditCategory(ev.target.value as TimeEntryCategory)}
+                          className="w-full mt-0.5 px-2 py-1 border border-slate-200 rounded text-sm bg-white"
+                        >
+                          {CATEGORY_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      {editCategory === 'bulk_payment' && (
+                        <label className="text-[11px] text-slate-600 block">
+                          Attach to invoice (bulk-payment / deposit)
+                          <select
+                            value={editInvoiceId}
+                            onChange={(ev) => setEditInvoiceId(ev.target.value)}
+                            className="w-full mt-0.5 px-2 py-1 border border-slate-200 rounded text-sm bg-white"
+                          >
+                            <option value="">— Pick an invoice —</option>
+                            {(coverageOptions?.invoices ?? []).map((opt) => (
+                              <option key={opt.id} value={opt.id}>{opt.label}</option>
+                            ))}
+                          </select>
+                          {coverageOptions && coverageOptions.invoices.length === 0 && (
+                            <span className="text-[10px] text-amber-700 italic">No invoices on this project yet — create one first.</span>
+                          )}
+                        </label>
+                      )}
+                      {editCategory === 'services_contract' && (
+                        <label className="text-[11px] text-slate-600 block">
+                          Attach to subscription (recurring contract)
+                          <select
+                            value={editSubscriptionId}
+                            onChange={(ev) => setEditSubscriptionId(ev.target.value)}
+                            className="w-full mt-0.5 px-2 py-1 border border-slate-200 rounded text-sm bg-white"
+                          >
+                            <option value="">— Pick a subscription —</option>
+                            {(coverageOptions?.subscriptions ?? []).map((opt) => (
+                              <option key={opt.id} value={opt.id}>{opt.label}</option>
+                            ))}
+                          </select>
+                          {coverageOptions && coverageOptions.subscriptions.length === 0 && (
+                            <span className="text-[10px] text-amber-700 italic">No subscriptions on this project yet.</span>
+                          )}
                         </label>
                       )}
                       <textarea
@@ -371,6 +515,9 @@ function NewEntryForm({
     description: string | null
     phase_id: string | null
     billable: boolean
+    category: TimeEntryCategory
+    covered_by_invoice_id: string | null
+    covered_by_subscription_id: string | null
     logged_at: string
   }) => Promise<boolean>
   onCreated: () => void
@@ -379,7 +526,7 @@ function NewEntryForm({
   const [hours, setHours] = useState('')
   const [description, setDescription] = useState('')
   const [phaseId, setPhaseId] = useState<string>('')
-  const [billable, setBillable] = useState(true)
+  const [category, setCategory] = useState<TimeEntryCategory>('billable')
   const [loggedAt, setLoggedAt] = useState(today)
   const [saving, setSaving] = useState(false)
 
@@ -395,7 +542,12 @@ function NewEntryForm({
       hours: h,
       description: description.trim() || null,
       phase_id: phaseId || null,
-      billable,
+      billable: category === 'billable',
+      category,
+      // Coverage refs deferred to inline edit (keeps the create form simple).
+      // Admin picks the doc by entering edit mode after create if needed.
+      covered_by_invoice_id: null,
+      covered_by_subscription_id: null,
       logged_at: loggedAt,
     })
     setSaving(false)
@@ -444,15 +596,18 @@ function NewEntryForm({
         maxLength={1000}
         className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-300"
       />
-      <div className="flex items-center justify-between">
-        <label className="flex items-center gap-2 text-xs text-slate-600">
-          <input
-            type="checkbox"
-            checked={billable}
-            onChange={(e) => setBillable(e.target.checked)}
-            className="rounded text-teal-600"
-          />
-          Billable
+      <div className="flex items-center justify-between gap-3">
+        <label className="flex items-center gap-2 text-xs text-slate-600 flex-1 min-w-0">
+          Category
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value as TimeEntryCategory)}
+            className="flex-1 min-w-0 px-2 py-1 border border-slate-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-teal-300"
+          >
+            {CATEGORY_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
         </label>
         <button
           type="submit"

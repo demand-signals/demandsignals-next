@@ -10,14 +10,50 @@ import { deleteTimeEntry } from '@/lib/time-entries'
 // Editable fields. Hours decimal mirrors hunter+claude minutes when
 // either of those changes; admin can also edit hours directly for
 // non-handoff (manual) entries that don't carry minute splits.
-const PatchSchema = z.object({
-  hunter_minutes: z.number().int().min(0).max(60 * 24 * 7).optional(),
-  claude_minutes: z.number().int().min(0).max(60 * 24 * 7).optional(),
-  hours: z.number().min(0).max(24).nullable().optional(),
-  description: z.string().max(2000).nullable().optional(),
-  billable: z.boolean().optional(),
-  logged_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-})
+//
+// Category drives billing rollups (see migration 051). bulk_payment +
+// services_contract require an attached doc; the others must NOT have
+// one. The DB constraint enforces this; we mirror it in the schema so
+// PostgREST returns 400 with a clean message instead of a 500-shaped
+// constraint violation.
+const CategoryEnum = z.enum([
+  'billable',
+  'non_billable',
+  'bulk_payment',
+  'services_contract',
+  'internal',
+])
+
+const PatchSchema = z
+  .object({
+    hunter_minutes: z.number().int().min(0).max(60 * 24 * 7).optional(),
+    claude_minutes: z.number().int().min(0).max(60 * 24 * 7).optional(),
+    hours: z.number().min(0).max(24).nullable().optional(),
+    description: z.string().max(2000).nullable().optional(),
+    billable: z.boolean().optional(),
+    category: CategoryEnum.optional(),
+    covered_by_invoice_id: z.string().uuid().nullable().optional(),
+    covered_by_subscription_id: z.string().uuid().nullable().optional(),
+    logged_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  })
+  .refine(
+    (d) => {
+      if (d.category === undefined) return true
+      if (d.category === 'bulk_payment') {
+        return !!d.covered_by_invoice_id && !d.covered_by_subscription_id
+      }
+      if (d.category === 'services_contract') {
+        return !!d.covered_by_subscription_id && !d.covered_by_invoice_id
+      }
+      // billable | non_billable | internal forbid both refs
+      return !d.covered_by_invoice_id && !d.covered_by_subscription_id
+    },
+    {
+      message:
+        'Coverage mismatch: bulk_payment requires covered_by_invoice_id; services_contract requires covered_by_subscription_id; billable/non_billable/internal forbid both.',
+      path: ['category'],
+    },
+  )
 
 export async function PATCH(
   request: NextRequest,
@@ -49,6 +85,31 @@ export async function PATCH(
   if (parsed.data.billable !== undefined) updates.billable = parsed.data.billable
   if (parsed.data.logged_at !== undefined) updates.logged_at = parsed.data.logged_at
 
+  // When category is patched, sync the legacy `billable` boolean and
+  // null-out the coverage ref the new category doesn't use. The DB
+  // CHECK constraint will reject mismatches anyway — we pre-clean here
+  // so the admin UI never has to send an explicit null.
+  if (parsed.data.category !== undefined) {
+    updates.category = parsed.data.category
+    updates.billable = parsed.data.category === 'billable'
+    if (parsed.data.category === 'bulk_payment') {
+      updates.covered_by_invoice_id = parsed.data.covered_by_invoice_id ?? null
+      updates.covered_by_subscription_id = null
+    } else if (parsed.data.category === 'services_contract') {
+      updates.covered_by_subscription_id = parsed.data.covered_by_subscription_id ?? null
+      updates.covered_by_invoice_id = null
+    } else {
+      updates.covered_by_invoice_id = null
+      updates.covered_by_subscription_id = null
+    }
+  } else {
+    // Allow standalone coverage updates without a category change
+    if (parsed.data.covered_by_invoice_id !== undefined)
+      updates.covered_by_invoice_id = parsed.data.covered_by_invoice_id
+    if (parsed.data.covered_by_subscription_id !== undefined)
+      updates.covered_by_subscription_id = parsed.data.covered_by_subscription_id
+  }
+
   // Auto-mirror hours from hunter+claude when minutes change but hours wasn't set explicitly
   if (
     (parsed.data.hunter_minutes !== undefined || parsed.data.claude_minutes !== undefined) &&
@@ -71,7 +132,7 @@ export async function PATCH(
     .from('project_time_entries')
     .update(updates)
     .eq('id', entryId)
-    .select('id, hours, hunter_minutes, claude_minutes, description, billable, logged_at, logged_by, source')
+    .select('id, hours, hunter_minutes, claude_minutes, description, billable, category, covered_by_invoice_id, covered_by_subscription_id, logged_at, logged_by, source')
     .single()
 
   if (error) {
