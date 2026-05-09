@@ -82,30 +82,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Pull joined time entries (one query, in-memory join)
-  const noteIds = (notes ?? []).map((n) => n.id)
-  let timeMap = new Map<string, { hunter_minutes: number; claude_minutes: number }>()
-  if (noteIds.length > 0) {
-    const { data: times } = await supabaseAdmin
-      .from('project_time_entries')
-      .select('project_note_id, hunter_minutes, claude_minutes')
-      .in('project_note_id', noteIds)
-    timeMap = new Map(
-      (times ?? []).map((t) => [
-        t.project_note_id,
-        {
-          hunter_minutes: t.hunter_minutes ?? 0,
-          claude_minutes: t.claude_minutes ?? 0,
-        },
-      ]),
-    )
-  }
-
-  return NextResponse.json({
-    notes: (notes ?? []).map((n) => ({
-      ...n,
-      hunter_minutes: timeMap.get(n.id)?.hunter_minutes ?? 0,
-      claude_minutes: timeMap.get(n.id)?.claude_minutes ?? 0,
-    })),
-  })
+  // Time entries are NOT joined onto notes — time lives on the
+  // time-entries panel + /admin/timekeeping. Notes are content only.
+  // (Hunter rule, 2026-05-09.)
+  return NextResponse.json({ notes: notes ?? [] })
 }

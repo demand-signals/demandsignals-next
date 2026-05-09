@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Loader2, Plus, EyeOff, Trash2, Pencil, MailCheck, Clock, ChevronDown, ChevronUp, Check, X } from 'lucide-react'
+import { Loader2, Plus, EyeOff, Trash2, Pencil, MailCheck, ChevronDown, ChevronUp, Check, X } from 'lucide-react'
 import { AddProjectNoteModal } from './AddProjectNoteModal'
 
 // Spec: docs/superpowers/specs/2026-05-07-client-portal-v1-design.md §11
@@ -17,16 +17,6 @@ interface AdminProjectNote {
   suppressed: boolean
   suppressed_reason: string | null
   created_at: string
-  hunter_minutes: number
-  claude_minutes: number
-}
-
-function formatTimeLabel(min: number): string {
-  if (min <= 0) return '0m'
-  if (min < 60) return `${min}m`
-  const h = Math.floor(min / 60)
-  const m = min % 60
-  return m === 0 ? `${h}h` : `${h}h ${m}m`
 }
 
 function formatDate(iso: string): string {
@@ -311,17 +301,8 @@ export function ProjectNotesPanel({ projectId }: { projectId: string }) {
                   </>
                 )}
 
-                {(note.hunter_minutes > 0 || note.claude_minutes > 0) && (
-                  <div className="mt-3 flex items-center gap-3 text-[11px] text-slate-500">
-                    <Clock className="w-3 h-3" />
-                    <span>
-                      Hunter <strong className="text-slate-700">{formatTimeLabel(note.hunter_minutes)}</strong>
-                    </span>
-                    <span>
-                      Claude <strong className="text-slate-700">{formatTimeLabel(note.claude_minutes)}</strong>
-                    </span>
-                  </div>
-                )}
+                {/* Time deliberately not shown on notes — see /admin/timekeeping
+                    + the project's Time Entries panel for hours. (2026-05-09 rule.) */}
 
                 {note.suppressed && note.suppressed_reason && (
                   <div className="mt-2 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded">

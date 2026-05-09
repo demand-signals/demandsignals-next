@@ -17,8 +17,6 @@ export function AddProjectNoteModal({
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [visibility, setVisibility] = useState<'client' | 'internal'>('client')
-  const [hunterMin, setHunterMin] = useState('')
-  const [claudeMin, setClaudeMin] = useState('')
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
@@ -40,8 +38,9 @@ export function AddProjectNoteModal({
           body: body.trim(),
           visibility,
           source: 'manual',
-          hunter_minutes: hunterMin ? Math.max(0, parseInt(hunterMin, 10)) : 0,
-          claude_minutes: claudeMin ? Math.max(0, parseInt(claudeMin, 10)) : 0,
+          // Time intentionally NOT captured here — time lives in
+          // /admin/timekeeping + the project's TimeEntries panel.
+          // Notes are content; entries are minutes. (Hunter rule, 2026-05-09.)
         }),
       })
       if (!res.ok) {
@@ -138,35 +137,6 @@ export function AddProjectNoteModal({
               </span>
             </label>
           </fieldset>
-
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">
-                Hunter minutes
-              </span>
-              <input
-                type="number"
-                min="0"
-                value={hunterMin}
-                onChange={(e) => setHunterMin(e.target.value)}
-                placeholder="0"
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-teal-300"
-              />
-            </label>
-            <label className="block">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">
-                Claude minutes
-              </span>
-              <input
-                type="number"
-                min="0"
-                value={claudeMin}
-                onChange={(e) => setClaudeMin(e.target.value)}
-                placeholder="0"
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-teal-300"
-              />
-            </label>
-          </div>
 
           {err && (
             <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">

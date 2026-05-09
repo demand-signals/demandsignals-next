@@ -62,10 +62,12 @@ export async function GET(
   })
   const rollup = rollupTimeEntries(entries)
 
-  // Notes — same date filter, on created_at.
+  // Notes — same date filter, on created_at. Time per-note is
+  // intentionally NOT selected — time lives on entries[] only.
+  // (Hunter rule, 2026-05-09.)
   let notesQuery = supabaseAdmin
     .from('project_notes')
-    .select('id, title, body, visibility, source, client_sent_at, hunter_minutes, claude_minutes, created_at')
+    .select('id, title, body, visibility, source, client_sent_at, created_at')
     .eq('project_id', id)
     .order('created_at', { ascending: false })
   if (fromDate) notesQuery = notesQuery.gte('created_at', `${fromDate}T00:00:00Z`)
@@ -78,8 +80,6 @@ export async function GET(
     visibility: n.visibility as 'internal' | 'client',
     source: n.source as string,
     client_sent_at: (n.client_sent_at as string | null) ?? null,
-    hunter_minutes: (n.hunter_minutes as number | null) ?? 0,
-    claude_minutes: (n.claude_minutes as number | null) ?? 0,
     created_at: n.created_at as string,
   }))
 

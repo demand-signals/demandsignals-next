@@ -41,9 +41,9 @@ export interface ProjectReportNote {
   visibility: 'internal' | 'client'
   source: string
   client_sent_at: string | null
-  hunter_minutes: number
-  claude_minutes: number
   created_at: string
+  // Time intentionally not on notes — see entries[] for hours.
+  // (Hunter rule, 2026-05-09.)
 }
 
 export interface ProjectReportInput {
