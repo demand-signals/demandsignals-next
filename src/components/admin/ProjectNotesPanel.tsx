@@ -44,10 +44,19 @@ export function ProjectNotesPanel({ projectId }: { projectId: string }) {
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
-  const [expanded, setExpanded] = useState(false)
+  const [expandedBodies, setExpandedBodies] = useState<Set<string>>(new Set())
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editBody, setEditBody] = useState('')
   const [editTitle, setEditTitle] = useState('')
+
+  function toggleBody(id: string) {
+    setExpandedBodies((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   const load = useCallback(() => {
     setLoading(true)
@@ -117,11 +126,6 @@ export function ProjectNotesPanel({ projectId }: { projectId: string }) {
     load()
   }
 
-  // Collapsed by default once there are 2+ notes. Single-note projects
-  // stay expanded since there's nothing to hide.
-  const shouldOfferCollapse = notes.length >= 2
-  const visibleNotes = !shouldOfferCollapse || expanded ? notes : notes.slice(0, 1)
-
   return (
     <section className="bg-white border border-slate-200 rounded-xl">
       <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
@@ -137,23 +141,6 @@ export function ProjectNotesPanel({ projectId }: { projectId: string }) {
               Client-visible notes appear on the portal and feed the daily digest.
             </p>
           </div>
-          {shouldOfferCollapse && (
-            <button
-              onClick={() => setExpanded((v) => !v)}
-              className="ml-2 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800 px-2 py-1 rounded hover:bg-slate-50"
-              title={expanded ? 'Collapse to most recent' : 'Show all notes'}
-            >
-              {expanded ? (
-                <>
-                  <ChevronUp className="w-3.5 h-3.5" /> Collapse
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="w-3.5 h-3.5" /> Show all {notes.length}
-                </>
-              )}
-            </button>
-          )}
         </div>
         <button
           onClick={() => setShowAdd(true)}
@@ -185,9 +172,13 @@ export function ProjectNotesPanel({ projectId }: { projectId: string }) {
         </div>
       ) : (
         <ol className="divide-y divide-slate-100">
-          {visibleNotes.map((note) => {
+          {notes.map((note) => {
             const isEditing = editingId === note.id
             const canEdit = !note.client_sent_at
+            const bodyLineCount = note.body.split('\n').length
+            const bodyIsLong = bodyLineCount > 6 || note.body.length > 400
+            const bodyExpanded = expandedBodies.has(note.id)
+            const showFullBody = isEditing || bodyExpanded || !bodyIsLong
             return (
               <li key={note.id} className="px-5 py-4">
                 <div className="flex items-start justify-between gap-4 mb-2">
@@ -274,11 +265,49 @@ export function ProjectNotesPanel({ projectId }: { projectId: string }) {
                 ) : (
                   <>
                     {note.title && (
-                      <h3 className="text-sm font-semibold text-slate-900 mb-1">{note.title}</h3>
+                      <h3 className="text-sm font-semibold text-slate-900 mb-1 inline-flex items-center gap-2">
+                        <span>{note.title}</span>
+                        {bodyIsLong && (
+                          <button
+                            onClick={() => toggleBody(note.id)}
+                            title={bodyExpanded ? 'Collapse' : 'Expand'}
+                            className="p-0.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                          >
+                            {bodyExpanded ? (
+                              <ChevronUp className="w-4 h-4" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" />
+                            )}
+                          </button>
+                        )}
+                      </h3>
                     )}
-                    <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                      {note.body}
-                    </p>
+                    {!note.title && bodyIsLong && (
+                      <button
+                        onClick={() => toggleBody(note.id)}
+                        className="mb-1 inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700"
+                      >
+                        {bodyExpanded ? (
+                          <>
+                            <ChevronUp className="w-3.5 h-3.5" /> Collapse
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-3.5 h-3.5" /> Expand
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {showFullBody ? (
+                      <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                        {note.body}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">
+                        {note.body.split('\n').slice(0, 2).join(' ').slice(0, 200)}
+                        {note.body.length > 200 ? '…' : ''}
+                      </p>
+                    )}
                   </>
                 )}
 
