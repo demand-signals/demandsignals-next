@@ -104,7 +104,7 @@ function NewInvoiceForm() {
     prospectId ? (prospects.find((p) => p.id === prospectId) ?? null) : null
 
   useEffect(() => {
-    fetch('/api/admin/prospects?limit=100')
+    fetch('/api/admin/prospects?limit=100&include_clients=1')
       .then((r) => r.json())
       .then((d) => setProspects(d.data ?? []))
       .catch(() => {})

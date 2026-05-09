@@ -87,6 +87,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
     return Number.isFinite(n) && n >= 0 ? n : 0
   }
 
+  const sowOffset = offsetOf('sowOffset')
   const projectsOffset = offsetOf('projectsOffset')
   const supportOffset = offsetOf('supportOffset')
   const subsOffset = offsetOf('subsOffset')
@@ -116,11 +117,17 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
   // Projects panel excludes support/bug-report types — those have their
   // own panel below.
   const [
+    sowCountRes,
     projectsCountRes, supportCountRes, subsCountRes, invoicesCountRes, receiptsCountRes,
     activeProjectsCountRes, openSupportCountRes,
     activeSubsAggRes, outstandingAggRes,
     bookingRes,
   ] = await Promise.all([
+    // SOWs — past, present, issued (all statuses, all time)
+    supabaseAdmin
+      .from('sow_documents')
+      .select('id', { count: 'exact', head: true })
+      .eq('prospect_id', id),
     // Regular projects (exclude support/bug types)
     supabaseAdmin
       .from('projects')
@@ -207,6 +214,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
     return 0
   }
 
+  const totalSows = sowCountRes.count ?? 0
   const totalProjects = projectsCountRes.count ?? 0
   const totalSupport = supportCountRes.count ?? 0
   const totalSubs = subsCountRes.count ?? 0
@@ -233,9 +241,16 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
 
   // Paginated lists — full history, newest first
   const [
+    sowListRes,
     projectsListRes, supportListRes, subsListRes, invoicesListRes, receiptsListRes,
     notesListRes, emailsListRes, activitiesListRes,
   ] = await Promise.all([
+    supabaseAdmin
+      .from('sow_documents')
+      .select('id, sow_number, title, status, pricing, sent_at, accepted_at, declined_at, created_at')
+      .eq('prospect_id', id)
+      .order('created_at', { ascending: false })
+      .range(sowOffset, sowOffset + PAGE_SIZE - 1),
     supabaseAdmin
       .from('projects')
       .select('id, name, type, status, start_date, target_date, completed_at, monthly_value, phases, updated_at, created_at')
@@ -293,6 +308,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
       .limit(messagesOffset + PAGE_SIZE + 100),
   ])
 
+  const sows = sowListRes.data ?? []
   const projects = projectsListRes.data ?? []
   const supportTickets = supportListRes.data ?? []
   type SubscriptionRow = {
@@ -396,6 +412,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
   // Helpers for pagination link rendering
   function pageHref(key: string, value: number) {
     const next = new URLSearchParams()
+    if (sowOffset && key !== 'sowOffset') next.set('sowOffset', String(sowOffset))
     if (projectsOffset && key !== 'projectsOffset') next.set('projectsOffset', String(projectsOffset))
     if (supportOffset && key !== 'supportOffset') next.set('supportOffset', String(supportOffset))
     if (subsOffset && key !== 'subsOffset') next.set('subsOffset', String(subsOffset))
@@ -525,6 +542,70 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main column */}
         <div className="lg:col-span-2 space-y-6">
+          {/* SOWs — past, present, issued. Lives above Projects since SOWs
+               drive project + invoice creation through the accept flow. */}
+          <Section
+            anchor="sowOffset"
+            icon={FileText}
+            title="Statements of Work"
+            count={totalSows}
+            empty="No SOWs issued yet."
+            createHref={`/admin/sow/new?prospect_id=${prospect.id}`}
+            createLabel="Create SOW"
+            pagination={{
+              offset: sowOffset,
+              total: totalSows,
+              prevHref: pageHref('sowOffset', Math.max(0, sowOffset - PAGE_SIZE)),
+              nextHref: pageHref('sowOffset', sowOffset + PAGE_SIZE),
+            }}
+          >
+            {sows.map((s) => {
+              const pricing = (s.pricing ?? {}) as { total_cents?: number; deposit_cents?: number }
+              const totalCents = pricing.total_cents ?? 0
+              return (
+                <Link
+                  key={s.id}
+                  href={`/admin/sow/${s.id}`}
+                  className="block p-3 rounded-lg border border-slate-200 hover:border-teal-300 hover:bg-teal-50/30 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-medium text-slate-900">
+                        {s.sow_number ?? 'SOW (no number)'}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5 truncate">
+                        {s.title || 'Untitled SOW'}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        <StatusPill status={s.status} />
+                        {s.sent_at && (
+                          <span className="ml-2">sent {new Date(s.sent_at).toLocaleDateString()}</span>
+                        )}
+                        {s.accepted_at && (
+                          <span className="ml-2 text-emerald-600">accepted {new Date(s.accepted_at).toLocaleDateString()}</span>
+                        )}
+                        {s.declined_at && (
+                          <span className="ml-2 text-red-600">declined {new Date(s.declined_at).toLocaleDateString()}</span>
+                        )}
+                        {s.created_at && (
+                          <span className="ml-2 text-slate-400">· {new Date(s.created_at).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                    </div>
+                    {totalCents > 0 && (
+                      <div className="text-right text-sm">
+                        <div className="font-semibold text-slate-700 tabular-nums">
+                          {formatCents(totalCents)}
+                        </div>
+                        <div className="text-[10px] text-slate-400">total</div>
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              )
+            })}
+          </Section>
+
           {/* Projects — full history, newest first */}
           <Section
             anchor="projectsOffset"
@@ -960,6 +1041,8 @@ function StatusPill({ status }: { status: string | null | undefined }) {
     viewed: 'bg-indigo-50 text-indigo-700',
     paid: 'bg-emerald-50 text-emerald-700',
     void: 'bg-slate-100 text-slate-400 line-through',
+    accepted: 'bg-emerald-50 text-emerald-700',
+    declined: 'bg-red-50 text-red-700',
   }
   const cls = map[status] ?? 'bg-slate-100 text-slate-600'
   const label = status === 'in_progress' ? 'In progress' : status.replace(/_/g, ' ')

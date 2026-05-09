@@ -206,7 +206,9 @@ export function NewProjectModal({
   const [err, setErr] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/admin/prospects?limit=500&sort=updated_at&order=desc')
+    // Project creation needs clients in the dropdown (clients can have
+     // direct-entry projects). API filters them out by default; opt back in.
+    fetch('/api/admin/prospects?limit=500&sort=updated_at&order=desc&include_clients=1')
       .then((r) => r.json())
       .then((d) => {
         const list = (d.data ?? []) as ProspectOption[]

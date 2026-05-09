@@ -15,6 +15,12 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get('limit') || '50', 10)
   const sort = searchParams.get('sort') || 'prospect_score'
   const order = searchParams.get('order') || 'desc'
+  // Clients live on /admin/clients now. By default the prospects list
+  // excludes is_client=true rows so the prospect view stays focused on
+  // pre-conversion records. Pass ?include_clients=1 (used by SOW/
+  // invoice/project creation forms that need to pick any prospect or
+  // client) to opt back in to the full list.
+  const includeClients = searchParams.get('include_clients') === '1'
 
   const offset = (page - 1) * limit
 
@@ -22,6 +28,7 @@ export async function GET(request: NextRequest) {
     .from('prospects')
     .select('*, demos(id, demo_url, status), deals(id, stage, value_estimate)', { count: 'exact' })
 
+  if (!includeClients) query = query.eq('is_client', false)
   if (stage) query = query.eq('stage', stage)
   if (industry) query = query.eq('industry', industry)
   if (city) query = query.ilike('city', `%${city}%`)

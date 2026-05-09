@@ -36,7 +36,10 @@ const STAGE_BADGE_COLORS: Record<string, string> = {
 }
 
 async function fetchAllProspects(): Promise<{ data: (Prospect & { demos?: Demo[] })[] }> {
-  const res = await fetch('/api/admin/prospects?limit=500&sort=prospect_score&order=desc')
+  // include_clients=1: detail page is also reached during the lifecycle redirect
+  // window; if a record was just promoted to client we still need to find it
+  // here before the redirect to /admin/clients/[id] takes effect.
+  const res = await fetch('/api/admin/prospects?limit=500&sort=prospect_score&order=desc&include_clients=1')
   if (!res.ok) throw new Error('Failed to fetch prospects')
   return res.json()
 }

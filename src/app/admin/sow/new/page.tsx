@@ -145,7 +145,7 @@ export default function NewSowPage() {
   } | null>(null)
 
   useEffect(() => {
-    fetch('/api/admin/prospects?limit=200')
+    fetch('/api/admin/prospects?limit=200&include_clients=1')
       .then((r) => r.json())
       .then((d) => setProspects(d.data ?? []))
   }, [])
