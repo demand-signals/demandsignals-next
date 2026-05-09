@@ -335,32 +335,41 @@ interface ParsedHandoff {
 }
 
 function parseHandoff(raw: string): ParsedHandoff | { error: string } {
-  // Hunter: matches both v1c "Hunter (active):" and v1d "Hunter (full session):"
-  const hunterRe = /Hunter\s*\([^)]+\):\s*(\d+)\s*h\s*(\d+)?\s*m?/i
-  const claudeRe = /Claude\s*\([^)]+\):\s*(\d+)\s*h\s*(\d+)?\s*m?/i
-  // Also allow plain-minutes form e.g. "Hunter: 330m"
-  const hunterMinRe = /Hunter\s*\([^)]+\):.*?\(?=\s*(\d+)\s*m\b/i
-  const claudeMinRe = /Claude\s*\([^)]+\):.*?\(?=\s*(\d+)\s*m\b/i
+  // Tolerant patterns. Match: any (parenthetical), optional ~ prefix on
+  // the value, h+m form ("6h 30m"), bare-h form ("6h"), or bare-m form
+  // ("330m"). The parenthetical is captured but its content doesn't
+  // matter — Hunter (active), (full session), (active engagement),
+  // (wall clock) all work.
+  //
+  // Bare-minutes form attempted FIRST: only matches when the line has
+  // ONLY a minutes value (no preceding hour value), so "6h 30m" goes
+  // to the h+m form, not the bare-m form. Anchored at the colon to
+  // avoid catching trailing "30m" of an h+m line.
+  const hunterMinRe = /Hunter\s*\([^)]+\):\s*~?\s*(\d+)\s*m\b(?!\s*\d)/i
+  const claudeMinRe = /Claude\s*\([^)]+\):\s*~?\s*(\d+)\s*m\b(?!\s*\d)/i
+  const hunterRe = /Hunter\s*\([^)]+\):\s*~?\s*(\d+)\s*h(?:\s*(\d+)\s*m?)?/i
+  const claudeRe = /Claude\s*\([^)]+\):\s*~?\s*(\d+)\s*h(?:\s*(\d+)\s*m?)?/i
 
   let hunterMinutes = 0
   let claudeMinutes = 0
 
+  // Try bare-minutes first (cheap; rejects when followed by 'h')
   const hMin = raw.match(hunterMinRe)
   if (hMin) hunterMinutes = parseInt(hMin[1], 10)
-  else {
+  if (hunterMinutes === 0) {
     const h = raw.match(hunterRe)
     if (h) hunterMinutes = parseInt(h[1], 10) * 60 + (h[2] ? parseInt(h[2], 10) : 0)
   }
 
   const cMin = raw.match(claudeMinRe)
   if (cMin) claudeMinutes = parseInt(cMin[1], 10)
-  else {
+  if (claudeMinutes === 0) {
     const c = raw.match(claudeRe)
     if (c) claudeMinutes = parseInt(c[1], 10) * 60 + (c[2] ? parseInt(c[2], 10) : 0)
   }
 
   if (hunterMinutes <= 0 && claudeMinutes <= 0) {
-    return { error: 'Could not find Hunter/Claude time lines in pasted text. Expected "Hunter (full session): Xh Ym" and "Claude (AI compute): Xh Ym".' }
+    return { error: 'Could not find Hunter/Claude time lines in pasted text. Expected "Hunter (any-label): Xh Ym" and "Claude (any-label): Xh Ym" — tilde (~) prefix on the value is OK.' }
   }
 
   // Session window — "Session: ~17:00 PT 2026-05-07 → ~22:30 PT 2026-05-07"

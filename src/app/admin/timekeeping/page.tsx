@@ -333,19 +333,34 @@ interface ParsedHandoff {
 }
 
 function parseHandoffText(raw: string): ParsedHandoff | { error: string } {
-  const hunterRe = /Hunter\s*\([^)]+\):\s*(\d+)\s*h\s*(\d+)?\s*m?/i
-  const claudeRe = /Claude\s*\([^)]+\):\s*(\d+)\s*h\s*(\d+)?\s*m?/i
+  // Tolerant patterns. Match: any (parenthetical), optional ~ prefix on
+  // the value, h+m form, bare-h form, or bare-m form. Mirror of the
+  // TimeEntriesPanel parser. Hunter (active) / (full session) / (active
+  // engagement) / (wall clock) all work.
+  const hunterMinRe = /Hunter\s*\([^)]+\):\s*~?\s*(\d+)\s*m\b(?!\s*\d)/i
+  const claudeMinRe = /Claude\s*\([^)]+\):\s*~?\s*(\d+)\s*m\b(?!\s*\d)/i
+  const hunterRe = /Hunter\s*\([^)]+\):\s*~?\s*(\d+)\s*h(?:\s*(\d+)\s*m?)?/i
+  const claudeRe = /Claude\s*\([^)]+\):\s*~?\s*(\d+)\s*h(?:\s*(\d+)\s*m?)?/i
 
   let hunterMinutes = 0
   let claudeMinutes = 0
 
-  const h = raw.match(hunterRe)
-  if (h) hunterMinutes = parseInt(h[1], 10) * 60 + (h[2] ? parseInt(h[2], 10) : 0)
-  const c = raw.match(claudeRe)
-  if (c) claudeMinutes = parseInt(c[1], 10) * 60 + (c[2] ? parseInt(c[2], 10) : 0)
+  const hMin = raw.match(hunterMinRe)
+  if (hMin) hunterMinutes = parseInt(hMin[1], 10)
+  if (hunterMinutes === 0) {
+    const h = raw.match(hunterRe)
+    if (h) hunterMinutes = parseInt(h[1], 10) * 60 + (h[2] ? parseInt(h[2], 10) : 0)
+  }
+
+  const cMin = raw.match(claudeMinRe)
+  if (cMin) claudeMinutes = parseInt(cMin[1], 10)
+  if (claudeMinutes === 0) {
+    const c = raw.match(claudeRe)
+    if (c) claudeMinutes = parseInt(c[1], 10) * 60 + (c[2] ? parseInt(c[2], 10) : 0)
+  }
 
   if (hunterMinutes <= 0 && claudeMinutes <= 0) {
-    return { error: 'Could not find Hunter/Claude time lines.' }
+    return { error: 'Could not find Hunter/Claude time lines. Expected "Hunter (any-label): Xh Ym" and "Claude (any-label): Xh Ym" — tilde (~) prefix on the value is OK.' }
   }
 
   const sessRe = /Session:\s*~?(\d{1,2}:\d{2})\s*PT\s+(\d{4}-\d{2}-\d{2})\s*[—→-]+\s*~?(\d{1,2}:\d{2})\s*PT\s+(\d{4}-\d{2}-\d{2})/
