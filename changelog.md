@@ -4,6 +4,26 @@ Append-only log of working sessions. Newest at top.
 
 ---
 
+## 2026-05-09 (early AM) — WS1 (Gaming-PC) — Hunter — categories + report PDF + notes/time separation
+
+- **Span**: 2026-05-08 22:34 PT → 2026-05-09 04:05 PT (5h 31m wall clock). Three commits to master (`0c5e5fe`, `b1b0352`).
+- **Time-entry billing categories** — migration 051 adds `category` (5-state CHECK enum: billable / non_billable / bulk_payment / services_contract / internal) + `covered_by_invoice_id` + `covered_by_subscription_id` FK refs with a CHECK constraint enforcing coverage matches category. Backfills from legacy `billable boolean`. PATCH/POST endpoints + `createTimeEntry()` accept the new fields. TimeEntriesPanel: category select on inline edit + new entry, conditional invoice/subscription picker (new `/coverage-options` endpoint), category badges, rollup breakdown.
+- **Project Activity Report PDF** — `src/lib/pdf/project-report.ts` 4-page branded deliverable (cover + time summary + notes timeline + entries detail table). Route at `GET /api/admin/projects/[id]/report-pdf` with optional from/to/includeInternal. Project detail page header gains a "Report" button alongside "Brief".
+- **Notes ↔ time architectural separation** — Hunter rule: "do not include time in the project notes. time is to be reported and managed via the time entries and timekeeping sections." Stripped Hunter/Claude minute inputs from AddProjectNoteModal, time chip from ProjectNotesPanel rows, time-join from `GET /api/admin/project-notes`, time fields from PDF `ProjectReportNote` type and report-pdf route SELECT. /handoff CLI seam was already correct (content → note, minutes → time-entry); just brought UI/API/PDF in line.
+- **/handoff Step 11.D exercised** — note `b73821e9` + time entry `202a657f` written via CLI bearer token to project `e1c3881f` (Demand Signals Platform Build).
+- **Time**: Hunter 5h 31m + Claude 1h 15m = **6h 46m total billable** (= 331m + 75m = 406m).
+- **Failures with lessons**:
+  - Inverted §5 D:/Y:/GitHub framing. Said "D:\dev is stale" — reduced three roles to two. Hunter: "you seem to be rusty about protocol." Re-read §5, corrected. Three roles: GitHub canonical for code; Y: canonical for working state; D:\dev per-workstation build/run.
+  - Over-explained when Hunter was mid-debug. Wrote 200-word migration-finding explanation when "find and run 051" was the answer. Hunter: "all you have to say is, find and run 051." Lesson: density at debug-time.
+  - Pushed code before applying migration to production. `0c5e5fe` shipped while 051 hadn't run on prod Supabase → "column does not exist" until Hunter ran APPLY-051. Order should be apply-then-push when code reads new columns.
+- **Decisions locked**:
+  - Notes never carry time. Time = time-entries + timekeeping; notes = content. /handoff's createNoteAndTimeEntry() helper writes to two separate rows.
+  - Coverage-FK consistency enforced at DB level via CHECK constraint, not app logic.
+  - Migration-then-code order for any column-additions.
+- **Next session priority**: smoke-verify `b1b0352` on production (no time chips on notes; report PDF correct), drop still-orphan envvars (`PORTAL_MAGIC_LINK_SECRET`, `GOOGLE_PORTAL_*`), promote "notes never carry time" to project CLAUDE.md §13.
+
+---
+
 ## 2026-05-08 (very late) — WS1 (Gaming-PC) — Hunter — admin polish marathon
 
 - **Span**: 14:13 PT → 22:08 PT (7h 55m wall clock). 30 commits pushed to master. No multi-hour gaps.

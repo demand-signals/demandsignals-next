@@ -8,7 +8,38 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-05-08 22:32 PT — WS1 (Gaming-PC) — Long admin-platform polish session (14:13 → 22:08 PT, 30 commits). Highlights: prospect/client lifecycle partition, full-page project edit (not modal), Stripe customer reconciliation chain (Payment Link → existing customer + default_payment_method seed + idempotency suffix on retry), project-level PDF generation matching SOW format, handoff parser hardening (tilde prefix, parenthetical labels, multi-shape session line, datetime offset, raw-paste body fallback), DOCK orphan time-entry cleanup, collapsible/editable Project Notes (per-note body collapse) + inline-editable Time Entries with auto-hours-mirror PATCH endpoint. /handoff Step 11.D exercised live this session — 200 OK, note `284e3f6a` + time entry `bac6416d` written via CLI bearer token.
+**Last updated:** 2026-05-09 04:10 PT — WS1 (Gaming-PC) — 5h 31m mid-session continuation. Two features + one architectural rule: (1) time-entry billing categories (5-state: billable / non_billable / bulk_payment / services_contract / internal) with FK refs to invoice/subscription via migration 051 + DB CHECK enforcing coverage matches category, (2) Project Activity Report PDF — 4-page branded deliverable wrapping notes timeline + time summary + entries detail table, (3) ARCHITECTURAL RULE LOCKED: time fields exclusive to time-entries + /admin/timekeeping; notes are content-only across UI / API / PDF. /handoff Step 11.D exercised — note `b73821e9` + time entry `202a657f` written via CLI token.
+
+---
+
+## SHIPPED 2026-05-09 (early AM) — time-entry categories + Project Activity Report PDF
+
+- **Migration 051** — `project_time_entries.category text NOT NULL DEFAULT 'billable'` with CHECK constraint enforcing 5-state enum: `billable` / `non_billable` / `bulk_payment` / `services_contract` / `internal`. Backfills from legacy `billable boolean` (true → billable, false → non_billable). Adds `covered_by_invoice_id` + `covered_by_subscription_id` FKs and a coverage CHECK so bulk_payment requires invoice ref, services_contract requires subscription ref, others forbid both. Applied to production via APPLY-051-2026-05-08.sql.
+- **TimeEntriesPanel UI** — category select on inline edit + new entry form; conditional invoice/subscription picker (fed by new `/api/admin/projects/[id]/coverage-options` endpoint); category badge per row (billable suppressed since default); rollup line in panel header shows the category split.
+- **PATCH/POST endpoints** accept category + coverage refs; PATCH pre-cleans coverage refs that don't match the new category; legacy `billable` boolean kept in sync for back-compat.
+- **createTimeEntry()** helper accepts category; rolls up `by_category` into `TimeRollup`.
+- **Project Activity Report PDF** — `src/lib/pdf/project-report.ts` 4-page branded deliverable: cover (DSIG-themed with period subtitle) / time summary (totals + Hunter/Claude split + category breakdown + longest sessions) / notes timeline / time entries detail table. Reuses `_shared.ts` helpers so brand treatment matches SOW + project-brief. Route at `GET /api/admin/projects/[id]/report-pdf?from=&to=&includeInternal=`. Defaults: all activity, client-visible notes only.
+- **Project detail page header** — both "Brief" (existing scope/phases PDF) and "Report" (new activity PDF) buttons side by side.
+- **Notes ↔ time architectural separation enforced** — pulled time fields from AddProjectNoteModal create form, ProjectNotesPanel row display, GET `/api/admin/project-notes` (no longer joins time-entries), PDF `ProjectReportNote` type, and report-pdf route SELECT. Time exclusive to time-entries + /admin/timekeeping. /handoff CLI seam was already correct (content → note, minutes → time-entry).
+- **Build:** clean. Three commits: `0c5e5fe`, `b1b0352`. Pushed to master.
+
+### Architectural decisions LOCKED (do not re-debate)
+
+- **Notes never carry time.** Project notes are content; project_time_entries are minutes. The two surfaces are independent. /handoff's `createNoteAndTimeEntry()` helper writes content to one row and minutes to a linked but separate row — that seam was already right; UI/API/PDF surfaces now match.
+- **Coverage-FK consistency enforced at DB level.** category=bulk_payment ⇒ covered_by_invoice_id NOT NULL + covered_by_subscription_id NULL. category=services_contract ⇒ covered_by_subscription_id NOT NULL + covered_by_invoice_id NULL. Other categories forbid both. CHECK constraint, not application logic.
+- **Migration order is migration-then-code.** When adding a column the code reads, apply the migration first, deploy code second. Otherwise prod throws "column does not exist" until APPLY runs.
+
+### Failures with lessons (this session — durable)
+
+- **Inverted §5 D:/Y:/GitHub framing.** Said "D:\dev is stale, Y: is canonical" — wrong both ways. The §5 rule has THREE roles (GitHub canonical for code, Y: canonical for working state, D:\dev per-workstation build/run loop). Hunter caught it: "review y:/claude.md regarding the use of D and Y. You seem to be rusty about protocol." Re-read §5, corrected. Lesson: when invoking the source-of-truth rule, name the three roles, never reduce to two.
+- **Over-explained migration order.** When schema-cache error appeared, produced a 200-word explanation when the actionable answer was "find and run 051". Hunter trained density: "all you have to say is, find and run 051". Lesson: when user is mid-debug, give the one-verb actionable, not the explanation.
+- **Migration-after-code order issue.** Pushed `0c5e5fe` before applying 051 to production → prod threw "column does not exist" until Hunter ran APPLY-051. Lesson recorded in decisions above; for future column-additions, surface the apply step ALONGSIDE the push, never as a tail follow-up.
+
+### Pending Hunter follow-up
+
+- Smoke-verify `b1b0352` once Vercel promotes: notes panel rows have no time chip, Add Note modal has no Hunter/Claude inputs, Project Report PDF Notes Timeline page shows content only, Time Summary page shows the Hunter/Claude split.
+- Drop the still-orphan envvars from prior session (`PORTAL_MAGIC_LINK_SECRET`, `GOOGLE_PORTAL_*`) — has been on the priority list 2 sessions running.
+- Promote "notes never carry time" to project CLAUDE.md §13 architectural rule.
 
 ---
 
