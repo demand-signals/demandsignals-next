@@ -268,7 +268,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
     supabaseAdmin
       .from('subscriptions')
       .select(`
-        id, status, override_monthly_amount_cents, started_at, paused_until, end_date, created_at,
+        id, status, override_monthly_amount_cents, current_period_start, paused_until, end_date, created_at,
         parent_invoice_id,
         plan:subscription_plans ( name, price_cents, billing_interval )
       `)
@@ -316,7 +316,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
     id: string
     status: string
     override_monthly_amount_cents: number | null
-    started_at: string | null
+    current_period_start: string | null
     paused_until: string | null
     end_date: string | null
     created_at: string | null
