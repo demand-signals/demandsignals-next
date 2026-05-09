@@ -269,6 +269,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
       .from('subscriptions')
       .select(`
         id, status, override_monthly_amount_cents, started_at, paused_until, end_date, created_at,
+        parent_invoice_id,
         plan:subscription_plans ( name, price_cents, billing_interval )
       `)
       .eq('prospect_id', id)
@@ -276,7 +277,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
       .range(subsOffset, subsOffset + PAGE_SIZE - 1),
     supabaseAdmin
       .from('invoices')
-      .select('id, invoice_number, total_due_cents, status, paid_at, sent_at, created_at')
+      .select('id, invoice_number, total_due_cents, status, paid_at, sent_at, created_at, subscription_intent, subscription_id')
       .eq('prospect_id', id)
       .order('created_at', { ascending: false })
       .range(invoicesOffset, invoicesOffset + PAGE_SIZE - 1),
@@ -319,12 +320,30 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
     paused_until: string | null
     end_date: string | null
     created_at: string | null
+    parent_invoice_id: string | null
     plan: SubscriptionPlanLink[] | SubscriptionPlanLink | null
   }
   const subscriptions = (subsListRes.data ?? []) as unknown as SubscriptionRow[]
   const invoices = invoicesListRes.data ?? []
   const receipts = receiptsListRes.data ?? []
   const upcomingBooking = bookingRes.data ?? null
+
+  // Cross-panel link maps: subscription <-> parent invoice. Lets us render
+  // "← INV-XXX" on subscription rows that came from a paid recurring
+  // invoice, and "→ Subscription" on invoice rows that spawned one.
+  const parentInvoiceIds = subscriptions
+    .map((s) => s.parent_invoice_id)
+    .filter((v): v is string => Boolean(v))
+  const parentInvoiceNumberById = new Map<string, string>()
+  if (parentInvoiceIds.length > 0) {
+    const { data: parentInvoices } = await supabaseAdmin
+      .from('invoices')
+      .select('id, invoice_number')
+      .in('id', parentInvoiceIds)
+    for (const inv of parentInvoices ?? []) {
+      if (inv.invoice_number) parentInvoiceNumberById.set(inv.id, inv.invoice_number)
+    }
+  }
 
   function planOf(s: SubscriptionRow): SubscriptionPlanLink | null {
     if (!s.plan) return null
@@ -753,36 +772,53 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
             {subscriptions.map((s) => {
               const monthly = monthlyContribution(s)
               const planName = planOf(s)?.name ?? 'Custom subscription'
+              const parentInvoiceNumber = s.parent_invoice_id
+                ? parentInvoiceNumberById.get(s.parent_invoice_id) ?? null
+                : null
               return (
-                <Link
+                <div
                   key={s.id}
-                  href={`/admin/subscriptions/${s.id}`}
-                  className="block p-3 rounded-lg border border-slate-200 hover:border-teal-300 hover:bg-teal-50/30 transition-colors"
+                  className="rounded-lg border border-slate-200 hover:border-teal-300 hover:bg-teal-50/30 transition-colors"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="font-medium text-slate-900 truncate">{planName}</div>
-                      <div className="text-xs text-slate-500 mt-0.5">
-                        <StatusPill status={s.status} />
-                        {s.status === 'paused' && s.paused_until && (
-                          <span className="ml-2">resumes {new Date(s.paused_until).toLocaleDateString()}</span>
-                        )}
-                        {s.end_date && (
-                          <span className="ml-2">ended {new Date(s.end_date).toLocaleDateString()}</span>
-                        )}
-                        {s.created_at && (
-                          <span className="ml-2 text-slate-400">· {new Date(s.created_at).toLocaleDateString()}</span>
-                        )}
+                  <Link
+                    href={`/admin/subscriptions/${s.id}`}
+                    className="block p-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-medium text-slate-900 truncate">{planName}</div>
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          <StatusPill status={s.status} />
+                          {s.status === 'paused' && s.paused_until && (
+                            <span className="ml-2">resumes {new Date(s.paused_until).toLocaleDateString()}</span>
+                          )}
+                          {s.end_date && (
+                            <span className="ml-2">ended {new Date(s.end_date).toLocaleDateString()}</span>
+                          )}
+                          {s.created_at && (
+                            <span className="ml-2 text-slate-400">· {new Date(s.created_at).toLocaleDateString()}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right text-sm">
+                        <div className="font-semibold text-emerald-700 tabular-nums">
+                          {formatCents(monthly)}
+                        </div>
+                        <div className="text-[10px] text-slate-400">/mo</div>
                       </div>
                     </div>
-                    <div className="text-right text-sm">
-                      <div className="font-semibold text-emerald-700 tabular-nums">
-                        {formatCents(monthly)}
-                      </div>
-                      <div className="text-[10px] text-slate-400">/mo</div>
+                  </Link>
+                  {s.parent_invoice_id && (
+                    <div className="px-3 pb-2 -mt-1">
+                      <Link
+                        href={`/admin/invoices/${s.parent_invoice_id}`}
+                        className="inline-flex items-center gap-1 text-[11px] text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded px-2 py-0.5 font-medium"
+                      >
+                        <FileText className="w-3 h-3" /> From {parentInvoiceNumber ?? 'invoice'}
+                      </Link>
                     </div>
-                  </div>
-                </Link>
+                  )}
+                </div>
               )
             })}
           </Section>
@@ -814,43 +850,60 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
               const balance = inv.status === 'paid'
                 ? 0
                 : Math.max(0, (inv.total_due_cents ?? 0) - (receiptsByInvoice.get(inv.id) ?? 0))
+              const spawnedSubId =
+                ((inv as { subscription_intent?: string }).subscription_intent === 'created' &&
+                  (inv as { subscription_id?: string | null }).subscription_id) || null
               return (
-                <Link
+                <div
                   key={inv.id}
-                  href={`/admin/invoices/${inv.id}`}
-                  className="block p-3 rounded-lg border border-slate-200 hover:border-teal-300 hover:bg-teal-50/30 transition-colors"
+                  className="rounded-lg border border-slate-200 hover:border-teal-300 hover:bg-teal-50/30 transition-colors"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="font-medium text-slate-900">
-                        {inv.invoice_number}
+                  <Link
+                    href={`/admin/invoices/${inv.id}`}
+                    className="block p-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-medium text-slate-900">
+                          {inv.invoice_number}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          <StatusPill status={inv.status} />
+                          {inv.sent_at && (
+                            <span className="ml-2">sent {new Date(inv.sent_at).toLocaleDateString()}</span>
+                          )}
+                          {inv.paid_at && (
+                            <span className="ml-2 text-emerald-600">paid {new Date(inv.paid_at).toLocaleDateString()}</span>
+                          )}
+                          {inv.created_at && (
+                            <span className="ml-2 text-slate-400">· {new Date(inv.created_at).toLocaleDateString()}</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-xs text-slate-500 mt-0.5">
-                        <StatusPill status={inv.status} />
-                        {inv.sent_at && (
-                          <span className="ml-2">sent {new Date(inv.sent_at).toLocaleDateString()}</span>
-                        )}
-                        {inv.paid_at && (
-                          <span className="ml-2 text-emerald-600">paid {new Date(inv.paid_at).toLocaleDateString()}</span>
-                        )}
-                        {inv.created_at && (
-                          <span className="ml-2 text-slate-400">· {new Date(inv.created_at).toLocaleDateString()}</span>
+                      <div className="text-right text-sm">
+                        <div className={`font-semibold tabular-nums ${
+                          inv.status === 'paid' ? 'text-slate-500'
+                            : balance > 0 ? 'text-orange-600' : 'text-slate-700'
+                        }`}>
+                          {formatCents(inv.total_due_cents ?? 0)}
+                        </div>
+                        {inv.status !== 'paid' && balance < (inv.total_due_cents ?? 0) && balance > 0 && (
+                          <div className="text-[10px] text-slate-400">{formatCents(balance)} balance</div>
                         )}
                       </div>
                     </div>
-                    <div className="text-right text-sm">
-                      <div className={`font-semibold tabular-nums ${
-                        inv.status === 'paid' ? 'text-slate-500'
-                          : balance > 0 ? 'text-orange-600' : 'text-slate-700'
-                      }`}>
-                        {formatCents(inv.total_due_cents ?? 0)}
-                      </div>
-                      {inv.status !== 'paid' && balance < (inv.total_due_cents ?? 0) && balance > 0 && (
-                        <div className="text-[10px] text-slate-400">{formatCents(balance)} balance</div>
-                      )}
+                  </Link>
+                  {spawnedSubId && (
+                    <div className="px-3 pb-2 -mt-1">
+                      <Link
+                        href={`/admin/subscriptions/${spawnedSubId}`}
+                        className="inline-flex items-center gap-1 text-[11px] text-teal-700 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 rounded px-2 py-0.5 font-medium"
+                      >
+                        <Repeat className="w-3 h-3" /> Spawned subscription
+                      </Link>
                     </div>
-                  </div>
-                </Link>
+                  )}
+                </div>
               )
             })}
           </Section>
