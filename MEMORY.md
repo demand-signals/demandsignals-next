@@ -8,7 +8,40 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-05-08 (late) — WS1 (Gaming-PC) — CLI tokens shipped end-to-end. Migration 050 applied; "DSIG shared CLI" token generated in admin UI and stored in `Y:\.credentials\dsig.env` as `DSIG_CLI_TOKEN`. /handoff command bumped to v1f and now POSTs to `/api/cli/handoff/project-notes` with Bearer auth — both project_notes (with daily-digest gating) AND project_time_entries (with hours-mirror for legacy timekeeping UIs) populated in one request. Multi-admin shared visibility, optional auto-expiry, revocable, rate-limited 60/hr/token, full audit log at `/admin/account/cli-tokens/[id]`. Plus the earlier portal pivot in this same session.
+**Last updated:** 2026-05-08 22:32 PT — WS1 (Gaming-PC) — Long admin-platform polish session (14:13 → 22:08 PT, 30 commits). Highlights: prospect/client lifecycle partition, full-page project edit (not modal), Stripe customer reconciliation chain (Payment Link → existing customer + default_payment_method seed + idempotency suffix on retry), project-level PDF generation matching SOW format, handoff parser hardening (tilde prefix, parenthetical labels, multi-shape session line, datetime offset, raw-paste body fallback), DOCK orphan time-entry cleanup, collapsible/editable Project Notes (per-note body collapse) + inline-editable Time Entries with auto-hours-mirror PATCH endpoint. /handoff Step 11.D exercised live this session — 200 OK, note `284e3f6a` + time entry `bac6416d` written via CLI bearer token.
+
+---
+
+## SHIPPED 2026-05-08 (very late) — admin-platform polish marathon
+
+- **Project notes per-note collapse + inline edit** — `ProjectNotesPanel.tsx` now collapses each note's body to a 2-line preview with a chevron next to the title; expand state per-note in a `Set`. Pencil affordance opens inline title+body editor → PATCH `/api/admin/project-notes/[id]`. Editing forces full-body render.
+- **Time entries inline edit** — `TimeEntriesPanel.tsx` Pencil per row opens form accepting `6h 30m` / `6h` / `30m` / raw-int parsing for Hunter/Claude splits + description. New PATCH `/api/admin/projects/[id]/time-entries/[entryId]` endpoint with auto-hours-mirror logic (recomputes `hours` decimal from minute totals when minutes change but `hours` not sent explicitly).
+- **Handoff body fallback** — when paste lacks `## CLIENT UPDATE` block, raw paste becomes note body (was dropping to `(time entry from /handoff)`). Title derived from first non-header line or Project/Client line. Mirrored across `TimeEntriesPanel` + `/admin/timekeeping`.
+- **Stripe reconciliation chain** — Payment Link silently created a fresh Stripe customer when one already existed on the prospect; retry endpoint now reverse-lookups via metadata search + checkout-session lookup, attaches `default_payment_method` before subscription create, passes fresh `idempotencySuffix=retry_<ts>` per retry. Tightened key resolver regex `/^(sk_(live|test)_|rk_(live|test)_)/`; slot priority: `DSIG_STRIPE_RESTRICTED_KEY_050826` > `DSIG_STRIPE_STANDARD_KEY_050826` > `DSIG_STRIPE_KEY_042626` (NOT `STRIPE_SECRET_KEY` — that slot doesn't exist in this Vercel project).
+- **Project-level PDF** — new `src/lib/pdf/project.ts` 3-page rendering reusing SOW shared helpers via exports. Added Generate PDF button on `/admin/projects/[id]` for both project + bug-report variants.
+- **Lifecycle partition** — `/admin/clients` now filters out non-clients; `/admin/prospects` filters out clients. Cross-redirect chips on each. SOW panel mounted on client view above projects. Support panel for bug-report intake.
+- **Project edit is a full page** at `/admin/projects/[id]/edit` (not a modal). Same surface as creation. Phases editable.
+- **DOCK orphan cleanup** — replaced 5 orphan project notes with 3 properly-shaped handoff time entries totaling 55.83h.
+
+### Architectural decisions LOCKED (do not re-debate)
+
+- **Project-level edit pages, not modals.** Same surface as create. Promote consistency across all "edit X" admin flows.
+- **Stripe customer reconciliation: metadata search FIRST, then checkout-session reverse-lookup, then create.** Don't propose creating a new customer when an existing one might be matchable.
+- **Per-note collapse, not panel-level collapse.** When user says "dropdown on project notes" — clarify scope before building. Default scope = the noun mentioned (each note's body), not the container.
+- **`project_time_entries` has NO `created_by` column.** Use `logged_by` for actor attribution. Inserts that include `created_by` get silently rejected by PostgREST and the warning never reaches the frontend.
+
+### Failures with lessons (this session — durable)
+
+- **Mis-scoped collapse on first attempt** — built panel-level "Show all N" instead of per-note body collapse. Fixed in second commit after Hunter screenshot annotation. Lesson recorded as decision above.
+- **Five-times-over Stripe key blame loop** — hit Hunter's $1000-per-occurrence penalty rule. Real bug was regex picking up a non-Stripe `mk_`-prefixed credential via glob discovery. Hard lesson: read the consuming code first; never propose "let me have you re-verify the key".
+- **Built /admin/projects/new as a UUID-id route** — `'new'` got parsed as the dynamic `[id]` segment and 500'd. Fixed by adding an explicit `/new` route segment that takes priority.
+- **Dockside paste mis-attribution claim** — I assumed Hunter pasted Dockside text into the wrong project; he corrected: "It was not added to Bug Report 050826, it was added here. Chase that down." Read the input source before blaming the user.
+
+### Pending Hunter follow-up
+
+- Verify per-note collapse + inline edits render correctly on production once `93d446f` promotes (chevron next to title, 2-line preview default, expand-on-click, Pencil opens inline form).
+- Send Mobile Mechanic Dan the Customer Portal session URL so he can add a payment method, then click Retry Stripe sync on his subscription.
+- Drop the still-orphan envvars from earlier today (`PORTAL_MAGIC_LINK_SECRET`, `GOOGLE_PORTAL_*`) — confirmed no code reads them.
 
 ---
 
