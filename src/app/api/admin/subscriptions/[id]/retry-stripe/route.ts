@@ -160,7 +160,11 @@ export async function POST(request: NextRequest, { params }: Params) {
   const productName = plan?.name ?? 'Custom subscription'
 
   // Helper that runs createStripeSubscription once and returns either
-  // the success payload or a parsed error string.
+  // the success payload or a parsed error string. Each invocation gets
+  // a fresh idempotency suffix (timestamp) — admin retries are distinct
+  // attempts, not duplicate-network-call retries, so reusing the key
+  // would trigger Stripe's "key reused with different parameters"
+  // rejection on every reconciliation pass.
   async function attemptCreate(): Promise<
     | { ok: true; result: Awaited<ReturnType<typeof createStripeSubscription>> }
     | { ok: false; error: string }
@@ -174,6 +178,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         startDateISO,
         cycleCap: sub!.cycle_cap ?? undefined,
         productName,
+        idempotencySuffix: `retry_${Date.now()}`,
       })
       return { ok: true, result }
     } catch (e) {

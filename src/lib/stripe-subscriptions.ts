@@ -60,9 +60,17 @@ export async function createStripeSubscription(args: {
   startDateISO: string
   cycleCap?: number
   productName: string
+  /**
+   * Idempotency-key suffix. Initial create uses '' (no suffix), keeping
+   * backward-compat with prior idempotency. Admin retries pass a fresh
+   * suffix (e.g. attempt count, timestamp) so Stripe doesn't reject the
+   * call as "key reused with different parameters."
+   */
+  idempotencySuffix?: string
 }): Promise<{ subscription: Stripe.Subscription; customerId: string; endDate: string | null }> {
   const customerId = await ensureStripeCustomer(args.prospectId)
   const s = stripe()
+  const suffix = args.idempotencySuffix ? `_${args.idempotencySuffix}` : ''
 
   const product = await s.products.create(
     {
@@ -71,7 +79,7 @@ export async function createStripeSubscription(args: {
         dsig_subscription_id: args.dsigSubscriptionId,
       },
     },
-    { idempotencyKey: idempotencyKey('product_for_sub', args.dsigSubscriptionId) },
+    { idempotencyKey: idempotencyKey('product_for_sub', `${args.dsigSubscriptionId}${suffix}`) },
   )
 
   const recurring = intervalToStripeRecurring(args.interval)
@@ -82,7 +90,7 @@ export async function createStripeSubscription(args: {
       currency: 'usd',
       recurring,
     },
-    { idempotencyKey: idempotencyKey('price_for_sub', args.dsigSubscriptionId) },
+    { idempotencyKey: idempotencyKey('price_for_sub', `${args.dsigSubscriptionId}${suffix}`) },
   )
 
   const startUnix = Math.floor(new Date(args.startDateISO).getTime() / 1000)
@@ -114,7 +122,7 @@ export async function createStripeSubscription(args: {
   }
 
   const subscription = await s.subscriptions.create(subscriptionParams, {
-    idempotencyKey: idempotencyKey('subscription', args.dsigSubscriptionId),
+    idempotencyKey: idempotencyKey('subscription', `${args.dsigSubscriptionId}${suffix}`),
   })
 
   return { subscription, customerId, endDate }
