@@ -363,13 +363,19 @@ function parseHandoffText(raw: string): ParsedHandoff | { error: string } {
     return { error: 'Could not find Hunter/Claude time lines. Expected "Hunter (any-label): Xh Ym" and "Claude (any-label): Xh Ym" — tilde (~) prefix on the value is OK.' }
   }
 
-  const sessRe = /Session:\s*~?(\d{1,2}:\d{2})\s*PT\s+(\d{4}-\d{2}-\d{2})\s*[—→-]+\s*~?(\d{1,2}:\d{2})\s*PT\s+(\d{4}-\d{2}-\d{2})/
-  const sess = raw.match(sessRe)
+  // Multi-shape Session: line parser. Same logic as TimeEntriesPanel —
+  // tolerates DATE-TIME / TIME-DATE order, AM/PM suffix, ~tilde prefix,
+  // and fuzzy time-of-day words (morning, evening, late). Empty halves
+  // return null which the server schema accepts.
   let sessionStartedAt: string | null = null
   let sessionEndedAt: string | null = null
-  if (sess) {
-    sessionStartedAt = `${sess[2]}T${sess[1]}:00-08:00`
-    sessionEndedAt = `${sess[4]}T${sess[3]}:00-08:00`
+  const sessLineMatch = raw.match(/Session:\s*([^\n]+)/i)
+  if (sessLineMatch) {
+    const halves = sessLineMatch[1].split(/\s*(?:[—→]|--)\s*|\s+-\s+/)
+    if (halves.length === 2) {
+      sessionStartedAt = parseSessionHalfTk(halves[0], 'start')
+      sessionEndedAt = parseSessionHalfTk(halves[1], 'end')
+    }
   }
 
   const cuRe = /##\s*CLIENT UPDATE[^\n]*\n([\s\S]*?)(?=\n##\s|$)/
@@ -390,6 +396,47 @@ function parseHandoffText(raw: string): ParsedHandoff | { error: string } {
     client_update_body: clientUpdateBody,
     client_update_title: clientUpdateTitle,
   }
+}
+
+// Parse one half of a Session: line. Mirror of TimeEntriesPanel's
+// parseSessionHalf (kept duplicated rather than extracted to a lib —
+// both files are small client components). Output is an ISO string
+// with the right PT offset (-07:00 PDT or -08:00 PST) for the date.
+function parseSessionHalfTk(half: string, side: 'start' | 'end'): string | null {
+  const dateMatch = half.match(/(\d{4}-\d{2}-\d{2})/)
+  if (!dateMatch) return null
+  const date = dateMatch[1]
+  const timeMatch = half.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i)
+  let hh = -1
+  let mm = 0
+  if (timeMatch) {
+    hh = parseInt(timeMatch[1], 10)
+    mm = parseInt(timeMatch[2], 10)
+    const ampm = timeMatch[3]?.toUpperCase()
+    if (ampm === 'PM' && hh < 12) hh += 12
+    if (ampm === 'AM' && hh === 12) hh = 0
+  } else {
+    const lower = half.toLowerCase()
+    if (/morning|early/.test(lower)) hh = 8
+    else if (/noon|mid-?day/.test(lower)) hh = 12
+    else if (/afternoon/.test(lower)) hh = 14
+    else if (/evening|late/.test(lower)) hh = side === 'end' ? 23 : 18
+    else if (/night/.test(lower)) hh = 21
+    else hh = side === 'end' ? 23 : 12
+    mm = side === 'end' && hh === 23 ? 59 : 0
+  }
+  const time = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
+  // PT offset — match TimeEntriesPanel ptToIso: detect DST via Intl
+  const d = new Date(`${date}T${time}:00-08:00`)
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    timeZoneName: 'short',
+  })
+  const parts = fmt.formatToParts(d)
+  const tzPart = parts.find((p) => p.type === 'timeZoneName')
+  const isPDT = tzPart?.value === 'PDT'
+  const offset = isPDT ? '-07:00' : '-08:00'
+  return `${date}T${time}:00${offset}`
 }
 
 interface ProjectOption {

@@ -372,16 +372,32 @@ function parseHandoff(raw: string): ParsedHandoff | { error: string } {
     return { error: 'Could not find Hunter/Claude time lines in pasted text. Expected "Hunter (any-label): Xh Ym" and "Claude (any-label): Xh Ym" — tilde (~) prefix on the value is OK.' }
   }
 
-  // Session window — "Session: ~17:00 PT 2026-05-07 → ~22:30 PT 2026-05-07"
-  const sessRe = /Session:\s*~?(\d{1,2}:\d{2})\s*PT\s+(\d{4}-\d{2}-\d{2})\s*[—→-]+\s*~?(\d{1,2}:\d{2})\s*PT\s+(\d{4}-\d{2}-\d{2})/
-  const sess = raw.match(sessRe)
+  // Session window — multi-shape tolerant. Hunter's /handoff output uses
+  // any of these forms:
+  //   "Session: ~17:00 PT 2026-05-07 → ~22:30 PT 2026-05-07"      (TIME PT DATE)
+  //   "Session: 2026-05-05 ~10:30 AM PT — 2026-05-06 ~late ev PT" (DATE TIME PT, fuzzy end)
+  //   "Session: ~2026-05-07 11:00 PT — 2026-05-08 00:50 PT"       (~DATE TIME PT)
+  //
+  // Strategy: split the Session line at — / → / -, extract a date and an
+  // optional time from each side independently. Falls back to noon for
+  // start and 11:59 PM for end if a side has only a fuzzy time word
+  // (morning/evening/late). Empty sessionStartedAt/EndedAt are valid
+  // (server schema accepts null) — better to drop the times than to
+  // reject the whole save.
   let sessionStartedAt: string | null = null
   let sessionEndedAt: string | null = null
-  if (sess) {
-    // PT = America/Los_Angeles. Build ISO strings with -07:00 offset (PDT)
-    // or -08:00 (PST). Use Intl to compute the right offset for each date.
-    sessionStartedAt = ptToIso(sess[2], sess[1])
-    sessionEndedAt = ptToIso(sess[4], sess[3])
+
+  const sessLineMatch = raw.match(/Session:\s*([^\n]+)/i)
+  if (sessLineMatch) {
+    const sessLine = sessLineMatch[1]
+    const splitRe = /\s*(?:[—→]|--)\s*|\s+-\s+/
+    const halves = sessLine.split(splitRe)
+    if (halves.length === 2) {
+      const left = parseSessionHalf(halves[0], 'start')
+      const right = parseSessionHalf(halves[1], 'end')
+      if (left) sessionStartedAt = left
+      if (right) sessionEndedAt = right
+    }
   }
 
   // CLIENT UPDATE block — captures everything between "## CLIENT UPDATE"
@@ -412,6 +428,45 @@ function parseHandoff(raw: string): ParsedHandoff | { error: string } {
     client_update_title: clientUpdateTitle,
     notes: notesMatch ? notesMatch[1].trim() : null,
   }
+}
+
+// Parse one half of a Session: line into an ISO timestamp.
+// Returns null if no recognizable date is found.
+//   "~10:30 AM PT 2026-05-05"        → "2026-05-05T10:30:00-07:00"
+//   "2026-05-06 ~10:30 AM PT"        → "2026-05-06T10:30:00-07:00"
+//   "~2026-05-07 11:00 PT"           → "2026-05-07T11:00:00-07:00"
+//   "2026-05-06 ~late evening PT"    → "2026-05-06T23:59:00-07:00"  (end fallback)
+//   "2026-05-06 ~morning PT"         → "2026-05-06T08:00:00-07:00"  (morning fallback)
+//   "2026-05-06 ~afternoon PT"       → "2026-05-06T14:00:00-07:00"
+//   "2026-05-06 PT"                  → start half: noon; end half: 11:59 PM
+function parseSessionHalf(half: string, side: 'start' | 'end'): string | null {
+  const dateMatch = half.match(/(\d{4}-\d{2}-\d{2})/)
+  if (!dateMatch) return null
+  const date = dateMatch[1]
+
+  // Try HH:MM (with optional AM/PM)
+  const timeMatch = half.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i)
+  let hh = -1
+  let mm = 0
+  if (timeMatch) {
+    hh = parseInt(timeMatch[1], 10)
+    mm = parseInt(timeMatch[2], 10)
+    const ampm = timeMatch[3]?.toUpperCase()
+    if (ampm === 'PM' && hh < 12) hh += 12
+    if (ampm === 'AM' && hh === 12) hh = 0
+  } else {
+    // Fuzzy time-of-day fallback
+    const lower = half.toLowerCase()
+    if (/morning|early/.test(lower)) hh = 8
+    else if (/noon|mid-?day/.test(lower)) hh = 12
+    else if (/afternoon/.test(lower)) hh = 14
+    else if (/evening|late/.test(lower)) hh = side === 'end' ? 23 : 18
+    else if (/night/.test(lower)) hh = 21
+    else hh = side === 'end' ? 23 : 12
+    mm = side === 'end' && hh === 23 ? 59 : 0
+  }
+  const time = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
+  return ptToIso(date, time)
 }
 
 function ptToIso(date: string, time: string): string {

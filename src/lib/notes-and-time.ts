@@ -28,8 +28,12 @@ export const NoteAndTimeInputSchema = z
     source: z.enum(['handoff', 'manual', 'import']).default('manual'),
     phase_id: z.string().uuid().optional().nullable(),
     deliverable_id: z.string().uuid().optional().nullable(),
-    session_started_at: z.string().datetime().optional().nullable(),
-    session_ended_at: z.string().datetime().optional().nullable(),
+    // { offset: true } so non-Z timestamps from the TimeEntriesPanel
+    // parser ("2026-05-05T10:30:00-07:00") are accepted. Default Zod
+    // .datetime() requires Z suffix and rejected the panel's input,
+    // causing 400s that the frontend surfaced as "Invalid input."
+    session_started_at: z.string().datetime({ offset: true }).optional().nullable(),
+    session_ended_at: z.string().datetime({ offset: true }).optional().nullable(),
     hunter_minutes: z.number().int().min(0).max(60 * 24 * 7).optional(),
     claude_minutes: z.number().int().min(0).max(60 * 24 * 7).optional(),
   })
