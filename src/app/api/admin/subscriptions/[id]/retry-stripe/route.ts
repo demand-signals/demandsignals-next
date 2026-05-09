@@ -17,7 +17,43 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { createStripeSubscription } from '@/lib/stripe-subscriptions'
-import { isStripeEnabled } from '@/lib/stripe-client'
+import { isStripeEnabled, stripe } from '@/lib/stripe-client'
+
+// Search Stripe for any customer tagged with this prospect_id in metadata
+// that has a default_payment_method or attached payment source. Returns
+// the customer ID, or null if no payment-bearing customer is found.
+//
+// Why this exists: Payment Links are created with customer_creation:'always',
+// which spawns a fresh Stripe customer at checkout time. The platform's
+// ensureStripeCustomer pre-stamps a different (empty) customer on the
+// prospect row before the link is generated. Result: the saved card lives
+// on customer A, the platform points at customer B, and any subsequent
+// subscription create fails with "no attached payment source."
+//
+// This helper queries Stripe for all customers with metadata.dsig_prospect_id
+// matching the prospect, picks the one with a saved card, and returns its ID
+// so the caller can reconcile the prospects.stripe_customer_id pointer.
+async function findCustomerWithPaymentMethod(
+  prospectId: string,
+): Promise<string | null> {
+  const s = stripe()
+
+  // Stripe's search API supports metadata: 'metadata["key"]:"value"'.
+  // Limit to the most recent matches; in practice there are 1-2.
+  const results = await s.customers.search({
+    query: `metadata["dsig_prospect_id"]:"${prospectId}"`,
+    limit: 20,
+  })
+
+  for (const c of results.data) {
+    if (c.deleted) continue
+    if (c.invoice_settings?.default_payment_method) return c.id
+    // Fall back to listing payment methods on the customer.
+    const pms = await s.paymentMethods.list({ customer: c.id, limit: 1 })
+    if (pms.data.length > 0) return c.id
+  }
+  return null
+}
 
 interface Params {
   params: Promise<{ id: string }>
@@ -79,45 +115,90 @@ export async function POST(request: NextRequest, { params }: Params) {
   const startDateISO = sub.current_period_start ?? new Date().toISOString()
   const productName = plan?.name ?? 'Custom subscription'
 
-  try {
-    const result = await createStripeSubscription({
-      dsigSubscriptionId: sub.id,
-      prospectId: sub.prospect_id,
-      amountCents,
-      interval,
-      startDateISO,
-      cycleCap: sub.cycle_cap ?? undefined,
-      productName,
-    })
-
-    // Update the DSIG row with the now-real Stripe identifiers + clear
-    // the prior STRIPE ERROR note.
-    await supabaseAdmin
-      .from('subscriptions')
-      .update({
-        stripe_subscription_id: result.subscription.id,
-        stripe_customer_id: result.customerId,
-        status: result.subscription.status === 'trialing' ? 'trialing' : 'active',
-        end_date: result.endDate,
-        notes: null,
+  // Helper that runs createStripeSubscription once and returns either
+  // the success payload or a parsed error string.
+  async function attemptCreate(): Promise<
+    | { ok: true; result: Awaited<ReturnType<typeof createStripeSubscription>> }
+    | { ok: false; error: string }
+  > {
+    try {
+      const result = await createStripeSubscription({
+        dsigSubscriptionId: sub!.id,
+        prospectId: sub!.prospect_id,
+        amountCents,
+        interval,
+        startDateISO,
+        cycleCap: sub!.cycle_cap ?? undefined,
+        productName,
       })
-      .eq('id', sub.id)
-
-    return NextResponse.json({
-      ok: true,
-      stripe_subscription_id: result.subscription.id,
-      stripe_customer_id: result.customerId,
-      status: result.subscription.status,
-    })
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
-    // Capture the new error to notes so admin can see what happened.
-    await supabaseAdmin
-      .from('subscriptions')
-      .update({
-        notes: `RETRY STRIPE ERROR (${new Date().toISOString()}): ${message}`,
-      })
-      .eq('id', sub.id)
-    return NextResponse.json({ error: message }, { status: 502 })
+      return { ok: true, result }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
   }
+
+  // First attempt
+  let outcome = await attemptCreate()
+
+  // If the failure is "no attached payment source," it usually means the
+  // prospect's stripe_customer_id is pointing at the wrong customer (the
+  // empty one ensureStripeCustomer pre-stamped vs. the Payment-Link-created
+  // one with the saved card). Search Stripe for the right customer and
+  // reconcile, then retry once.
+  let reconciledCustomerId: string | null = null
+  if (
+    !outcome.ok &&
+    /no attached payment source|no default payment method/i.test(outcome.error)
+  ) {
+    try {
+      const found = await findCustomerWithPaymentMethod(sub.prospect_id)
+      if (found) {
+        await supabaseAdmin
+          .from('prospects')
+          .update({ stripe_customer_id: found })
+          .eq('id', sub.prospect_id)
+        reconciledCustomerId = found
+        outcome = await attemptCreate()
+      }
+    } catch (searchErr) {
+      console.error(
+        '[retry-stripe] customer reconciliation search failed:',
+        searchErr instanceof Error ? searchErr.message : searchErr,
+      )
+    }
+  }
+
+  if (!outcome.ok) {
+    // Capture the (final) error to notes so admin can see what happened.
+    await supabaseAdmin
+      .from('subscriptions')
+      .update({
+        notes: `RETRY STRIPE ERROR (${new Date().toISOString()}): ${outcome.error}` +
+          (reconciledCustomerId
+            ? ` [reconciled customer to ${reconciledCustomerId}; still failed]`
+            : ''),
+      })
+      .eq('id', sub.id)
+    return NextResponse.json({ error: outcome.error }, { status: 502 })
+  }
+
+  // Success — write the now-real Stripe identifiers + clear notes.
+  await supabaseAdmin
+    .from('subscriptions')
+    .update({
+      stripe_subscription_id: outcome.result.subscription.id,
+      stripe_customer_id: outcome.result.customerId,
+      status: outcome.result.subscription.status === 'trialing' ? 'trialing' : 'active',
+      end_date: outcome.result.endDate,
+      notes: null,
+    })
+    .eq('id', sub.id)
+
+  return NextResponse.json({
+    ok: true,
+    stripe_subscription_id: outcome.result.subscription.id,
+    stripe_customer_id: outcome.result.customerId,
+    status: outcome.result.subscription.status,
+    reconciled_customer: reconciledCustomerId,
+  })
 }

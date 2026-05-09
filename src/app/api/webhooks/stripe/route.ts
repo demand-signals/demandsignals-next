@@ -115,6 +115,38 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
           await markInstallmentPaid(installmentId, amountCents)
         }
 
+        // Reconcile the prospect's stripe_customer_id with whatever
+        // Stripe used at checkout. Payment Links are created with
+        // customer_creation: 'always', which means Stripe creates a
+        // FRESH customer at checkout time — separate from any empty
+        // customer DSIG had pre-stamped on the prospect via
+        // ensureStripeCustomer. Without this reconciliation, the saved
+        // card lives on customer A while the platform looks for it on
+        // customer B, and any subscription creation against customer B
+        // fails with "no attached payment source." Idempotent: only
+        // writes when the new value differs from what's stored.
+        const customerId = (obj.customer as string | undefined) ?? null
+        if (customerId) {
+          const { data: invRow } = await supabaseAdmin
+            .from('invoices')
+            .select('prospect_id')
+            .eq('id', invoiceId)
+            .maybeSingle()
+          if (invRow?.prospect_id) {
+            const { data: prospRow } = await supabaseAdmin
+              .from('prospects')
+              .select('stripe_customer_id')
+              .eq('id', invRow.prospect_id)
+              .maybeSingle()
+            if (prospRow && prospRow.stripe_customer_id !== customerId) {
+              await supabaseAdmin
+                .from('prospects')
+                .update({ stripe_customer_id: customerId })
+                .eq('id', invRow.prospect_id)
+            }
+          }
+        }
+
         // Set-and-forget subscription path (migration 043). When this
         // invoice has subscription_intent='pending' (i.e. has monthly
         // or annual cadence lines), spin up the Stripe subscription
@@ -122,7 +154,6 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
         // safe on webhook retries. Best-effort: failure leaves the
         // invoice paid but flagged 'pending' for manual recovery.
         try {
-          const customerId = (obj.customer as string | undefined) ?? null
           if (customerId) {
             const { createSubscriptionFromInvoice } = await import('@/lib/invoice-subscription')
             await createSubscriptionFromInvoice({
