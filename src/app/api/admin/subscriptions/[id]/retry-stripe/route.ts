@@ -184,16 +184,20 @@ export async function POST(request: NextRequest, { params }: Params) {
   // First attempt
   let outcome = await attemptCreate()
 
-  // If the failure is "no attached payment source," it usually means the
-  // prospect's stripe_customer_id is pointing at the wrong customer (the
-  // empty one ensureStripeCustomer pre-stamped vs. the Payment-Link-created
-  // one with the saved card). Search Stripe for the right customer and
-  // reconcile, then retry once.
+  // If the failure is "no attached payment source," it usually means
+  // EITHER (a) the prospect's stripe_customer_id is pointing at the wrong
+  // customer (the empty pre-stamped one vs. the Payment-Link-created one
+  // with the saved card), OR (b) the right customer has the card attached
+  // but not set as default_payment_method (Stripe quirk for Payment-mode
+  // Payment Links + customer_creation:'always'). Try both fixes in order.
   let reconciledCustomerId: string | null = null
   if (
     !outcome.ok &&
     /no attached payment source|no default payment method/i.test(outcome.error)
   ) {
+    const s = stripe()
+
+    // Fix (a): search for the right customer and reconcile prospect pointer
     try {
       const found = await findCustomerWithPaymentMethod(sub.prospect_id)
       if (found) {
@@ -202,13 +206,53 @@ export async function POST(request: NextRequest, { params }: Params) {
           .update({ stripe_customer_id: found })
           .eq('id', sub.prospect_id)
         reconciledCustomerId = found
-        outcome = await attemptCreate()
       }
     } catch (searchErr) {
       console.error(
         '[retry-stripe] customer reconciliation search failed:',
         searchErr instanceof Error ? searchErr.message : searchErr,
       )
+    }
+
+    // Fix (b): on whichever customer we'll use (newly-reconciled or original),
+    // promote the most recent card to default_payment_method.
+    try {
+      const customerIdToSeed =
+        reconciledCustomerId ??
+        // Re-read the prospect in case ensureStripeCustomer just stamped a fresh ID
+        (await supabaseAdmin
+          .from('prospects')
+          .select('stripe_customer_id')
+          .eq('id', sub.prospect_id)
+          .maybeSingle()).data?.stripe_customer_id ??
+        null
+      if (customerIdToSeed) {
+        const pms = await s.paymentMethods.list({
+          customer: customerIdToSeed,
+          type: 'card',
+          limit: 5,
+        })
+        if (pms.data.length > 0) {
+          const newest = pms.data.reduce((a, b) => (a.created > b.created ? a : b))
+          await s.customers.update(customerIdToSeed, {
+            invoice_settings: { default_payment_method: newest.id },
+          })
+        }
+      }
+    } catch (seedErr) {
+      console.error(
+        '[retry-stripe] default-PM seed failed:',
+        seedErr instanceof Error ? seedErr.message : seedErr,
+      )
+    }
+
+    // Retry once after either/both fixes applied.
+    if (reconciledCustomerId) {
+      outcome = await attemptCreate()
+    } else {
+      // Even if no reconciliation was needed, the default-PM seed may have
+      // unblocked things; retry anyway.
+      outcome = await attemptCreate()
     }
   }
 

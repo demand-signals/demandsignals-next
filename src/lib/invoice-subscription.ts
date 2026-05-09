@@ -193,6 +193,45 @@ export async function createSubscriptionFromInvoice(args: {
     cancelAt = nowSec + invoice.term_months * 30 * ONE_DAY
   }
 
+  // Stripe quirk: on Payment-mode Payment Links with customer_creation:'always',
+  // the card from the just-completed checkout session lands on the customer
+  // as a PaymentMethod object but Stripe does NOT auto-set it as the
+  // customer's default_payment_method. Subscription create then fails with
+  // "no attached payment source" because Stripe looks at the default, not
+  // the attached list.
+  //
+  // Fix: read the customer's PaymentMethods, set the most recently created
+  // card as invoice_settings.default_payment_method, THEN create the sub.
+  // No-op if there's no card yet (subscriptions.create will give the
+  // canonical "no payment source" error and the caller's retry logic can
+  // surface it to admin).
+  try {
+    const pms = await s.paymentMethods.list({
+      customer: args.stripeCustomerId,
+      type: 'card',
+      limit: 5,
+    })
+    if (pms.data.length > 0) {
+      const newest = pms.data.reduce((a, b) => (a.created > b.created ? a : b))
+      const cust = await s.customers.retrieve(args.stripeCustomerId)
+      const currentDefault =
+        !('deleted' in cust && cust.deleted)
+          ? cust.invoice_settings?.default_payment_method
+          : null
+      if (currentDefault !== newest.id) {
+        await s.customers.update(args.stripeCustomerId, {
+          invoice_settings: { default_payment_method: newest.id },
+        })
+      }
+    }
+  } catch (e) {
+    console.error(
+      '[createSubscriptionFromInvoice] default-payment-method seed failed:',
+      e instanceof Error ? e.message : e,
+    )
+    // Non-fatal — let subscriptions.create error with a clean Stripe message.
+  }
+
   const subscriptionParams: Stripe.SubscriptionCreateParams = {
     customer: args.stripeCustomerId,
     items,
