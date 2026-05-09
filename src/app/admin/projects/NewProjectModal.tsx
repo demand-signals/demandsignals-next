@@ -25,7 +25,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, X, Plus, Trash2, Sparkles, ChevronUp, ChevronDown } from 'lucide-react'
+import { Loader2, Plus, Trash2, Sparkles, ChevronUp, ChevronDown } from 'lucide-react'
 import { CatalogPicker, type CatalogPickerItem } from '@/components/admin/catalog-picker'
 import { formatCents } from '@/lib/format'
 import type { Cadence } from '@/lib/invoice-types'
@@ -388,16 +388,20 @@ export function NewProjectModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center overflow-y-auto pt-8 pb-12 px-4">
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-2xl w-full max-w-3xl">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10 rounded-t-xl">
-          <h2 className="text-lg font-semibold text-slate-800">New Project</h2>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-700">
-            <X className="w-5 h-5" />
+    <div className="p-6 max-w-4xl">
+      <form onSubmit={handleSubmit}>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-slate-900">New Project</h1>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-sm text-slate-500 hover:text-slate-800 underline"
+          >
+            Cancel
           </button>
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="space-y-5 bg-white border border-slate-200 rounded-xl p-6">
           {/* Basics */}
           <section className="space-y-3">
             <Field label="Project name *">
@@ -728,7 +732,7 @@ export function NewProjectModal({
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-2 sticky bottom-0 bg-white rounded-b-xl">
+        <div className="mt-4 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}

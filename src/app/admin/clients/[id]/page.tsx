@@ -24,7 +24,7 @@ import { revalidatePath } from 'next/cache'
 import {
   ArrowLeft, FileText, Receipt as ReceiptIcon, Calendar, Folder, Repeat,
   Phone, Mail, MapPin, Globe, Pencil, Eye, MessageCircle, Plus, Send,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, LifeBuoy, Bug,
 } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { formatCents } from '@/lib/format'
@@ -88,10 +88,13 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
   }
 
   const projectsOffset = offsetOf('projectsOffset')
+  const supportOffset = offsetOf('supportOffset')
   const subsOffset = offsetOf('subsOffset')
   const invoicesOffset = offsetOf('invoicesOffset')
   const receiptsOffset = offsetOf('receiptsOffset')
   const messagesOffset = offsetOf('messagesOffset')
+
+  const SUPPORT_TYPES = ['customer_service', 'bug_report']
 
   // Core prospect row
   const { data: prospect } = await supabaseAdmin
@@ -110,19 +113,42 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
 
   // Aggregate counts (for status tiles + panel totals) run as separate
   // count-only queries so we don't pay to fetch all rows just to count them.
+  // Projects panel excludes support/bug-report types — those have their
+  // own panel below.
   const [
-    projectsCountRes, subsCountRes, invoicesCountRes, receiptsCountRes,
-    activeProjectsCountRes, activeSubsAggRes, outstandingAggRes,
+    projectsCountRes, supportCountRes, subsCountRes, invoicesCountRes, receiptsCountRes,
+    activeProjectsCountRes, openSupportCountRes,
+    activeSubsAggRes, outstandingAggRes,
     bookingRes,
   ] = await Promise.all([
-    supabaseAdmin.from('projects').select('id', { count: 'exact', head: true }).eq('prospect_id', id),
-    supabaseAdmin.from('subscriptions').select('id', { count: 'exact', head: true }).eq('prospect_id', id),
-    supabaseAdmin.from('invoices').select('id', { count: 'exact', head: true }).eq('prospect_id', id),
-    supabaseAdmin.from('receipts').select('id', { count: 'exact', head: true }).eq('prospect_id', id),
+    // Regular projects (exclude support/bug types)
     supabaseAdmin
       .from('projects')
       .select('id', { count: 'exact', head: true })
       .eq('prospect_id', id)
+      .not('type', 'in', `(${SUPPORT_TYPES.join(',')})`),
+    // Support/bug-report projects (separate panel)
+    supabaseAdmin
+      .from('projects')
+      .select('id', { count: 'exact', head: true })
+      .eq('prospect_id', id)
+      .in('type', SUPPORT_TYPES),
+    supabaseAdmin.from('subscriptions').select('id', { count: 'exact', head: true }).eq('prospect_id', id),
+    supabaseAdmin.from('invoices').select('id', { count: 'exact', head: true }).eq('prospect_id', id),
+    supabaseAdmin.from('receipts').select('id', { count: 'exact', head: true }).eq('prospect_id', id),
+    // Active project tile — only counts non-support active/planning/in_progress
+    supabaseAdmin
+      .from('projects')
+      .select('id', { count: 'exact', head: true })
+      .eq('prospect_id', id)
+      .in('status', ['active', 'planning', 'in_progress'])
+      .not('type', 'in', `(${SUPPORT_TYPES.join(',')})`),
+    // Open support tickets — type IS in support, status not completed/cancelled
+    supabaseAdmin
+      .from('projects')
+      .select('id', { count: 'exact', head: true })
+      .eq('prospect_id', id)
+      .in('type', SUPPORT_TYPES)
       .in('status', ['active', 'planning', 'in_progress']),
     // Active subscriptions for MRR tile
     supabaseAdmin
@@ -182,10 +208,12 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
   }
 
   const totalProjects = projectsCountRes.count ?? 0
+  const totalSupport = supportCountRes.count ?? 0
   const totalSubs = subsCountRes.count ?? 0
   const totalInvoices = invoicesCountRes.count ?? 0
   const totalReceipts = receiptsCountRes.count ?? 0
   const activeProjectsCount = activeProjectsCountRes.count ?? 0
+  const openSupportCount = openSupportCountRes.count ?? 0
   const totalMrrCents = (
     (activeSubsAggRes.data ?? []) as unknown as ActiveSubAgg[]
   ).reduce((sum, s) => sum + monthlyContributionAgg(s), 0)
@@ -205,15 +233,23 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
 
   // Paginated lists — full history, newest first
   const [
-    projectsListRes, subsListRes, invoicesListRes, receiptsListRes,
+    projectsListRes, supportListRes, subsListRes, invoicesListRes, receiptsListRes,
     notesListRes, emailsListRes, activitiesListRes,
   ] = await Promise.all([
     supabaseAdmin
       .from('projects')
-      .select('id, name, status, start_date, target_date, completed_at, monthly_value, phases, updated_at, created_at')
+      .select('id, name, type, status, start_date, target_date, completed_at, monthly_value, phases, updated_at, created_at')
       .eq('prospect_id', id)
+      .not('type', 'in', `(${SUPPORT_TYPES.join(',')})`)
       .order('created_at', { ascending: false })
       .range(projectsOffset, projectsOffset + PAGE_SIZE - 1),
+    supabaseAdmin
+      .from('projects')
+      .select('id, name, type, status, start_date, target_date, completed_at, monthly_value, phases, updated_at, created_at')
+      .eq('prospect_id', id)
+      .in('type', SUPPORT_TYPES)
+      .order('created_at', { ascending: false })
+      .range(supportOffset, supportOffset + PAGE_SIZE - 1),
     supabaseAdmin
       .from('subscriptions')
       .select(`
@@ -258,6 +294,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
   ])
 
   const projects = projectsListRes.data ?? []
+  const supportTickets = supportListRes.data ?? []
   type SubscriptionRow = {
     id: string
     status: string
@@ -360,6 +397,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
   function pageHref(key: string, value: number) {
     const next = new URLSearchParams()
     if (projectsOffset && key !== 'projectsOffset') next.set('projectsOffset', String(projectsOffset))
+    if (supportOffset && key !== 'supportOffset') next.set('supportOffset', String(supportOffset))
     if (subsOffset && key !== 'subsOffset') next.set('subsOffset', String(subsOffset))
     if (invoicesOffset && key !== 'invoicesOffset') next.set('invoicesOffset', String(invoicesOffset))
     if (receiptsOffset && key !== 'receiptsOffset') next.set('receiptsOffset', String(receiptsOffset))
@@ -409,11 +447,16 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
       </div>
 
       {/* Status header tiles — current state */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         <StatTile
           label="Active projects"
           value={String(activeProjectsCount)}
           accent={activeProjectsCount > 0 ? 'text-emerald-700' : 'text-slate-400'}
+        />
+        <StatTile
+          label="Open tickets"
+          value={String(openSupportCount)}
+          accent={openSupportCount > 0 ? 'text-amber-600' : 'text-slate-400'}
         />
         <StatTile
           label="MRR"
@@ -529,6 +572,74 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
                         <div className="text-[10px] text-slate-400">/mo</div>
                       </div>
                     )}
+                  </div>
+                </Link>
+              )
+            })}
+          </Section>
+
+          {/* Support & Bug Reports — type IN ('customer_service','bug_report') */}
+          <Section
+            anchor="supportOffset"
+            icon={LifeBuoy}
+            title="Support & Bug Reports"
+            count={totalSupport}
+            empty="No support contacts or bug reports yet."
+            createHref={`/admin/projects/new?prospect_id=${prospect.id}&type=customer_service`}
+            createLabel="Log support contact"
+            extraActions={
+              <Link
+                href={`/admin/projects/new?prospect_id=${prospect.id}&type=bug_report`}
+                className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium whitespace-nowrap"
+              >
+                <Bug className="w-3.5 h-3.5" />
+                Log bug report
+              </Link>
+            }
+            footerAccent={
+              openSupportCount > 0 ? (
+                <span className="text-amber-600 font-semibold">
+                  {openSupportCount} open
+                </span>
+              ) : null
+            }
+            pagination={{
+              offset: supportOffset,
+              total: totalSupport,
+              prevHref: pageHref('supportOffset', Math.max(0, supportOffset - PAGE_SIZE)),
+              nextHref: pageHref('supportOffset', supportOffset + PAGE_SIZE),
+            }}
+          >
+            {supportTickets.map((p) => {
+              const phases = Array.isArray(p.phases) ? p.phases : []
+              const phaseCount = phases.length
+              const completedPhases = phases.filter(
+                (ph: { status?: string }) => ph?.status === 'completed',
+              ).length
+              const TypeIcon = p.type === 'bug_report' ? Bug : LifeBuoy
+              return (
+                <Link
+                  key={p.id}
+                  href={`/admin/projects/${p.id}`}
+                  className="block p-3 rounded-lg border border-slate-200 hover:border-amber-300 hover:bg-amber-50/30 transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-amber-100 text-amber-600">
+                      <TypeIcon className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-slate-900 truncate">{p.name}</div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        <StatusPill status={p.status} />
+                        <span className="ml-2 inline-block text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-medium uppercase">
+                          {p.type === 'bug_report' ? 'BUG' : 'SUPPORT'}
+                        </span>
+                        {phaseCount > 0 && <span className="ml-2">{completedPhases}/{phaseCount} phases</span>}
+                        {p.created_at && (
+                          <span className="ml-2 text-slate-400">· {new Date(p.created_at).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </Link>
               )
@@ -861,7 +972,7 @@ function StatusPill({ status }: { status: string | null | undefined }) {
 
 function Section({
   anchor, icon: Icon, title, count, empty,
-  createHref, createLabel, footerAccent, pagination, children,
+  createHref, createLabel, extraActions, footerAccent, pagination, children,
 }: {
   anchor: string
   icon: React.ElementType
@@ -870,6 +981,7 @@ function Section({
   empty: string
   createHref?: string
   createLabel?: string
+  extraActions?: React.ReactNode
   footerAccent?: React.ReactNode
   pagination?: {
     offset: number
@@ -891,6 +1003,7 @@ function Section({
         </h3>
         <div className="flex items-center gap-3 flex-shrink-0">
           {footerAccent && <div className="text-xs">{footerAccent}</div>}
+          {extraActions}
           {createHref && createLabel && (
             <Link
               href={createHref}
