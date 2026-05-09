@@ -6,7 +6,7 @@
 //     in this priority order from explicit named slots only:
 //       1. DSIG_STRIPE_RESTRICTED_KEY_050826
 //       2. DSIG_STRIPE_STANDARD_KEY_050826
-//       3. STRIPE_SECRET_KEY (legacy)
+//       3. DSIG_STRIPE_KEY_042626 (prior dated key, kept as fallback)
 //     No glob/auto-discovery. Add a new named slot to resolveStripeSecret
 //     when rotating; bump the date suffix at the same time.
 //   STRIPE_SNAPSHOT_SIGNING_SECRET — for verifying webhook signatures.
@@ -59,7 +59,7 @@ function getSecretKey(): string {
  * Slot priority (newer dated keys win, restricted preferred over standard):
  *   1. DSIG_STRIPE_RESTRICTED_KEY_050826  — new restricted key (current)
  *   2. DSIG_STRIPE_STANDARD_KEY_050826    — new standard key (current)
- *   3. STRIPE_SECRET_KEY                  — legacy generic slot
+ *   3. DSIG_STRIPE_KEY_042626             — prior dated key, fallback
  *
  * Glob discovery (DSIG_STRIPE_KEY_*) is intentionally NOT used. An earlier
  * version of this resolver scanned every env var with that prefix and
@@ -81,7 +81,7 @@ function resolveStripeSecret(): {
   const candidates: Array<[string, string | undefined]> = [
     ['DSIG_STRIPE_RESTRICTED_KEY_050826', process.env.DSIG_STRIPE_RESTRICTED_KEY_050826],
     ['DSIG_STRIPE_STANDARD_KEY_050826', process.env.DSIG_STRIPE_STANDARD_KEY_050826],
-    ['STRIPE_SECRET_KEY', process.env.STRIPE_SECRET_KEY],
+    ['DSIG_STRIPE_KEY_042626', process.env.DSIG_STRIPE_KEY_042626],
   ]
 
   const rejected: Array<{ slot: string; prefix: string }> = []
@@ -133,7 +133,7 @@ export function stripe(): Stripe {
   if (!key) {
     throw new Error(
       'No valid Stripe secret key found. Checked DSIG_STRIPE_RESTRICTED_KEY_050826, ' +
-      'DSIG_STRIPE_STANDARD_KEY_050826, STRIPE_SECRET_KEY — none had an sk_live_/sk_test_/rk_live_/rk_test_ prefix. ' +
+      'DSIG_STRIPE_STANDARD_KEY_050826, DSIG_STRIPE_KEY_042626 — none had an sk_live_/sk_test_/rk_live_/rk_test_ prefix. ' +
       'See server logs for which slots were set but rejected.',
     )
   }
