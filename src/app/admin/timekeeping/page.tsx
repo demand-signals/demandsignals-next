@@ -470,10 +470,14 @@ function PasteHandoffBlock({ onSaved }: { onSaved: () => void }) {
       }),
     })
     setSaving(false)
+    const j = await res.json().catch(() => ({}))
     if (!res.ok) {
-      const j = await res.json().catch(() => ({}))
       alert(j.error ?? 'Save failed')
       return
+    }
+    // Surface server-side warning (note wrote, time entry didn't).
+    if (j.warning) {
+      alert(`Saved with warning:\n\n${j.warning}\n\nThe note saved but the time entry did not. Re-paste after the underlying issue is fixed, or log time manually.`)
     }
     onSaved()
   }

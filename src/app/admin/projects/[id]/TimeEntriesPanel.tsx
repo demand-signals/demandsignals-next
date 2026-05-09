@@ -479,10 +479,18 @@ function PasteHandoffForm({
       }),
     })
     setSaving(false)
+    const j = await res.json().catch(() => ({}))
     if (!res.ok) {
-      const j = await res.json().catch(() => ({}))
       alert(j.error ?? 'Save failed')
       return
+    }
+    // Server returns 200 with a `warning` field when the project_notes
+    // row wrote but the project_time_entries row failed (e.g. column
+    // mismatch, constraint failure). Don't pretend success — surface
+    // it so the admin knows the time entry didn't land.
+    if (j.warning) {
+      alert(`Saved with warning:\n\n${j.warning}\n\nThe note saved but the time entry did not. Re-paste after the underlying issue is fixed, or log time manually via Log Time.`)
+      // Still call onCreated() so the panel refreshes and shows what DID save.
     }
     onCreated()
   }

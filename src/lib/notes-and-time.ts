@@ -225,6 +225,12 @@ export async function createNoteAndTimeEntry(
     ? new Date(input.session_ended_at).toISOString().slice(0, 10)
     : new Date().toISOString().slice(0, 10)
 
+  // project_time_entries has no created_by column — admin attribution
+  // for time entries lives on logged_by (email or actor label). Past
+  // versions of this helper sent created_by; PostgREST silently rejected
+  // the insert and the warning never surfaced to the frontend, leading
+  // to "Save handoff" appearing successful while the time entry never
+  // wrote. See migrations 030 + 048 for the actual column set.
   const { data: timeEntry, error: teErr } = await supabaseAdmin
     .from('project_time_entries')
     .insert({
@@ -241,7 +247,6 @@ export async function createNoteAndTimeEntry(
       session_ended_at: input.session_ended_at ?? null,
       description: input.title ?? null,
       source: input.source === 'import' ? 'manual' : input.source,
-      created_by: audit.actor_id,
     })
     .select('id, hours, hunter_minutes, claude_minutes, logged_at, logged_by')
     .single()
