@@ -50,7 +50,9 @@ const CADENCE_COLOR: Record<string, string> = {
   annual:     T.ORANGE,
 }
 
-function cadencePill(cadence: string): string {
+// Exported helpers (shared with pdf/project.ts so project + bug-report
+// PDFs render with identical brand-spec phase/deliverable formatting).
+export function cadencePill(cadence: string): string {
   const label = CADENCE_LABEL[cadence] ?? cadence
   const color = CADENCE_COLOR[cadence] ?? T.GRAY
   return `<span style="display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600;color:${color};border:1px solid ${color};white-space:nowrap;letter-spacing:0.02em">${esc(label)}</span>`
@@ -58,11 +60,11 @@ function cadencePill(cadence: string): string {
 
 // ── Phase accumulator ─────────────────────────────────────────────────
 
-interface TotalsAccum {
+export interface TotalsAccum {
   oneTime: number; monthly: number; quarterly: number; annual: number
 }
 
-function accumulatePhase(phase: SowPhase): TotalsAccum {
+export function accumulatePhase(phase: SowPhase): TotalsAccum {
   const t: TotalsAccum = { oneTime: 0, monthly: 0, quarterly: 0, annual: 0 }
   for (const d of phase.deliverables) {
     const line = d.line_total_cents ?? ((d.hours ?? d.quantity ?? 1) * (d.unit_price_cents ?? 0))
@@ -76,7 +78,7 @@ function accumulatePhase(phase: SowPhase): TotalsAccum {
   return t
 }
 
-function accumulateAll(phases: SowPhase[]): TotalsAccum {
+export function accumulateAll(phases: SowPhase[]): TotalsAccum {
   return phases.reduce<TotalsAccum>(
     (acc, p) => {
       const t = accumulatePhase(p)
@@ -198,7 +200,7 @@ function coverPage(sow: SowDocument, prospect: SowProspect): string {
 
 // ── PAGE 2 — Scope + Phases & Deliverables ────────────────────────────
 
-function deliverableRow(d: SowPhaseDeliverable, rowIdx: number): string {
+export function deliverableRow(d: SowPhaseDeliverable, rowIdx: number): string {
   const qty    = d.quantity ?? 1
   const hrs    = d.hours
   const unit   = d.unit_price_cents ?? 0
@@ -222,7 +224,7 @@ function deliverableRow(d: SowPhaseDeliverable, rowIdx: number): string {
   </tr>`
 }
 
-function phaseBlock(phase: SowPhase, idx: number): string {
+export function phaseBlock(phase: SowPhase, idx: number): string {
   const num = String(idx + 1).padStart(2, '0')
   const t = accumulatePhase(phase)
   const parts: string[] = []

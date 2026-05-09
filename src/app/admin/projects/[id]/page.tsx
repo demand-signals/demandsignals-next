@@ -3,7 +3,7 @@
 import { useEffect, useState, use, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Loader2, ChevronDown, ChevronRight, ExternalLink, CheckCircle2, Circle, Clock, Trash2, Pencil } from 'lucide-react'
+import { Loader2, ChevronDown, ChevronRight, ExternalLink, CheckCircle2, Circle, Clock, Trash2, Pencil, FileText } from 'lucide-react'
 import { formatCents } from '@/lib/format'
 import type { ProjectRow, ProjectPhase, ProjectPhaseDeliverable } from '@/lib/invoice-types'
 import { OutstandingObligations } from './OutstandingObligations'
@@ -397,6 +397,16 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
             </div>
           ) : (
             <>
+              <a
+                href={`/api/admin/projects/${project.id}/pdf`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
+                title="Generate brand-formatted PDF"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                PDF
+              </a>
               <Link
                 href={`/admin/projects/${project.id}/edit`}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
