@@ -61,8 +61,29 @@ export function SubscriptionActionPanel({ subscription }: Props) {
     )
   }
 
+  async function handleRetryStripe() {
+    if (!confirm(
+      'Retry Stripe subscription creation?\n\nThis will call Stripe with the row\'s current ' +
+      'amount/interval/period_start and store the resulting stripe_subscription_id. Use only ' +
+      'when the original create failed (e.g. STRIPE ERROR in notes).',
+    )) return
+    setBusy(true)
+    const res = await fetch(
+      `/api/admin/subscriptions/${subscription.id}/retry-stripe`,
+      { method: 'POST', headers: { 'content-type': 'application/json' } },
+    )
+    const data = await res.json()
+    setBusy(false)
+    if (!res.ok) return alert(`Retry failed: ${data.error}`)
+    alert(
+      `Stripe subscription created.\n\nstripe_subscription_id: ${data.stripe_subscription_id}\nstatus: ${data.status}`,
+    )
+    router.refresh()
+  }
+
   const isPaused = subscription.status === 'paused'
   const isCanceled = subscription.status === 'canceled'
+  const needsStripeRetry = !subscription.stripe_subscription_id && !isCanceled
 
   return (
     <div
@@ -74,6 +95,43 @@ export function SubscriptionActionPanel({ subscription }: Props) {
       }}
     >
       <h3 style={{ margin: 0, marginBottom: 12, fontSize: 14, fontWeight: 700 }}>Actions</h3>
+
+      {needsStripeRetry && (
+        <div
+          style={{
+            marginBottom: 12,
+            padding: 12,
+            border: '1px solid #fbbf24',
+            borderRadius: 6,
+            background: '#fef3c7',
+          }}
+        >
+          <p style={{ margin: 0, marginBottom: 8, fontSize: 13, color: '#7c2d12', fontWeight: 600 }}>
+            ⚠ No Stripe subscription on this row
+          </p>
+          <p style={{ margin: 0, marginBottom: 10, fontSize: 12, color: '#78350f', lineHeight: 1.4 }}>
+            stripe_subscription_id is null. The original create call likely failed (check Notes).
+            Retry the create using the row's current amount/interval/period_start.
+          </p>
+          <button
+            onClick={handleRetryStripe}
+            disabled={busy}
+            style={{
+              padding: '6px 12px',
+              borderRadius: 6,
+              background: '#f28500',
+              color: 'white',
+              border: 'none',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: busy ? 'not-allowed' : 'pointer',
+              opacity: busy ? 0.5 : 1,
+            }}
+          >
+            {busy ? 'Retrying…' : 'Retry Stripe sync'}
+          </button>
+        </div>
+      )}
 
       {subscription.cycle_cap !== null && (
         <p style={{ fontSize: 13, color: '#5d6780', marginBottom: 12 }}>
