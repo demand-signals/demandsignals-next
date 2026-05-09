@@ -388,6 +388,26 @@ function parseHandoffText(raw: string): ParsedHandoff | { error: string } {
     if (firstBullet) clientUpdateTitle = firstBullet[1].slice(0, 200)
   }
 
+  // Fallback body — same logic as TimeEntriesPanel: when no formal
+  // "## CLIENT UPDATE" header was pasted, use the whole raw paste as
+  // the note body so Hunter's session detail isn't lost as
+  // "(time entry from /handoff)" placeholder.
+  if (!clientUpdateBody && raw.trim().length > 0) {
+    clientUpdateBody = raw.trim()
+    const titleSkipRe = /^(session|wall clock|project|client|total billable|notes)\s*[:\/]/i
+    const lines = raw.split('\n').map((l) => l.trim()).filter(Boolean)
+    for (const line of lines) {
+      if (!titleSkipRe.test(line) && !line.startsWith('-') && !line.startsWith('#')) {
+        clientUpdateTitle = line.slice(0, 200)
+        break
+      }
+    }
+    if (!clientUpdateTitle) {
+      const projLine = raw.match(/Project\s*\/\s*Client:\s*([^\n]+)/i)
+      if (projLine) clientUpdateTitle = projLine[1].trim().slice(0, 200)
+    }
+  }
+
   return {
     hunter_minutes: hunterMinutes,
     claude_minutes: claudeMinutes,

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Loader2, Clock, Plus, Trash2, X, Clipboard } from 'lucide-react'
+import { Loader2, Clock, Plus, Trash2, X, Clipboard, Pencil, Check } from 'lucide-react'
 import type { ProjectPhase } from '@/lib/invoice-types'
 
 interface TimeEntry {
@@ -63,6 +63,12 @@ export function TimeEntriesPanel({
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [showPaste, setShowPaste] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editHunterStr, setEditHunterStr] = useState('')
+  const [editClaudeStr, setEditClaudeStr] = useState('')
+  const [editHoursStr, setEditHoursStr] = useState('')
+  const [editDesc, setEditDesc] = useState('')
+  const [editBusy, setEditBusy] = useState(false)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -81,6 +87,74 @@ export function TimeEntriesPanel({
     })
     if (res.ok) load()
     else alert('Delete failed')
+  }
+
+  // Edit-entry helpers: Xh Ym → minutes parser, used for both hunter +
+  // claude inputs. Empty/invalid → 0. "6h 30m" / "6h" / "30m" / "390"
+  // (raw minutes) all accepted.
+  function parseTimeInputToMinutes(s: string): number {
+    const t = s.trim()
+    if (!t) return 0
+    if (/^\d+$/.test(t)) return parseInt(t, 10)  // raw minutes
+    let mins = 0
+    const h = t.match(/(\d+)\s*h/i)
+    const m = t.match(/(\d+)\s*m\b/i)
+    if (h) mins += parseInt(h[1], 10) * 60
+    if (m) mins += parseInt(m[1], 10)
+    return mins
+  }
+
+  function startEditEntry(e: TimeEntry) {
+    setEditingId(e.id)
+    setEditHunterStr(e.hunter_minutes ? fmtMinutes(e.hunter_minutes) : '')
+    setEditClaudeStr(e.claude_minutes ? fmtMinutes(e.claude_minutes) : '')
+    // Show hours only if it's a manual entry without minute splits
+    const hasMinutes = (e.hunter_minutes ?? 0) > 0 || (e.claude_minutes ?? 0) > 0
+    setEditHoursStr(hasMinutes ? '' : (e.hours != null ? String(e.hours) : ''))
+    setEditDesc(e.description ?? '')
+  }
+  function cancelEditEntry() {
+    setEditingId(null)
+    setEditHunterStr('')
+    setEditClaudeStr('')
+    setEditHoursStr('')
+    setEditDesc('')
+  }
+  async function saveEditEntry(entryId: string) {
+    setEditBusy(true)
+    const payload: Record<string, unknown> = {
+      description: editDesc.trim() || null,
+    }
+    const hMin = parseTimeInputToMinutes(editHunterStr)
+    const cMin = parseTimeInputToMinutes(editClaudeStr)
+    const hasMinuteEdits =
+      editHunterStr.trim().length > 0 || editClaudeStr.trim().length > 0
+    if (hasMinuteEdits) {
+      payload.hunter_minutes = hMin
+      payload.claude_minutes = cMin
+      // hours auto-mirrors on the server when minutes change
+    } else if (editHoursStr.trim().length > 0) {
+      const h = parseFloat(editHoursStr)
+      if (!Number.isFinite(h) || h < 0) {
+        alert('Hours must be a non-negative number')
+        setEditBusy(false)
+        return
+      }
+      payload.hours = h
+    }
+    const res = await fetch(`/api/admin/projects/${projectId}/time-entries/${entryId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    setEditBusy(false)
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      alert(j.error ?? 'Edit failed')
+      return
+    }
+    cancelEditEntry()
+    load()
   }
 
   const phaseName = (phaseId: string | null) => {
@@ -162,47 +236,124 @@ export function TimeEntriesPanel({
         </div>
       ) : (
         <ul className="divide-y divide-slate-100">
-          {data.entries.map((e) => (
-            <li key={e.id} className="px-4 py-2.5 flex items-start gap-3 group">
-              <div className="text-sm font-semibold text-slate-700 tabular-nums w-14 shrink-0">
-                {entryHours(e).toFixed(2)}h
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap text-[11px]">
-                  <span className="text-slate-500">{new Date(e.logged_at).toLocaleDateString()}</span>
-                  {e.source === 'handoff' && (
-                    <span className="px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 font-semibold">handoff</span>
-                  )}
-                  {phaseName(e.phase_id) && (
-                    <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">{phaseName(e.phase_id)}</span>
-                  )}
-                  {!e.billable && (
-                    <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">non-billable</span>
-                  )}
-                  {e.logged_by && (
-                    <span className="text-slate-400 truncate">· {e.logged_by}</span>
+          {data.entries.map((e) => {
+            const isEditing = editingId === e.id
+            return (
+              <li key={e.id} className="px-4 py-2.5 flex items-start gap-3 group">
+                <div className="text-sm font-semibold text-slate-700 tabular-nums w-14 shrink-0">
+                  {entryHours(e).toFixed(2)}h
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap text-[11px]">
+                    <span className="text-slate-500">{new Date(e.logged_at).toLocaleDateString()}</span>
+                    {e.source === 'handoff' && (
+                      <span className="px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 font-semibold">handoff</span>
+                    )}
+                    {phaseName(e.phase_id) && (
+                      <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">{phaseName(e.phase_id)}</span>
+                    )}
+                    {!e.billable && (
+                      <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">non-billable</span>
+                    )}
+                    {e.logged_by && (
+                      <span className="text-slate-400 truncate">· {e.logged_by}</span>
+                    )}
+                  </div>
+
+                  {isEditing ? (
+                    <div className="mt-2 space-y-2 bg-slate-50 -mx-2 px-2 py-2 rounded">
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="text-[11px] text-slate-600">
+                          Hunter
+                          <input
+                            value={editHunterStr}
+                            onChange={(ev) => setEditHunterStr(ev.target.value)}
+                            placeholder="6h 30m"
+                            className="w-full mt-0.5 px-2 py-1 border border-slate-200 rounded text-sm"
+                          />
+                        </label>
+                        <label className="text-[11px] text-slate-600">
+                          Claude
+                          <input
+                            value={editClaudeStr}
+                            onChange={(ev) => setEditClaudeStr(ev.target.value)}
+                            placeholder="9h 0m"
+                            className="w-full mt-0.5 px-2 py-1 border border-slate-200 rounded text-sm"
+                          />
+                        </label>
+                      </div>
+                      {!editHunterStr.trim() && !editClaudeStr.trim() && (
+                        <label className="text-[11px] text-slate-600 block">
+                          Or hours (decimal, when no minute split)
+                          <input
+                            value={editHoursStr}
+                            onChange={(ev) => setEditHoursStr(ev.target.value)}
+                            placeholder="2.5"
+                            className="w-full mt-0.5 px-2 py-1 border border-slate-200 rounded text-sm"
+                          />
+                        </label>
+                      )}
+                      <textarea
+                        value={editDesc}
+                        onChange={(ev) => setEditDesc(ev.target.value)}
+                        placeholder="Description"
+                        rows={2}
+                        className="w-full px-2 py-1 border border-slate-200 rounded text-sm"
+                      />
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={cancelEditEntry}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded text-slate-600 hover:bg-slate-100"
+                        >
+                          <X className="w-3.5 h-3.5" /> Cancel
+                        </button>
+                        <button
+                          onClick={() => saveEditEntry(e.id)}
+                          disabled={editBusy}
+                          className="inline-flex items-center gap-1 px-3 py-1 text-xs rounded bg-[var(--teal)] text-white font-medium disabled:opacity-50 hover:bg-[var(--teal-dark)]"
+                        >
+                          {editBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {((e.hunter_minutes ?? 0) > 0 || (e.claude_minutes ?? 0) > 0) && (
+                        <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
+                          <span>Hunter <strong className="text-slate-700">{fmtMinutes(e.hunter_minutes)}</strong></span>
+                          <span>·</span>
+                          <span>Claude <strong className="text-slate-700">{fmtMinutes(e.claude_minutes)}</strong></span>
+                        </div>
+                      )}
+                      {e.description && (
+                        <div className="text-sm text-slate-700 mt-0.5">{e.description}</div>
+                      )}
+                    </>
                   )}
                 </div>
-                {((e.hunter_minutes ?? 0) > 0 || (e.claude_minutes ?? 0) > 0) && (
-                  <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
-                    <span>Hunter <strong className="text-slate-700">{fmtMinutes(e.hunter_minutes)}</strong></span>
-                    <span>·</span>
-                    <span>Claude <strong className="text-slate-700">{fmtMinutes(e.claude_minutes)}</strong></span>
+
+                {!isEditing && (
+                  <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => startEditEntry(e)}
+                      className="text-slate-400 hover:text-teal-600"
+                      title="Edit entry"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(e.id)}
+                      className="text-slate-400 hover:text-red-500"
+                      title="Delete entry"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 )}
-                {e.description && (
-                  <div className="text-sm text-slate-700 mt-0.5">{e.description}</div>
-                )}
-              </div>
-              <button
-                onClick={() => handleDelete(e.id)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-red-500 shrink-0"
-                title="Delete entry"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </li>
-          ))}
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>
@@ -418,6 +569,32 @@ function parseHandoff(raw: string): ParsedHandoff | { error: string } {
   // Notes block (artifact C "Notes:" line and below)
   const notesRe = /Notes:\s*([\s\S]*?)(?=\n##\s|$)/
   const notesMatch = raw.match(notesRe)
+
+  // Fallback body: when no formal "## CLIENT UPDATE" header was pasted
+  // (Hunter's typical handoff is just the TIME TRACKING content + Notes
+  // block), use the WHOLE raw paste as the note body. The session detail
+  // Hunter writes — the breakdown of Hunter active time, the Claude
+  // compute description, etc. — is what makes a good client-visible
+  // note. Better to capture too much than to leave the body as a
+  // placeholder "(time entry from /handoff)" string.
+  if (!clientUpdateBody && raw.trim().length > 0) {
+    clientUpdateBody = raw.trim()
+    // Title fallback: first non-trivial line (skip "Session:", "Wall clock:",
+    // "Project / Client:", "Total billable:" lines — those are headers).
+    const titleSkipRe = /^(session|wall clock|project|client|total billable|notes)\s*[:\/]/i
+    const lines = raw.split('\n').map((l) => l.trim()).filter(Boolean)
+    for (const line of lines) {
+      if (!titleSkipRe.test(line) && !line.startsWith('-') && !line.startsWith('#')) {
+        clientUpdateTitle = line.slice(0, 200)
+        break
+      }
+    }
+    // If no title found, try the Project / Client line trimmed
+    if (!clientUpdateTitle) {
+      const projLine = raw.match(/Project\s*\/\s*Client:\s*([^\n]+)/i)
+      if (projLine) clientUpdateTitle = projLine[1].trim().slice(0, 200)
+    }
+  }
 
   return {
     hunter_minutes: hunterMinutes,
