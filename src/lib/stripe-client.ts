@@ -2,11 +2,16 @@
 // Singleton Stripe client + idempotency helpers.
 //
 // Required env vars:
-//   STRIPE_SECRET_KEY — secret key (sk_test_... or sk_live_...). REQUIRED.
-//     Falls back to STRIPE_CLAUDE_API_KEY or legacy STRIPE_API_KEY.
+//   Secret key (sk_live_/sk_test_/rk_live_/rk_test_) — REQUIRED. Resolved
+//     in this priority order from explicit named slots only:
+//       1. DSIG_STRIPE_RESTRICTED_KEY_050826
+//       2. DSIG_STRIPE_STANDARD_KEY_050826
+//       3. STRIPE_SECRET_KEY (legacy)
+//     No glob/auto-discovery. Add a new named slot to resolveStripeSecret
+//     when rotating; bump the date suffix at the same time.
 //   STRIPE_SNAPSHOT_SIGNING_SECRET — for verifying webhook signatures.
 //     Falls back to STRIPE_WEBHOOK_SECRET. Until set, webhook returns 503.
-//   STRIPE_PUBLISHABLE_KEY — for any future client-side flows.
+//   DSIG_STRIPE_PUBLISHABLE_KEY_050826 — for any future client-side flows.
 //     Not currently used (we host invoices, Stripe hosts checkout/portal).
 //
 // Webhook payload style: our handler expects SNAPSHOT payloads (the
@@ -23,17 +28,20 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 
 let client: Stripe | null = null
 
-// Stripe-issued secret-key prefixes. Stripe uses several:
-//   sk_live_ / sk_test_  — Standard secret key (legacy, broad scope)
+// Stripe-issued secret-key prefixes. Stripe uses two:
+//   sk_live_ / sk_test_  — Standard secret key (broad scope)
 //   rk_live_ / rk_test_  — Restricted key (granular permissions)
-//   mk_                  — Machine key (newer Standard secret format,
-//                          may carry a long opaque tail without a
-//                          live/test segment in the prefix)
-// Pasted credentials from other vendors (e.g. ak_, pat_, AKIA…, ghp_)
-// are rejected up front so the fallback chain has a chance to find a
-// real key instead of the SDK silently caching a garbage value and
-// erroring on first API call.
-const VALID_SECRET_KEY_PATTERN = /^(sk_(live|test)_|rk_(live|test)_|mk_)/
+// Pasted credentials from other vendors (e.g. ak_, pat_, mk_, AKIA…,
+// ghp_) are rejected up front so the fallback chain has a chance to
+// find a real key instead of the SDK silently caching a garbage value
+// and erroring on first API call.
+//
+// History note: an earlier version of this regex accepted a bogus 'mk_'
+// prefix on a misread of Stripe's docs — that opened the door for
+// non-Stripe env vars (whose values happen to start with mk_) to be
+// matched by the DSIG_STRIPE_KEY_* glob discovery and handed to the
+// Stripe SDK. The glob is also gone now (only explicit named slots).
+const VALID_SECRET_KEY_PATTERN = /^(sk_(live|test)_|rk_(live|test)_)/
 
 function isValidStripeSecretKey(v: string | undefined | null): boolean {
   return typeof v === 'string' && VALID_SECRET_KEY_PATTERN.test(v.trim())
@@ -45,11 +53,21 @@ function getSecretKey(): string {
 
 /**
  * Walk the candidate env-var chain, return the first that matches a Stripe
- * secret-key prefix. Slots are searched in priority order:
- *   1. Explicit named slots: STRIPE_SECRET_KEY, STRIPE_CLAUDE_API_KEY, STRIPE_API_KEY
- *   2. Any DSIG_STRIPE_KEY_* slot (rotation-friendly: drop a new dated key
- *      like DSIG_STRIPE_KEY_042626 in Vercel, no code edit needed).
- *      Multiple matches sort by name DESC so the newest dated key wins.
+ * secret-key prefix (sk_live_/sk_test_/rk_live_/rk_test_). Slots are
+ * searched in priority order; the first valid one wins.
+ *
+ * Slot priority (newer dated keys win, restricted preferred over standard):
+ *   1. DSIG_STRIPE_RESTRICTED_KEY_050826  — new restricted key (current)
+ *   2. DSIG_STRIPE_STANDARD_KEY_050826    — new standard key (current)
+ *   3. STRIPE_SECRET_KEY                  — legacy generic slot
+ *
+ * Glob discovery (DSIG_STRIPE_KEY_*) is intentionally NOT used. An earlier
+ * version of this resolver scanned every env var with that prefix and
+ * picked the first one that passed the regex. Combined with a too-loose
+ * regex (allowed `mk_`), that let a non-Stripe credential whose value
+ * happened to start with `mk_` get fed to the Stripe SDK, producing
+ * Invalid API Key errors at runtime. Explicit named slots only from now
+ * on. Add a new slot here when rotating; don't reach for a glob.
  *
  * Garbage slots (set but not a Stripe prefix) are skipped with a console
  * warning that names the slot — surfaces in Vercel logs and on the admin
@@ -60,18 +78,12 @@ function resolveStripeSecret(): {
   active_slot: string | null
   rejected: Array<{ slot: string; prefix: string }>
 } {
-  const explicit: Array<[string, string | undefined]> = [
+  const candidates: Array<[string, string | undefined]> = [
+    ['DSIG_STRIPE_RESTRICTED_KEY_050826', process.env.DSIG_STRIPE_RESTRICTED_KEY_050826],
+    ['DSIG_STRIPE_STANDARD_KEY_050826', process.env.DSIG_STRIPE_STANDARD_KEY_050826],
     ['STRIPE_SECRET_KEY', process.env.STRIPE_SECRET_KEY],
-    ['STRIPE_CLAUDE_API_KEY', process.env.STRIPE_CLAUDE_API_KEY],
-    ['STRIPE_API_KEY', process.env.STRIPE_API_KEY],
   ]
-  // Discover rotation-friendly slots — DSIG_STRIPE_KEY_<anything>.
-  const rotation: Array<[string, string | undefined]> = Object.keys(process.env)
-    .filter((k) => /^DSIG_STRIPE_KEY_/.test(k))
-    .sort((a, b) => b.localeCompare(a))
-    .map((k) => [k, process.env[k]] as [string, string | undefined])
 
-  const candidates = [...explicit, ...rotation]
   const rejected: Array<{ slot: string; prefix: string }> = []
   for (const [name, value] of candidates) {
     if (!value) continue
@@ -83,7 +95,7 @@ function resolveStripeSecret(): {
     // errors at the call site rather than the SDK boundary.
     console.warn(
       `[stripe-client] ${name} is set but does not look like a Stripe secret key ` +
-      `(expected sk_live_/sk_test_/rk_live_/rk_test_/mk_ prefix; got ${value.slice(0, 4)}…). Skipping.`,
+      `(expected sk_live_/sk_test_/rk_live_/rk_test_ prefix; got ${value.slice(0, 4)}…). Skipping.`,
     )
   }
   return { key: '', active_slot: null, rejected }
@@ -120,8 +132,8 @@ export function stripe(): Stripe {
   const key = getSecretKey()
   if (!key) {
     throw new Error(
-      'No valid Stripe secret key found. Checked STRIPE_SECRET_KEY, ' +
-      'STRIPE_CLAUDE_API_KEY, STRIPE_API_KEY — none had an sk_/rk_ prefix. ' +
+      'No valid Stripe secret key found. Checked DSIG_STRIPE_RESTRICTED_KEY_050826, ' +
+      'DSIG_STRIPE_STANDARD_KEY_050826, STRIPE_SECRET_KEY — none had an sk_live_/sk_test_/rk_live_/rk_test_ prefix. ' +
       'See server logs for which slots were set but rejected.',
     )
   }

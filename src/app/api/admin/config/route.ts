@@ -48,7 +48,10 @@ export async function GET(request: NextRequest) {
     stripe_webhook_secret_configured: Boolean(stripeDiag.active_webhook_slot),
     stripe_webhook_active_slot: stripeDiag.active_webhook_slot,
     stripe_webhook_rejected_slots: stripeDiag.rejected_webhook_slots,
-    stripe_publishable_configured: Boolean(process.env.STRIPE_PUBLISHABLE_KEY),
+    stripe_publishable_configured: Boolean(
+      process.env.DSIG_STRIPE_PUBLISHABLE_KEY_050826 ||
+      process.env.STRIPE_PUBLISHABLE_KEY,
+    ),
     twilio_configured: Boolean(
       process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN,
     ),
