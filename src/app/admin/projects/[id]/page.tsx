@@ -10,7 +10,6 @@ import { OutstandingObligations } from './OutstandingObligations'
 import { TimeEntriesPanel } from './TimeEntriesPanel'
 import { InlineEditText } from '@/components/admin/inline-edit-text'
 import { ProjectNotesPanel } from '@/components/admin/ProjectNotesPanel'
-import { EditProjectModal } from './EditProjectModal'
 
 // Extended with joined prospect data
 interface ProjectDetail extends ProjectRow {
@@ -235,7 +234,6 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
   const [error, setError] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [showEdit, setShowEdit] = useState(false)
 
   async function handleDelete() {
     setDeleting(true)
@@ -399,14 +397,14 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
             </div>
           ) : (
             <>
-              <button
-                onClick={() => setShowEdit(true)}
+              <Link
+                href={`/admin/projects/${project.id}/edit`}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
-                title="Edit project metadata"
+                title="Edit project"
               >
                 <Pencil className="w-3.5 h-3.5" />
                 Edit
-              </button>
+              </Link>
               <button
                 onClick={() => setConfirmDelete(true)}
                 className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50"
@@ -665,24 +663,6 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
 
       {/* Project Notes */}
       <ProjectNotesPanel projectId={project.id} />
-
-      {/* Edit metadata modal */}
-      {showEdit && (
-        <EditProjectModal
-          projectId={project.id}
-          initial={{
-            type: project.type,
-            status: project.status,
-            start_date: project.start_date,
-            target_date: project.target_date,
-            completed_at: project.completed_at,
-            monthly_value: project.monthly_value,
-            notes: project.notes,
-          }}
-          onClose={() => setShowEdit(false)}
-          onSaved={load}
-        />
-      )}
     </div>
   )
 }
