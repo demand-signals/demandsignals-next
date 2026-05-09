@@ -19,39 +19,83 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { createStripeSubscription } from '@/lib/stripe-subscriptions'
 import { isStripeEnabled, stripe } from '@/lib/stripe-client'
 
-// Search Stripe for any customer tagged with this prospect_id in metadata
-// that has a default_payment_method or attached payment source. Returns
-// the customer ID, or null if no payment-bearing customer is found.
+// Find the Stripe customer that holds the saved card for this prospect.
 //
-// Why this exists: Payment Links are created with customer_creation:'always',
-// which spawns a fresh Stripe customer at checkout time. The platform's
-// ensureStripeCustomer pre-stamps a different (empty) customer on the
-// prospect row before the link is generated. Result: the saved card lives
-// on customer A, the platform points at customer B, and any subsequent
-// subscription create fails with "no attached payment source."
+// Two paths to the same answer (try in order):
 //
-// This helper queries Stripe for all customers with metadata.dsig_prospect_id
-// matching the prospect, picks the one with a saved card, and returns its ID
-// so the caller can reconcile the prospects.stripe_customer_id pointer.
+// 1. Customers tagged in metadata: ensureStripeCustomer stamps
+//    metadata.dsig_prospect_id when it creates a customer. If any such
+//    customer has a saved card, prefer that.
+//
+// 2. Payment-link checkout reverse-lookup: the actual card-bearing
+//    customer for an invoice that paid via a Stripe Payment Link is
+//    typically a FRESH Stripe-auto-created customer from
+//    customer_creation:'always' — it does NOT carry the dsig_prospect_id
+//    metadata tag, so path 1 misses it. To find that customer, look at
+//    the prospect's recent paid invoices in DSIG, pull each one's
+//    stripe_payment_link_id, list checkout sessions for that link, and
+//    grab the customer from a paid session. This is the workaround for
+//    the customer-creation:'always' design choice.
 async function findCustomerWithPaymentMethod(
   prospectId: string,
 ): Promise<string | null> {
   const s = stripe()
 
-  // Stripe's search API supports metadata: 'metadata["key"]:"value"'.
-  // Limit to the most recent matches; in practice there are 1-2.
-  const results = await s.customers.search({
-    query: `metadata["dsig_prospect_id"]:"${prospectId}"`,
-    limit: 20,
-  })
-
-  for (const c of results.data) {
-    if (c.deleted) continue
-    if (c.invoice_settings?.default_payment_method) return c.id
-    // Fall back to listing payment methods on the customer.
-    const pms = await s.paymentMethods.list({ customer: c.id, limit: 1 })
-    if (pms.data.length > 0) return c.id
+  // Path 1: metadata search
+  try {
+    const results = await s.customers.search({
+      query: `metadata["dsig_prospect_id"]:"${prospectId}"`,
+      limit: 20,
+    })
+    for (const c of results.data) {
+      if (c.deleted) continue
+      if (c.invoice_settings?.default_payment_method) return c.id
+      const pms = await s.paymentMethods.list({ customer: c.id, limit: 1 })
+      if (pms.data.length > 0) return c.id
+    }
+  } catch (e) {
+    console.error('[retry-stripe] customers.search failed:', e instanceof Error ? e.message : e)
   }
+
+  // Path 2: payment-link checkout reverse-lookup
+  const { data: paidInvoices } = await supabaseAdmin
+    .from('invoices')
+    .select('id, stripe_payment_link_id')
+    .eq('prospect_id', prospectId)
+    .eq('status', 'paid')
+    .not('stripe_payment_link_id', 'is', null)
+    .order('paid_at', { ascending: false })
+    .limit(10)
+
+  for (const inv of paidInvoices ?? []) {
+    const linkId = inv.stripe_payment_link_id as string | null
+    if (!linkId) continue
+    try {
+      const sessions = await s.checkout.sessions.list({
+        payment_link: linkId,
+        limit: 5,
+      })
+      for (const sess of sessions.data) {
+        if (sess.payment_status !== 'paid') continue
+        const customerId =
+          typeof sess.customer === 'string'
+            ? sess.customer
+            : (sess.customer?.id ?? null)
+        if (!customerId) continue
+        // Confirm this customer actually has a saved card before returning
+        const pms = await s.paymentMethods.list({ customer: customerId, limit: 1 })
+        if (pms.data.length > 0) return customerId
+      }
+    } catch (e) {
+      console.error(
+        '[retry-stripe] sessions.list for link',
+        linkId,
+        'failed:',
+        e instanceof Error ? e.message : e,
+      )
+    }
+  }
+
   return null
 }
 
