@@ -46,8 +46,16 @@ export async function GET(request: NextRequest) {
 
 // Create a project standalone (not via SOW accept). Useful for retro-loading
 // existing engagements or starting a project before any SOW exists.
-const ALLOWED_TYPES = new Set(['website', 'mobile_app', 'webapp', 'content', 'seo', 'ads', 'consulting', 'other'])
-const ALLOWED_STATUSES = new Set(['planning', 'in_progress', 'on_hold', 'completed', 'cancelled'])
+const ALLOWED_TYPES = new Set([
+  // Net-new client work
+  'website', 'mobile_app', 'webapp', 'content', 'seo', 'ads', 'consulting', 'other',
+  // Customer service / support / bug fixing — same data shape, different filter context
+  'customer_service', 'bug_report',
+  // DSIG-internal projects + courtesy work for clients (not billed)
+  'internal', 'courtesy',
+])
+// 'active' is the backfilled General-Support status — accept it alongside the canonical values
+const ALLOWED_STATUSES = new Set(['active', 'planning', 'in_progress', 'on_hold', 'completed', 'cancelled'])
 
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request)
