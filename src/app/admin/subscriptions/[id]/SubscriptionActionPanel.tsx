@@ -74,7 +74,25 @@ export function SubscriptionActionPanel({ subscription }: Props) {
     )
     const data = await res.json()
     setBusy(false)
-    if (!res.ok) return alert(`Retry failed: ${data.error}`)
+    if (!res.ok) {
+      // The "no payment source" error has its own remediation path: send
+      // the client an Add Payment Method link via the customer portal,
+      // then retry. Surface that hint instead of a flat error.
+      const isNoPaymentSource = /no attached payment source|no default payment method/i.test(
+        data.error ?? '',
+      )
+      if (isNoPaymentSource) {
+        alert(
+          'Stripe says: no payment method on this customer yet.\n\n' +
+          'Next step: click "Generate Add Payment Method link" below, send ' +
+          'the URL to the client, wait for them to add a card, then click ' +
+          'Retry Stripe sync again.\n\n' +
+          `Original error: ${data.error}`,
+        )
+        return
+      }
+      return alert(`Retry failed: ${data.error}`)
+    }
     alert(
       `Stripe subscription created.\n\nstripe_subscription_id: ${data.stripe_subscription_id}\nstatus: ${data.status}`,
     )
@@ -216,7 +234,7 @@ export function SubscriptionActionPanel({ subscription }: Props) {
         </div>
       )}
 
-      {subscription.stripe_subscription_id && !isCanceled && (
+      {!isCanceled && (
         <button
           onClick={handlePortalLink}
           disabled={busy}
