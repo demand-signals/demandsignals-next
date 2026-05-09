@@ -20,9 +20,29 @@ export async function PATCH(
   const body = await request.json().catch(() => null)
   if (!body) return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
 
-  const { status, force } = body as { status: ProjectPhase['status']; force?: boolean }
-  if (!['pending', 'in_progress', 'completed'].includes(status)) {
+  const { status, force, name, description } = body as {
+    status?: ProjectPhase['status']
+    force?: boolean
+    name?: string
+    description?: string
+  }
+
+  // Validate status if present
+  const isStatusUpdate = status !== undefined
+  if (isStatusUpdate && !['pending', 'in_progress', 'completed'].includes(status)) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+  }
+
+  // Validate name/description if present (string-only patches; no side effects)
+  const isTextUpdate = name !== undefined || description !== undefined
+  if (name !== undefined && (typeof name !== 'string' || !name.trim())) {
+    return NextResponse.json({ error: 'name must be a non-empty string' }, { status: 400 })
+  }
+  if (description !== undefined && typeof description !== 'string') {
+    return NextResponse.json({ error: 'description must be a string' }, { status: 400 })
+  }
+  if (!isStatusUpdate && !isTextUpdate) {
+    return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
   }
 
   const { data: project, error: fetchErr } = await supabaseAdmin
@@ -41,11 +61,35 @@ export async function PATCH(
   const targetPhase = phases[phaseIdx]
   const wasCompleted = targetPhase.status === 'completed'
 
-  // ── Guard: cannot complete a phase with un-delivered deliverables ──
+  // Text-only update path — patch name/description and return early.
+  // No status change → no milestone firing, no auto-advance, no
+  // un-delivered guard.
+  if (!isStatusUpdate) {
+    const updatedPhases = phases.map((p, i) => {
+      if (i !== phaseIdx) return p
+      return {
+        ...p,
+        ...(name !== undefined ? { name: name.trim() } : {}),
+        ...(description !== undefined ? { description } : {}),
+      }
+    })
+    const { error: textErr } = await supabaseAdmin
+      .from('projects')
+      .update({ phases: updatedPhases, updated_at: new Date().toISOString() })
+      .eq('id', id)
+    if (textErr) return NextResponse.json({ error: textErr.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  }
+
+  // ── Status update path ──────────────────────────────────────────
+  // status is guaranteed defined here (early-returned above if !isStatusUpdate)
+  const newStatus = status as ProjectPhase['status']
+
+  // Guard: cannot complete a phase with un-delivered deliverables.
   // This protects against accidental phase completion that would otherwise
   // fire any milestone-triggered payment installments prematurely.
   // Admin can pass force=true to override (e.g. backfilling historical data).
-  if (status === 'completed' && !wasCompleted && !force) {
+  if (newStatus === 'completed' && !wasCompleted && !force) {
     const undelivered = (targetPhase.deliverables ?? []).filter(
       (d) => d.status !== 'delivered',
     )
@@ -66,8 +110,11 @@ export async function PATCH(
     if (i !== phaseIdx) return p
     return {
       ...p,
-      status,
-      completed_at: status === 'completed' ? new Date().toISOString() : p.completed_at ?? null,
+      status: newStatus,
+      // Allow text fields to update in same call as status if both provided
+      ...(name !== undefined ? { name: name.trim() } : {}),
+      ...(description !== undefined ? { description } : {}),
+      completed_at: newStatus === 'completed' ? new Date().toISOString() : p.completed_at ?? null,
     }
   })
 
@@ -114,7 +161,7 @@ export async function PATCH(
   // ── Fire milestone-triggered installments ──────────────────────────
   // Only when transitioning into 'completed' (avoids re-firing on idempotent re-PATCH).
   const firedInstallments: string[] = []
-  if (status === 'completed' && !wasCompleted) {
+  if (newStatus === 'completed' && !wasCompleted) {
     const { data: pendingInstallments } = await supabaseAdmin
       .from('payment_installments')
       .select('id')

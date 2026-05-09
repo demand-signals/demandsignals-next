@@ -3,13 +3,14 @@
 import { useEffect, useState, use, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Loader2, ChevronDown, ChevronRight, ExternalLink, CheckCircle2, Circle, Clock, Trash2 } from 'lucide-react'
+import { Loader2, ChevronDown, ChevronRight, ExternalLink, CheckCircle2, Circle, Clock, Trash2, Pencil } from 'lucide-react'
 import { formatCents } from '@/lib/format'
 import type { ProjectRow, ProjectPhase, ProjectPhaseDeliverable } from '@/lib/invoice-types'
 import { OutstandingObligations } from './OutstandingObligations'
 import { TimeEntriesPanel } from './TimeEntriesPanel'
 import { InlineEditText } from '@/components/admin/inline-edit-text'
 import { ProjectNotesPanel } from '@/components/admin/ProjectNotesPanel'
+import { EditProjectModal } from './EditProjectModal'
 
 // Extended with joined prospect data
 interface ProjectDetail extends ProjectRow {
@@ -78,10 +79,12 @@ function PhaseCard({
   phase,
   onUpdatePhase,
   onUpdateDeliverable,
+  onUpdatePhaseText,
 }: {
   phase: ProjectPhase
   onUpdatePhase: (phaseId: string, status: ProjectPhase['status']) => Promise<void>
   onUpdateDeliverable: (phaseId: string, delivId: string, status: ProjectPhaseDeliverable['status']) => Promise<void>
+  onUpdatePhaseText: (phaseId: string, patch: { name?: string; description?: string }) => Promise<void>
 }) {
   const [expanded, setExpanded] = useState(phase.status === 'in_progress')
   const [saving, setSaving] = useState(false)
@@ -116,9 +119,15 @@ function PhaseCard({
         ) : (
           <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
         )}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-slate-800">{phase.name}</span>
+            <InlineEditText
+              as="span"
+              className="font-semibold text-slate-800"
+              value={phase.name}
+              onSave={(name) => onUpdatePhaseText(phase.id, { name })}
+              placeholder="Phase name"
+            />
             <span
               className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${
                 PHASE_STATUS_COLORS[phase.status] ?? 'bg-slate-100 text-slate-600'
@@ -127,9 +136,15 @@ function PhaseCard({
               {PHASE_STATUS_LABELS[phase.status] ?? phase.status}
             </span>
           </div>
-          {phase.description && (
-            <p className="text-xs text-slate-500 mt-0.5 truncate">{phase.description}</p>
-          )}
+          <div className="text-xs text-slate-500 mt-0.5">
+            <InlineEditText
+              as="span"
+              className="text-xs text-slate-500"
+              value={phase.description ?? ''}
+              onSave={(description) => onUpdatePhaseText(phase.id, { description })}
+              placeholder="Add a phase description…"
+            />
+          </div>
         </div>
 
         {/* Phase action buttons */}
@@ -220,6 +235,7 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
   const [error, setError] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
 
   async function handleDelete() {
     setDeleting(true)
@@ -312,6 +328,19 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
     if (res.ok) load()
   }
 
+  async function updatePhaseText(phaseId: string, patch: { name?: string; description?: string }) {
+    const res = await fetch(`/api/admin/projects/${id}/phases/${phaseId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error(data.error ?? 'Update failed')
+    }
+    load()
+  }
+
   if (loading) return <div className="p-6"><Loader2 className="w-6 h-6 animate-spin text-teal-500" /></div>
   if (error) return <div className="p-6 text-red-600">{error}</div>
   if (!project) return <div className="p-6 text-slate-400">Project not found.</div>
@@ -369,13 +398,23 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => setConfirmDelete(true)}
-              className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50"
-              title="Delete project"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <>
+              <button
+                onClick={() => setShowEdit(true)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
+                title="Edit project metadata"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Edit
+              </button>
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50"
+                title="Delete project"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -614,6 +653,7 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
                 phase={phase}
                 onUpdatePhase={updatePhase}
                 onUpdateDeliverable={updateDeliverable}
+                onUpdatePhaseText={updatePhaseText}
               />
             ))}
           </div>
@@ -625,6 +665,24 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
 
       {/* Project Notes */}
       <ProjectNotesPanel projectId={project.id} />
+
+      {/* Edit metadata modal */}
+      {showEdit && (
+        <EditProjectModal
+          projectId={project.id}
+          initial={{
+            type: project.type,
+            status: project.status,
+            start_date: project.start_date,
+            target_date: project.target_date,
+            completed_at: project.completed_at,
+            monthly_value: project.monthly_value,
+            notes: project.notes,
+          }}
+          onClose={() => setShowEdit(false)}
+          onSaved={load}
+        />
+      )}
     </div>
   )
 }
