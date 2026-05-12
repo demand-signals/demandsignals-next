@@ -4,6 +4,8 @@ import './globals.css'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { ContactBot } from '@/components/layout/ContactBot'
+import { InquiryStrip } from '@/components/layout/InquiryStrip'
+import { ExitIntentModal } from '@/components/layout/ExitIntentModal'
 import { AccessibilityWidget } from '@/components/layout/AccessibilityWidget'
 import { ArcCardGame } from '@/components/sections/ArcCardGame'
 import { JsonLd } from '@/components/seo/JsonLd'
@@ -59,21 +61,16 @@ export const metadata: Metadata = {
     description:
       'AI agent swarms, AI websites, and automated marketing for businesses. 3x leads. Always on.',
     url: 'https://demandsignals.co',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'Demand Signals — AI-Powered Demand Generation',
-      },
-    ],
+    // OG image auto-injected from src/app/opengraph-image.tsx (Next.js App Router
+    // convention). Hardcoding /og-image.png here would shadow the dynamic image
+    // with a 404 static file. Do NOT add an `images:` array here.
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Demand Signals — AI-Powered Demand Generation',
     description: 'AI agents + AI websites + automated marketing for local businesses.',
-    images: ['/og-image.png'],
+    // Twitter image also auto-injected from opengraph-image.tsx — same reason.
     site: '@demandsignals',
     creator: '@demandsignals',
   },
@@ -110,9 +107,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main id="main-content" className="flex-1" style={{ paddingTop: '72px' }}>
             {children}
           </main>
+          <InquiryStrip />
           <ArcCardGame />
           <Footer />
           <ContactBot />
+          <ExitIntentModal />
           <AccessibilityWidget />
           <Analytics />
           <Suspense fallback={null}>

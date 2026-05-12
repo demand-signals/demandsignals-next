@@ -13,7 +13,6 @@ type BuildMetadataOptions = {
 }
 
 const SITE_URL = 'https://demandsignals.co'
-const OG_IMAGE = '/og-image.png'
 
 export function buildMetadata({
   title,
@@ -30,7 +29,7 @@ export function buildMetadata({
 
   return {
     /* ── Primary ─────────────────────────────────────── */
-    title,
+    title: { absolute: title }, // bypass layout-level template; page titles already include brand suffix
     description,
     ...(keywords.length > 0 && { keywords }),
 
@@ -40,6 +39,11 @@ export function buildMetadata({
       : { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large' as const, 'max-snippet': -1, 'max-video-preview': -1 } },
 
     /* ── Open Graph (social preview cards) ───────────── */
+    // NOTE: `images` intentionally omitted — Next.js auto-injects the
+    // dynamic OG image from src/app/opengraph-image.tsx (App Router
+    // convention). Hardcoding a URL here would shadow the dynamic image
+    // with a 404 static asset. Same reason `images:` is omitted from
+    // root layout.tsx openGraph + twitter blocks.
     openGraph: {
       title:       ogTitle ?? title,
       description: ogDescription ?? description,
@@ -47,13 +51,6 @@ export function buildMetadata({
       type:        'website',
       siteName:    'Demand Signals',
       locale:      'en_US',
-      images: [{
-        url:    OG_IMAGE,
-        width:  1200,
-        height: 630,
-        alt:    ogTitle ?? title,
-        type:   'image/png',
-      }],
     },
 
     /* ── Twitter / X Card ────────────────────────────── */
@@ -61,7 +58,6 @@ export function buildMetadata({
       card:        'summary_large_image',
       title:       twitterTitle ?? ogTitle ?? title,
       description: twitterDescription ?? ogDescription ?? description,
-      images:      [OG_IMAGE],
       site:        '@demandsignals',
       creator:     '@demandsignals',
     },

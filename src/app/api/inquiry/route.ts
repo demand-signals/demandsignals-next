@@ -22,7 +22,12 @@ export async function POST(req: NextRequest) {
     const business = sanitizeField(body.business, 200)
     const service_interest = sanitizeField(body.service, 100)
     const page_url = sanitizeField(body.page_url, 500) || '/'
-    const source = body.source === 'contact_form' ? 'contact_form' : 'quick_form'
+    const rawSource = typeof body.source === 'string' ? body.source : ''
+    const source: 'contact_form' | 'quick_form' | 'inquiry_strip' | 'exit_intent' =
+      rawSource === 'contact_form' ? 'contact_form'
+      : rawSource === 'inquiry_strip' ? 'inquiry_strip'
+      : rawSource === 'exit_intent' ? 'exit_intent'
+      : 'quick_form'
 
     if (!name || !email) {
       return NextResponse.json(

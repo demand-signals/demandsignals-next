@@ -21,7 +21,7 @@ import { verifyAttributionCookie, ATTRIBUTION_COOKIE_NAME } from '@/lib/attribut
 import { CONTACT_EMAIL, getAdminTeamPhones } from '@/lib/constants'
 import { escapeHtml } from '@/lib/api-security'
 
-export type InquirySource = 'quick_form' | 'contact_form' | 'portal_reply'
+export type InquirySource = 'quick_form' | 'contact_form' | 'portal_reply' | 'inquiry_strip' | 'exit_intent'
 
 export interface RecordInquiryArgs {
   source: InquirySource
