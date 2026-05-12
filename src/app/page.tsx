@@ -33,13 +33,12 @@ export const metadata: Metadata = {
     description:
       'AI agent swarms, AI-powered websites, and automated marketing for local businesses. 10x more leads. Top 3 Google ranking in 90 days.',
     url: 'https://demandsignals.co',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Demand Signals — AI-Powered Demand Generation' }],
+    // images auto-injected from src/app/opengraph-image.tsx
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Demand Signals — AI-Powered Demand Generation',
     description: 'AI agents + AI websites + automated marketing for local businesses. 10× more leads. Top 3 Google ranking in 90 days.',
-    images: ['/og-image.png'],
   },
   alternates: { canonical: 'https://demandsignals.co' },
 }

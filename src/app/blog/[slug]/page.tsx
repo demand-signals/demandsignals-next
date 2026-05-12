@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: 'article',
       siteName: 'Demand Signals',
       locale: 'en_US',
-      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: post.title, type: 'image/png' }],
+      // images auto-injected from src/app/opengraph-image.tsx
       publishedTime: new Date(post.date).toISOString(),
       modifiedTime: new Date(post.date).toISOString(),
       authors: [post.author],
@@ -48,7 +48,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: 'summary_large_image',
       title: post.title,
       description: post.excerpt,
-      images: ['/og-image.png'],
       site: '@demandsignals',
       creator: '@demandsignals',
     },
@@ -94,7 +93,7 @@ export default async function BlogPostPage({ params }: Props) {
       '@type': 'WebPage',
       '@id': canonicalUrl,
     },
-    image: '/og-image.png',
+    image: 'https://demandsignals.co/opengraph-image',
     keywords: post.tags.join(', '),
   }
 
