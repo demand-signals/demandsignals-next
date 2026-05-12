@@ -4,6 +4,29 @@ Append-only log of working sessions. Newest at top.
 
 ---
 
+## 2026-05-11 — WS1 (Gaming-PC) — Hunter — site traffic + lead-gen enhancement (research → diagnose → plan → ship)
+
+- **Span**: 2026-05-11 16:26 PT → 21:08 PT (4h 42m wall clock). Four commits pushed to master (`9eeceb7`, `9efa8d1`, `38bcf6e`, `440d0a3`).
+- **Diagnosis pass** — three parallel research agents (analytics+funnel data sources map, full conversion-funnel audit, public SEO posture audit on live demandsignals.co). Synthesized into a 5-leak ranked list. GSC data Hunter pasted mid-session flipped the indexing story: 790 indexed / 502 not / 1,282 known (61% coverage, not the catastrophic <1% the `site:` operator suggested).
+- **`/book` page shipped** — `src/app/book/page.tsx` + `BookPageClient.tsx` + `/api/book/slots` + `/api/book/create`. Wraps §23 booking primitives (`listAvailableSlots`, `bookSlot({ source: 'public_book' })`). Honeypot + apiGuard, 409 auto-refresh on slot taken, 503 fallback to /contact when calendar disconnected.
+- **§29 calendar URL purge** — BOOKING_URL constant flipped to `/book`, 13 callsites cascade, 5 hardcoded `calendar.google.com/...` URLs scrubbed from src/, 2 from public/llms*.txt. §29 hard rule no longer silently violated.
+- **Title double-suffix bug fixed** — `buildMetadata()` now uses `title: { absolute: title }`. Bypasses root layout `title.template`. Verified on /demand-generation/local-seo: `Local SEO — Dominate Your Market | Demand Signals` (was double-suffixed).
+- **OG image fixed** — 4 commits to land correctly. Final approach: explicit absolute URL `https://demandsignals.co/opengraph-image` in 11 callsites (buildMetadata + root layout + 9 page-level overrides). Verified: homepage og:image points at /opengraph-image, route returns 200 31876b image/png.
+- **InquiryStrip + ExitIntentModal** — both mounted in root layout. Strip is sitewide above-footer; modal fires once per session on cursor exit-top with 8s arm + ≤768px skip. Both post to `/api/inquiry` with new source values (`inquiry_strip`, `exit_intent` added to InquirySource type).
+- **Production verified**: homepage og:image correct, /book = 200, title single-suffix, §29 calendar.google.com count = 0, InquiryStrip "Get a Reply" rendered.
+- **Time**: Hunter 4h 42m + Claude 1h 28m = **6h 10m total billable** (= 282m + 88m = 370m).
+- **Failures with lessons**:
+  - Next.js metadata API does NOT auto-inject `opengraph-image.tsx` when `openGraph` is explicitly set. Burned 3 commits learning this. The file convention provides the route handler; you still must reference it via absolute URL in `images:`. Lesson locked in MEMORY.md "Architectural decisions LOCKED".
+  - Audit agent's claimed redirect 404s were invalid — tested URLs that aren't configured redirect sources. Verified actual configured redirect (`/services/wordpress`) returns 308. Lesson: spot-check audit findings on the most "alarming" items before treating them as work.
+  - Skipped `npm run build` because D:\dev had uncommitted prior-session work. Per §13 should always build before push. Let Vercel verify instead — worked but bent the rule.
+- **Decisions locked**:
+  - §29 enforcement permanent. Native on-site booking (`/book`) is the only path. External Google Appointment Schedules links dead everywhere.
+  - Next.js metadata file conventions do NOT auto-inject when `openGraph` is explicitly set — always use absolute URLs.
+  - Title pre-baking + `title.absolute` is the chosen pattern for service/category/blog/LTP pages.
+- **Next session priority**: investigate the 502 not-indexed pages in GSC (Page Indexing → "Why pages aren't indexed"). Discovery isn't the bottleneck (sitemap 779 pages discovered, growing). Per-page ranking-worthiness is. Secondary: smoke-verify InquiryStrip + ExitIntentModal capture real prospects; smoke-verify `/book` E2E.
+
+---
+
 ## 2026-05-09 (early AM) — WS1 (Gaming-PC) — Hunter — categories + report PDF + notes/time separation
 
 - **Span**: 2026-05-08 22:34 PT → 2026-05-09 04:05 PT (5h 31m wall clock). Three commits to master (`0c5e5fe`, `b1b0352`).

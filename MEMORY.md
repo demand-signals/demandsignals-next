@@ -8,7 +8,44 @@
 > recent 5 tasks back, current, next 3-5 ahead. Prune anything older than 30 days
 > unless it's a durable lesson ("don't do X, it broke Y").
 
-**Last updated:** 2026-05-09 04:10 PT — WS1 (Gaming-PC) — 5h 31m mid-session continuation. Two features + one architectural rule: (1) time-entry billing categories (5-state: billable / non_billable / bulk_payment / services_contract / internal) with FK refs to invoice/subscription via migration 051 + DB CHECK enforcing coverage matches category, (2) Project Activity Report PDF — 4-page branded deliverable wrapping notes timeline + time summary + entries detail table, (3) ARCHITECTURAL RULE LOCKED: time fields exclusive to time-entries + /admin/timekeeping; notes are content-only across UI / API / PDF. /handoff Step 11.D exercised — note `b73821e9` + time entry `202a657f` written via CLI token.
+**Last updated:** 2026-05-11 21:08 PT — WS1 (Gaming-PC) — 4h 42m site-traffic + lead-gen enhancement session. Diagnosis-first pass via three parallel research agents, then six ship items: (1) **`/book` page shipped** — native on-site booking that finally retires the external Google Appointment Schedules link per §29 hard rule (was violated in 4+ surfaces on homepage alone); 2 new API routes wrap §23 booking primitives; (2) BOOKING_URL constant + 13 callsites + 5 hardcoded calendar URLs in src/ + 2 in llms.txt all scrubbed; (3) **title double-suffix bug** (`X | Demand Signals | Demand Signals` on every service/category/blog page) fixed via `title.absolute` in `buildMetadata()`; (4) **OG image** repointed across 11 callsites from 404 `/og-image.png` → working `/opengraph-image` dynamic route; (5) **InquiryStrip** sitewide above-footer form + **ExitIntentModal** on intent-to-leave — both posting to existing `/api/inquiry` recordInquiry pipeline; (6) 4 commits pushed to master, all verified live. GSC data reconciliation flipped earlier "0.16% indexed" claim — Google actually has 790 indexed / 502 not-indexed / 1,282 known; the bottleneck is ranking-worthiness, not discovery.
+
+---
+
+## SHIPPED 2026-05-11 — /book page + §29 calendar URL purge + OG fix + title bug + sitewide inquiry surfaces
+
+- **`/book` public booking page** — `src/app/book/page.tsx` (server component metadata + ReservationPackage JSON-LD) + `src/app/book/BookPageClient.tsx` (slot picker → form → confirmation panel with Meet link). Two new endpoints: `GET /api/book/slots` (wraps `listAvailableSlots()`, returns 4 signed slot ids) + `POST /api/book/create` (wraps `bookSlot({ source: 'public_book' })`, honeypot + apiGuard, 409 auto-refreshes slots, 503 fallback routes to /contact).
+- **BOOKING_URL = '/book'** — `src/lib/constants.ts` constant flipped from external Google URL. All 13 callsites cascaded automatically (target=_blank + rel=noopener stripped — internal route now). 5 additional hardcoded `calendar.google.com/...` URLs scrubbed from src/ (quote-ai system prompt, QuotePageClient, ShareActions, contact feed route, quote-session rate-limit fallback). `public/llms.txt` + `public/llms-full.txt` updated. §29 violation cleared site-wide.
+- **Title double-suffix bug** — `src/lib/metadata.ts` `buildMetadata()` now uses `title: { absolute: title }` which bypasses root layout.tsx's `title.template: '%s | Demand Signals'`. Pages that pre-bake the suffix (which is all 31+ of them) now render single suffix. Verified: `Local SEO — Dominate Your Market | Demand Signals` (was `... | Demand Signals | Demand Signals`).
+- **OG image fix** — went through 4 attempts:
+  1. Removed hardcoded `/og-image.png` from root layout + buildMetadata (wrong — produced 0 og:image tags)
+  2. Realized 9 more pages had their own `images:` arrays — stripped those too (wrong, same reason)
+  3. Re-added explicit absolute URL pointing at `/opengraph-image` route in `buildMetadata()` + root layout + 9 page-level overrides (correct)
+  4. **LESSON**: Next.js metadata API does NOT auto-inject file-convention `opengraph-image.tsx` when `openGraph` is explicitly set. The file just provides the route handler; you still must reference it via absolute URL in `images:`. Promotion candidate for project CLAUDE.md.
+- **InquiryStrip** — `src/components/layout/InquiryStrip.tsx`, mounted in root layout above ArcCardGame/Footer. 3-field form (name + email + optional message), dark gradient background, posts to `/api/inquiry` with `source='inquiry_strip'`. Sitewide on every page.
+- **ExitIntentModal** — `src/components/layout/ExitIntentModal.tsx`, mounted in root layout. Fires once per session on `mouseout` event with `clientY <= 0` (cursor exiting top of viewport). 8s arm delay, sessionStorage `dsig_exit_intent_shown` flag, skipped on viewports ≤768px (touch-unreliable), prefers-reduced-motion respected. Posts `source='exit_intent'` with "free local-business audit checklist" pitch.
+- **InquirySource type extended** — `src/lib/inquiry.ts` enum now includes `inquiry_strip` + `exit_intent`. `/api/inquiry` route coerces incoming source value to one of the four allowed strings.
+- **Commits pushed**: `9eeceb7` (book + scrub), `9efa8d1` (title fix + inquiry surfaces + first OG attempt), `38bcf6e` (OG image strip remaining refs — wrong), `440d0a3` (OG image absolute URL — correct). Production verified: homepage og:image = `https://demandsignals.co/opengraph-image`, `/book` returns 200, calendar.google.com count on homepage = 0, InquiryStrip "Get a Reply" headline present.
+
+### Architectural decisions LOCKED (do not re-debate)
+
+- **§29 enforcement is permanent.** Native on-site booking (`/book` + §23 primitives) is the only path. External Google Appointment Schedules links are dead across all surfaces — homepage, footer, ContactBot, MobileMenu, quote pages, tools, contact page, llms.txt, llms-full.txt all scrubbed. Any future "Book a Call" CTA must go through `/book` or `/quote` (AI flow).
+- **Next.js metadata file conventions do NOT auto-inject when `openGraph` is explicitly set.** Always reference dynamic image routes via absolute URL in `images:` arrays. Centralized `OG_IMAGE_URL` constant in `src/lib/metadata.ts` is the single source of truth for `buildMetadata()` callers; page-level overrides (homepage, blog/[slug], LTPs, locations, accessibility, privacy, terms) reference the same absolute URL inline.
+- **Title pre-baking + `title.absolute`** is the chosen pattern for service/category/blog/LTP pages. Root layout's `title.template` only applies to pages that pass a bare title string (e.g., admin pages). Pages using `buildMetadata()` provide their full intended title.
+
+### Failures with lessons (this session — durable)
+
+- **Audit agent's claimed redirect 404s were wrong.** Tested URLs that don't have redirect rules (`/services/local-seo`, `/services/wordpress-development`, `/ai-agents/swarms` — none are configured sources) and reported the 404 as a broken redirect. Verified the actually-configured redirect `/services/wordpress` returns 308 → `/websites-apps/wordpress-development`. Lesson: trust verification curls over agent claims; spot-check audit findings on the most "alarming" items before treating them as work.
+- **Next.js opengraph-image file-convention misunderstanding.** Burned commit 2 + commit 3 + commit 4 cycling through the wrong fix. The file convention works for routes that don't set `openGraph` at all — but every DSIG page does. Lesson now locked above.
+- **Skipped local `npm run build` because D:\dev had uncommitted prior-session work** that blocked a clean `git pull`. Per §13 should always build before push. Pushed straight from Y: and let Vercel verify. No failures, but the rule was bent. Next session: clean up D:\dev or accept Vercel-only verification as the new normal for small surgical changes.
+
+### Pending Hunter follow-up
+
+- Smoke-verify InquiryStrip + ExitIntentModal capture real prospects (first submission should land in `prospect_inquiries` table; admin notification SMS + email should fire via `recordInquiry()` fanout).
+- Smoke-verify `/book` end-to-end — pick a slot, submit, confirm calendar event lands on demandsignals@gmail.com, Meet link in confirmation panel works, 24h+1h reminder cron fires.
+- **Next session priority**: investigate the 502 not-indexed pages in GSC (Page Indexing → "Why pages aren't indexed" drill-down). Likely candidates: "Crawled - not indexed" on thin LTPs (575 templated pages with overlap), or duplicate-content signals. The real next lever for traffic isn't discovery, it's per-page ranking-worthiness.
+- Delete the `public/og-image.png` 404 entirely OR ship a static fallback PNG (defense-in-depth for external systems that hardcode the legacy URL).
+- Drop the still-orphan envvars (`PORTAL_MAGIC_LINK_SECRET`, `GOOGLE_PORTAL_*`) — flagged 3 sessions running.
 
 ---
 
