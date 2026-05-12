@@ -61,16 +61,26 @@ export const metadata: Metadata = {
     description:
       'AI agent swarms, AI websites, and automated marketing for businesses. 3x leads. Always on.',
     url: 'https://demandsignals.co',
-    // OG image auto-injected from src/app/opengraph-image.tsx (Next.js App Router
-    // convention). Hardcoding /og-image.png here would shadow the dynamic image
-    // with a 404 static file. Do NOT add an `images:` array here.
+    // OG image is rendered dynamically at src/app/opengraph-image.tsx
+    // (edge runtime PNG). Next.js metadata API does NOT auto-inject the
+    // file-convention image when openGraph is explicitly set, so we
+    // reference it as an absolute URL here.
+    images: [
+      {
+        url: 'https://demandsignals.co/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'Demand Signals — AI-Powered Demand Generation',
+        type: 'image/png',
+      },
+    ],
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Demand Signals — AI-Powered Demand Generation',
     description: 'AI agents + AI websites + automated marketing for local businesses.',
-    // Twitter image also auto-injected from opengraph-image.tsx — same reason.
+    images: ['https://demandsignals.co/opengraph-image'],
     site: '@demandsignals',
     creator: '@demandsignals',
   },

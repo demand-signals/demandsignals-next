@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: 'article',
       siteName: 'Demand Signals',
       locale: 'en_US',
-      // images auto-injected from src/app/opengraph-image.tsx
+      images: [{ url: 'https://demandsignals.co/opengraph-image', width: 1200, height: 630, alt: post.title, type: 'image/png' }],
       publishedTime: new Date(post.date).toISOString(),
       modifiedTime: new Date(post.date).toISOString(),
       authors: [post.author],
@@ -48,6 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: 'summary_large_image',
       title: post.title,
       description: post.excerpt,
+      images: ['https://demandsignals.co/opengraph-image'],
       site: '@demandsignals',
       creator: '@demandsignals',
     },

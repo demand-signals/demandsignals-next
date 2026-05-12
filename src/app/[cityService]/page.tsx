@@ -56,7 +56,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url,
       siteName: 'Demand Signals',
       locale: 'en_US',
-      // images auto-injected from src/app/opengraph-image.tsx
+      images: [{ url: 'https://demandsignals.co/opengraph-image', width: 1200, height: 630, alt: `${service.searchIntentName} in ${city.name} — Demand Signals`, type: 'image/png' }],
     },
     twitter: {
       card: 'summary_large_image',

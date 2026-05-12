@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     siteName: 'Demand Signals',
     locale: 'en_US',
     type: 'website',
-    // images auto-injected from src/app/opengraph-image.tsx
+    images: [{ url: 'https://demandsignals.co/opengraph-image', width: 1200, height: 630, alt: 'Privacy Policy — Demand Signals', type: 'image/png' }],
   },
   twitter: {
     card: 'summary',
