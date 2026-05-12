@@ -118,7 +118,7 @@ export function PageHero({ eyebrow, title, subtitle, ctaLabel = 'Get a Quote →
             }}>
               {ctaLabel}
             </Link>
-            <a href={BOOKING_URL} target="_blank" rel="noopener" style={{
+            <a href={BOOKING_URL} style={{
               display: 'inline-flex', alignItems: 'center', padding: '13px 30px',
               border: '2px solid rgba(255,255,255,0.5)', color: '#fff',
               background: 'rgba(255,255,255,0.15)',

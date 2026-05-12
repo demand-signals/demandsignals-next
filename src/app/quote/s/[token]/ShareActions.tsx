@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-const BOOKING_URL = 'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true'
+const BOOKING_URL = '/book'
 const DSIG_PHONE = '(916) 542-2423'
 const DSIG_PHONE_TEL = '+19165422423'
 
@@ -99,8 +99,6 @@ export function ShareActions({
         {/* Primary: Book a strategy call (orange) */}
         <a
           href={BOOKING_URL}
-          target="_blank"
-          rel="noopener"
           className="rounded-xl py-4 px-5 font-semibold text-center text-white transition-opacity hover:opacity-90"
           style={{ background: '#FF6B2B' }}
         >

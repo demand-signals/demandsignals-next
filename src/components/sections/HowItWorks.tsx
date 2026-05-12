@@ -96,8 +96,6 @@ export default function HowItWorks() {
           <div style={{ textAlign: 'center' }}>
             <a
               href={BOOKING_URL}
-              target="_blank"
-              rel="noopener noreferrer"
               style={{
                 display: 'inline-block', background: '#FF6B2B', color: '#fff',
                 fontWeight: 700, fontSize: '0.95rem', padding: '14px 32px',

@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
             fallback: {
               sms: 'sms:+19165422423',
               email: 'mailto:DemandSignals@gmail.com',
-              booking: 'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true',
+              booking: 'https://demandsignals.co/book',
             },
           },
           { status: 429 },

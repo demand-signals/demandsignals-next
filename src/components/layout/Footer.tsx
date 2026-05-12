@@ -25,7 +25,7 @@ export function Footer() {
           <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem' }}>
             <span style={{ color: 'var(--teal)', fontSize: '1rem' }}>✉️</span> {CONTACT_EMAIL}
           </a>
-          <a href={BOOKING_URL} target="_blank" rel="noopener" style={{
+          <a href={BOOKING_URL} style={{
             display: 'inline-block', padding: '10px 22px', background: '#FF6B2B',
             color: '#fff', fontWeight: 700, fontSize: '0.85rem', borderRadius: 100,
             textDecoration: 'none', whiteSpace: 'nowrap',

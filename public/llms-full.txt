@@ -111,7 +111,7 @@ Service slugs: wordpress-development, react-next-webapps, mobile-apps, vibe-code
 - Address: 5170 Golden Foothills Pkwy, El Dorado Hills, CA 95762
 - Hours: Monday-Friday, 10:00 AM - 8:00 PM Pacific Time
 - [Contact Page](https://demandsignals.co/contact)
-- [Book a Free Call](https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true)
+- [Book a Free Call](https://demandsignals.co/book)
 
 ## Frequently Asked Questions
 

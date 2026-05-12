@@ -386,7 +386,7 @@ export function HeroCanvas() {
             }}>
               Book a Free Call →
             </Link>
-            <a href={BOOKING_URL} target="_blank" rel="noopener" style={{
+            <a href={BOOKING_URL} style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               padding: '15px 28px', border: '2px solid rgba(255,255,255,0.25)',
               background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(10px)',

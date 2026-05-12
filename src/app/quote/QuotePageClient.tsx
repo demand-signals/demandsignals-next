@@ -427,9 +427,7 @@ export default function QuotePageClient() {
               <div className="text-xs font-normal text-slate-500">DemandSignals@gmail.com</div>
             </a>
             <a
-              href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true"
-              target="_blank"
-              rel="noopener"
+              href="/book"
               className="bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white rounded-lg py-3 px-4 font-medium"
             >
               📅 Book a call

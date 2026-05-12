@@ -27,7 +27,7 @@ export function ContactBot() {
             Let's talk about your demand generation goals. Choose how you'd like to connect.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <a href={BOOKING_URL} target="_blank" rel="noopener" style={{
+            <a href={BOOKING_URL} style={{
               display: 'block', textAlign: 'center', padding: '10px 16px',
               background: 'linear-gradient(135deg, var(--teal), var(--teal-dark))',
               color: '#fff', fontWeight: 600, fontSize: '0.875rem', borderRadius: 8,

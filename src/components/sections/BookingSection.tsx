@@ -139,8 +139,6 @@ export default function BookingSection() {
               </ul>
               <a
                 href={BOOKING_URL}
-                target="_blank"
-                rel="noopener noreferrer"
                 style={{
                   display: 'inline-block',
                   background: '#FF6B2B',

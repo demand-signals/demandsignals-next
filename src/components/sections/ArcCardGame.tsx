@@ -294,8 +294,6 @@ export function ArcCardGame() {
               </button>
               <a
                 href={BOOKING_URL}
-                target="_blank"
-                rel="noopener noreferrer"
                 style={{
                   background: '#FF6B2B', color: '#fff', fontWeight: 700,
                   padding: '14px 28px', borderRadius: 100, textDecoration: 'none',

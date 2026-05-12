@@ -56,8 +56,6 @@ export default function CtaBand() {
           <div className="ds-cta__buttons">
             <a
               href={BOOKING_URL}
-              target="_blank"
-              rel="noopener noreferrer"
               className="ds-cta__primary"
             >
               Book Your Free Call →

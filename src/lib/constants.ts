@@ -12,8 +12,11 @@ export const BUSINESS_ADDRESS = {
   zip: '95762',
 } as const
 export const BUSINESS_ADDRESS_LINE = `${BUSINESS_ADDRESS.street}, ${BUSINESS_ADDRESS.city}, ${BUSINESS_ADDRESS.state} ${BUSINESS_ADDRESS.zip}`
-export const BOOKING_URL =
-  'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true'
+// §29 hard rule (2026-05-01): never link to external Google Appointment
+// Schedules. /book is the native on-site booking page (shipped 2026-05-11)
+// powered by §23 booking primitives. All 19 BOOKING_URL callsites cascade
+// from this single constant.
+export const BOOKING_URL = '/book'
 export const LOGO_URL =
   '/logo.png'
 

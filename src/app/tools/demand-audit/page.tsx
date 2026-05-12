@@ -272,8 +272,6 @@ export default function DemandAuditPage() {
           </p>
           <a
             href={BOOKING_URL}
-            target="_blank"
-            rel="noopener noreferrer"
             style={{
               display: 'inline-flex',
               alignItems: 'center',

@@ -103,8 +103,6 @@ export function MobileMenu({ onClose }: Props) {
         </Link>
         <a
           href={BOOKING_URL}
-          target="_blank"
-          rel="noopener"
           className={`${headerStyles.btnPrimary} ${styles.ctaFlex}`}
         >
           Book a Call

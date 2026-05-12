@@ -23,7 +23,7 @@ const CONTACT_FAQS = [
   },
 ]
 
-const BOOKING_URL = 'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true'
+const BOOKING_URL = 'https://demandsignals.co/book'
 
 export async function GET(request: Request) {
   const detail = getDetailLevel(request)

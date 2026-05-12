@@ -1078,7 +1078,7 @@ Turn 1 response template (adapt wording — don't be robotic):
    ✉️ Want the full plan emailed? Drop your work email — you'll have
       pricing, scope, and timeline within the day.
 
-   📅 Or pick a time on our calendar: https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3yjIRXePILfG3aDwDq7N_ZdQIEOxi0HioY6NFF1vzE7PfH-xYXGVOW95ZNJ0BZj5d4-uUVJNPK?gv=true
+   📅 Or pick a time on our calendar: https://demandsignals.co/book
       (30 mins, no pressure)
 
    Which one works?"
