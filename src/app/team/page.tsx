@@ -4,7 +4,6 @@ import { JsonLd } from '@/components/seo/JsonLd'
 import { faqSchema, breadcrumbSchema } from '@/lib/schema'
 import { PageHero } from '@/components/sections/PageHero'
 import { FaqAccordion } from '@/components/ui/FaqAccordion'
-import { AnimatedCTA } from '@/components/sections/AnimatedCTA'
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/motion/ScrollReveal'
 
 const faqs = [
@@ -239,14 +238,7 @@ export default function TeamPage() {
 
       <FaqAccordion faqs={faqs} />
 
-      <AnimatedCTA
-        heading="Want to Work With Us?"
-        text="Whether you need a website, an AI system, or a full demand generation overhaul — we ship fast and deliver results that compound over time."
-        primaryLabel="Start the Conversation →"
-        primaryHref="/contact"
-        secondaryLabel="See Our Work"
-        secondaryHref="/portfolio"
-      />
+      {/* End-of-page CTA rendered globally via InquiryStrip in root layout. */}
     </>
   )
 }

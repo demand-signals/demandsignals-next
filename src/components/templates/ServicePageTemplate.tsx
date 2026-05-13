@@ -1,19 +1,28 @@
+// ServicePageTemplate — used by every individual service page (e.g.
+// /websites-apps/wordpress-website, /demand-generation/local-seo).
+//
+// CTA note (2026-05-13): The trailing AnimatedCTA was removed because
+// the global InquiryStrip in root layout.tsx is the single end-of-page
+// conversion surface. Two CTAs back-to-back (orange "Not Sure Where to
+// Start?" + dark "Question, quote, or curious?") were killing decisive
+// action. Callers' `ctaHeading` / `ctaText` / `ctaPrimary*` /
+// `ctaSecondary*` props are accepted but silently ignored for
+// backward-compat. Cleanup pass: drop those props from individual
+// service page callers in a follow-up.
+
 import { PageHero } from '@/components/sections/PageHero'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { serviceSchema, breadcrumbSchema, faqSchema } from '@/lib/schema'
-import { SITE_URL, BOOKING_URL } from '@/lib/constants'
+import { SITE_URL } from '@/lib/constants'
 import { FeatureShowcase } from '@/components/sections/FeatureShowcase'
 import { StatsCounter } from '@/components/sections/StatsCounter'
 import { FaqAccordion } from '@/components/ui/FaqAccordion'
-import { GlassCard } from '@/components/ui/GlassCard'
 import { ScrollReveal } from '@/components/motion/ScrollReveal'
-import { SectionHeading, pillStyle } from '@/components/ui/SectionHeading'
+import { pillStyle } from '@/components/ui/SectionHeading'
 import HomeBlogSection from '@/components/sections/HomeBlogSection'
 import { AnimatedTechStack } from '@/components/sections/AnimatedTechStack'
 import { AnimatedAICallout } from '@/components/sections/AnimatedAICallout'
-import { AnimatedCTA } from '@/components/sections/AnimatedCTA'
 import type { ServiceCategory } from '@/lib/blog'
-import Link from 'next/link'
 
 type Feature = { icon: string; title: string; description: string }
 type TechRow = { label: string; value: string }
@@ -45,9 +54,9 @@ export function ServicePageTemplate({
   stats,
   techEyebrow, techHeading, techDescription, techStack,
   aiCalloutEyebrow, aiCalloutHeading, aiCalloutText, aiCalloutBullets,
-  faqs, serviceCategory, proofSection,
-  ctaHeading, ctaText, ctaPrimaryLabel, ctaPrimaryHref = '/contact',
-  ctaSecondaryLabel = 'See Portfolio', ctaSecondaryHref = '/portfolio',
+  faqs, proofSection,
+  // ctaHeading/ctaText/ctaPrimary*/ctaSecondary* are accepted for
+  // backward-compat but no longer rendered (see comment at top of file).
 }: ServicePageProps) {
   return (
     <>
@@ -93,15 +102,8 @@ export function ServicePageTemplate({
       {/* 8. FAQ — alternating slide-in */}
       {faqs.length > 0 && <FaqAccordion faqs={faqs} />}
 
-      {/* 9. CTA — gradient shift on scroll */}
-      <AnimatedCTA
-        heading={ctaHeading}
-        text={ctaText}
-        primaryLabel={ctaPrimaryLabel}
-        primaryHref={ctaPrimaryHref}
-        secondaryLabel={ctaSecondaryLabel}
-        secondaryHref={ctaSecondaryHref}
-      />
+      {/* End-of-page CTA is rendered globally via InquiryStrip in
+          root layout.tsx — no duplicate CTA here. */}
     </>
   )
 }

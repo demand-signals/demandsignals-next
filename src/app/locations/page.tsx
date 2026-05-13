@@ -5,7 +5,6 @@ import { PageHero } from '@/components/sections/PageHero'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { breadcrumbSchema, faqSchema } from '@/lib/schema'
 import { FaqAccordion } from '@/components/ui/FaqAccordion'
-import { AnimatedCTA } from '@/components/sections/AnimatedCTA'
 import { CountySelector } from '@/components/sections/CountySelector'
 import { getCountiesWithCities } from '@/lib/counties'
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/motion/ScrollReveal'
@@ -200,15 +199,7 @@ export default function LocationsPage() {
       {/* ── FAQ ──────────────────────────────────────────────────── */}
       <FaqAccordion faqs={locationsFaqs} />
 
-      {/* ── CTA ──────────────────────────────────────────────────── */}
-      <AnimatedCTA
-        heading="Not in Our Area? We'll Come to You."
-        text="Our AI systems work for any market. Tell us your city, your industry, and your biggest competitor — and we'll show you exactly how to dominate your local search results."
-        primaryLabel="Start the Conversation →"
-        primaryHref="/contact"
-        secondaryLabel="View All Services"
-        secondaryHref="/websites-apps"
-      />
+      {/* End-of-page CTA rendered globally via InquiryStrip in root layout. */}
     </>
   )
 }

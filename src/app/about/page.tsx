@@ -3,7 +3,6 @@ import { JsonLd } from '@/components/seo/JsonLd'
 import { faqSchema, breadcrumbSchema } from '@/lib/schema'
 import { PageHero } from '@/components/sections/PageHero'
 import { FaqAccordion } from '@/components/ui/FaqAccordion'
-import { AnimatedCTA } from '@/components/sections/AnimatedCTA'
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/motion/ScrollReveal'
 
 const faqs = [
@@ -115,14 +114,7 @@ export default function AboutPage() {
 
       <FaqAccordion faqs={faqs} />
 
-      <AnimatedCTA
-        heading="Ready to See What We Can Do?"
-        text="Start with a free intelligence report or book a 30-minute strategy call. No pitch, no pressure — just a clear picture of your biggest opportunities."
-        primaryLabel="Get a Free Report →"
-        primaryHref="/tools/research-reports"
-        secondaryLabel="Contact Us"
-        secondaryHref="/contact"
-      />
+      {/* End-of-page CTA rendered globally via InquiryStrip in root layout. */}
     </>
   )
 }

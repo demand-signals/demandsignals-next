@@ -7,10 +7,8 @@ import { getCityBySlug, CITIES } from '@/lib/cities'
 import { COUNTIES, getCountyBySlug, getCountyForCity } from '@/lib/counties'
 import { SERVICES, SERVICE_CATEGORIES, getServicesByCategory } from '@/lib/services'
 import type { ServiceCategory } from '@/lib/services'
-import { BOOKING_URL } from '@/lib/constants'
 import { PageHero } from '@/components/sections/PageHero'
 import { FaqAccordion } from '@/components/ui/FaqAccordion'
-import { AnimatedCTA } from '@/components/sections/AnimatedCTA'
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/motion/ScrollReveal'
 
 type Props = { params: Promise<{ county: string; city: string }> }
@@ -358,15 +356,7 @@ export default async function CityHubPage({ params }: Props) {
       {/* ─── FAQ ──────────────────────────────────────────────── */}
       <FaqAccordion faqs={faqs} />
 
-      {/* ─── CTA ──────────────────────────────────────────────── */}
-      <AnimatedCTA
-        heading={`Ready to grow your ${city.name} business?`}
-        text={`Book a free 15-minute call. We'll audit your current local search presence, show you exactly where competitors are beating you, and lay out what AI marketing fixes it.`}
-        primaryLabel={`Get a Free ${city.name} Audit →`}
-        primaryHref="/contact"
-        secondaryLabel="Book a Free Call"
-        secondaryHref={BOOKING_URL}
-      />
+      {/* End-of-page CTA rendered globally via InquiryStrip in root layout. */}
 
       {/* eslint-disable-next-line react/no-unknown-property */}
       <style>{`

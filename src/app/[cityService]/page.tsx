@@ -7,10 +7,8 @@ import { getCityBySlug, CITIES } from '@/lib/cities'
 import { getServiceBySlug, getServicesByCategory, SERVICE_CATEGORIES } from '@/lib/services'
 import { getCountyForCity } from '@/lib/counties'
 import { getCityServiceBySlug, getAllCityServiceParams } from '@/lib/city-service-slugs'
-import { BOOKING_URL } from '@/lib/constants'
 import { PageHero } from '@/components/sections/PageHero'
 import { FaqAccordion } from '@/components/ui/FaqAccordion'
-import { AnimatedCTA } from '@/components/sections/AnimatedCTA'
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/motion/ScrollReveal'
 
 type Props = { params: Promise<{ cityService: string }> }
@@ -574,15 +572,7 @@ export default async function CityServiceLTP({ params }: Props) {
       {/* ─── FAQ — question-first for AEO extraction ─────────── */}
       <FaqAccordion faqs={faqs} />
 
-      {/* ─── CTA ──────────────────────────────────────────────── */}
-      <AnimatedCTA
-        heading={`Ready for the Best ${service.name} Near Me in ${city.name}?`}
-        text={`Book a free 15-minute call. We'll audit your ${service.name.toLowerCase()} presence across ${city.name} — from ${city.localTerms[0]} to ${city.localTerms[2]} — and show you exactly where competitors are winning.`}
-        primaryLabel={`Get a Free ${city.name} Audit →`}
-        primaryHref="/contact"
-        secondaryLabel="Book a Free Call"
-        secondaryHref={BOOKING_URL}
-      />
+      {/* End-of-page CTA rendered globally via InquiryStrip in root layout. */}
     </>
   )
 }

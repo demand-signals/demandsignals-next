@@ -1,9 +1,13 @@
+// CategoryIndexTemplate — index page for a category (e.g. /websites-apps).
+// CTA note 2026-05-13: trailing AnimatedCTA removed; the global
+// InquiryStrip handles end-of-page conversion. cta* props remain
+// accepted for backward-compat but silently ignored.
+
 import { JsonLd } from '@/components/seo/JsonLd'
 import { breadcrumbSchema, faqSchema } from '@/lib/schema'
 import { SITE_URL } from '@/lib/constants'
 import { PageHero } from '@/components/sections/PageHero'
 import { FaqAccordion } from '@/components/ui/FaqAccordion'
-import { AnimatedCTA } from '@/components/sections/AnimatedCTA'
 import { AnimatedServiceCards } from '@/components/sections/AnimatedServiceCards'
 
 type ServiceCard = {
@@ -40,12 +44,7 @@ export function CategoryIndexTemplate({
   eyebrow, titleHtml, subtitle, calloutHtml,
   services, faqs,
   breadcrumbName, breadcrumbPath,
-  ctaHeading = 'Not Sure Where to Start?',
-  ctaText = "Start with a free intelligence report. We'll tell you exactly where your biggest opportunities are — then you decide what to do next.",
-  ctaPrimaryLabel = 'Get a Free Report →',
-  ctaSecondaryLabel = 'Talk to Us',
-  ctaPrimaryHref = '/tools/research-reports',
-  ctaSecondaryHref = '/contact',
+  // cta* props accepted for backward-compat but no longer rendered.
 }: CategoryIndexProps) {
   return (
     <>
@@ -73,15 +72,8 @@ export function CategoryIndexTemplate({
       {/* FAQ — animated accordion */}
       {faqs.length > 0 && <FaqAccordion faqs={faqs} />}
 
-      {/* CTA — hue-shift gradient on scroll */}
-      <AnimatedCTA
-        heading={ctaHeading}
-        text={ctaText}
-        primaryLabel={ctaPrimaryLabel}
-        primaryHref={ctaPrimaryHref}
-        secondaryLabel={ctaSecondaryLabel}
-        secondaryHref={ctaSecondaryHref}
-      />
+      {/* End-of-page CTA is rendered globally via InquiryStrip in
+          root layout.tsx — no duplicate CTA here. */}
     </>
   )
 }

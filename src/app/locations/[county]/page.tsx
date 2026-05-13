@@ -6,10 +6,8 @@ import { breadcrumbSchema, faqSchema, SOCIAL_PROFILES } from '@/lib/schema'
 import { COUNTY_SLUGS, getCountyBySlug, getCountyCities } from '@/lib/counties'
 import { SERVICES, SERVICE_CATEGORIES, getServicesByCategory } from '@/lib/services'
 import type { ServiceCategory } from '@/lib/services'
-import { BOOKING_URL } from '@/lib/constants'
 import { PageHero } from '@/components/sections/PageHero'
 import { FaqAccordion } from '@/components/ui/FaqAccordion'
-import { AnimatedCTA } from '@/components/sections/AnimatedCTA'
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/motion/ScrollReveal'
 
 type Props = { params: Promise<{ county: string }> }
@@ -283,15 +281,7 @@ export default async function CountyHubPage({ params }: Props) {
       {/* ── FAQ ──────────────────────────────────────────────── */}
       <FaqAccordion faqs={faqs} />
 
-      {/* ── CTA ──────────────────────────────────────────────── */}
-      <AnimatedCTA
-        heading={`Ready to grow your ${county.name} business?`}
-        text={`Book a free 15-minute call. We'll audit your current visibility in the ${county.shortName} market and show you exactly where AI marketing can move the needle.`}
-        primaryLabel={`Get a Free ${county.shortName} Audit →`}
-        primaryHref="/contact"
-        secondaryLabel="Book a Free Call"
-        secondaryHref={BOOKING_URL}
-      />
+      {/* End-of-page CTA rendered globally via InquiryStrip in root layout. */}
     </>
   )
 }
