@@ -66,11 +66,12 @@ export function Footer() {
           <h4 style={colHead}>Websites & Apps</h4>
           <ul style={ul}>
             {([
-              ['WordPress Sites',     '/websites-apps/wordpress-development'],
-              ['React / Next.js',     '/websites-apps/react-next-webapps'],
+              ['Free HTML Sites',     '/websites-apps/free-html-website'],
+              ['Vite Sites',          '/websites-apps/vite-website'],
+              ['Vibe Coded Sites',    '/websites-apps/vibe-coded-website'],
+              ['WordPress w/ Divi',   '/websites-apps/wordpress-website'],
+              ['React / Next.js',     '/websites-apps/react-nextjs-webapp'],
               ['Mobile Apps',         '/websites-apps/mobile-apps'],
-              ['Vibe Coded Apps',     '/websites-apps/vibe-coded'],
-              ['UI/UX Design',        '/websites-apps/design'],
               ['Hosting',             '/websites-apps/hosting'],
             ] as const).map(([label, href]) => (
               <li key={href}><FooterLink href={href}>{label}</FooterLink></li>

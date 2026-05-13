@@ -40,11 +40,13 @@ const DSIG_SERVICES = [
   { url: '/content-social/ai-auto-blogging', anchor: 'AI auto-blogging', topics: ['auto blogging', 'blog automation', 'content marketing'] },
   { url: '/content-social/ai-content-repurposing', anchor: 'AI content repurposing', topics: ['repurposing', 'content distribution', 'multi-channel'] },
 
-  // Websites & Apps
-  { url: '/websites-apps/wordpress-development', anchor: 'WordPress development', topics: ['wordpress', 'cms'] },
-  { url: '/websites-apps/react-next-webapps', anchor: 'React/Next.js web apps', topics: ['react', 'nextjs', 'web apps', 'spa'] },
+  // Websites & Apps (new hub URLs as of 2026-05-13)
+  { url: '/websites-apps/free-html-website', anchor: 'free HTML website', topics: ['free website', 'small business website', 'static html'] },
+  { url: '/websites-apps/vite-website', anchor: 'Vite website', topics: ['vite', 'fast website', 'spa'] },
+  { url: '/websites-apps/vibe-coded-website', anchor: 'vibe-coded website', topics: ['vibe coding', 'rapid prototyping', 'ai built'] },
+  { url: '/websites-apps/wordpress-website', anchor: 'WordPress website', topics: ['wordpress', 'cms', 'divi'] },
+  { url: '/websites-apps/react-nextjs-webapp', anchor: 'React/Next.js web app', topics: ['react', 'nextjs', 'web apps'] },
   { url: '/websites-apps/mobile-apps', anchor: 'iOS & Android app development', topics: ['mobile apps', 'ios', 'android'] },
-  { url: '/websites-apps/vibe-coded', anchor: 'vibe-coded web apps', topics: ['vibe coding', 'rapid prototyping'] },
   { url: '/websites-apps/design', anchor: 'UI/UX design', topics: ['ui design', 'ux', 'visual design'] },
   { url: '/websites-apps/hosting', anchor: 'agent & app hosting', topics: ['hosting', 'deployment', 'devops'] },
 ] as const

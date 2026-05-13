@@ -5,7 +5,7 @@ import LighthouseScores from '@/components/sections/LighthouseScores'
 export const metadata = buildMetadata({
   title:       'React & Next.js Web App Development — AI-Powered | Demand Signals',
   description: 'Full-stack Next.js web applications with AI features, TypeScript, Supabase, and Vercel edge deployment. Custom platforms, dashboards, and tools built for performance.',
-  path:        '/websites-apps/react-next-webapps',
+  path:        '/websites-apps/react-nextjs-webapp',
   keywords:    ['Next.js development', 'React web apps', 'TypeScript development', 'Supabase apps', 'AI web applications', 'Vercel deployment'],
 })
 
@@ -20,11 +20,11 @@ export default function ReactNextPage() {
         breadcrumbs={[
           { name: 'Home', path: '/' },
           { name: 'Websites & Apps', path: '/websites-apps' },
-          { name: 'React / Next.js Apps', path: '/websites-apps/react-next-webapps' },
+          { name: 'React / Next.js Apps', path: '/websites-apps/react-nextjs-webapp' },
         ]}
         schemaName="React & Next.js Web App Development"
         schemaDescription="Full-stack Next.js web applications with AI features, TypeScript, and edge deployment."
-        schemaUrl="/websites-apps/react-next-webapps"
+        schemaUrl="/websites-apps/react-nextjs-webapp"
         featuresHeading="Cutting-Edge Web Applications Built on React & Next.js"
         features={[
           { icon: '🌐', title: 'Marketing Platforms', description: 'Database-driven marketing sites with dynamic pages, schema markup, and AI content pipelines. This site — demandsignals.co — runs on Next.js.' },

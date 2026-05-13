@@ -4,7 +4,7 @@ import { ServicePageTemplate } from '@/components/templates/ServicePageTemplate'
 export const metadata = buildMetadata({
   title:       'AI-Managed WordPress Development | Demand Signals',
   description: 'We build and manage WordPress sites engineered for local search, GEO citations, and lead generation. AI agents keep your content fresh automatically. Serving Northern California.',
-  path:        '/websites-apps/wordpress-development',
+  path:        '/websites-apps/wordpress-website',
   keywords:    ['WordPress development Northern California', 'AI-managed WordPress site', 'WordPress SEO El Dorado County', 'managed WordPress Sacramento', 'WooCommerce development'],
 })
 
@@ -19,11 +19,11 @@ export default function WordPressDevelopmentPage() {
       breadcrumbs={[
         { name: 'Home', path: '/' },
         { name: 'Websites & Apps', path: '/websites-apps' },
-        { name: 'WordPress Sites', path: '/websites-apps/wordpress-development' },
+        { name: 'WordPress Sites', path: '/websites-apps/wordpress-website' },
       ]}
       schemaName="WordPress Website Development"
       schemaDescription="AI-managed WordPress sites built for local search, GEO citations, and lead generation."
-      schemaUrl="/websites-apps/wordpress-development"
+      schemaUrl="/websites-apps/wordpress-website"
       featuresHeading="AI-Managed WordPress Sites That Rank, Convert, and Grow"
       features={[
         { icon: '🏢', title: 'Business Marketing Sites', description: 'Multi-page WordPress sites with GEO-first content architecture, full schema markup, and lead capture integrated with your CRM. Built to rank in Google and get cited in ChatGPT answers.' },

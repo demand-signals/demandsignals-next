@@ -33,15 +33,68 @@ export const SERVICE_CATEGORIES: Record<ServiceCategory, { label: string; color:
 
 export const SERVICES: ServiceData[] = [
   // ── Websites & Apps ─────────────────────────────────────────
+  // Order matches the homepage Web Presence spectrum (simple → complex):
+  //   Free HTML → Vite → Vibe Coded → WordPress → React/Next.js
+  // Plus app dev tier below: Mobile Apps + Hosting + (legacy: UI/UX Design)
+  //
+  // Note: legacy `slug` values are preserved on the 3 original services
+  // (wordpress-development, react-next-webapps, vibe-coded) so the
+  // existing city×service LTPs at /sacramento-wordpress-development etc.
+  // continue to resolve and keep their indexed equity. The user-visible
+  // service hub pages have moved to new URLs (wordpress-website,
+  // react-nextjs-webapp, vibe-coded-website) via parentHref + 301
+  // redirects — see next.config.ts. Decision logged 2026-05-13.
+  {
+    slug: 'free-html-website',
+    name: 'Free HTML Website',
+    shortName: 'Free HTML',
+    searchIntentName: 'Free Website Builder',
+    category: 'websites-apps',
+    categoryLabel: 'Websites & Apps',
+    icon: '🌐',
+    parentHref: '/websites-apps/free-html-website',
+    tagline: 'Free hand-coded HTML website — you only pay for hosting',
+    description: 'A clean, fast, hand-coded HTML website for small businesses — we build it free, you pay $20/month for hosting. AI generates the content, we ship in days, and we own none of your work. Perfect for service businesses that need a real online presence without a $5,000 project.',
+    features: ['Free build — we cover the labor', '$20/mo Verpex PHP hosting', 'AI-generated copy + SEO setup', 'Local schema markup included', 'Mobile-responsive by default', 'Admin Hours add-on for ongoing updates'],
+    keywordTemplates: ['free website {city}', 'free website builder {city} {state}', 'free small business website {city}', 'free HTML website {city}', 'free site for small business near {city}'],
+    faqTemplates: [
+      { question: 'Is the free website really free for {city} businesses?', answer: 'Yes — the build is genuinely free. We use AI to research your {city} business, generate copy, and hand-code a fast HTML site. You pay $20/month for hosting on our PHP infrastructure (SSL, backups, and security included). There is no setup fee, no design fee, and no contract. Most {city} businesses also add an Admin Hours package starting at $100/mo when they need ongoing updates, but that is optional.' },
+      { question: 'Why would a marketing agency in {city} give away free websites?', answer: 'Because most {city} businesses eventually need help — content updates, new pages, SEO improvements, or a tier-up to WordPress when they outgrow a static site. We earn our keep through hosting, Admin Hours retainers, and the natural upgrade path as your {city} business grows. Free site, real long-term partnership.' },
+      { question: 'How fast can you launch a free website for a {city} business?', answer: 'Most free HTML sites for {city} businesses launch within 5–10 business days from quote acceptance. If your business is already in Google Business Profile or has an existing website we can mirror, we ship faster. The AI handles content generation; our team handles design, schema markup, and {city}-targeted local SEO setup.' },
+      { question: 'What is NOT included in the free website?', answer: 'The free build covers a 1–10 page brochure-style HTML site with AI-generated copy and local schema. Not included: e-commerce, member portals, custom dashboards, blog (use WordPress for that), or anything requiring a database. Those become paid projects starting at $1,000 (Vibe-Coded) or $2,000 (WordPress). Marketing campaigns, newsletters, and SEO content writing are separate services — Admin Hours covers site updates, not campaigns.' },
+      { question: 'Can I add a blog or e-commerce later for my {city} business?', answer: 'Yes. When your {city} business outgrows the free HTML site, we tier you up to WordPress w/ Divi (starting at $2,000) or a Vibe-Coded app (starting at $1,000). We credit any unused Admin Hours toward the new build. Most {city} businesses tier up within 6–12 months as their business grows.' },
+    ],
+  },
+  {
+    slug: 'vite-website',
+    name: 'Vite Website',
+    shortName: 'Vite',
+    searchIntentName: 'Vite Developer',
+    category: 'websites-apps',
+    categoryLabel: 'Websites & Apps',
+    icon: '⚡',
+    parentHref: '/websites-apps/vite-website',
+    tagline: 'Lightning-fast Vite-built websites and SPAs',
+    description: 'Lightning-fast websites built with Vite — the modern build tool powering React, Vue, and Svelte apps. Sub-second load times, edge-cached delivery, and the developer-experience speed that lets us ship features in days instead of weeks. Starting at $500.',
+    features: ['Vite build pipeline (instant HMR)', 'React, Vue, or Svelte', 'Edge-cached delivery (Vibe hosting)', '$40/mo Vibe hosting', 'Sub-second Core Web Vitals', 'Admin Hours add-on available'],
+    keywordTemplates: ['Vite website {city}', 'Vite developer {city} {state}', 'fast website {city}', 'SPA developer {city}', 'modern website {city} {state}'],
+    faqTemplates: [
+      { question: 'What is a Vite website and why does it matter for {city} businesses?', answer: 'Vite is a modern build tool that produces websites with sub-second load times — measurably faster than WordPress or page-builder platforms. For {city} businesses competing for local search rankings, page speed is a direct Google ranking factor. A Vite site loads in under 500ms; a typical WordPress site loads in 2–4 seconds. That speed difference moves you up in {city} search results and converts more visitors into customers.' },
+      { question: 'How much does a Vite website cost in {city}?', answer: 'Vite websites for {city} businesses start at $500 for a single-page site and run $1,500–3,000 for multi-page sites with custom interactivity. This includes the Vite build pipeline, mobile-responsive design, local schema markup for {city} SEO, and edge deployment on our Vibe hosting tier ($40/mo). Compare this to a WordPress site at $2,000+ that loads 4× slower and you can see why performance-conscious {city} businesses choose Vite.' },
+      { question: 'When should a {city} business choose Vite over WordPress?', answer: 'Choose Vite when speed is critical and you do not need a visual content editor — e.g. landing pages, portfolios, service-business sites with static content. Choose WordPress when staff need to edit pages without developer involvement, or you need a blog, e-commerce, or member areas. Most {city} restaurants, salons, contractors, and professional services do beautifully on Vite at half the WordPress price.' },
+      { question: 'How fast can you ship a Vite website for a {city} business?', answer: 'Most Vite sites for {city} businesses launch in 1–3 weeks from quote acceptance. The Vite developer experience lets us iterate at 5–10x the speed of WordPress development. Add a few days for custom design and content review and you have a production-ready site that out-performs your {city} competitors on page speed.' },
+      { question: 'What happens after launch? Can I update a Vite website myself?', answer: 'Vite sites are developer-edited (not WordPress-style visual editing). Text and image updates go through our Admin Hours packages — starting at $100/mo for 4 hours, up to $1,000/mo for 40 hours. Most {city} businesses on Vite take the Growth package (8 hours/$200/mo) which covers monthly content updates, design tweaks, and small feature additions. If you need WordPress-style editing, we can tier you over.' },
+    ],
+  },
   {
     slug: 'wordpress-development',
-    name: 'WordPress Development',
+    name: 'WordPress w/ Divi',
     shortName: 'WordPress',
     searchIntentName: 'WordPress Developer',
     category: 'websites-apps',
     categoryLabel: 'Websites & Apps',
-    icon: '🌐',
-    parentHref: '/websites-apps/wordpress-development',
+    icon: '📰',
+    parentHref: '/websites-apps/wordpress-website',
     tagline: 'Custom WordPress sites built to rank and convert',
     description: 'Custom WordPress websites engineered for speed, SEO performance, and lead conversion. We build sites that rank in Google, appear in AI search results, and turn local visitors into booked appointments.',
     features: ['Custom theme development', 'Core Web Vitals optimized', 'Local schema markup', 'AI content pipeline ready', 'Mobile-first responsive design', 'Ongoing maintenance & updates'],
@@ -56,13 +109,13 @@ export const SERVICES: ServiceData[] = [
   },
   {
     slug: 'react-next-webapps',
-    name: 'React & Next.js Web Apps',
+    name: 'React / Next.js Web Apps',
     shortName: 'React / Next.js',
     searchIntentName: 'Web App Developer',
     category: 'websites-apps',
     categoryLabel: 'Websites & Apps',
-    icon: '⚛️',
-    parentHref: '/websites-apps/react-next-webapps',
+    icon: '🚀',
+    parentHref: '/websites-apps/react-nextjs-webapp',
     tagline: 'High-performance web applications built with React and Next.js',
     description: 'Enterprise-grade web applications built with React and Next.js — the same technology powering Netflix, Uber, and this very website. Server-rendered, blazing-fast, and optimized for both users and search engines.',
     features: ['Server-side rendering (SSR)', 'Static site generation (SSG)', 'API route integration', 'TypeScript by default', 'Edge-optimized deployment', 'AI feature integration'],
@@ -98,13 +151,13 @@ export const SERVICES: ServiceData[] = [
   },
   {
     slug: 'vibe-coded',
-    name: 'Vibe Coded Web Apps',
+    name: 'Vibe Coded Websites',
     shortName: 'Vibe Coded',
     searchIntentName: 'AI Web App Builder',
     category: 'websites-apps',
     categoryLabel: 'Websites & Apps',
-    icon: '✨',
-    parentHref: '/websites-apps/vibe-coded',
+    icon: '🎨',
+    parentHref: '/websites-apps/vibe-coded-website',
     tagline: 'AI-built web applications — rapid development, real results',
     description: 'Web applications built using AI-assisted "vibe coding" — a revolutionary approach where AI writes the code while human experts direct the architecture. 10x faster development, dramatically lower cost, same production quality.',
     features: ['AI-assisted development', '10x faster delivery', 'Lower development cost', 'Human-directed architecture', 'Production-grade output', 'Full customization'],

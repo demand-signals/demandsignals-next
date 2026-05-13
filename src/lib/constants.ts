@@ -41,13 +41,19 @@ export type NavItem = {
 }
 
 // ── Websites & Apps dropdown ──────────────────────────────────
+// Order matches the homepage Web Presence spectrum (simple → complex):
+//   Free HTML → Vite → Vibe Coded → WordPress → React/Next.js
+// Then the app dev tier below: Mobile Apps + Hosting.
+// UI/UX Design (/websites-apps/design) page remains live but is
+// removed from header nav per Hunter 2026-05-13.
 export const NAV_WEBSITES_APPS: NavItem[] = [
-  { icon: '🏢', label: 'WordPress Sites',         desc: 'Custom themes, WooCommerce, AI content pipelines',   href: '/websites-apps/wordpress-development' },
-  { icon: '⚡', label: 'React / Next.js Apps',    desc: 'Full-stack apps with AI features & edge deployment', href: '/websites-apps/react-next-webapps'    },
-  { icon: '📱', label: 'iOS & Android Apps',      desc: 'React Native cross-platform, App Store ready',       href: '/websites-apps/mobile-apps'           },
-  { icon: '🤖', label: 'Vibe Coded Web Apps',     desc: 'Ship in days with Cursor, Claude Code & Lovable',    href: '/websites-apps/vibe-coded'            },
-  { icon: '🎨', label: 'UI/UX Design',            desc: 'Figma systems, AI prototyping, dev-ready handoff',   href: '/websites-apps/design'                },
-  { icon: '🖥️', label: 'Agent & App Hosting',     desc: 'Vercel, Cloudflare & managed infrastructure',        href: '/websites-apps/hosting'               },
+  { icon: '🌐', label: 'Free HTML Sites',         desc: 'Free build + $20/mo hosting · we milk the cow forever', href: '/websites-apps/free-html-website' },
+  { icon: '⚡', label: 'Vite Sites',              desc: 'Lightning-fast static sites & SPAs · starting $500',     href: '/websites-apps/vite-website'      },
+  { icon: '🎨', label: 'Vibe Coded Sites',        desc: 'AI-generated presences shipped in days · starting $1k',  href: '/websites-apps/vibe-coded-website' },
+  { icon: '📰', label: 'WordPress w/ Divi',       desc: 'Proven CMS w/ AI content pipeline · starting $2k',       href: '/websites-apps/wordpress-website'  },
+  { icon: '🚀', label: 'React / Next.js WebApps', desc: 'Full-stack apps with AI features · starting $4k',        href: '/websites-apps/react-nextjs-webapp' },
+  { icon: '📱', label: 'iOS & Android Apps',      desc: 'React Native cross-platform, App Store ready',           href: '/websites-apps/mobile-apps'         },
+  { icon: '🖥️', label: 'Agent & App Hosting',     desc: 'Vercel, Cloudflare & managed infrastructure',            href: '/websites-apps/hosting'             },
 ]
 
 // ── Demand Generation dropdown ────────────────────────────────

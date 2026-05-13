@@ -4,7 +4,7 @@ import { ServicePageTemplate } from '@/components/templates/ServicePageTemplate'
 export const metadata = buildMetadata({
   title:       'Vibe Coded Web Apps — AI-Built, Ship in Days | Demand Signals',
   description: 'AI-built web applications shipped fast using Cursor, Claude Code, and modern AI tools. Prototype to production in days, not months. Real databases, real deployment.',
-  path:        '/websites-apps/vibe-coded',
+  path:        '/websites-apps/vibe-coded-website',
   keywords:    ['vibe coding', 'AI-built web apps', 'Cursor development', 'Claude Code', 'rapid prototyping', 'AI development'],
 })
 
@@ -19,11 +19,11 @@ export default function VibeCodedPage() {
       breadcrumbs={[
         { name: 'Home', path: '/' },
         { name: 'Websites & Apps', path: '/websites-apps' },
-        { name: 'Vibe Coded Web Apps', path: '/websites-apps/vibe-coded' },
+        { name: 'Vibe Coded Web Apps', path: '/websites-apps/vibe-coded-website' },
       ]}
       schemaName="Vibe Coded Web App Development"
       schemaDescription="AI-built web applications shipped in days using Cursor, Claude Code, and modern AI tools."
-      schemaUrl="/websites-apps/vibe-coded"
+      schemaUrl="/websites-apps/vibe-coded-website"
       featuresHeading="Ship Production Web Apps in Days, Not Months"
       features={[
         { icon: '⚡', title: 'AI-Accelerated Development', description: 'Cursor and Claude Code write production-quality code from natural language descriptions. We guide the AI, review the output, and ship features at 5-10x the speed of traditional development.' },

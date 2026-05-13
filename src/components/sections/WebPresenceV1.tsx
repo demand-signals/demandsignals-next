@@ -4,11 +4,11 @@ import Link from 'next/link'
 import { ScrollReveal } from '@/components/motion/ScrollReveal'
 
 const flavors = [
-  { icon: '🌐', label: 'Static HTML/CSS', color: '#E5793A', sub: 'Clean, hand-coded sites',  startingAt: 'FREE',   href: '/websites-apps' },
-  { icon: '⚡', label: 'Vite Sites',      color: '#646CFF', sub: 'Fast static sites & SPAs', startingAt: '$500',   href: '/websites-apps' },
-  { icon: '🎨', label: 'Vibe Coded',      color: '#DB2777', sub: 'AI-generated presences',   startingAt: '$1,000', href: '/websites-apps/vibe-coded' },
-  { icon: '📰', label: 'WordPress',       color: '#21759B', sub: 'Proven CMS solutions',     startingAt: '$2,000', href: '/websites-apps/wordpress-development' },
-  { icon: '🚀', label: 'React / Next.js', color: '#0891B2', sub: 'Full-stack web apps',      startingAt: '$4,000', href: '/websites-apps/react-next-webapps' },
+  { icon: '🌐', label: 'Free HTML Sites', color: '#E5793A', sub: 'Hand-coded, AI-generated content', startingAt: 'FREE',   href: '/websites-apps/free-html-website' },
+  { icon: '⚡', label: 'Vite Sites',      color: '#646CFF', sub: 'Lightning-fast static sites + SPAs', startingAt: '$500',   href: '/websites-apps/vite-website' },
+  { icon: '🎨', label: 'Vibe Coded',      color: '#DB2777', sub: 'AI-generated presences',   startingAt: '$1,000', href: '/websites-apps/vibe-coded-website' },
+  { icon: '📰', label: 'WordPress',       color: '#21759B', sub: 'WordPress w/ Divi',        startingAt: '$2,000', href: '/websites-apps/wordpress-website' },
+  { icon: '🚀', label: 'React / Next.js', color: '#0891B2', sub: 'Full-stack web apps',      startingAt: '$4,000', href: '/websites-apps/react-nextjs-webapp' },
 ]
 
 export default function WebPresenceV1() {

@@ -14,10 +14,19 @@ const nextConfig: NextConfig = {
     return [
       // Unified login URL (renamed 2026-05-07)
       { source: '/admin-login', destination: '/login', permanent: true },
-      // Old service URLs → new structure
-      { source: '/services/wordpress',      destination: '/websites-apps/wordpress-development',           permanent: true },
-      { source: '/services/nextjs-webapps', destination: '/websites-apps/react-next-webapps',              permanent: true },
-      { source: '/services/vibe-coded',     destination: '/websites-apps/vibe-coded',                      permanent: true },
+      // ── Websites & Apps hub renames (2026-05-13) ─────────────────────
+      // Per Option B: hub pages renamed to match buyer search intent.
+      // City×service LTPs at /sacramento-wordpress-development etc.
+      // intentionally retain their old slugs so existing Google equity
+      // doesn't churn. The 3 hub redirects below cover the renamed
+      // service hub pages only.
+      { source: '/websites-apps/wordpress-development', destination: '/websites-apps/wordpress-website',    permanent: true },
+      { source: '/websites-apps/react-next-webapps',    destination: '/websites-apps/react-nextjs-webapp',  permanent: true },
+      { source: '/websites-apps/vibe-coded',            destination: '/websites-apps/vibe-coded-website',   permanent: true },
+      // Old service URLs → new structure (point at new hub URLs)
+      { source: '/services/wordpress',      destination: '/websites-apps/wordpress-website',               permanent: true },
+      { source: '/services/nextjs-webapps', destination: '/websites-apps/react-nextjs-webapp',             permanent: true },
+      { source: '/services/vibe-coded',     destination: '/websites-apps/vibe-coded-website',              permanent: true },
       { source: '/services/mobile-apps',    destination: '/websites-apps/mobile-apps',                     permanent: true },
       { source: '/services/ui-ux-design',   destination: '/websites-apps/design',                          permanent: true },
       { source: '/services/websites',       destination: '/websites-apps',                                 permanent: true },

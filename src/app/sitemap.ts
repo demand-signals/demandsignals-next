@@ -21,11 +21,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   /* ── PRIORITY 0.9 — Individual Service Pages ──────────────────────────── */
   const servicePages: MetadataRoute.Sitemap = [
-    // Websites & Apps
-    `${BASE}/websites-apps/wordpress-development`,
-    `${BASE}/websites-apps/react-next-webapps`,
+    // Websites & Apps (homepage spectrum order: simple → complex, then app dev tier)
+    `${BASE}/websites-apps/free-html-website`,
+    `${BASE}/websites-apps/vite-website`,
+    `${BASE}/websites-apps/vibe-coded-website`,
+    `${BASE}/websites-apps/wordpress-website`,
+    `${BASE}/websites-apps/react-nextjs-webapp`,
     `${BASE}/websites-apps/mobile-apps`,
-    `${BASE}/websites-apps/vibe-coded`,
     `${BASE}/websites-apps/design`,
     `${BASE}/websites-apps/hosting`,
     // Demand Generation

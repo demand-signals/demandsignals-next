@@ -32,20 +32,44 @@ export const CATEGORY_CONTENT: CategoryContent[] = [
     name: 'Websites & Apps',
     description: 'From WordPress marketing sites to full-stack Next.js platforms and mobile apps — every build includes AI features, GEO optimization, and continuous improvement from day one.',
     callout: 'We don\'t build websites that look pretty and sit idle. Every site we ship is actively generating leads, ranking in AI search results, and improving itself — 24 hours a day, 7 days a week.',
+    // Order matches homepage Web Presence spectrum simple → complex,
+    // then app dev tier. UI/UX Design (/websites-apps/design) still
+    // lives but is removed from hub listings per Hunter 2026-05-13.
     services: [
       {
-        icon: '🏢',
-        href: '/websites-apps/wordpress-development',
-        title: 'WordPress Sites',
-        description: 'AI-managed WordPress sites built for local search, GEO citations, and automated lead generation. Custom themes, WooCommerce, ACF Pro — connected to an AI content pipeline.',
-        features: ['Custom WordPress themes', 'WooCommerce stores', 'AI content pipelines', 'Managed hosting + CDN'],
+        icon: '🌐',
+        href: '/websites-apps/free-html-website',
+        title: 'Free HTML Sites — Starting FREE',
+        description: 'Hand-coded HTML websites built free for your business. AI generates the content; we ship in days. You only pay $20/mo for Verpex PHP hosting (SSL, backups, security included).',
+        features: ['Free build — we cover the labor', '$20/mo Verpex PHP hosting', 'AI-generated copy + local SEO', 'Tier up anytime — credits transfer'],
       },
       {
         icon: '⚡',
-        href: '/websites-apps/react-next-webapps',
-        title: 'React / Next.js Apps',
+        href: '/websites-apps/vite-website',
+        title: 'Vite Sites — Starting $500',
+        description: 'Lightning-fast websites built with Vite — sub-second load times, edge-cached delivery, and the speed that moves you up in local search rankings.',
+        features: ['Vite build pipeline', 'Sub-second Core Web Vitals', '$40/mo Vibe hosting', 'React, Vue, or Svelte'],
+      },
+      {
+        icon: '🎨',
+        href: '/websites-apps/vibe-coded-website',
+        title: 'Vibe Coded Sites — Starting $1,000',
+        description: 'AI-built web applications shipped fast — prototype to production in days, not months. Real databases, real deployment, real iteration speed.',
+        features: ['AI-assisted development', 'Same-week launches', 'Real Supabase backends', '$40/mo Vibe hosting'],
+      },
+      {
+        icon: '📰',
+        href: '/websites-apps/wordpress-website',
+        title: 'WordPress w/ Divi — Starting $2,000',
+        description: 'AI-managed WordPress sites with Divi page builder, custom themes, WooCommerce, and an AI content pipeline that keeps your site fresh automatically.',
+        features: ['Divi visual editor', 'WooCommerce ready', 'AI content pipeline', '$20/mo Verpex hosting'],
+      },
+      {
+        icon: '🚀',
+        href: '/websites-apps/react-nextjs-webapp',
+        title: 'React / Next.js WebApps — Starting $4,000',
         description: 'Full-stack web applications on Next.js with AI features baked in. TypeScript, Supabase, edge deployment, and Claude API integrations from day one.',
-        features: ['Next.js App Router', 'TypeScript (strict)', 'AI features built-in', 'Vercel edge deployment'],
+        features: ['Next.js App Router', 'TypeScript (strict)', 'AI features built-in', '$80/mo managed enterprise hosting'],
       },
       {
         icon: '📱',
@@ -53,20 +77,6 @@ export const CATEGORY_CONTENT: CategoryContent[] = [
         title: 'iOS & Android Apps',
         description: 'Cross-platform mobile apps with React Native and Expo. AI features, push notifications, offline mode, and App Store publishing — one codebase, both stores.',
         features: ['React Native + Expo', 'AI-powered features', 'Push notifications', 'App Store publishing'],
-      },
-      {
-        icon: '🤖',
-        href: '/websites-apps/vibe-coded',
-        title: 'Vibe Coded Web Apps',
-        description: 'AI-built web applications shipped fast using Cursor, Claude Code, and Lovable. Prototype to production in days — not months.',
-        features: ['Cursor + Claude Code', 'Rapid iteration', 'Real databases', 'Production-ready'],
-      },
-      {
-        icon: '🎨',
-        href: '/websites-apps/design',
-        title: 'UI/UX Design',
-        description: 'Figma-based design systems, high-fidelity UI, user research, and AI-assisted prototyping. Brand-consistent design that ships with your product.',
-        features: ['Figma design systems', 'Component libraries', 'AI-assisted ideation', 'Dev-ready handoff'],
       },
       {
         icon: '🖥️',

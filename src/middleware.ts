@@ -2,8 +2,13 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-// Service slugs for all 23 services
+// Service slugs — used to power markdown feed routes at /feeds/services/<slug>.
+// Legacy slugs (wordpress-development, react-next-webapps, vibe-coded) are
+// preserved so the /feeds/services/<old-slug>.md endpoints remain stable
+// for any AI crawler that already cached them. The 2 new services
+// (free-html-website, vite-website) are appended.
 const SERVICE_SLUGS = new Set([
+  'free-html-website', 'vite-website',
   'wordpress-development', 'react-next-webapps', 'mobile-apps', 'vibe-coded', 'design', 'hosting',
   'geo-aeo-llm-optimization', 'local-seo', 'geo-targeting', 'gbp-admin', 'systems',
   'ai-content-generation', 'ai-social-media-management', 'ai-review-auto-responders', 'ai-auto-blogging', 'ai-content-repurposing',
@@ -13,9 +18,19 @@ const SERVICE_SLUGS = new Set([
 // Category slugs
 const CATEGORY_SLUGS = new Set(['websites-apps', 'demand-generation', 'content-social', 'ai-services'])
 
-// Category-to-service mapping for URL pattern matching
+// Category-to-service mapping for URL pattern matching.
+// Includes new hub-page slugs (wordpress-website, react-nextjs-webapp,
+// vibe-coded-website, free-html-website, vite-website) PLUS the legacy
+// slugs that still resolve via 301 redirects (next.config.ts).
 const CATEGORY_SERVICE_MAP: Record<string, Set<string>> = {
-  'websites-apps': new Set(['wordpress-development', 'react-next-webapps', 'mobile-apps', 'vibe-coded', 'design', 'hosting']),
+  'websites-apps': new Set([
+    // new hub-page slugs (current canonical URLs)
+    'free-html-website', 'vite-website', 'vibe-coded-website', 'wordpress-website', 'react-nextjs-webapp',
+    // legacy slugs (301-redirected via next.config.ts, kept here so middleware doesn't 404 in-flight requests)
+    'wordpress-development', 'react-next-webapps', 'vibe-coded',
+    // unchanged
+    'mobile-apps', 'design', 'hosting',
+  ]),
   'demand-generation': new Set(['geo-aeo-llm-optimization', 'local-seo', 'geo-targeting', 'gbp-admin', 'systems']),
   'content-social': new Set(['ai-content-generation', 'ai-social-media-management', 'ai-review-auto-responders', 'ai-auto-blogging', 'ai-content-repurposing']),
   'ai-services': new Set(['ai-automation-strategies', 'ai-workforce-automation', 'ai-agent-infrastructure', 'ai-automated-outreach', 'ai-agent-swarms', 'private-llms', 'clawbot-setup']),

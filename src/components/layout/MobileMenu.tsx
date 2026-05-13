@@ -7,12 +7,16 @@ const SECTIONS = [
   {
     heading: 'Websites & Apps',
     links: [
-      { label: 'WordPress Sites',      href: '/websites-apps/wordpress-development' },
-      { label: 'React / Next.js Apps',  href: '/websites-apps/react-next-webapps'   },
-      { label: 'iOS & Android Apps',    href: '/websites-apps/mobile-apps'           },
-      { label: 'Vibe Coded Web Apps',   href: '/websites-apps/vibe-coded'            },
-      { label: 'UI/UX Design',          href: '/websites-apps/design'                },
-      { label: 'Agent & App Hosting',   href: '/websites-apps/hosting'               },
+      // Order matches homepage Web Presence spectrum simple → complex,
+      // then app dev tier below. UI/UX Design removed from nav per
+      // Hunter 2026-05-13 (page at /websites-apps/design remains live).
+      { label: 'Free HTML Sites',          href: '/websites-apps/free-html-website'   },
+      { label: 'Vite Sites',               href: '/websites-apps/vite-website'         },
+      { label: 'Vibe Coded Sites',         href: '/websites-apps/vibe-coded-website'  },
+      { label: 'WordPress w/ Divi',        href: '/websites-apps/wordpress-website'    },
+      { label: 'React / Next.js WebApps',  href: '/websites-apps/react-nextjs-webapp' },
+      { label: 'iOS & Android Apps',       href: '/websites-apps/mobile-apps'          },
+      { label: 'Agent & App Hosting',      href: '/websites-apps/hosting'              },
     ],
   },
   {
