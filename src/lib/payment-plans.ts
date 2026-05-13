@@ -720,14 +720,22 @@ export async function generateInvoiceFromInstallment(
       auto_sent: options.autoSent ?? false,
       category_hint: 'service_revenue',
       notes: `${installment.description ?? `Payment ${installment.sequence}`} for SOW ${sow.sow_number} — ${sow.title}`,
-      // Discount inheritance (migration 036). Per-installment invoices
-      // bill the installment amount which is already a fraction of the
-      // post-discount total — copying preserves the audit trail without
-      // changing math.
-      discount_kind: sow.discount_kind ?? null,
-      discount_value_bps: sow.discount_value_bps ?? 0,
-      discount_amount_cents: sow.discount_amount_cents ?? 0,
-      discount_description: sow.discount_description ?? null,
+      // ── Discount inheritance — DELIBERATELY NOT COPIED ─────────────
+      // Per-installment invoices bill the installment amount, which is
+      // ALREADY the post-discount remaining slice (computed during SOW
+      // conversion). Copying the SOW's discount_* fields onto each
+      // per-installment invoice causes the PDF renderer to subtract
+      // the discount a SECOND time at display, zeroing out invoices
+      // whose subtotal equals the discount amount (e.g. SSMM Phase 2
+      // deposit on 2026-05-13: $2,000 subtotal − $2,000 "Phase 1
+      // Deposit Received" discount = $0 total due, with "No balance
+      // due" stamp). Discounts are a SOW-level concept and should
+      // remain rendered ONLY on the SOW PDF / the deposit invoice at
+      // SOW acceptance, never on subsequent milestone-fired installments.
+      discount_kind: null,
+      discount_value_bps: 0,
+      discount_amount_cents: 0,
+      discount_description: null,
     })
     .select('*')
     .single()
@@ -842,12 +850,14 @@ async function generateInvoiceFromParentInvoiceInstallment(
         installment.description
           ? `${installment.description} (installment ${installment.sequence} of plan for ${parentInvoice.invoice_number})`
           : `Installment ${installment.sequence} of payment plan for ${parentInvoice.invoice_number}`,
-      // Inherit document-level discount fields from the parent so the
-      // child invoice's audit trail reflects the same agreement.
-      discount_kind: parentInvoice.discount_kind ?? null,
-      discount_value_bps: parentInvoice.discount_value_bps ?? 0,
-      discount_amount_cents: parentInvoice.discount_amount_cents ?? 0,
-      discount_description: parentInvoice.discount_description ?? null,
+      // Discount inheritance NOT copied — see generateInvoiceFromInstallment
+      // above for full rationale. Same logic: installment.amount_cents is
+      // already the post-discount remaining slice; copying the parent's
+      // discount fields makes the PDF subtract it a second time at display.
+      discount_kind: null,
+      discount_value_bps: 0,
+      discount_amount_cents: 0,
+      discount_description: null,
     })
     .select('*')
     .single()
