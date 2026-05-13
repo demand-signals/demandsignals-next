@@ -144,9 +144,9 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
   // activePreset gives visible feedback when a preset is clicked. Default
   // installments mirror "single" exactly, so clicking Single previously
   // produced no observable change (perceived as broken).
-  const [activePreset, setActivePreset] = useState<'single' | 'two' | 'three' | null>('single')
+  const [activePreset, setActivePreset] = useState<'single' | 'two' | 'three' | 'per_phase' | null>('single')
 
-  function applyPreset(preset: 'single' | 'two' | 'three') {
+  function applyPreset(preset: 'single' | 'two' | 'three' | 'per_phase') {
     setActivePreset(preset)
     if (preset === 'single') {
       setInstallments([
@@ -183,7 +183,7 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
           description: `${sow.title} — payment 2 of 2`,
         },
       ])
-    } else {
+    } else if (preset === 'three') {
       const third = Math.floor(expectedCash / 3)
       const remainder = expectedCash - third * 2
       const d30 = new Date(); d30.setDate(d30.getDate() + 30)
@@ -216,6 +216,47 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
           description: `${sow.title} — payment 3 of 3`,
         },
       ])
+    } else {
+      // ── 'per_phase' ── Deposit per phase (milestone-triggered).
+      // First installment fires on SOW acceptance (start of phase 1).
+      // Each subsequent installment fires when the prior phase marks
+      // complete (deposit-to-kick-off-next-phase pattern).
+      const phaseCount = sow.phases.length
+      if (phaseCount === 0) {
+        setInstallments([
+          {
+            sequence: 1,
+            amount_input: (expectedCash / 100).toFixed(2),
+            currency_type: 'cash',
+            expected_payment_method: 'card',
+            trigger_type: 'on_acceptance',
+            description: `${sow.title} — single payment (no phases defined)`,
+          },
+        ])
+        return
+      }
+      const per = Math.floor(expectedCash / phaseCount)
+      const remainder = expectedCash - per * (phaseCount - 1)
+      setInstallments(
+        sow.phases.map((phase, idx) => {
+          const isLast = idx === phaseCount - 1
+          const isFirst = idx === 0
+          const amount = isLast ? remainder : per
+          return {
+            sequence: idx + 1,
+            amount_input: (amount / 100).toFixed(2),
+            currency_type: 'cash' as CurrencyType,
+            expected_payment_method: 'card' as ExpectedPaymentMethod,
+            // Phase-1 deposit fires on SOW acceptance.
+            // Phase-N>1 deposit fires when phase N-1 marks complete.
+            trigger_type: isFirst ? ('on_acceptance' as TriggerType) : ('milestone' as TriggerType),
+            ...(isFirst
+              ? {}
+              : { trigger_milestone_id: sow.phases[idx - 1].id }),
+            description: `${phase.name} Deposit`,
+          }
+        }),
+      )
     }
   }
 
@@ -565,8 +606,12 @@ export function ConvertForm({ sow }: { sow: SowSummary }) {
           Build payment plan · cash to allocate: {fmtCents(expectedCash)}
         </div>
         <div style={{ marginBottom: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          {(['single', 'two', 'three'] as const).map((p) => {
-            const label = p === 'single' ? 'Single payment' : p === 'two' ? '2 installments (30d)' : '3 installments (30d/60d)'
+          {(['single', 'two', 'three', 'per_phase'] as const).map((p) => {
+            const label =
+              p === 'single' ? 'Single payment'
+              : p === 'two' ? '2 installments (30d)'
+              : p === 'three' ? '3 installments (30d/60d)'
+              : `Deposit per phase (${sow.phases.length})`
             const isActive = activePreset === p
             return (
               <button
