@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { firePaymentInstallment } from '@/lib/payment-plans'
+import { activateSubscriptionsForPhase } from '@/lib/subscription-activation'
 import type { ProjectPhase } from '@/lib/invoice-types'
 
 export async function PATCH(
@@ -161,6 +162,7 @@ export async function PATCH(
   // ── Fire milestone-triggered installments ──────────────────────────
   // Only when transitioning into 'completed' (avoids re-firing on idempotent re-PATCH).
   const firedInstallments: string[] = []
+  const activatedSubscriptions: Array<{ id: string; stripe_subscription_id: string | null; error: string | null }> = []
   if (newStatus === 'completed' && !wasCompleted) {
     const { data: pendingInstallments } = await supabaseAdmin
       .from('payment_installments')
@@ -177,7 +179,18 @@ export async function PATCH(
         console.error('[phase-complete] fire installment failed', inst.id, e)
       }
     }
+
+    // ── Activate deferred-start subscriptions ────────────────────────
+    // Any subscriptions with activation_phase_id = phaseId AND
+    // status='trialing' AND no Stripe linkage get activated now:
+    // Stripe sub created, status flipped to 'active'.
+    const subResults = await activateSubscriptionsForPhase(phaseId)
+    activatedSubscriptions.push(...subResults)
   }
 
-  return NextResponse.json({ ok: true, fired_installments: firedInstallments })
+  return NextResponse.json({
+    ok: true,
+    fired_installments: firedInstallments,
+    activated_subscriptions: activatedSubscriptions,
+  })
 }

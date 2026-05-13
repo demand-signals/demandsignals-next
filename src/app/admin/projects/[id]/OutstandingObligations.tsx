@@ -11,6 +11,7 @@ interface InstallmentRow {
   currency_type: string
   trigger_type: string
   trigger_date: string | null
+  trigger_milestone_id: string | null
   status: string
   description: string | null
   invoice: { invoice_number: string; public_uuid: string; status: string } | null
@@ -35,10 +36,21 @@ export function OutstandingObligations({ projectId, prospectId }: Props) {
   const [installments, setInstallments] = useState<InstallmentRow[]>([])
   const [tradeCredits, setTradeCredits] = useState<TikRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [firingId, setFiringId] = useState<string | null>(null)
+  const [errorById, setErrorById] = useState<Record<string, string>>({})
+
+  async function load() {
+    const r = await fetch(`/api/admin/projects/${projectId}/obligations`)
+    if (r.ok) {
+      const data = await r.json()
+      setInstallments(data.installments ?? [])
+      setTradeCredits(data.trade_credits ?? [])
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
-    async function load() {
+    async function init() {
       try {
         const r = await fetch(`/api/admin/projects/${projectId}/obligations`)
         if (cancelled) return
@@ -51,9 +63,39 @@ export function OutstandingObligations({ projectId, prospectId }: Props) {
         if (!cancelled) setLoading(false)
       }
     }
-    load()
+    init()
     return () => { cancelled = true }
   }, [projectId, prospectId])
+
+  async function fireInstallment(inst: InstallmentRow) {
+    if (firingId) return
+    const ok = window.confirm(
+      `Issue invoice for installment #${inst.sequence} ($${(inst.amount_cents / 100).toFixed(2)})?\n\n` +
+      `This creates an INV-… invoice immediately and marks it as "sent". ` +
+      `Use this to bill ahead of the trigger (e.g. milestone not yet marked complete) ` +
+      `or when a backfilled installment needs to be issued.`,
+    )
+    if (!ok) return
+
+    setFiringId(inst.id)
+    setErrorById((m) => ({ ...m, [inst.id]: '' }))
+    try {
+      const r = await fetch(
+        `/api/admin/projects/${projectId}/installments/${inst.id}/fire`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' } },
+      )
+      const body = await r.json()
+      if (!r.ok) {
+        setErrorById((m) => ({ ...m, [inst.id]: body.error ?? 'Fire failed' }))
+        return
+      }
+      await load()
+    } catch (e) {
+      setErrorById((m) => ({ ...m, [inst.id]: e instanceof Error ? e.message : String(e) }))
+    } finally {
+      setFiringId(null)
+    }
+  }
 
   if (loading) return null
 
@@ -96,23 +138,52 @@ export function OutstandingObligations({ projectId, prospectId }: Props) {
           <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Pending cash payments</h3>
           <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13 }}>
             {pendingCash.map((i) => (
-              <li key={i.id} style={{ marginBottom: 4 }}>
-                #{i.sequence} — {fmt(i.amount_cents)}
-                {i.trigger_type === 'time' && ` · due ${i.trigger_date}`}
-                {i.trigger_type === 'milestone' && ` · on milestone`}
-                {i.trigger_type === 'on_completion_of_payment' && ` · after another payment`}
-                {i.trigger_type === 'on_acceptance' && ` · on acceptance`}
-                {' · '}status: <strong>{i.status}</strong>
-                {i.invoice && (
-                  <>
-                    {' · '}
-                    <Link
-                      href={`/invoice/${i.invoice.invoice_number}/${i.invoice.public_uuid}`}
-                      target="_blank"
+              <li key={i.id} style={{ marginBottom: 8 }}>
+                <div>
+                  #{i.sequence}
+                  {i.description && ` — ${i.description}`}
+                  {' — '}{fmt(i.amount_cents)}
+                  {i.trigger_type === 'time' && ` · due ${i.trigger_date}`}
+                  {i.trigger_type === 'milestone' && ` · on milestone`}
+                  {i.trigger_type === 'on_completion_of_payment' && ` · after another payment`}
+                  {i.trigger_type === 'on_acceptance' && ` · on acceptance`}
+                  {' · '}status: <strong>{i.status}</strong>
+                  {i.invoice && (
+                    <>
+                      {' · '}
+                      <Link
+                        href={`/invoice/${i.invoice.invoice_number}/${i.invoice.public_uuid}`}
+                        target="_blank"
+                      >
+                        {i.invoice.invoice_number}
+                      </Link>
+                    </>
+                  )}
+                  {i.status === 'pending' && (
+                    <button
+                      type="button"
+                      onClick={() => fireInstallment(i)}
+                      disabled={firingId === i.id}
+                      style={{
+                        marginLeft: 8,
+                        padding: '2px 10px',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        background: firingId === i.id ? '#94a3b8' : '#FF6B2B',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 4,
+                        cursor: firingId === i.id ? 'not-allowed' : 'pointer',
+                      }}
                     >
-                      {i.invoice.invoice_number}
-                    </Link>
-                  </>
+                      {firingId === i.id ? 'Sending…' : 'Send invoice now'}
+                    </button>
+                  )}
+                </div>
+                {errorById[i.id] && (
+                  <div style={{ color: '#dc2626', fontSize: 12, marginTop: 4 }}>
+                    {errorById[i.id]}
+                  </div>
                 )}
               </li>
             ))}
