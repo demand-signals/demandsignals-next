@@ -1,17 +1,41 @@
 'use client'
 
 // ExitIntentModal — fires once per session when the user moves cursor
-// toward the top of the viewport (signal: about to leave). Mounted
-// only on homepage and LTPs (via opt-in flag in layouts). Posts to
-// /api/inquiry with source='exit_intent'. Honors prefers-reduced-motion
-// and never re-fires within the same session.
+// toward the top of the viewport (signal: about to leave). Mounted in
+// the root layout so it's globally available, but suppressed on every
+// non-marketing surface (admin portal, /quote builder, /book, magic-link
+// pages for SOW/invoice/receipt). Posts to /api/inquiry with
+// source='exit_intent'. Honors prefers-reduced-motion and never re-fires
+// within the same session.
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { X, CheckCircle2 } from 'lucide-react'
 
 const SESSION_KEY = 'dsig_exit_intent_shown'
 
+// Pathname prefixes where the audit-checklist popup must NEVER fire.
+// Admin portal: distracting + irrelevant to a logged-in operator.
+// Quote builder / booking: prospect is actively converting — don't
+// interrupt with a competing lead magnet.
+// Magic-link doc pages: client is trying to read/pay/sign a document.
+const SUPPRESSED_PREFIXES = [
+  '/admin',
+  '/admin-login',
+  '/quote',
+  '/book',
+  '/sow/',
+  '/invoice/',
+  '/receipt/',
+  '/me/',
+]
+
 export function ExitIntentModal() {
+  const pathname = usePathname()
+  const suppressed = SUPPRESSED_PREFIXES.some((p) =>
+    p.endsWith('/') ? pathname?.startsWith(p) : pathname === p || pathname?.startsWith(p + '/'),
+  )
+
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -22,6 +46,7 @@ export function ExitIntentModal() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    if (suppressed) return
     if (sessionStorage.getItem(SESSION_KEY) === '1') return
     // Skip on small viewports — exit intent via mousemove is unreliable on touch
     if (window.matchMedia('(max-width: 768px)').matches) return
@@ -48,7 +73,7 @@ export function ExitIntentModal() {
       document.removeEventListener('mouseout', onMouseOut)
       if (armTimer) clearTimeout(armTimer)
     }
-  }, [])
+  }, [suppressed])
 
   useEffect(() => {
     if (!open) return
