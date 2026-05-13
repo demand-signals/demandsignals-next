@@ -1,12 +1,25 @@
 'use client'
 
-// InquiryStrip — slim sitewide lead-capture form rendered above the
-// footer on every page (mounted in root layout.tsx). Posts to the
-// existing /api/inquiry endpoint with source='inquiry_strip', which
-// fans out via recordInquiry() → Resend email + Twilio SMS + page_visit.
+// InquiryStrip — the single, end-of-page CTA on every public page.
+// Mounted in root layout.tsx so it appears once per page.
+//
+// Three channels in one box (Hunter directive 2026-05-13):
+//   1. Text a human at (916) 542-2423            ← tel: link, mobile-tap
+//   2. Schedule a 15-min Google Meet at /book    ← native on-site booking
+//   3. Send a quick note (inline form)           ← /api/inquiry, source='inquiry_strip'
+//
+// Replaces the previous design where two CTAs (AnimatedCTA + InquiryStrip)
+// stacked back-to-back. The AnimatedCTA has been removed from the
+// CategoryIndexTemplate + ServicePageTemplate so this box is the single
+// conversion surface at end-of-page.
 
 import { useState } from 'react'
-import { ArrowRight, CheckCircle2 } from 'lucide-react'
+import { MessageSquare, Calendar, Send, CheckCircle2 } from 'lucide-react'
+
+const PHONE_DISPLAY = '(916) 542-2423'
+const PHONE_TEL = 'tel:+19165422423'
+const PHONE_SMS = 'sms:+19165422423'
+const BOOK_URL = '/book'
 
 export function InquiryStrip() {
   const [name, setName] = useState('')
@@ -52,58 +65,116 @@ export function InquiryStrip() {
 
   return (
     <section
-      aria-label="Quick inquiry"
+      aria-label="Contact Demand Signals"
       style={{
         background: 'linear-gradient(135deg, #1d2330 0%, #2a3448 100%)',
-        padding: '48px 24px',
+        padding: '64px 24px',
         borderTop: '1px solid rgba(82,201,160,0.18)',
       }}
     >
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 36 }}>
+          <div style={{
+            color: '#52C9A0', fontSize: '0.75rem', fontWeight: 700,
+            letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12,
+          }}>
+            Three Ways to Reach a Real Human
+          </div>
+          <h2 style={{
+            color: '#fff', fontSize: 'clamp(1.6rem, 3vw, 2.1rem)', fontWeight: 800,
+            margin: 0, lineHeight: 1.2,
+          }}>
+            Question, quote, or curious? Pick a channel.
+          </h2>
+        </div>
+
+        {/* Three-channel grid */}
+        <div
+          className="inquiry-channels"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 16,
+            marginBottom: 28,
+          }}
+        >
+          {/* Channel 1 — Text a human */}
+          <a
+            href={PHONE_SMS}
+            style={{
+              ...channelCardStyle,
+              textDecoration: 'none',
+            }}
+          >
+            <div style={iconBoxStyle('#52C9A0')}>
+              <MessageSquare style={{ width: 22, height: 22, color: '#fff' }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={channelTitleStyle}>Text a real human</div>
+              <div style={channelMetaStyle}>{PHONE_DISPLAY} · usually a reply within minutes</div>
+            </div>
+          </a>
+
+          {/* Channel 2 — Book a Meet */}
+          <a
+            href={BOOK_URL}
+            style={{
+              ...channelCardStyle,
+              textDecoration: 'none',
+            }}
+          >
+            <div style={iconBoxStyle('#FF6B2B')}>
+              <Calendar style={{ width: 22, height: 22, color: '#fff' }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={channelTitleStyle}>Book a 15-min Meet</div>
+              <div style={channelMetaStyle}>Google Meet · pick a slot on our calendar</div>
+            </div>
+          </a>
+        </div>
+
+        {/* Divider */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 14,
+          margin: '24px 0',
+          color: 'rgba(255,255,255,0.4)',
+          fontSize: '0.78rem',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          fontWeight: 600,
+        }}>
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.12)' }} />
+          or send a quick note
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.12)' }} />
+        </div>
+
+        {/* Channel 3 — Inline note form */}
         {submitted ? (
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: 14, color: '#52C9A0', textAlign: 'center', padding: '20px 0',
           }}>
-            <CheckCircle2 style={{ width: 28, height: 28 }} />
+            <CheckCircle2 style={{ width: 28, height: 28, flexShrink: 0 }} />
             <div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff' }}>
-                Got it — we’ll be in touch within one business day.
+              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#fff' }}>
+                Got it — we&rsquo;ll reply within one business day.
               </div>
-              <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>
-                Want to skip the wait? <a href="/book" style={{ color: '#52C9A0', textDecoration: 'underline' }}>Book a call now →</a>
+              <div style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>
+                Want to skip the wait? <a href={BOOK_URL} style={{ color: '#52C9A0', textDecoration: 'underline' }}>Book a 15-min Meet →</a>
               </div>
             </div>
           </div>
         ) : (
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 40, alignItems: 'center',
-          }} className="inquiry-strip-grid">
-            <div>
-              <div style={{
-                color: '#52C9A0', fontSize: '0.75rem', fontWeight: 700,
-                letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10,
-              }}>
-                Get a Reply
-              </div>
-              <h3 style={{
-                color: '#fff', fontSize: 'clamp(1.3rem, 2.3vw, 1.7rem)', fontWeight: 800,
-                margin: '0 0 8px', lineHeight: 1.2,
-              }}>
-                Question, quote, or just curious?
-              </h3>
-              <p style={{
-                color: 'rgba(255,255,255,0.65)', fontSize: '0.95rem',
-                lineHeight: 1.5, margin: 0,
-              }}>
-                Drop your details and we’ll reply within one business day.
-                Or <a href="/book" style={{ color: '#52C9A0', textDecoration: 'underline' }}>book a 20-min call</a>.
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} style={{
-              display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10,
-            }} className="inquiry-strip-form">
+          <form onSubmit={handleSubmit}>
+            <div
+              className="inquiry-form-grid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 10,
+              }}
+            >
               <input
                 type="text" value={name} onChange={(e) => setName(e.target.value)}
                 placeholder="Your name *" required autoComplete="name"
@@ -118,7 +189,7 @@ export function InquiryStrip() {
               />
               <input
                 type="text" value={message} onChange={(e) => setMessage(e.target.value)}
-                placeholder="What can we help with? (optional)"
+                placeholder="What's on your mind? (optional)"
                 style={{ ...inputStyle, gridColumn: '1 / -1' }}
                 aria-label="Message"
               />
@@ -146,7 +217,7 @@ export function InquiryStrip() {
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   padding: '14px 28px',
                   background: submitting ? '#94a3b8' : '#FF6B2B',
-                  color: '#fff', fontWeight: 700, fontSize: '0.95rem',
+                  color: '#fff', fontWeight: 700, fontSize: '0.98rem',
                   borderRadius: 100, border: 'none',
                   cursor: submitting ? 'wait' : 'pointer',
                   fontFamily: 'inherit', transition: 'background 0.15s',
@@ -154,24 +225,74 @@ export function InquiryStrip() {
               >
                 {submitting ? 'Sending…' : (
                   <>
-                    Send inquiry
-                    <ArrowRight style={{ width: 16, height: 16 }} />
+                    Send note
+                    <Send style={{ width: 16, height: 16 }} />
                   </>
                 )}
               </button>
-            </form>
-          </div>
+            </div>
+          </form>
         )}
+
+        {/* Phone fallback — for desktop users without sms: handler. Always visible. */}
+        <div style={{
+          textAlign: 'center', marginTop: 22,
+          color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem',
+        }}>
+          On a desktop? Call or text us directly at{' '}
+          <a href={PHONE_TEL} style={{ color: '#52C9A0', textDecoration: 'none', fontWeight: 600 }}>
+            {PHONE_DISPLAY}
+          </a>
+        </div>
       </div>
 
       <style>{`
         @media (max-width: 768px) {
-          .inquiry-strip-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
-          .inquiry-strip-form { grid-template-columns: 1fr !important; }
+          .inquiry-channels { grid-template-columns: 1fr !important; }
+          .inquiry-form-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </section>
   )
+}
+
+const channelCardStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 14,
+  padding: '18px 20px',
+  background: 'rgba(255,255,255,0.04)',
+  border: '1px solid rgba(255,255,255,0.10)',
+  borderRadius: 12,
+  cursor: 'pointer',
+  transition: 'all 0.18s',
+}
+
+const iconBoxStyle = (bg: string): React.CSSProperties => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 44,
+  height: 44,
+  borderRadius: 10,
+  background: bg,
+  flexShrink: 0,
+})
+
+const channelTitleStyle: React.CSSProperties = {
+  color: '#fff',
+  fontSize: '1rem',
+  fontWeight: 700,
+  marginBottom: 3,
+}
+
+const channelMetaStyle: React.CSSProperties = {
+  color: 'rgba(255,255,255,0.6)',
+  fontSize: '0.85rem',
+  lineHeight: 1.4,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
 }
 
 const inputStyle: React.CSSProperties = {
