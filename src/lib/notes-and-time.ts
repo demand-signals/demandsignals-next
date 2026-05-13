@@ -138,7 +138,7 @@ export async function createNoteAndTimeEntry(
       .from('projects')
       .select('id')
       .eq('prospect_id', prospect.id)
-      .eq('status', 'active')
+      .in('status', ['active', 'in_progress'])
       .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle()
