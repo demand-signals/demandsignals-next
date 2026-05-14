@@ -552,10 +552,36 @@ async function fireBackfilledInstallment(
 // ── firePaymentInstallment ─────────────────────────────────────────
 // Transitions a pending installment into invoice_issued (cash) or
 // tik_open (TIK). Idempotent: no-op if status != 'pending'.
+/**
+ * Fire a pending payment installment — creates the per-installment invoice
+ * (cash currency) or opens a trade-credit ledger row (TIK currency).
+ *
+ * `mode` controls the invoice's initial status (default 'send' preserves
+ * legacy behavior; 'draft' creates an invoice that's hidden from the
+ * public magic-link page and requires admin review before issuance).
+ *
+ * Per Hunter 2026-05-13: admin-discretion triggers (manual Send-now button,
+ * milestone phase-complete auto-fire, time-trigger cron) should default
+ * to 'draft' so the admin reviews PDFs before clients see them. The
+ * SOW-acceptance deposit path + subscription-cycle cron continue to use
+ * 'send' because those decisions are already gated elsewhere.
+ *
+ * The legacy `sendInvoice: boolean` option is honored for backward-compat:
+ *   sendInvoice: true  → mode: 'send'
+ *   sendInvoice: false → mode: 'send' but autoSent=false (creates a
+ *                        status='sent' invoice with sent_at=null —
+ *                        magic link live, but flagged as unsent)
+ * If `mode` is also passed it takes precedence.
+ */
 export async function firePaymentInstallment(
   installmentId: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  options: { sow?: any; parentInvoice?: any; sendInvoice?: boolean } = {},
+  options: {
+    sow?: any
+    parentInvoice?: any
+    sendInvoice?: boolean
+    mode?: 'draft' | 'send'
+  } = {},
 ): Promise<void> {
   const { data: installment } = await supabaseAdmin
     .from('payment_installments')
@@ -573,6 +599,13 @@ export async function firePaymentInstallment(
   const sowId = installment.schedule?.sow_document_id
   const parentInvoiceId = installment.schedule?.parent_invoice_id
 
+  // Resolve effective mode from options. Explicit `mode` wins over legacy
+  // `sendInvoice`. Legacy `sendInvoice` doesn't gate the status (status
+  // was always 'sent' historically); it only controls auto_sent / sent_at.
+  // New `mode: 'draft'` is the actual review-before-send gate.
+  const effectiveMode: 'draft' | 'send' = options.mode ?? 'send'
+  const autoSent = effectiveMode === 'send' && options.sendInvoice !== false
+
   if (sowId) {
     let sow = options.sow
     if (!sow) {
@@ -586,7 +619,8 @@ export async function firePaymentInstallment(
 
     if (installment.currency_type === 'cash') {
       const { invoice } = await generateInvoiceFromInstallment(installment, sow, {
-        autoSent: options.sendInvoice ?? false,
+        autoSent,
+        mode: effectiveMode,
       })
 
       await supabaseAdmin
@@ -644,7 +678,7 @@ export async function firePaymentInstallment(
       const { invoice } = await generateInvoiceFromParentInvoiceInstallment(
         installment,
         parentInvoice,
-        { autoSent: options.sendInvoice ?? false },
+        { autoSent, mode: effectiveMode },
       )
 
       await supabaseAdmin
@@ -694,10 +728,16 @@ export async function generateInvoiceFromInstallment(
   installment: PaymentInstallment,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sow: any,
-  options: { autoSent?: boolean } = {},
+  options: { autoSent?: boolean; mode?: 'draft' | 'send' } = {},
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<{ invoice: any }> {
   const now = new Date().toISOString()
+  const mode = options.mode ?? 'send'
+  // Draft mode (Hunter directive 2026-05-13): admin-discretion callers
+  // create invoices hidden from the public magic-link page until reviewed.
+  // The /api/admin/invoices/[id]/send route flips draft→sent and
+  // dispatches the email.
+  const initialStatus = mode === 'draft' ? 'draft' : 'sent'
 
   const tempInvNumber = `PENDING-${crypto.randomUUID()}`
   const { data: invoice, error: invErr } = await supabaseAdmin
@@ -708,16 +748,16 @@ export async function generateInvoiceFromInstallment(
       prospect_id: sow.prospect_id,
       quote_session_id: sow.quote_session_id,
       payment_installment_id: installment.id,
-      status: 'sent',
-      sent_at: options.autoSent ? now : null,
-      sent_via_channel: options.autoSent ? 'manual' : null,
+      status: initialStatus,
+      sent_at: mode === 'send' && options.autoSent ? now : null,
+      sent_via_channel: mode === 'send' && options.autoSent ? 'manual' : null,
       subtotal_cents: installment.amount_cents,
       discount_cents: 0,
       total_due_cents: installment.amount_cents,
       currency: 'USD',
       auto_generated: true,
       auto_trigger: `installment_${installment.trigger_type}`,
-      auto_sent: options.autoSent ?? false,
+      auto_sent: mode === 'send' && options.autoSent === true,
       category_hint: 'service_revenue',
       notes: `${installment.description ?? `Payment ${installment.sequence}`} for SOW ${sow.sow_number} — ${sow.title}`,
       // ── Discount inheritance — DELIBERATELY NOT COPIED ─────────────
@@ -821,10 +861,13 @@ async function generateInvoiceFromParentInvoiceInstallment(
   installment: PaymentInstallment,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   parentInvoice: any,
-  options: { autoSent?: boolean } = {},
+  options: { autoSent?: boolean; mode?: 'draft' | 'send' } = {},
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<{ invoice: any }> {
   const now = new Date().toISOString()
+  const mode = options.mode ?? 'send'
+  // Same draft semantics as generateInvoiceFromInstallment — see comments there.
+  const initialStatus = mode === 'draft' ? 'draft' : 'sent'
 
   const tempInvNumber = `PENDING-${crypto.randomUUID()}`
   const { data: invoice, error: invErr } = await supabaseAdmin
@@ -835,16 +878,16 @@ async function generateInvoiceFromParentInvoiceInstallment(
       prospect_id: parentInvoice.prospect_id,
       quote_session_id: null,
       payment_installment_id: installment.id,
-      status: 'sent',
-      sent_at: options.autoSent ? now : null,
-      sent_via_channel: options.autoSent ? 'manual' : null,
+      status: initialStatus,
+      sent_at: mode === 'send' && options.autoSent ? now : null,
+      sent_via_channel: mode === 'send' && options.autoSent ? 'manual' : null,
       subtotal_cents: installment.amount_cents,
       discount_cents: 0,
       total_due_cents: installment.amount_cents,
       currency: 'USD',
       auto_generated: true,
       auto_trigger: `installment_invoice_${installment.trigger_type}`,
-      auto_sent: options.autoSent ?? false,
+      auto_sent: mode === 'send' && options.autoSent === true,
       category_hint: parentInvoice.category_hint ?? 'service_revenue',
       notes:
         installment.description
@@ -979,9 +1022,14 @@ export async function cascadeOnPayment(triggerInstallmentId: string): Promise<bo
 
   if (!dependents || dependents.length === 0) return false
 
+  // 2026-05-13: cascaded dependent installments fire as `mode='draft'`
+  // for the same reason milestone / time / manual-send do — admin
+  // reviews the auto-generated invoice on /admin/invoices/[id] before
+  // it's emailed. The cron may flag many pending invoices at once;
+  // batching review prevents data-bug invoices from reaching clients.
   for (const dep of dependents) {
     try {
-      await firePaymentInstallment(dep.id, { sendInvoice: true })
+      await firePaymentInstallment(dep.id, { mode: 'draft' })
     } catch (e) {
       console.error('[cascadeOnPayment] failed to fire dependent', dep.id, e)
     }

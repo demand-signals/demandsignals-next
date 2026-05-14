@@ -70,10 +70,9 @@ export function OutstandingObligations({ projectId, prospectId }: Props) {
   async function fireInstallment(inst: InstallmentRow) {
     if (firingId) return
     const ok = window.confirm(
-      `Issue invoice for installment #${inst.sequence} ($${(inst.amount_cents / 100).toFixed(2)})?\n\n` +
-      `This creates an INV-… invoice immediately and marks it as "sent". ` +
-      `Use this to bill ahead of the trigger (e.g. milestone not yet marked complete) ` +
-      `or when a backfilled installment needs to be issued.`,
+      `Create draft invoice for installment #${inst.sequence} ($${(inst.amount_cents / 100).toFixed(2)})?\n\n` +
+      `This generates the INV-… as a DRAFT — admin reviews PDF + line items + totals before it goes live. ` +
+      `Click Issue & Send on the admin invoice page when ready. The client does NOT see the magic link until you send.`,
     )
     if (!ok) return
 
@@ -87,6 +86,12 @@ export function OutstandingObligations({ projectId, prospectId }: Props) {
       const body = await r.json()
       if (!r.ok) {
         setErrorById((m) => ({ ...m, [inst.id]: body.error ?? 'Fire failed' }))
+        return
+      }
+      // Redirect to the new draft invoice's admin page for review.
+      // Server returns admin_review_url; fall back to refreshing if missing.
+      if (body.admin_review_url) {
+        window.location.href = body.admin_review_url
         return
       }
       await load()
@@ -176,7 +181,7 @@ export function OutstandingObligations({ projectId, prospectId }: Props) {
                         cursor: firingId === i.id ? 'not-allowed' : 'pointer',
                       }}
                     >
-                      {firingId === i.id ? 'Sending…' : 'Send invoice now'}
+                      {firingId === i.id ? 'Creating draft…' : 'Create draft invoice'}
                     </button>
                   )}
                 </div>

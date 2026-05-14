@@ -161,6 +161,11 @@ export async function PATCH(
 
   // ── Fire milestone-triggered installments ──────────────────────────
   // Only when transitioning into 'completed' (avoids re-firing on idempotent re-PATCH).
+  // 2026-05-13: fires as `mode='draft'` so the admin reviews each
+  // auto-generated invoice on /admin/invoices/[id] before the magic
+  // link goes live to the client. Prevents the SSMM-051326A class of
+  // bug where auto-send shipped with wrong data. Admin clicks Issue &
+  // Send when ready.
   const firedInstallments: string[] = []
   const activatedSubscriptions: Array<{ id: string; stripe_subscription_id: string | null; error: string | null }> = []
   if (newStatus === 'completed' && !wasCompleted) {
@@ -173,7 +178,7 @@ export async function PATCH(
 
     for (const inst of pendingInstallments ?? []) {
       try {
-        await firePaymentInstallment(inst.id, { sendInvoice: true })
+        await firePaymentInstallment(inst.id, { mode: 'draft' })
         firedInstallments.push(inst.id)
       } catch (e) {
         console.error('[phase-complete] fire installment failed', inst.id, e)

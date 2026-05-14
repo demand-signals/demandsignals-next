@@ -9,6 +9,14 @@
 // The installment's trigger_type is irrelevant to manual firing — this
 // just calls the same orchestrator the cron / phase-complete handler
 // would call.
+//
+// 2026-05-13: Creates the invoice as `status='draft'` (not 'sent'). The
+// admin reviews the PDF + line items + totals on /admin/invoices/[id]
+// and clicks Issue & Send to flip status='sent' + dispatch the email.
+// Prevents the SSMM-051326A class of bug (auto-send with wrong data;
+// magic link goes live before admin notices). The response includes
+// admin_review_url so the caller (OutstandingObligations Send-now
+// button) can redirect immediately.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
@@ -48,18 +56,27 @@ export async function POST(
   }
 
   try {
-    await firePaymentInstallment(instId, { sendInvoice: true })
+    await firePaymentInstallment(instId, { mode: 'draft' })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 
-  // Return the updated installment + new invoice
+  // Return the updated installment + new invoice + admin review URL so the
+  // OutstandingObligations Send-now button can redirect immediately.
   const { data: updated } = await supabaseAdmin
     .from('payment_installments')
-    .select('*, invoice:invoices!payment_installments_invoice_id_fkey(invoice_number, public_uuid, status)')
+    .select('*, invoice:invoices!payment_installments_invoice_id_fkey(id, invoice_number, public_uuid, status)')
     .eq('id', instId)
     .single()
 
-  return NextResponse.json({ ok: true, installment: updated })
+  const invoiceId = updated?.invoice?.id
+  const adminReviewUrl = invoiceId ? `/admin/invoices/${invoiceId}` : null
+
+  return NextResponse.json({
+    ok: true,
+    installment: updated,
+    admin_review_url: adminReviewUrl,
+    message: 'Draft invoice created — review on the admin page and click Issue & Send when ready.',
+  })
 }
