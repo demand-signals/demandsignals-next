@@ -41,6 +41,14 @@ export type ServicePageProps = {
   aiCalloutEyebrow?: string; aiCalloutHeading?: string; aiCalloutText?: string
   aiCalloutBullets?: string[]
   faqs: FAQ[]
+  /**
+   * Optional override for the FAQ section heading. If not supplied,
+   * derives a sensible default from the last breadcrumb name or the
+   * eyebrow (e.g. "WordPress w/ Divi FAQ"). Per Hunter 2026-05-13:
+   * generic "Frequently Asked Questions" is a missed opportunity for
+   * both UX and SEO/AEO context.
+   */
+  faqHeading?: string
   serviceCategory?: ServiceCategory
   proofSection?: React.ReactNode
   ctaHeading: string; ctaText: string; ctaPrimaryLabel: string
@@ -54,10 +62,18 @@ export function ServicePageTemplate({
   stats,
   techEyebrow, techHeading, techDescription, techStack,
   aiCalloutEyebrow, aiCalloutHeading, aiCalloutText, aiCalloutBullets,
-  faqs, proofSection,
+  faqs, faqHeading, proofSection,
   // ctaHeading/ctaText/ctaPrimary*/ctaSecondary* are accepted for
   // backward-compat but no longer rendered (see comment at top of file).
 }: ServicePageProps) {
+  // Derive FAQ heading: explicit prop > last breadcrumb name > eyebrow.
+  // All three pull from existing props so no caller needs to opt in.
+  // Result: WordPress page shows "WordPress w/ Divi FAQ", Free HTML page
+  // shows "Free HTML Website FAQ", etc.
+  const derivedFaqHeading =
+    faqHeading
+    ?? (breadcrumbs.length > 0 ? `${breadcrumbs[breadcrumbs.length - 1].name} FAQ` : `${eyebrow} FAQ`)
+
   return (
     <>
       <JsonLd data={serviceSchema(schemaName, schemaDescription, `${SITE_URL}${schemaUrl}`)} />
@@ -100,7 +116,7 @@ export function ServicePageTemplate({
       <HomeBlogSection />
 
       {/* 8. FAQ — alternating slide-in */}
-      {faqs.length > 0 && <FaqAccordion faqs={faqs} />}
+      {faqs.length > 0 && <FaqAccordion faqs={faqs} heading={derivedFaqHeading} />}
 
       {/* End-of-page CTA is rendered globally via InquiryStrip in
           root layout.tsx — no duplicate CTA here. */}

@@ -7,7 +7,20 @@ import { SectionHeading } from '@/components/ui/SectionHeading'
 
 type FAQ = { question: string; answer: string }
 
-export function FaqAccordion({ faqs }: { faqs: FAQ[] }) {
+// `heading` overrides the default "Frequently Asked Questions" so callers
+// can scope the section to the page topic (e.g. "Free HTML Sites FAQ",
+// "WordPress w/ Divi FAQ"). Default kept for backward-compat with the
+// 30+ existing callers that don't pass one. Per Hunter 2026-05-13:
+// generic "Frequently Asked Questions" is a missed SEO/UX opportunity.
+export function FaqAccordion({
+  faqs,
+  heading = 'Frequently Asked Questions',
+  eyebrow = 'FAQ',
+}: {
+  faqs: FAQ[]
+  heading?: string
+  eyebrow?: string
+}) {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   return (
@@ -19,7 +32,7 @@ export function FaqAccordion({ faqs }: { faqs: FAQ[] }) {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <SectionHeading eyebrow="FAQ" heading="Frequently Asked Questions" />
+          <SectionHeading eyebrow={eyebrow} heading={heading} />
         </motion.div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 900, margin: '0 auto' }}>
           {faqs.map((faq, i) => {

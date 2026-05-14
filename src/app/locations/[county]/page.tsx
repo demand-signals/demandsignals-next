@@ -279,7 +279,7 @@ export default async function CountyHubPage({ params }: Props) {
       </section>
 
       {/* ── FAQ ──────────────────────────────────────────────── */}
-      <FaqAccordion faqs={faqs} />
+      <FaqAccordion faqs={faqs} heading={`${county.name} FAQ`} />
 
       {/* End-of-page CTA rendered globally via InquiryStrip in root layout. */}
     </>

@@ -236,7 +236,7 @@ export default function TeamPage() {
         </div>
       </section>
 
-      <FaqAccordion faqs={faqs} />
+      <FaqAccordion faqs={faqs} heading="Our Team FAQ" />
 
       {/* End-of-page CTA rendered globally via InquiryStrip in root layout. */}
     </>

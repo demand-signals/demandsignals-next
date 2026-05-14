@@ -112,7 +112,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <FaqAccordion faqs={faqs} />
+      <FaqAccordion faqs={faqs} heading="About Demand Signals FAQ" />
 
       {/* End-of-page CTA rendered globally via InquiryStrip in root layout. */}
     </>

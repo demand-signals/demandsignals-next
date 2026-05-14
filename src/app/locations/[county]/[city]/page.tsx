@@ -354,7 +354,7 @@ export default async function CityHubPage({ params }: Props) {
       </section>
 
       {/* ─── FAQ ──────────────────────────────────────────────── */}
-      <FaqAccordion faqs={faqs} />
+      <FaqAccordion faqs={faqs} heading={`${city.name} FAQ`} />
 
       {/* End-of-page CTA rendered globally via InquiryStrip in root layout. */}
 

@@ -32,6 +32,13 @@ export type CategoryIndexProps = {
   faqs: FAQ[]
   breadcrumbName: string
   breadcrumbPath: string
+  /**
+   * Optional override for the FAQ section heading. Default derives
+   * "<breadcrumbName> FAQ" (e.g. "Websites & Apps FAQ"). Per Hunter
+   * 2026-05-13: generic "Frequently Asked Questions" is a missed
+   * opportunity for both UX and SEO/AEO context.
+   */
+  faqHeading?: string
   ctaHeading?: string
   ctaText?: string
   ctaPrimaryLabel?: string
@@ -44,8 +51,11 @@ export function CategoryIndexTemplate({
   eyebrow, titleHtml, subtitle, calloutHtml,
   services, faqs,
   breadcrumbName, breadcrumbPath,
+  faqHeading,
   // cta* props accepted for backward-compat but no longer rendered.
 }: CategoryIndexProps) {
+  const derivedFaqHeading = faqHeading ?? `${breadcrumbName} FAQ`
+
   return (
     <>
       <JsonLd data={breadcrumbSchema([
@@ -70,7 +80,7 @@ export function CategoryIndexTemplate({
       </section>
 
       {/* FAQ — animated accordion */}
-      {faqs.length > 0 && <FaqAccordion faqs={faqs} />}
+      {faqs.length > 0 && <FaqAccordion faqs={faqs} heading={derivedFaqHeading} />}
 
       {/* End-of-page CTA is rendered globally via InquiryStrip in
           root layout.tsx — no duplicate CTA here. */}

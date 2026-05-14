@@ -197,7 +197,7 @@ export default function LocationsPage() {
       </section>
 
       {/* ── FAQ ──────────────────────────────────────────────────── */}
-      <FaqAccordion faqs={locationsFaqs} />
+      <FaqAccordion faqs={locationsFaqs} heading="Service Locations FAQ" />
 
       {/* End-of-page CTA rendered globally via InquiryStrip in root layout. */}
     </>

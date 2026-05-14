@@ -570,7 +570,7 @@ export default async function CityServiceLTP({ params }: Props) {
       )}
 
       {/* ─── FAQ — question-first for AEO extraction ─────────── */}
-      <FaqAccordion faqs={faqs} />
+      <FaqAccordion faqs={faqs} heading={`${service.name} in ${city.name} FAQ`} />
 
       {/* End-of-page CTA rendered globally via InquiryStrip in root layout. */}
     </>

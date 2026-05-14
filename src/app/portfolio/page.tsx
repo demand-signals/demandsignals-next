@@ -194,7 +194,7 @@ export default function PortfolioPage() {
       </section>
 
       {/* FAQ Section */}
-      <FaqAccordion faqs={faqs} />
+      <FaqAccordion faqs={faqs} heading="Portfolio FAQ" />
 
       {/* CTA */}
       <section style={{ background: 'var(--dark)', padding: '72px 24px', textAlign: 'center' }}>

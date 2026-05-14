@@ -246,7 +246,7 @@ export default function ContactPageClient() {
       </section>
 
       {/* FAQ */}
-      <FaqAccordion faqs={contactFaqs} />
+      <FaqAccordion faqs={contactFaqs} heading="Contact FAQ" />
 
       <style>{`
         @media (max-width: 640px) {

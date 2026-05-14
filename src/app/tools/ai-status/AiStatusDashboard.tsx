@@ -337,8 +337,7 @@ export function AiStatusDashboard({ faqs }: { faqs: { question: string; answer: 
       {/* FAQ */}
       <section className="bg-[var(--light)] py-16">
         <div className="max-w-3xl mx-auto px-6">
-          <h2 className="text-2xl font-bold text-center text-[var(--dark)] mb-8">Frequently Asked Questions</h2>
-          <FaqAccordion faqs={faqs} />
+          <FaqAccordion faqs={faqs} heading="AI Status Dashboard FAQ" />
         </div>
       </section>
 
