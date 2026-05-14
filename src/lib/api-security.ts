@@ -85,18 +85,37 @@ const ALLOWED_ORIGINS = new Set<string>([
 
 export function isValidOrigin(req: NextRequest): boolean {
   const origin = req.headers.get('origin')
-  // Browsers ALWAYS send Origin on cross-origin POST/PATCH/DELETE per fetch
-  // spec. A missing Origin on a state-changing request indicates either
-  // server-to-server (rare for our public endpoints — those have their own
-  // Bearer auth) or a malicious bypass attempt. Deny.
-  if (!origin) return false
-  let normalized: string
-  try {
-    normalized = new URL(origin).origin
-  } catch {
-    return false
+
+  // Tier 1: Origin is present — exact-match against allowed list.
+  // Browsers send Origin on cross-origin POST/PATCH/DELETE per fetch spec.
+  if (origin) {
+    let normalized: string
+    try {
+      normalized = new URL(origin).origin
+    } catch {
+      return false
+    }
+    return ALLOWED_ORIGINS.has(normalized)
   }
-  return ALLOWED_ORIGINS.has(normalized)
+
+  // Tier 2: Origin is absent. Two legitimate scenarios where this happens:
+  //   (a) Same-origin GET fetches — browsers omit Origin per fetch spec
+  //       on GET unless cross-origin. The /book page calling
+  //       /api/book/slots is exactly this. Symptom: page shows
+  //       "Booking temporarily unavailable" because slots returns 403.
+  //   (b) Header-light same-origin POSTs in Chrome with no Content-Type
+  //       (witnessed 2026-05-01 on six admin POST buttons).
+  // In both cases the browser still writes Sec-Fetch-Site = same-origin
+  // (or 'none' for direct navigation). Sec-Fetch-Site is a "forbidden"
+  // header — JS cannot set it; only the browser does, after the fetch
+  // leaves the page. A cross-origin attacker therefore cannot forge it.
+  // Accept it as proof of CSRF safety when Origin is missing.
+  const sfs = req.headers.get('sec-fetch-site')
+  if (sfs === 'same-origin' || sfs === 'none') {
+    return true
+  }
+
+  return false
 }
 
 // ── Content-Type validation ──────────────────────────────────────────────────
