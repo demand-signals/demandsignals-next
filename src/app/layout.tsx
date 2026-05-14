@@ -5,7 +5,6 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { ContactBot } from '@/components/layout/ContactBot'
 import { InquiryStrip } from '@/components/layout/InquiryStrip'
-import { ExitIntentModal } from '@/components/layout/ExitIntentModal'
 import { AccessibilityWidget } from '@/components/layout/AccessibilityWidget'
 import { ArcCardGame } from '@/components/sections/ArcCardGame'
 import { JsonLd } from '@/components/seo/JsonLd'
@@ -121,7 +120,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ArcCardGame />
           <Footer />
           <ContactBot />
-          <ExitIntentModal />
           <AccessibilityWidget />
           <Analytics />
           <Suspense fallback={null}>
