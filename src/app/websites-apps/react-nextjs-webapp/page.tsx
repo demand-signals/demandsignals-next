@@ -1,5 +1,6 @@
 import { buildMetadata } from '@/lib/metadata'
 import { ServicePageTemplate } from '@/components/templates/ServicePageTemplate'
+import { AdminHoursPackages } from '@/components/sections/AdminHoursPackages'
 import LighthouseScores from '@/components/sections/LighthouseScores'
 
 export const metadata = buildMetadata({
@@ -11,6 +12,7 @@ export const metadata = buildMetadata({
 
 export default function ReactNextPage() {
   return (
+    <>
     <ServicePageTemplate
         eyebrow="React / Next.js Development"
         titleHtml={<><span style={{color:'#FF6B2B'}}>Next.js Apps</span> With<br /><span style={{color:'#52C9A0'}}>AI Built In.</span></>}
@@ -65,5 +67,11 @@ export default function ReactNextPage() {
         ctaPrimaryLabel="Start My App Build →"
         serviceCategory="websites-apps"
       />
+    <AdminHoursPackages
+      eyebrow="After your web app launches"
+      heading="Admin Hours — Ongoing Development & Iteration"
+      intro="Real apps need real engineering attention — new features, integrations, performance tuning, security patches. Pick a monthly Admin Hours package or pay-as-you-go. Most React/Next clients run on Pro (20 hours/$500/mo) or Agency (40 hours/$1,000/mo)."
+    />
+    </>
   )
 }

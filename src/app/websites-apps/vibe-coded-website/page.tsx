@@ -1,5 +1,6 @@
 import { buildMetadata } from '@/lib/metadata'
 import { ServicePageTemplate } from '@/components/templates/ServicePageTemplate'
+import { AdminHoursPackages } from '@/components/sections/AdminHoursPackages'
 
 export const metadata = buildMetadata({
   title:       'Vibe Coded Web Apps — AI-Built, Ship in Days | Demand Signals',
@@ -10,6 +11,7 @@ export const metadata = buildMetadata({
 
 export default function VibeCodedPage() {
   return (
+    <>
     <ServicePageTemplate
       eyebrow="Vibe Coded Web Apps"
       titleHtml={<><span style={{color:'#FF6B2B'}}>Vibe Coded Apps</span><br /><span style={{color:'#52C9A0'}}>Ship in Days, Not Months.</span></>}
@@ -61,5 +63,11 @@ export default function VibeCodedPage() {
       ctaPrimaryLabel="Let's Build It →"
       serviceCategory="websites-apps"
     />
+    <AdminHoursPackages
+      eyebrow="After your vibe-coded site launches"
+      heading="Admin Hours — Updates & Iteration"
+      intro="Vibe-coded sites iterate fast — AI rebuilds features in minutes. Admin Hours covers ongoing changes, new features, and tweaks. Pick a monthly package or pay-as-you-go."
+    />
+    </>
   )
 }

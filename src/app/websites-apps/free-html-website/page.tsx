@@ -1,5 +1,6 @@
 import { buildMetadata } from '@/lib/metadata'
 import { ServicePageTemplate } from '@/components/templates/ServicePageTemplate'
+import { AdminHoursPackages } from '@/components/sections/AdminHoursPackages'
 
 export const metadata = buildMetadata({
   title:       'Free HTML Websites for Small Business — $20/mo Hosting | Demand Signals',
@@ -10,6 +11,7 @@ export const metadata = buildMetadata({
 
 export default function FreeHtmlWebsitePage() {
   return (
+    <>
     <ServicePageTemplate
       eyebrow="Free HTML Website"
       titleHtml={<><span style={{color:'#FF6B2B'}}>Free Websites</span> for<br /><span style={{color:'#52C9A0'}}>Small Businesses.</span></>}
@@ -74,5 +76,11 @@ export default function FreeHtmlWebsitePage() {
       ctaSecondaryLabel="See WordPress Tier"
       ctaSecondaryHref="/websites-apps/wordpress-website"
     />
+    <AdminHoursPackages
+      eyebrow="After your site launches"
+      heading="Admin Hours — Optional Updates & Iteration"
+      intro="Your free site is free forever. When you need content updates, new pages, or a design tweak — pick an Admin Hours package (or pay-as-you-go). Unused hours expire each month so we both stay busy."
+    />
+    </>
   )
 }

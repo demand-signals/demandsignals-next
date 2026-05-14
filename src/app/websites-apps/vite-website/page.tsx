@@ -1,5 +1,6 @@
 import { buildMetadata } from '@/lib/metadata'
 import { ServicePageTemplate } from '@/components/templates/ServicePageTemplate'
+import { AdminHoursPackages } from '@/components/sections/AdminHoursPackages'
 
 export const metadata = buildMetadata({
   title:       'Vite Websites — Lightning-Fast Sites Starting at $500 | Demand Signals',
@@ -10,6 +11,7 @@ export const metadata = buildMetadata({
 
 export default function ViteWebsitePage() {
   return (
+    <>
     <ServicePageTemplate
       eyebrow="Vite Website"
       titleHtml={<><span style={{color:'#FF6B2B'}}>Vite Websites</span><br /><span style={{color:'#52C9A0'}}>Lightning-Fast by Default.</span></>}
@@ -74,5 +76,11 @@ export default function ViteWebsitePage() {
       ctaSecondaryLabel="See Free HTML Tier"
       ctaSecondaryHref="/websites-apps/free-html-website"
     />
+    <AdminHoursPackages
+      eyebrow="After your Vite site launches"
+      heading="Admin Hours — Updates & Iteration"
+      intro="Vite sites are developer-edited (not WordPress-style visual editing). Updates go through Admin Hours — pick a monthly package or pay-as-you-go. Most Vite clients run on the Growth tier (8 hours/$200/mo)."
+    />
+    </>
   )
 }

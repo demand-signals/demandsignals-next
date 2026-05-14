@@ -1,5 +1,6 @@
 import { buildMetadata } from '@/lib/metadata'
 import { ServicePageTemplate } from '@/components/templates/ServicePageTemplate'
+import { AdminHoursPackages } from '@/components/sections/AdminHoursPackages'
 
 export const metadata = buildMetadata({
   title:       'AI-Managed WordPress Development | Demand Signals',
@@ -10,6 +11,7 @@ export const metadata = buildMetadata({
 
 export default function WordPressDevelopmentPage() {
   return (
+    <>
     <ServicePageTemplate
       eyebrow="WordPress Development"
       titleHtml={<><span style={{color:'#FF6B2B'}}>WordPress Sites</span> That Work<br /><span style={{color:'#52C9A0'}}>While You Sleep.</span></>}
@@ -64,5 +66,11 @@ export default function WordPressDevelopmentPage() {
       serviceCategory="websites-apps"
       proofSection={undefined}
     />
+    <AdminHoursPackages
+      eyebrow="After your WordPress site launches"
+      heading="Admin Hours — Content, Updates, & New Features"
+      intro="WordPress sites need monthly attention — plugin updates, content refreshes, design tweaks, new features. Most WordPress clients run on the Growth tier (8 hours/$200/mo). Unused hours expire monthly so we both stay busy."
+    />
+    </>
   )
 }
