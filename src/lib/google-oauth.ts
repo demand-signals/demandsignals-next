@@ -62,6 +62,19 @@ function redirectUri(): string {
  * (we use a signed cookie + DB row).
  */
 export function getAuthorizationUrl(state: string): string {
+  // 2026-05-14: drop `include_granted_scopes=true`. With it on, if the
+  // user previously approved a NARROWER subset (e.g. calendar.events
+  // when we now request calendar), Google reuses the prior grant
+  // silently rather than re-prompting for the broader scope. Result:
+  // user clicks Connect, sees a consent screen for the OLD scope, and
+  // the integration row ends up with insufficient permission for
+  // freebusy.query and events.insert. Combined with prompt=consent we
+  // get a fresh re-prompt for the FULL scope set every time.
+  //
+  // Trade-off: without include_granted_scopes, if Hunter has BOTH
+  // /admin Calendar AND a future /admin Drive integration, granting
+  // one re-prompts for the other. That's tolerable — we want users to
+  // see the full scope list every time they reconnect.
   const params = new URLSearchParams({
     client_id: clientId(),
     redirect_uri: redirectUri(),
@@ -69,7 +82,6 @@ export function getAuthorizationUrl(state: string): string {
     scope: SCOPES.join(' '),
     access_type: 'offline',
     prompt: 'consent',
-    include_granted_scopes: 'true',
     state,
   })
   return `${AUTH_ENDPOINT}?${params.toString()}`
