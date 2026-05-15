@@ -121,3 +121,10 @@ Append-only log of working sessions. Newest at top.
   - Side-effect GET routes use plain `<a>`, not `<Link>` (RSC-prefetch hazard).
   - `EMAIL_REPLY_TO = DemandSignals@gmail.com` for all client-facing kinds.
 - **Next session priority:** find + kill the stale `dsig.demandsignals.dev` redirect that intercepted `/auth/signout?_rsc=...`. Drop orphan Vercel envvars (`PORTAL_MAGIC_LINK_SECRET`, `GOOGLE_PORTAL_*`). Drop unused GCP "DSIG Portal" OAuth client. Smoke-test the 9am PT digest cron firing.
+
+## 2026-05-15 — dsig-02 — Hunter
+- Multi-batch unification session (3-day arc): SSMM payment remediation, nav 5-stack spectrum, lead-surface hardening, auto-handoff pipeline (Y:\SKILLS\dsig-handoff\ + migration 053 + handoff.md v1i), ExitIntentModal removed, Daily Trend chart bug closed.
+- ~33 commits to master. Migrations 050a + 052 + 053 applied.
+- Auto-handoff pipeline live: Hunter on-clock 9h 54m + Claude 3h 21m = 13h 15m billable (auto-derived from transcript, first live POST).
+- Decisions logged: auto-handoff = canonical billing path, 20-min idle cap, overbill-bias, tool exec is Claude work, MEMORY entry = client note body, annotate-don't-block, DRAFT mode for admin installment firing.
+- Next session priority: validate 9am client digest rendering of the new MEMORY-density body.
