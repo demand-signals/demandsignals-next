@@ -12,8 +12,19 @@ const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
 const REVOKE_ENDPOINT = 'https://oauth2.googleapis.com/revoke'
 const AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth'
 
+// Scope changed 2026-05-14: the narrower 'calendar.events' scope covers
+// event create/update/delete but NOT the freebusy.query API the booking
+// page uses to find open slots. Without the broader 'calendar' scope,
+// /api/book/slots returns:
+//   403 PERMISSION_DENIED · ACCESS_TOKEN_SCOPE_INSUFFICIENT · freebusy.query
+//
+// After this scope change deploys, the existing refresh token still
+// holds the old narrower scope set, so /api/book/slots will continue
+// to 403 until the admin clicks Reconnect on /admin/integrations/google
+// and re-grants. The OAuth start flow uses `prompt=consent` so Google
+// re-prompts and the new scope is included.
 const SCOPES = [
-  'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/calendar',
   'openid',
   'email',
   'profile',

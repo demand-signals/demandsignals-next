@@ -30,18 +30,17 @@ export async function GET(req: NextRequest) {
         { status: 503 },
       )
     }
-    // Temporary diagnostic: surface the real error to the caller while
-    // we hunt down why /book is showing "temporarily unavailable" on
-    // production despite isValidOrigin passing. Will be reverted to
-    // safeErrorResponse() once root cause is identified.
-    return NextResponse.json(
-      {
-        ok: false,
-        error: 'book_slots',
-        message: msg,
-        stack: err instanceof Error ? err.stack?.split('\n').slice(0, 5).join(' | ') : undefined,
-      },
-      { status: 500 },
-    )
+    // Insufficient scope on the stored refresh token. This happens when
+    // the calendar was connected under a narrower scope set (e.g. the
+    // pre-2026-05-14 'calendar.events' scope which doesn't cover the
+    // freebusy.query API the slot-finder uses). The admin must click
+    // Reconnect on /admin/integrations/google to re-grant.
+    if (msg.includes('insufficientPermissions') || msg.includes('ACCESS_TOKEN_SCOPE_INSUFFICIENT')) {
+      return NextResponse.json(
+        { ok: false, error: 'Booking is temporarily unavailable. Please use the contact form.' },
+        { status: 503 },
+      )
+    }
+    return safeErrorResponse('book_slots', err)
   }
 }
