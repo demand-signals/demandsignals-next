@@ -10,8 +10,15 @@ import { requireAdmin } from '@/lib/admin-auth'
 // Spec: docs/superpowers/specs/2026-05-07-client-portal-v1-design.md §11
 // Plan: docs/superpowers/plans/2026-05-07-client-portal-v1-plan.md Task 10.3–10.4
 
+// Body cap raised 2026-05-15 from 20k → 100k. The 20k cap was a soft
+// sanity bound; multi-day MEMORY-style backfill entries legitimately
+// exceed it (witnessed: ~20k+ entries on Dockside project_notes edit
+// path 400'd as "Invalid input"). Postgres `text` column is unbounded;
+// the limit is purely application-layer paranoia. 100k is comfortably
+// larger than any realistic engineering log entry while still bounding
+// pathological pastes.
 const PatchSchema = z.object({
-  body: z.string().min(1).max(20_000).optional(),
+  body: z.string().min(1).max(100_000).optional(),
   title: z.string().max(200).nullable().optional(),
   visibility: z.enum(['internal', 'client']).optional(),
 })

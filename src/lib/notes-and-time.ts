@@ -22,7 +22,12 @@ export const NoteAndTimeInputSchema = z
   .object({
     project_id: z.string().uuid().optional(),
     client_code: z.string().min(2).max(8).optional(),
-    body: z.string().min(1).max(20_000),
+    // Body cap raised 2026-05-15 from 20k → 100k. Multi-day MEMORY-style
+    // backfill entries legitimately exceed 20k (witnessed: Dockside edit
+    // path 400'd as "Invalid input" on real engineering log content).
+    // Postgres `text` is unbounded; 100k is comfortable headroom while
+    // still bounding pathological pastes.
+    body: z.string().min(1).max(100_000),
     title: z.string().max(200).optional().nullable(),
     visibility: z.enum(['internal', 'client']).default('client'),
     source: z.enum(['handoff', 'manual', 'import']).default('manual'),
