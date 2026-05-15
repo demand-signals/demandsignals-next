@@ -157,21 +157,44 @@ export function AnalyticsDashboard() {
       {data.dailyTrend.length > 0 && (
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <SectionTitle>Daily Trend</SectionTitle>
+          {/* Two-row layout: bars row gets a fixed 120px height so each
+              column's percent-height resolves against a real number.
+              The previous flex-col with view-label-then-bar-then-date
+              had no explicit height on the column wrapper, so the bar's
+              percent-height resolved against auto-sized content and
+              collapsed to the minHeight:4 floor — every bar looked flat
+              regardless of actual views (caught 2026-05-15). */}
           <div className="flex items-end gap-[2px] mt-3" style={{ height: 120 }}>
-            {data.dailyTrend.map((d, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-[0.5rem] text-slate-400">{d.views}</span>
+            {data.dailyTrend.map((d, i) => {
+              const pct = (d.views / maxDailyViews) * 100
+              return (
                 <div
-                  className="w-full bg-[var(--teal)] rounded-t opacity-80 hover:opacity-100 transition-opacity"
-                  style={{ height: `${(d.views / maxDailyViews) * 100}%`, minHeight: d.views > 0 ? 4 : 0 }}
+                  key={i}
+                  className="flex-1 relative bg-[var(--teal)] rounded-t opacity-80 hover:opacity-100 transition-opacity"
+                  style={{ height: `${pct}%`, minHeight: d.views > 0 ? 4 : 0 }}
                   title={`${d.date}: ${d.views} views, ${d.visitors} visitors`}
-                />
-                {data.dailyTrend.length <= 31 && (
-                  <span className="text-[0.45rem] text-slate-300 -rotate-45 origin-top-left whitespace-nowrap">{d.date}</span>
-                )}
-              </div>
-            ))}
+                >
+                  {/* View count floats above each bar */}
+                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[0.5rem] text-slate-500 whitespace-nowrap">
+                    {d.views}
+                  </span>
+                </div>
+              )
+            })}
           </div>
+          {/* Date row below the bars row */}
+          {data.dailyTrend.length <= 31 && (
+            <div className="flex gap-[2px] mt-1">
+              {data.dailyTrend.map((d, i) => (
+                <span
+                  key={i}
+                  className="flex-1 text-[0.5rem] text-slate-400 text-center whitespace-nowrap overflow-hidden"
+                >
+                  {d.date.slice(5)}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
