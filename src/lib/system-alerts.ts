@@ -3,13 +3,21 @@
 // Used by every subsystem that can fail in a way the admin should know about.
 // See spec §4.2.
 //
-// Bootstrap caveat: this module sends alert emails via SMTP directly (NOT
-// via @/lib/email) because:
-//   1. Avoids circular dependency (email.ts also calls notify() on failure)
-//   2. Avoids infinite loop if the alert send itself fails
+// 2026-05-15: migrated from SMTP/nodemailer to Resend via sendEmail.
+// Background: the original SMTP path went silent after the Resend
+// migration (Vercel doesn't have SMTP_* env vars), so every notify()
+// call wrote a row but no email ever sent. Discovered when Hunter's
+// PostHog review caught a real lead bounce after the InquiryStrip
+// constraint bug had been silently rejecting visitors for 24h+.
+//
+// Circular-dependency safety: sendEmail() accepts a `suppressAlerts`
+// flag specifically for this caller. If sendEmail fails it returns
+// `{ success: false }` instead of throwing OR re-calling notify(),
+// so there's no infinite loop. Last-resort logging falls back to
+// console.error if the email path fails.
 
-import nodemailer from 'nodemailer'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { sendEmail } from '@/lib/email'
 
 export interface NotifyArgs {
   severity: 'info' | 'warning' | 'error' | 'critical'
@@ -21,23 +29,6 @@ export interface NotifyArgs {
 }
 
 const ALERT_EMAIL = process.env.ALERT_EMAIL || 'DemandSignals@gmail.com'
-const ALERT_FROM_FALLBACK = process.env.SMTP_USER || 'DemandSignals@gmail.com'
-
-let smtpTransporter: nodemailer.Transporter | null = null
-function smtp(): nodemailer.Transporter | null {
-  if (smtpTransporter) return smtpTransporter
-  const host = process.env.SMTP_HOST
-  const user = process.env.SMTP_USER
-  const pass = process.env.SMTP_PASS
-  if (!host || !user || !pass) return null
-  smtpTransporter = nodemailer.createTransport({
-    host,
-    port: parseInt(process.env.SMTP_PORT ?? '587'),
-    secure: parseInt(process.env.SMTP_PORT ?? '587') === 465,
-    auth: { user, pass },
-  })
-  return smtpTransporter
-}
 
 /**
  * Write a system_notifications row + (unless suppressed) send a throttled
@@ -95,13 +86,8 @@ export async function notify(args: NotifyArgs): Promise<void> {
   }
   if (throttled) return
 
-  // 4. Send alert email via SMTP (never via Resend — avoids loop)
-  const transporter = smtp()
-  if (!transporter) {
-    console.error('[notify] SMTP not configured; alert email NOT sent. Notification persisted to DB.')
-    return
-  }
-
+  // 4. Send alert email via Resend (suppressAlerts breaks the cycle —
+  //    sendEmail won't re-call notify() on its own failure).
   const subject = `[${args.severity}] [${args.source}] ${args.title}`
   const ctxJson = JSON.stringify(ctx, null, 2)
   const text = `Severity: ${args.severity}
@@ -117,23 +103,44 @@ ${ctxJson}
 Notification ID: ${insertedId ?? '(insert failed)'}
 Time: ${new Date().toISOString()}
 `
+  // Lightweight HTML for readability; Resend prefers some HTML over text-only.
+  const html = `<pre style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;background:#f6f8fa;padding:16px;border-radius:8px;">${escapeHtml(text)}</pre>`
 
-  try {
-    await transporter.sendMail({
-      from: `Demand Signals Alerts <${ALERT_FROM_FALLBACK}>`,
-      to: ALERT_EMAIL,
-      subject,
-      text,
-    })
-    // 5. Stamp emailed_at on the inserted row
-    if (insertedId) {
+  const result = await sendEmail({
+    to: ALERT_EMAIL,
+    kind: 'system_alert',
+    subject,
+    html,
+    text,
+    suppressAlerts: true,  // critical: prevents alert-on-alert loops
+  })
+
+  if (!result.success) {
+    // Last-resort log. The DB row is the only signal now.
+    console.error('[notify] alert email send failed:', result.error ?? 'unknown', 'provider=' + result.provider)
+    return
+  }
+
+  // 5. Stamp emailed_at on the inserted row
+  if (insertedId) {
+    try {
       await supabaseAdmin
         .from('system_notifications')
         .update({ emailed_at: new Date().toISOString() })
         .eq('id', insertedId)
+    } catch (e) {
+      console.error('[notify] emailed_at stamp failed:', e instanceof Error ? e.message : e)
     }
-  } catch (e) {
-    // Last-resort log. The DB row is the only signal now.
-    console.error('[notify] alert email send failed:', e instanceof Error ? e.message : e)
   }
+}
+
+// Minimal HTML escape; kept private to avoid pulling api-security into the
+// alert path (api-security imports things that may themselves call notify()).
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
