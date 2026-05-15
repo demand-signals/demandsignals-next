@@ -30,6 +30,18 @@ export async function GET(req: NextRequest) {
         { status: 503 },
       )
     }
-    return safeErrorResponse('book_slots', err)
+    // Temporary diagnostic: surface the real error to the caller while
+    // we hunt down why /book is showing "temporarily unavailable" on
+    // production despite isValidOrigin passing. Will be reverted to
+    // safeErrorResponse() once root cause is identified.
+    return NextResponse.json(
+      {
+        ok: false,
+        error: 'book_slots',
+        message: msg,
+        stack: err instanceof Error ? err.stack?.split('\n').slice(0, 5).join(' | ') : undefined,
+      },
+      { status: 500 },
+    )
   }
 }
