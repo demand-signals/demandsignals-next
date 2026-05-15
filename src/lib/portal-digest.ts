@@ -329,14 +329,101 @@ function escapeHtml(s: string): string {
 }
 
 function renderMarkdownToHtml(body: string): string {
-  // Email rendering — plain paragraph + line-break only.
-  // For richer rendering the in-portal MDX renderer applies; the email
-  // is intentionally minimal so it's robust across all email clients.
-  const escaped = escapeHtml(body)
-  return escaped
-    .split(/\n{2,}/)
-    .map((p) => `<p style="margin:0 0 12px 0;">${p.replace(/\n/g, '<br>')}</p>`)
-    .join('')
+  // 2026-05-15: upgraded from paragraph+br only to support the subset
+  // of markdown the /handoff pipeline emits — bold, inline code, and
+  // nested bulleted lists. Library-free; deliberately conservative
+  // regex so stray asterisks in user text don't accidentally bold.
+  // For richer rendering the in-portal MDX renderer applies; this is
+  // the email path which must be robust across all email clients.
+  //
+  // Supported:
+  //   **bold** → <strong>bold</strong>
+  //   `code`   → <code>code</code>
+  //   - bullet (lines starting with "- " or "* ") → <ul><li>
+  //   4-space indented "- bullet" → nested <ul><li>
+  //
+  // Lines NOT matching list markers stay paragraphs with <br>.
+  // HTML escaping runs FIRST so the resulting <strong>/<ul> tags
+  // we emit aren't escaped themselves.
+
+  // Process line-by-line so we can detect list blocks.
+  const rawLines = body.split('\n')
+  const out: string[] = []
+
+  let i = 0
+  while (i < rawLines.length) {
+    const line = rawLines[i]
+    // Detect list block: any line starting with optional indent then "- " or "* ".
+    const listMatch = line.match(/^( {0,8})[-*] (.+)$/)
+    if (listMatch) {
+      // Collect contiguous list lines.
+      const listLines: Array<{ indent: number; text: string }> = []
+      while (i < rawLines.length) {
+        const m = rawLines[i].match(/^( {0,12})[-*] (.+)$/)
+        if (!m) break
+        listLines.push({ indent: Math.floor(m[1].length / 2), text: m[2] })
+        i++
+      }
+      out.push(renderListBlock(listLines))
+      continue
+    }
+    // Detect blank line — paragraph separator
+    if (line.trim() === '') {
+      out.push('')
+      i++
+      continue
+    }
+    // Regular text — accumulate paragraph lines until blank or list.
+    const paraLines: string[] = []
+    while (i < rawLines.length) {
+      const l = rawLines[i]
+      if (l.trim() === '') break
+      if (l.match(/^ {0,8}[-*] /)) break
+      paraLines.push(l)
+      i++
+    }
+    if (paraLines.length > 0) {
+      const para = paraLines.map(renderInline).join('<br>')
+      out.push(`<p style="margin:0 0 12px 0;">${para}</p>`)
+    }
+  }
+
+  return out.filter((s) => s !== '').join('')
+}
+
+function renderListBlock(items: Array<{ indent: number; text: string }>): string {
+  // Build nested <ul> tree based on indent level.
+  // Simple recursive descent — items at indent N nest under previous indent N-1.
+  let html = '<ul style="margin:0 0 12px 0;padding-left:22px;">'
+  let depth = 0
+  for (let idx = 0; idx < items.length; idx++) {
+    const item = items[idx]
+    while (depth < item.indent) {
+      html += '<ul style="margin:4px 0;padding-left:22px;">'
+      depth++
+    }
+    while (depth > item.indent) {
+      html += '</ul>'
+      depth--
+    }
+    html += `<li style="margin:4px 0;">${renderInline(item.text)}</li>`
+  }
+  while (depth > 0) {
+    html += '</ul>'
+    depth--
+  }
+  html += '</ul>'
+  return html
+}
+
+function renderInline(text: string): string {
+  // Order matters: escape HTML first, then re-introduce safe inline markup.
+  let s = escapeHtml(text)
+  // Inline code FIRST so its contents aren't bold-processed.
+  s = s.replace(/`([^`]+)`/g, '<code style="background:#f4f6f9;padding:2px 5px;border-radius:3px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:0.92em;">$1</code>')
+  // Bold (double asterisk only — single stays literal so math like "5 * 4" survives).
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+  return s
 }
 
 function shortDate(iso: string): string {
