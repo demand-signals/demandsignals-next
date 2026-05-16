@@ -397,26 +397,24 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
             </div>
           ) : (
             <>
-              <a
-                href={`/api/admin/projects/${project.id}/pdf`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() => window.open(`/api/admin/projects/${project.id}/pdf?ts=${Date.now()}`, '_blank', 'noopener,noreferrer')}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
-                title="Generate project brief PDF (scope, phases, deliverables)"
+                title="Generate project brief PDF (scope, phases, deliverables). Always regenerates from current project state."
               >
                 <FileText className="w-3.5 h-3.5" />
                 Brief
-              </a>
-              <a
-                href={`/api/admin/projects/${project.id}/report-pdf`}
-                target="_blank"
-                rel="noopener noreferrer"
+              </button>
+              <button
+                type="button"
+                onClick={() => window.open(`/api/admin/projects/${project.id}/report-pdf?ts=${Date.now()}`, '_blank', 'noopener,noreferrer')}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
-                title="Generate activity report PDF (notes timeline + time entries)"
+                title="Generate activity report PDF (notes timeline + time entries). Always regenerates from current project state."
               >
                 <FileText className="w-3.5 h-3.5" />
                 Report
-              </a>
+              </button>
               <Link
                 href={`/admin/projects/${project.id}/edit`}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
