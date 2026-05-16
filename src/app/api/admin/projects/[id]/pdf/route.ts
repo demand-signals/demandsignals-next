@@ -3,9 +3,18 @@
 // Always fresh — no caching, no R2 upload. PDF is a snapshot of the
 // project at view time, intended for sharing with team members or
 // clients.
+//
+// `dynamic`/`fetchCache`/`revalidate` are required together: Supabase
+// SDK uses fetch() under the hood, and Next.js's data cache wraps it
+// even when the route handler runs dynamically. Without these the PDF
+// lags behind freshly-added notes/time entries (project foot-gun
+// documented in MEMORY 2026-05-14).
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+export const revalidate = 0
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
