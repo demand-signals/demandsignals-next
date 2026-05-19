@@ -139,11 +139,21 @@ export async function createNoteAndTimeEntry(
         error: { code: 'client_not_found', message: `No prospect with client_code ${code}` },
       }
     }
+    // "Active" here means "currently being worked on" — NOT the literal
+    // status string 'active'. The projects table has two naming
+    // conventions in circulation: NewProjectModal defaults to 'active',
+    // but the detail page + most older records use 'planning' /
+    // 'in_progress' / 'on_hold'. Exclude only the truly-finished states
+    // so this resolver matches operator intent ("the project I'm
+    // working on right now") rather than a brittle literal.
+    // See Y:\PROJECTS\dockside-next 2026-05-19 handoff: DOCK was
+    // status='in_progress' and got 'no_active_project' under the old
+    // `eq('status', 'active')` filter.
     const { data: project } = await supabaseAdmin
       .from('projects')
       .select('id')
       .eq('prospect_id', prospect.id)
-      .eq('status', 'active')
+      .not('status', 'in', '(completed,cancelled)')
       .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -152,7 +162,7 @@ export async function createNoteAndTimeEntry(
         ok: false,
         error: {
           code: 'no_active_project',
-          message: `No active project for client_code ${code}. Pick a specific project_id instead.`,
+          message: `No in-progress project for client_code ${code} (all projects are completed or cancelled). Pick a specific project_id instead.`,
         },
       }
     }

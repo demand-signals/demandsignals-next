@@ -50,12 +50,18 @@ export default async function PortalDashboardPage() {
   const outstandingCents =
     openInvoices?.reduce((s, inv) => s + (inv.total_due_cents ?? 0), 0) ?? 0
 
-  // Active project: most recently updated active project
+  // Active project: most recently updated in-progress project.
+  // Excludes 'completed' and 'cancelled'; everything else
+  // (including 'planning', 'in_progress', 'on_hold', 'active')
+  // is considered current and shown to the client. The literal
+  // status string 'active' is not authoritative — the table has
+  // mixed naming conventions in circulation (see notes-and-time.ts
+  // comment for the full story).
   const { data: activeProjects } = await supabaseAdmin
     .from('projects')
     .select('id, name, status, monthly_value, updated_at')
     .eq('prospect_id', prospectId)
-    .eq('status', 'active')
+    .not('status', 'in', '(completed,cancelled)')
     .order('updated_at', { ascending: false })
     .limit(1)
   const activeProject = activeProjects?.[0] ?? null
