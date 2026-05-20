@@ -670,15 +670,30 @@ function parseHandoff(raw: string): ParsedHandoff | { error: string } {
   let hunterMinutes = 0
   let claudeMinutes = 0
 
+  // FORMAT 0 — bare key=value shorthand. Hunter's quickest paste:
+  //   hunter_minutes: 426 (7h 6m on-clock)
+  //   claude_minutes: 311 (5h 11m inference + tool exec)
+  // Or with `=` instead of `:`. Anchored at line start (or start of
+  // string) to avoid matching "hunter_minutes" inside other prose.
+  const hKvRe = /(?:^|\n)\s*hunter[_\s-]?minutes\s*[:=]\s*(\d+)/i
+  const cKvRe = /(?:^|\n)\s*claude[_\s-]?minutes\s*[:=]\s*(\d+)/i
+  const hKv = raw.match(hKvRe)
+  const cKv = raw.match(cKvRe)
+  if (hKv) hunterMinutes = parseInt(hKv[1], 10)
+  if (cKv) claudeMinutes = parseInt(cKv[1], 10)
+
   // FORMAT A: anchor on the explicit "(= NNNm)" billable-total form.
   // These regexes ONLY match the on-clock / billable-line summaries.
-  const hunterOnClockRe = /Hunter\s+on-clock\s*\([^)]*\)\s*:[^\n(]*\(\s*=\s*(\d+)\s*m\s*\)/i
-  const claudeLineRe = /Claude\s+line\s*\([^)]*\)\s*:[^\n(]*\(\s*=\s*(\d+)\s*m\s*\)/i
-
-  const hOC = raw.match(hunterOnClockRe)
-  const cL = raw.match(claudeLineRe)
-  if (hOC) hunterMinutes = parseInt(hOC[1], 10)
-  if (cL) claudeMinutes = parseInt(cL[1], 10)
+  if (hunterMinutes === 0) {
+    const hunterOnClockRe = /Hunter\s+on-clock\s*\([^)]*\)\s*:[^\n(]*\(\s*=\s*(\d+)\s*m\s*\)/i
+    const hOC = raw.match(hunterOnClockRe)
+    if (hOC) hunterMinutes = parseInt(hOC[1], 10)
+  }
+  if (claudeMinutes === 0) {
+    const claudeLineRe = /Claude\s+line\s*\([^)]*\)\s*:[^\n(]*\(\s*=\s*(\d+)\s*m\s*\)/i
+    const cL = raw.match(claudeLineRe)
+    if (cL) claudeMinutes = parseInt(cL[1], 10)
+  }
 
   // FORMAT B fallback: only consult if FORMAT A didn't match. Tolerant
   // patterns. h+m form ("6h 30m"), bare-h form ("6h"), or bare-m form
@@ -709,7 +724,7 @@ function parseHandoff(raw: string): ParsedHandoff | { error: string } {
   }
 
   if (hunterMinutes <= 0 && claudeMinutes <= 0) {
-    return { error: 'Could not find Hunter/Claude time lines in pasted text. Expected "Hunter (any-label): Xh Ym" and "Claude (any-label): Xh Ym" — tilde (~) prefix on the value is OK.' }
+    return { error: 'Could not find Hunter/Claude time lines. Three formats accepted: (1) "hunter_minutes: 426" + "claude_minutes: 311" (shorthand); (2) "Hunter on-clock (...): Xh Ym (= NNNm)" + "Claude line (...): Xh Ym (= NNNm)" (full handoff artifact); (3) "Hunter (any-label): Xh Ym" + "Claude (any-label): Xh Ym" (legacy single-line). Tilde (~) prefix on values is OK.' }
   }
 
   // Session window — multi-shape tolerant. Hunter's /handoff output uses

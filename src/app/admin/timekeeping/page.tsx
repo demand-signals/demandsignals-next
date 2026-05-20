@@ -346,13 +346,24 @@ function parseHandoffText(raw: string): ParsedHandoff | { error: string } {
   let hunterMinutes = 0
   let claudeMinutes = 0
 
-  const hunterOnClockRe = /Hunter\s+on-clock\s*\([^)]*\)\s*:[^\n(]*\(\s*=\s*(\d+)\s*m\s*\)/i
-  const claudeLineRe = /Claude\s+line\s*\([^)]*\)\s*:[^\n(]*\(\s*=\s*(\d+)\s*m\s*\)/i
+  // FORMAT 0 — bare key=value shorthand. Hunter's quickest paste.
+  const hKvRe = /(?:^|\n)\s*hunter[_\s-]?minutes\s*[:=]\s*(\d+)/i
+  const cKvRe = /(?:^|\n)\s*claude[_\s-]?minutes\s*[:=]\s*(\d+)/i
+  const hKv = raw.match(hKvRe)
+  const cKv = raw.match(cKvRe)
+  if (hKv) hunterMinutes = parseInt(hKv[1], 10)
+  if (cKv) claudeMinutes = parseInt(cKv[1], 10)
 
-  const hOC = raw.match(hunterOnClockRe)
-  const cL = raw.match(claudeLineRe)
-  if (hOC) hunterMinutes = parseInt(hOC[1], 10)
-  if (cL) claudeMinutes = parseInt(cL[1], 10)
+  if (hunterMinutes === 0) {
+    const hunterOnClockRe = /Hunter\s+on-clock\s*\([^)]*\)\s*:[^\n(]*\(\s*=\s*(\d+)\s*m\s*\)/i
+    const hOC = raw.match(hunterOnClockRe)
+    if (hOC) hunterMinutes = parseInt(hOC[1], 10)
+  }
+  if (claudeMinutes === 0) {
+    const claudeLineRe = /Claude\s+line\s*\([^)]*\)\s*:[^\n(]*\(\s*=\s*(\d+)\s*m\s*\)/i
+    const cL = raw.match(claudeLineRe)
+    if (cL) claudeMinutes = parseInt(cL[1], 10)
+  }
 
   // FORMAT B fallback — pre-2026-05-15 single-line "Hunter (label): Xh Ym".
   if (hunterMinutes === 0) {
@@ -378,7 +389,7 @@ function parseHandoffText(raw: string): ParsedHandoff | { error: string } {
   }
 
   if (hunterMinutes <= 0 && claudeMinutes <= 0) {
-    return { error: 'Could not find Hunter/Claude time lines. Expected "Hunter (any-label): Xh Ym" and "Claude (any-label): Xh Ym" — tilde (~) prefix on the value is OK.' }
+    return { error: 'Could not find Hunter/Claude time lines. Three formats accepted: (1) "hunter_minutes: 426" + "claude_minutes: 311" (shorthand); (2) "Hunter on-clock (...): Xh Ym (= NNNm)" + "Claude line (...): Xh Ym (= NNNm)" (full handoff artifact); (3) "Hunter (any-label): Xh Ym" + "Claude (any-label): Xh Ym" (legacy single-line). Tilde (~) prefix on values is OK.' }
   }
 
   // Multi-shape Session: line parser. Same logic as TimeEntriesPanel —
