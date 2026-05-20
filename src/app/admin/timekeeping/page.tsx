@@ -333,30 +333,48 @@ interface ParsedHandoff {
 }
 
 function parseHandoffText(raw: string): ParsedHandoff | { error: string } {
-  // Tolerant patterns. Match: any (parenthetical), optional ~ prefix on
-  // the value, h+m form, bare-h form, or bare-m form. Mirror of the
-  // TimeEntriesPanel parser. Hunter (active) / (full session) / (active
-  // engagement) / (wall clock) all work.
-  const hunterMinRe = /Hunter\s*\([^)]+\):\s*~?\s*(\d+)\s*m\b(?!\s*\d)/i
-  const claudeMinRe = /Claude\s*\([^)]+\):\s*~?\s*(\d+)\s*m\b(?!\s*\d)/i
-  const hunterRe = /Hunter\s*\([^)]+\):\s*~?\s*(\d+)\s*h(?:\s*(\d+)\s*m?)?/i
-  const claudeRe = /Claude\s*\([^)]+\):\s*~?\s*(\d+)\s*h(?:\s*(\d+)\s*m?)?/i
+  // Two artifact formats supported, tried in this order. See the
+  // matching TimeEntriesPanel.tsx parseHandoff() for the full
+  // explanation; the regexes here are kept in sync verbatim.
+  //
+  // FORMAT A — v1i+ (auto-derived). Anchor on the "(= NNNm)" billable
+  // totals because the same artifact also contains intermediate
+  // breakdown lines that match the legacy regexes (e.g. "Hunter human
+  // (own typing/reading, 20-min idle cap)") and would silently capture
+  // a smaller value. Bug surfaced 2026-05-19 SMMA session.
 
   let hunterMinutes = 0
   let claudeMinutes = 0
 
-  const hMin = raw.match(hunterMinRe)
-  if (hMin) hunterMinutes = parseInt(hMin[1], 10)
+  const hunterOnClockRe = /Hunter\s+on-clock\s*\([^)]*\)\s*:[^\n(]*\(\s*=\s*(\d+)\s*m\s*\)/i
+  const claudeLineRe = /Claude\s+line\s*\([^)]*\)\s*:[^\n(]*\(\s*=\s*(\d+)\s*m\s*\)/i
+
+  const hOC = raw.match(hunterOnClockRe)
+  const cL = raw.match(claudeLineRe)
+  if (hOC) hunterMinutes = parseInt(hOC[1], 10)
+  if (cL) claudeMinutes = parseInt(cL[1], 10)
+
+  // FORMAT B fallback — pre-2026-05-15 single-line "Hunter (label): Xh Ym".
   if (hunterMinutes === 0) {
-    const h = raw.match(hunterRe)
-    if (h) hunterMinutes = parseInt(h[1], 10) * 60 + (h[2] ? parseInt(h[2], 10) : 0)
+    const hunterMinRe = /Hunter\s*\([^)]+\):\s*~?\s*(\d+)\s*m\b(?!\s*\d)/i
+    const hunterRe = /Hunter\s*\([^)]+\):\s*~?\s*(\d+)\s*h(?:\s*(\d+)\s*m?)?/i
+    const hMin = raw.match(hunterMinRe)
+    if (hMin) hunterMinutes = parseInt(hMin[1], 10)
+    if (hunterMinutes === 0) {
+      const h = raw.match(hunterRe)
+      if (h) hunterMinutes = parseInt(h[1], 10) * 60 + (h[2] ? parseInt(h[2], 10) : 0)
+    }
   }
 
-  const cMin = raw.match(claudeMinRe)
-  if (cMin) claudeMinutes = parseInt(cMin[1], 10)
   if (claudeMinutes === 0) {
-    const c = raw.match(claudeRe)
-    if (c) claudeMinutes = parseInt(c[1], 10) * 60 + (c[2] ? parseInt(c[2], 10) : 0)
+    const claudeMinRe = /Claude\s*\([^)]+\):\s*~?\s*(\d+)\s*m\b(?!\s*\d)/i
+    const claudeRe = /Claude\s*\([^)]+\):\s*~?\s*(\d+)\s*h(?:\s*(\d+)\s*m?)?/i
+    const cMin = raw.match(claudeMinRe)
+    if (cMin) claudeMinutes = parseInt(cMin[1], 10)
+    if (claudeMinutes === 0) {
+      const c = raw.match(claudeRe)
+      if (c) claudeMinutes = parseInt(c[1], 10) * 60 + (c[2] ? parseInt(c[2], 10) : 0)
+    }
   }
 
   if (hunterMinutes <= 0 && claudeMinutes <= 0) {

@@ -641,37 +641,71 @@ interface ParsedHandoff {
 }
 
 function parseHandoff(raw: string): ParsedHandoff | { error: string } {
-  // Tolerant patterns. Match: any (parenthetical), optional ~ prefix on
-  // the value, h+m form ("6h 30m"), bare-h form ("6h"), or bare-m form
-  // ("330m"). The parenthetical is captured but its content doesn't
-  // matter — Hunter (active), (full session), (active engagement),
-  // (wall clock) all work.
+  // Two artifact formats are supported, tried in this order:
   //
-  // Bare-minutes form attempted FIRST: only matches when the line has
-  // ONLY a minutes value (no preceding hour value), so "6h 30m" goes
-  // to the h+m form, not the bare-m form. Anchored at the colon to
-  // avoid catching trailing "30m" of an h+m line.
-  const hunterMinRe = /Hunter\s*\([^)]+\):\s*~?\s*(\d+)\s*m\b(?!\s*\d)/i
-  const claudeMinRe = /Claude\s*\([^)]+\):\s*~?\s*(\d+)\s*m\b(?!\s*\d)/i
-  const hunterRe = /Hunter\s*\([^)]+\):\s*~?\s*(\d+)\s*h(?:\s*(\d+)\s*m?)?/i
-  const claudeRe = /Claude\s*\([^)]+\):\s*~?\s*(\d+)\s*h(?:\s*(\d+)\s*m?)?/i
+  // FORMAT A — v1i+ (dsig-handoff skill, 2026-05-15 and later). Auto-
+  // derived from session transcripts; three time categories rolled up
+  // into two billable totals with explicit "(= NNNm)" anchors:
+  //
+  //   - Hunter on-clock (own + while Claude works):  7h 06m  (= 426m)
+  //   - Claude line (inference + tool execution):    5h 11m  (= 311m)
+  //
+  // We MUST anchor on these specific lines — the same artifact also
+  // contains intermediate breakdown lines that match the legacy
+  // "Hunter (...)" / "Claude (...)" regexes (e.g., "Hunter human (own
+  // typing/reading, 20-min idle cap)" and "Claude inference (model
+  // thinking)") and would silently capture the wrong (smaller) value.
+  // Witnessed 2026-05-19 SMMA session: legacy regex parsed Hunter as
+  // 115m instead of the on-clock 426m, undercounting by 5+ hours.
+  //
+  // FORMAT B — pre-2026-05-15 single-line. Kept as fallback for
+  // historical pastes and any future variants:
+  //
+  //   - Hunter (active engagement): 6h 30m
+  //   - Claude (compute): 2h 15m
+  //
+  // The parenthetical content is captured but ignored — any label
+  // works. Tilde (~) prefix on the value is tolerated.
 
   let hunterMinutes = 0
   let claudeMinutes = 0
 
-  // Try bare-minutes first (cheap; rejects when followed by 'h')
-  const hMin = raw.match(hunterMinRe)
-  if (hMin) hunterMinutes = parseInt(hMin[1], 10)
+  // FORMAT A: anchor on the explicit "(= NNNm)" billable-total form.
+  // These regexes ONLY match the on-clock / billable-line summaries.
+  const hunterOnClockRe = /Hunter\s+on-clock\s*\([^)]*\)\s*:[^\n(]*\(\s*=\s*(\d+)\s*m\s*\)/i
+  const claudeLineRe = /Claude\s+line\s*\([^)]*\)\s*:[^\n(]*\(\s*=\s*(\d+)\s*m\s*\)/i
+
+  const hOC = raw.match(hunterOnClockRe)
+  const cL = raw.match(claudeLineRe)
+  if (hOC) hunterMinutes = parseInt(hOC[1], 10)
+  if (cL) claudeMinutes = parseInt(cL[1], 10)
+
+  // FORMAT B fallback: only consult if FORMAT A didn't match. Tolerant
+  // patterns. h+m form ("6h 30m"), bare-h form ("6h"), or bare-m form
+  // ("330m"). Bare-minutes form attempted FIRST: only matches when the
+  // line has ONLY a minutes value (no preceding hour value), so "6h 30m"
+  // goes to the h+m form, not the bare-m form. Anchored at the colon to
+  // avoid catching trailing "30m" of an h+m line.
   if (hunterMinutes === 0) {
-    const h = raw.match(hunterRe)
-    if (h) hunterMinutes = parseInt(h[1], 10) * 60 + (h[2] ? parseInt(h[2], 10) : 0)
+    const hunterMinRe = /Hunter\s*\([^)]+\):\s*~?\s*(\d+)\s*m\b(?!\s*\d)/i
+    const hunterRe = /Hunter\s*\([^)]+\):\s*~?\s*(\d+)\s*h(?:\s*(\d+)\s*m?)?/i
+    const hMin = raw.match(hunterMinRe)
+    if (hMin) hunterMinutes = parseInt(hMin[1], 10)
+    if (hunterMinutes === 0) {
+      const h = raw.match(hunterRe)
+      if (h) hunterMinutes = parseInt(h[1], 10) * 60 + (h[2] ? parseInt(h[2], 10) : 0)
+    }
   }
 
-  const cMin = raw.match(claudeMinRe)
-  if (cMin) claudeMinutes = parseInt(cMin[1], 10)
   if (claudeMinutes === 0) {
-    const c = raw.match(claudeRe)
-    if (c) claudeMinutes = parseInt(c[1], 10) * 60 + (c[2] ? parseInt(c[2], 10) : 0)
+    const claudeMinRe = /Claude\s*\([^)]+\):\s*~?\s*(\d+)\s*m\b(?!\s*\d)/i
+    const claudeRe = /Claude\s*\([^)]+\):\s*~?\s*(\d+)\s*h(?:\s*(\d+)\s*m?)?/i
+    const cMin = raw.match(claudeMinRe)
+    if (cMin) claudeMinutes = parseInt(cMin[1], 10)
+    if (claudeMinutes === 0) {
+      const c = raw.match(claudeRe)
+      if (c) claudeMinutes = parseInt(c[1], 10) * 60 + (c[2] ? parseInt(c[2], 10) : 0)
+    }
   }
 
   if (hunterMinutes <= 0 && claudeMinutes <= 0) {
