@@ -6,6 +6,7 @@ import { Footer } from '@/components/layout/Footer'
 import { ContactBot } from '@/components/layout/ContactBot'
 import { InquiryStrip } from '@/components/layout/InquiryStrip'
 import { AccessibilityWidget } from '@/components/layout/AccessibilityWidget'
+import { CookieStoplight } from '@/components/layout/CookieStoplight'
 import { ArcCardGame } from '@/components/sections/ArcCardGame'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { orgSchema, websiteSchema } from '@/lib/schema'
@@ -121,6 +122,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Footer />
           <ContactBot />
           <AccessibilityWidget />
+          {/* CookieStoplight is the consent UI only. Trackers below still
+              fire unconditionally — gating PostHog/Vercel Analytics on the
+              `dsig_cookie_consent` localStorage value (or the
+              `dsig:consent-changed` window event) is a follow-up. Kit
+              install reference: Y:\TOOLS\dsig-cookie-stoplight\README.md
+              "Integration" section. */}
+          <CookieStoplight />
           <Analytics />
           <Suspense fallback={null}>
             <AnalyticsTracker />
