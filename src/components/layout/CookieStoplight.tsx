@@ -291,27 +291,16 @@ export function CookieStoplight() {
               })}
             </div>
 
-            {/* Per-tier descriptions, stacked tiny */}
-            <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid #f3f4f6' }}>
-              {CONFIG.tiers.map((tier) => (
-                <div key={tier.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
-                  <span style={{
-                    width: 8, height: 8, borderRadius: '50%',
-                    background: tier.color, marginTop: 5, flexShrink: 0,
-                  }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#374151' }}>{tier.label}</div>
-                    <div style={{ fontSize: 10.5, color: '#9ca3af', lineHeight: 1.4 }}>{tier.description}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Footer link to privacy page */}
-            <div style={{ marginTop: 6, paddingTop: 10, borderTop: '1px solid #f3f4f6', textAlign: 'center' }}>
+            {/* Footer link to privacy page. Per-tier descriptions are
+                NOT rendered separately — the buttons above carry
+                `title={tier.description}` (HTML tooltip on hover) and
+                `aria-label={tier.label}` (screen readers), so the
+                explanation is one hover away without doubling the
+                visual footprint. */}
+            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6', textAlign: 'center' }}>
               <a
                 href="/privacy"
-                style={{ fontSize: 10.5, color: '#9ca3af', textDecoration: 'underline' }}
+                style={{ fontSize: 11, color: '#9ca3af', textDecoration: 'underline' }}
               >
                 Read our full privacy policy
               </a>
