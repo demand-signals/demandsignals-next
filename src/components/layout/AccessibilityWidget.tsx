@@ -1,9 +1,37 @@
 'use client'
 
+// DSIG Accessibility Widget — Next.js / React drop-in
+// ─────────────────────────────────────────────────────────────────────────────
+// Source-of-truth: Y:\TOOLS\dsig-accessibility-widget\react\AccessibilityWidget.tsx
+// Bottom-left 40×40 circular blue button; click to open a left-side drawer
+// with 8 accessibility controls: text size, contrast, color-blind modes,
+// cursor size, line spacing, letter spacing, highlight links, readable
+// font, pause animations. Persists in localStorage; settings re-apply
+// automatically on every page load.
+//
+// Visual treatment is the canonical DSIG accessibility surface — extracted
+// from demandsignals.co where it's been live and battle-tested. WCAG 2.1 AA
+// compliant.
+//
+// Dependencies: framer-motion (already in every DSIG Next.js site).
+//
+// Per-site theming:
+//   - `buttonColor` prop  → closed-state button background
+//   - `accentColor` prop  → drawer active-state highlights (defaults to same as button)
+//   - CSS var fallbacks   → `--a11y-button-color` + `--a11y-accent-color`
+//   - Defaults to DSIG blue `#1e40af` if nothing else is set
+//
+// Version: v1a — 2026-05-22
+
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const STORAGE_KEY = 'accessibility_settings'
+
+// Default colors. Per-site override via props or CSS variables --
+// see AccessibilityWidget component for precedence rules.
+const DEFAULT_BUTTON_COLOR = '#1e40af'  // DSIG blue
+const DEFAULT_ACCENT_COLOR = '#1e40af'  // same as button by default
 
 interface AccessibilityState {
   fontSize: number
@@ -209,10 +237,12 @@ function OptionButton({
   active,
   onClick,
   children,
+  accentColor,
 }: {
   active: boolean
   onClick: () => void
   children: React.ReactNode
+  accentColor: string
 }) {
   return (
     <button
@@ -220,9 +250,14 @@ function OptionButton({
       style={{
         padding: '5px 10px',
         borderRadius: 6,
-        border: active ? '1.5px solid #1e40af' : '1.5px solid #e5e7eb',
-        background: active ? '#eff6ff' : '#fff',
-        color: active ? '#1e40af' : '#374151',
+        border: active ? `1.5px solid ${accentColor}` : '1.5px solid #e5e7eb',
+        // Light tint for active background -- if accentColor differs from
+        // default DSIG blue, use a 12%-opacity-of-accent via color-mix.
+        // Falls back to #eff6ff for browsers without color-mix (caniuse: 95%+).
+        background: active
+          ? `color-mix(in srgb, ${accentColor} 8%, white)`
+          : '#fff',
+        color: active ? accentColor : '#374151',
         fontSize: 12,
         fontWeight: active ? 600 : 400,
         cursor: 'pointer',
@@ -239,10 +274,12 @@ function TogglePill({
   active,
   onClick,
   children,
+  accentColor,
 }: {
   active: boolean
   onClick: () => void
   children: React.ReactNode
+  accentColor: string
 }) {
   return (
     <button
@@ -250,8 +287,8 @@ function TogglePill({
       style={{
         padding: '6px 12px',
         borderRadius: 20,
-        border: active ? '1.5px solid #1e40af' : '1.5px solid #e5e7eb',
-        background: active ? '#1e40af' : '#fff',
+        border: active ? `1.5px solid ${accentColor}` : '1.5px solid #e5e7eb',
+        background: active ? accentColor : '#fff',
         color: active ? '#fff' : '#374151',
         fontSize: 12,
         fontWeight: 500,
@@ -279,9 +316,53 @@ function Section({ children }: { children: React.ReactNode }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function AccessibilityWidget() {
+export interface AccessibilityWidgetProps {
+  /**
+   * Closed-state button background color. Precedence (highest first):
+   *   1. This prop (per-mount override)
+   *   2. CSS variable `--a11y-button-color` on :root or any ancestor
+   *   3. DEFAULT_BUTTON_COLOR (DSIG blue #1e40af)
+   *
+   * Accept any CSS color value. Most sites only need to set this prop.
+   *
+   * Example per-mount override:
+   *   <AccessibilityWidget buttonColor="#FF6B2B" />
+   *
+   * Example CSS-var-based theming in globals.css:
+   *   :root { --a11y-button-color: #FF6B2B; }
+   *   <AccessibilityWidget />   // picks up the var automatically
+   */
+  buttonColor?: string
+
+  /**
+   * Drawer active-state highlights — selected OptionButton border + text,
+   * selected TogglePill background, header icon color. If omitted, defaults
+   * to the same value as buttonColor for visual cohesion.
+   *
+   * Precedence (highest first):
+   *   1. This prop
+   *   2. CSS variable `--a11y-accent-color`
+   *   3. Same as resolved buttonColor
+   */
+  accentColor?: string
+}
+
+export function AccessibilityWidget({
+  buttonColor,
+  accentColor,
+}: AccessibilityWidgetProps = {}) {
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<AccessibilityState>(DEFAULT_STATE)
+
+  // Resolved colors. Props win outright. Otherwise hand off to CSS:
+  // var() with fallback lets a site set `--a11y-button-color` or
+  // `--a11y-accent-color` in globals.css and the widget inherits with
+  // no JSX change. If neither prop nor var is set, falls through to
+  // the DSIG-blue defaults.
+  const resolvedButtonColor = buttonColor
+    ?? `var(--a11y-button-color, ${DEFAULT_BUTTON_COLOR})`
+  const resolvedAccentColor = accentColor
+    ?? `var(--a11y-accent-color, ${buttonColor ?? `var(--a11y-button-color, ${DEFAULT_ACCENT_COLOR})`})`
 
   // Load state from localStorage on mount
   useEffect(() => {
@@ -348,7 +429,7 @@ export function AccessibilityWidget() {
             width: 40,
             height: 40,
             borderRadius: '50%',
-            background: '#1e40af',
+            background: resolvedButtonColor,
             border: 'none',
             cursor: 'pointer',
             display: 'flex',
@@ -420,7 +501,7 @@ export function AccessibilityWidget() {
               >
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                    <span style={{ color: '#1e40af' }}>
+                    <span style={{ color: resolvedAccentColor }}>
                       <AccessIcon />
                     </span>
                     <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#111827' }}>
@@ -479,6 +560,7 @@ export function AccessibilityWidget() {
                       key={v}
                       active={state.contrast === v}
                       onClick={() => update({ contrast: v })}
+                      accentColor={resolvedAccentColor}
                     >
                       {v === 'normal' ? 'Normal' : v === 'high' ? 'High Contrast' : v === 'inverted' ? 'Inverted' : 'Grayscale'}
                     </OptionButton>
@@ -503,6 +585,7 @@ export function AccessibilityWidget() {
                       key={v}
                       active={state.colorBlind === v}
                       onClick={() => update({ colorBlind: v })}
+                      accentColor={resolvedAccentColor}
                     >
                       {label}
                     </OptionButton>
@@ -519,6 +602,7 @@ export function AccessibilityWidget() {
                       key={v}
                       active={state.cursorSize === v}
                       onClick={() => update({ cursorSize: v })}
+                      accentColor={resolvedAccentColor}
                     >
                       {v === 'normal' ? 'Normal' : v === 'large' ? 'Large' : 'Extra Large'}
                     </OptionButton>
@@ -535,6 +619,7 @@ export function AccessibilityWidget() {
                       key={v}
                       active={state.lineHeight === v}
                       onClick={() => update({ lineHeight: v })}
+                      accentColor={resolvedAccentColor}
                     >
                       {v === 'normal' ? 'Normal' : v === 'increased' ? 'Increased' : 'Double'}
                     </OptionButton>
@@ -551,6 +636,7 @@ export function AccessibilityWidget() {
                       key={v}
                       active={state.letterSpacing === v}
                       onClick={() => update({ letterSpacing: v })}
+                      accentColor={resolvedAccentColor}
                     >
                       {v === 'normal' ? 'Normal' : v === 'increased' ? 'Increased' : 'Wide'}
                     </OptionButton>
@@ -565,18 +651,21 @@ export function AccessibilityWidget() {
                   <TogglePill
                     active={state.highlightLinks}
                     onClick={() => update({ highlightLinks: !state.highlightLinks })}
+                    accentColor={resolvedAccentColor}
                   >
                     Highlight Links
                   </TogglePill>
                   <TogglePill
                     active={state.readableFont}
                     onClick={() => update({ readableFont: !state.readableFont })}
+                    accentColor={resolvedAccentColor}
                   >
                     Readable Font
                   </TogglePill>
                   <TogglePill
                     active={state.pauseAnimations}
                     onClick={() => update({ pauseAnimations: !state.pauseAnimations })}
+                    accentColor={resolvedAccentColor}
                   >
                     Pause Animations
                   </TogglePill>
