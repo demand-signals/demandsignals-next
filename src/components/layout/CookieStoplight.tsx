@@ -26,12 +26,16 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // ── CONFIG ──────────────────────────────────────────────────────────────────
-// Tweak these values to rebrand per-site.
+// Tweak these values to rebrand per-site. `buttonColor` is the closed-state
+// button background — also overridable per-mount via the `buttonColor` prop
+// or per-site via the `--cookie-button-color` CSS variable (see CookieStoplight
+// component for precedence). Stoplight circle colors stay universal because
+// red/yellow/green carry semantic meaning across all sites.
 
 const CONFIG = {
   storageKey: 'dsig_cookie_consent',
   cookieMaxAgeDays: 365,
-  buttonColor: '#52C9A0',  // DSIG teal (matches PDF + brand)
+  defaultButtonColor: '#52C9A0',  // DSIG teal — default if no prop + no CSS var
   buttonShadow: '0 2px 8px rgba(0,0,0,0.18)',  // matches AccessibilityWidget
   position: {
     bottom: 20,
@@ -110,11 +114,38 @@ const CloseIcon = () => (
 
 // ── Main component ──────────────────────────────────────────────────────────
 
-export function CookieStoplight() {
+export interface CookieStoplightProps {
+  /**
+   * Closed-state button background color. Precedence (highest first):
+   *   1. This prop (per-mount override)
+   *   2. CSS variable `--cookie-button-color` set on the page (per-site)
+   *   3. CONFIG.defaultButtonColor (DSIG teal)
+   *
+   * Accept any CSS color value (hex, rgb, hsl, color name, even
+   * `var(--my-brand)` if a site wants to chain through their own token).
+   *
+   * Example per-mount override:
+   *   <CookieStoplight buttonColor="#FF6B2B" />
+   *
+   * Example CSS-var-based theming in globals.css:
+   *   :root { --cookie-button-color: #FF6B2B; }
+   *   <CookieStoplight />   // picks up the var automatically
+   */
+  buttonColor?: string
+}
+
+export function CookieStoplight({ buttonColor }: CookieStoplightProps = {}) {
   // null = not yet checked localStorage (first render, before hydration);
   // ConsentTier = consent has been given;
   // 'unset' = checked, no consent yet (show panel immediately).
   const [consent, setConsent] = useState<ConsentTier | 'unset' | null>(null)
+
+  // Resolved button color. If the prop is provided, use it directly.
+  // Otherwise hand off to CSS: var() with a fallback to the default
+  // means a site can set `--cookie-button-color` in globals.css and
+  // the button picks it up automatically without any JSX change. If
+  // neither is set, falls through to the DSIG teal default.
+  const resolvedButtonColor = buttonColor ?? `var(--cookie-button-color, ${CONFIG.defaultButtonColor})`
   const [panelOpen, setPanelOpen] = useState(false)
 
   useEffect(() => {
@@ -171,7 +202,7 @@ export function CookieStoplight() {
                 width: 40,
                 height: 40,
                 borderRadius: '50%',
-                background: CONFIG.buttonColor,
+                background: resolvedButtonColor,
                 border: 'none',
                 cursor: 'pointer',
                 display: 'flex',
