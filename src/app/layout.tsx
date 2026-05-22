@@ -10,7 +10,6 @@ import { CookieStoplight } from '@/components/layout/CookieStoplight'
 import { ArcCardGame } from '@/components/sections/ArcCardGame'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { orgSchema, websiteSchema } from '@/lib/schema'
-import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from 'react'
 import { AnalyticsTracker } from '@/components/layout/AnalyticsTracker'
 import { PostHogProvider } from '@/components/PostHogProvider'
@@ -122,14 +121,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Footer />
           <ContactBot />
           <AccessibilityWidget />
-          {/* CookieStoplight is the consent UI only. Trackers below still
-              fire unconditionally — gating PostHog/Vercel Analytics on the
-              `dsig_cookie_consent` localStorage value (or the
-              `dsig:consent-changed` window event) is a follow-up. Kit
-              install reference: Y:\TOOLS\dsig-cookie-stoplight\README.md
-              "Integration" section. */}
+          {/* CookieStoplight + PostHog consent integration:
+              - red (essential)  → PostHog stays opted-out (zero capture)
+              - yellow (balanced) + green (all) → PostHog opts in
+              Gate lives in PostHogProvider.tsx; widget here is just the
+              UI. Reserved: green tier will additionally allow third-
+              party marketing scripts (social pixels, ad tracking) when
+              those are introduced. AnalyticsTracker below is first-
+              party + cookieless, exempt from consent under
+              "strictly necessary" — stays on for all visitors. */}
           <CookieStoplight />
-          <Analytics />
           <Suspense fallback={null}>
             <AnalyticsTracker />
           </Suspense>
