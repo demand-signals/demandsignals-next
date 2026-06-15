@@ -23,11 +23,12 @@ import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
 import {
   ArrowLeft, FileText, Receipt as ReceiptIcon, Calendar, Folder, Repeat,
-  Phone, Mail, MapPin, Globe, Pencil, Eye, MessageCircle, Plus, Send,
+  Phone, Mail, MapPin, Globe, Eye, MessageCircle, Plus, Send,
   ChevronLeft, ChevronRight, LifeBuoy, Bug,
 } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { formatCents } from '@/lib/format'
+import { EditClientButton } from '@/components/admin/edit-client-button'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -1039,9 +1040,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
               )}
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2">
-              <Link href={`/admin/prospects/${prospect.id}/edit`} className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-teal-600">
-                <Pencil className="w-3 h-3" /> Edit details
-              </Link>
+              <EditClientButton prospectId={prospect.id} />
             </div>
           </div>
 
