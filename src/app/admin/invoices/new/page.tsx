@@ -32,6 +32,10 @@ interface LineItemDraft {
   unit_price_input: string  // raw string for the price input; committed to cents on blur
   discount_pct: number
   discount_label: string
+  // Seeded from a project (migration 054). When true, suppress the
+  // "Ad-hoc — breaks catalog alignment" warning since the line came
+  // from project data, not from the user manually entering ad-hoc text.
+  seeded?: boolean
 }
 
 const EMPTY_LINE: LineItemDraft = {
@@ -136,8 +140,11 @@ function NewInvoiceForm() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data = await res.json() as {
           project: { id: string; name: string; prospect_id: string }
-          prospect: { id: string; business_name: string } | null
-          deliverables_seed: { lines: Array<{ description: string; quantity: number; unit_price_cents: number; cadence: string }> }
+          prospect: { id: string; business_name: string; owner_name: string | null; owner_email: string | null } | null
+          deliverables_seed: {
+            lines: Array<{ description: string; quantity: number; unit_price_cents: number; cadence: string }>
+            skipped?: Array<{ phaseName: string; delivName: string; reason: string }>
+          }
           time_entries_seed: { lines: Array<{ description: string; quantity: number; unit_price_cents: number; cadence: string }>; entry_ids: string[] }
         }
         if (cancelled) return
@@ -146,6 +153,34 @@ function NewInvoiceForm() {
         // this but a hand-typed URL might omit prospect_id.
         if (data.project.prospect_id && !prospectId) {
           setProspectId(data.project.prospect_id)
+        }
+
+        // CRITICAL: ProspectPicker searches the LOCAL `prospects` array,
+        // which is fetched limit=100. If the seeded prospect isn't in
+        // that page (typed of dropdown: "No matches for 'dockside'"), the
+        // picker shows the prefilled id as a blank field. Inject the seed
+        // prospect into the array so the picker can render + search it.
+        if (data.prospect) {
+          const seedProspect = data.prospect
+          setProspects((prev) => {
+            if (prev.some((p) => p.id === seedProspect.id)) return prev
+            // Cast to the page's Prospect shape — extra fields default to null;
+            // picker only uses id + business_name + owner_name for search/render.
+            const injected = {
+              id: seedProspect.id,
+              business_name: seedProspect.business_name,
+              owner_name: seedProspect.owner_name,
+              owner_email: seedProspect.owner_email,
+              business_email: null,
+              owner_phone: null,
+              business_phone: null,
+              address: null,
+              city: null,
+              state: null,
+              zip: null,
+            }
+            return [injected, ...prev]
+          })
         }
 
         // Map seed lines into LineItemDraft. Source-aware: deliverables
@@ -164,13 +199,20 @@ function NewInvoiceForm() {
             unit_price_input: (l.unit_price_cents / 100).toFixed(2),
             discount_pct: 0,
             discount_label: '',
+            seeded: true,
           }))
           setLines(seeded)
           if (presetSource === 'time_entries') {
             setCoveredTimeEntryIds(data.time_entries_seed.entry_ids)
           }
+          const skippedCount = presetSource === 'deliverables'
+            ? (data.deliverables_seed.skipped?.length ?? 0)
+            : 0
+          const skippedNote = skippedCount > 0
+            ? ` Skipped ${skippedCount} deliverable${skippedCount === 1 ? '' : 's'} with no price set — add them manually if needed.`
+            : ''
           setSeedNotice(
-            `Seeded ${seeded.length} line${seeded.length === 1 ? '' : 's'} from "${data.project.name}" (${presetSource === 'time_entries' ? 'time entries' : 'delivered phases'}). Edit anything before issuing.`,
+            `Seeded ${seeded.length} line${seeded.length === 1 ? '' : 's'} from "${data.project.name}" (${presetSource === 'time_entries' ? 'time entries' : 'delivered phases'}). Edit anything before issuing.${skippedNote}`,
           )
         } else if (presetSource === 'blank' || !presetSource) {
           setSeedNotice(`Linked to project "${data.project.name}". Add line items manually.`)
@@ -554,7 +596,7 @@ function NewInvoiceForm() {
                           placeholder={isCustom ? 'Ad-hoc description' : 'Description'}
                         />
                       </div>
-                      {isCustom && l.unit_price_cents >= 0 && (
+                      {isCustom && !l.seeded && l.unit_price_cents >= 0 && (
                         <div className="text-[10px] text-amber-800 mt-0.5 ml-5">
                           Ad-hoc line — breaks catalog alignment. Consider adding to catalog
                           via the picker above.

@@ -78,9 +78,10 @@ export async function GET(
   // the codebase (and don't fail with `invalid input syntax for type
   // integer: "22.25"` on insert).
   const deliverablesLines: CreateLineItem[] = []
+  const deliverablesSkipped: Array<{ phaseName: string; delivName: string; reason: string }> = []
   const phases = Array.isArray(project.phases) ? project.phases : []
   for (const phase of phases) {
-    const phaseName = typeof phase?.name === 'string' ? phase.name : 'Phase'
+    const phaseName = typeof phase?.name === 'string' && phase.name.trim() ? phase.name.trim() : 'Phase'
     const delivs = Array.isArray(phase?.deliverables) ? phase.deliverables : []
     for (const d of delivs) {
       if (d?.status !== 'delivered') continue
@@ -99,13 +100,39 @@ export async function GET(
         }
         return unit
       })()
-      // Build a human-friendly description that keeps the hour count visible
-      // since quantity=1 hides it from the rendered line.
+
+      // Compose a sensible name. Real deliverables have a `.name`; some
+      // projects only track at phase granularity and leave it blank. Falling
+      // back to phase description means we never ship "Phase 1 — Deliverable"
+      // to a client, which is meaningless. Priority:
+      //   1. `${phaseName} — ${d.name}` (most specific)
+      //   2. `${phaseName} — ${phase.description}` (phase-only project)
+      //   3. `${phaseName}` (last resort)
+      const delivName = typeof d.name === 'string' ? d.name.trim() : ''
+      const phaseDesc = typeof phase?.description === 'string' ? phase.description.trim() : ''
+      const composed =
+        delivName ? `${phaseName} — ${delivName}` :
+        phaseDesc ? `${phaseName} — ${phaseDesc}` :
+        phaseName
+
+      // Filter $0 deliverables. "Delivered" can mean the work is done but
+      // the price wasn't set on the deliverable record; shipping that as a
+      // $0 invoice line is noise. Surface in skipped list so the seed
+      // notice can mention it.
+      if (lineTotalCents <= 0) {
+        deliverablesSkipped.push({
+          phaseName,
+          delivName: delivName || phaseDesc || 'untitled',
+          reason: 'no price set',
+        })
+        continue
+      }
+
       const hoursSuffix = (typeof d.hours === 'number' && d.hours > 0)
         ? ` (${formatHours(d.hours)} hrs)`
         : ''
       deliverablesLines.push({
-        description: `${phaseName} — ${d.name ?? 'Deliverable'}${hoursSuffix}`,
+        description: `${composed}${hoursSuffix}`,
         quantity: 1,
         unit_price_cents: lineTotalCents,
         cadence: d.cadence ?? 'one_time',
@@ -192,7 +219,7 @@ export async function GET(
       prospect_id: project.prospect_id,
     },
     prospect: prospect ?? null,
-    deliverables_seed: { lines: deliverablesLines },
+    deliverables_seed: { lines: deliverablesLines, skipped: deliverablesSkipped },
     time_entries_seed: { lines: timeLines, entry_ids: timeEntryIds },
   })
 }
