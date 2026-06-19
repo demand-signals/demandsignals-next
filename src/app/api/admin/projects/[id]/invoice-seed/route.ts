@@ -28,6 +28,17 @@ interface CreateLineItem {
   cadence: 'one_time' | 'monthly' | 'quarterly' | 'annual'
 }
 
+function formatHours(h: number): string {
+  // 22.25 → "22.25", 22 → "22"
+  return Number.isInteger(h) ? String(h) : String(Math.round(h * 100) / 100)
+}
+
+function formatCentsInline(cents: number): string {
+  // Tiny inline formatter (avoid importing /lib/format for a route).
+  const dollars = (cents / 100).toFixed(2)
+  return `$${dollars}`
+}
+
 export async function GET(
   request: NextRequest,
   ctx: { params: Promise<{ id: string }> },
@@ -58,6 +69,14 @@ export async function GET(
   // Only status='delivered' deliverables get pre-selected (one-off
   // billing-after-completion workflow). Pending deliverables excluded;
   // user can add lines manually after generation if they want to bill ahead.
+  //
+  // SCHEMA NOTE: invoice_line_items.quantity is `integer NOT NULL`. The
+  // existing /admin/invoices/new surface handles fractional hours by
+  // putting hours in the description and setting quantity=1 with the
+  // full line total as unit_price_cents. We follow the same convention
+  // here so deliverables/time-entry seeded invoices match the rest of
+  // the codebase (and don't fail with `invalid input syntax for type
+  // integer: "22.25"` on insert).
   const deliverablesLines: CreateLineItem[] = []
   const phases = Array.isArray(project.phases) ? project.phases : []
   for (const phase of phases) {
@@ -65,22 +84,30 @@ export async function GET(
     const delivs = Array.isArray(phase?.deliverables) ? phase.deliverables : []
     for (const d of delivs) {
       if (d?.status !== 'delivered') continue
-      // unit_price_cents may live on the deliverable, or be derived from
-      // line_total_cents / quantity. Fall back to 0 (user must fix).
-      const qty = (typeof d.hours === 'number' && d.hours > 0)
-        ? d.hours
-        : (typeof d.quantity === 'number' && d.quantity > 0 ? d.quantity : 1)
-      const unitPrice = (() => {
-        if (typeof d.unit_price_cents === 'number') return d.unit_price_cents
-        if (typeof d.line_total_cents === 'number' && qty > 0) {
-          return Math.round(d.line_total_cents / qty)
+      // Resolve the full line total cents. Priority: stored line_total_cents
+      // > hours × unit_price > quantity × unit_price > unit_price > 0.
+      const lineTotalCents = (() => {
+        if (typeof d.line_total_cents === 'number' && d.line_total_cents >= 0) {
+          return d.line_total_cents
         }
-        return 0
+        const unit = typeof d.unit_price_cents === 'number' ? d.unit_price_cents : 0
+        if (typeof d.hours === 'number' && d.hours > 0) {
+          return Math.round(d.hours * unit)
+        }
+        if (typeof d.quantity === 'number' && d.quantity > 0) {
+          return Math.round(d.quantity * unit)
+        }
+        return unit
       })()
+      // Build a human-friendly description that keeps the hour count visible
+      // since quantity=1 hides it from the rendered line.
+      const hoursSuffix = (typeof d.hours === 'number' && d.hours > 0)
+        ? ` (${formatHours(d.hours)} hrs)`
+        : ''
       deliverablesLines.push({
-        description: `${phaseName} — ${d.name ?? 'Deliverable'}`,
-        quantity: qty,
-        unit_price_cents: unitPrice,
+        description: `${phaseName} — ${d.name ?? 'Deliverable'}${hoursSuffix}`,
+        quantity: 1,
+        unit_price_cents: lineTotalCents,
         cadence: d.cadence ?? 'one_time',
       })
     }
@@ -144,10 +171,14 @@ export async function GET(
       if (bucket.totalHours <= 0) continue
       const avgRate = Math.round(bucket.weightedRateNumerator / bucket.totalHours)
       const totalHoursRounded = Math.round(bucket.totalHours * 100) / 100
+      // SCHEMA NOTE: quantity must be integer. Hours go in the description;
+      // the full bucket total becomes unit_price_cents at quantity=1. See
+      // the comment in the deliverables seeder above for the convention.
+      const lineTotalCents = Math.round(bucket.totalHours * avgRate)
       timeLines.push({
-        description: `${bucket.label} — ${totalHoursRounded} hrs`,
-        quantity: totalHoursRounded,
-        unit_price_cents: avgRate,
+        description: `${bucket.label} — ${totalHoursRounded} hrs @ ${formatCentsInline(avgRate)}/hr`,
+        quantity: 1,
+        unit_price_cents: lineTotalCents,
         cadence: 'one_time',
       })
       timeEntryIds.push(...bucket.entryIds)

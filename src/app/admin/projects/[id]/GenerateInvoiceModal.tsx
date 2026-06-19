@@ -210,7 +210,8 @@ export function GenerateInvoiceModal({
                           <div className="flex-1 min-w-0">
                             <div className="text-slate-800 truncate">{l.description}</div>
                             <div className="text-xs text-slate-400">
-                              {l.quantity} × {formatCents(l.unit_price_cents)}
+                              {l.quantity > 1 && <>{l.quantity} × </>}
+                              {formatCents(l.unit_price_cents)}
                               {l.cadence !== 'one_time' && <> · {l.cadence}</>}
                             </div>
                           </div>
