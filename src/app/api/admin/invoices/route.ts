@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
   const status = sp.get('status')
   const kind = sp.get('kind')
   const prospectId = sp.get('prospect_id')
+  const projectId = sp.get('project_id')
   const autoOnly = sp.get('auto_generated') === 'true'
   const search = sp.get('search')
   const limit = Math.min(parseInt(sp.get('limit') || '50'), 200)
@@ -44,8 +45,8 @@ export async function GET(request: NextRequest) {
   let q = supabaseAdmin
     .from('invoices')
     .select(
-      `id, invoice_number, kind, prospect_id, status, total_due_cents, currency,
-       auto_generated, auto_trigger, created_at, sent_at, viewed_at, paid_at,
+      `id, invoice_number, kind, prospect_id, project_id, status, total_due_cents, currency,
+       send_date, due_date, auto_generated, auto_trigger, created_at, sent_at, viewed_at, paid_at,
        stripe_payment_link_url, subscription_intent, term_months, until_cancelled,
        trade_credit_cents,
        prospects(business_name),
@@ -58,6 +59,7 @@ export async function GET(request: NextRequest) {
   if (status) q = q.eq('status', status)
   if (kind) q = q.eq('kind', kind)
   if (prospectId) q = q.eq('prospect_id', prospectId)
+  if (projectId) q = q.eq('project_id', projectId)
   if (autoOnly) q = q.eq('auto_generated', true)
   if (search) q = q.or(`invoice_number.ilike.%${search}%`)
 
@@ -153,6 +155,7 @@ export async function POST(request: NextRequest) {
     prospect_id,
     quote_session_id,
     subscription_id,
+    project_id,
     line_items,
     notes,
     due_date,
@@ -169,11 +172,13 @@ export async function POST(request: NextRequest) {
     payment_terms,
     term_months,
     until_cancelled,
+    covered_time_entry_ids,
   }: {
     kind?: InvoiceKind
     prospect_id?: string
     quote_session_id?: string
     subscription_id?: string
+    project_id?: string
     line_items: CreateLineItem[]
     notes?: string
     due_date?: string
@@ -193,6 +198,12 @@ export async function POST(request: NextRequest) {
     // Term governs subscription duration (migration 043). Mutually exclusive.
     term_months?: number | null
     until_cancelled?: boolean
+    // Migration 054 — project_id back-link, set ONLY by the "Generate
+    // Invoice from Project" flow on /admin/projects/[id]. Existing
+    // SOW-driven / subscription / quote-driven flows leave this null.
+    // covered_time_entry_ids: when seeded from time entries, flips those
+    // entries' covered_by_invoice_id to this new invoice's id after
+    // creation to prevent double-billing.
   } = body
 
   const effectiveKind: InvoiceKind = kind ?? (quote_session_id ? 'quote_driven' : 'business')
@@ -274,6 +285,7 @@ export async function POST(request: NextRequest) {
       prospect_id: prospect_id ?? null,
       quote_session_id: quote_session_id ?? null,
       subscription_id: subscription_id ?? null,
+      project_id: project_id ?? null,
       status: 'draft',
       subtotal_cents: subtotalCents,
       discount_cents: discountCents,
@@ -362,6 +374,30 @@ export async function POST(request: NextRequest) {
   if (liErr) {
     await supabaseAdmin.from('invoices').delete().eq('id', inv.id)
     return NextResponse.json({ error: `Line items: ${liErr.message}` }, { status: 500 })
+  }
+
+  // Mark covered time entries (migration 051 added covered_by_invoice_id).
+  // Only set when project_id is also set — otherwise covered_time_entry_ids
+  // could come from a stale modal session and we'd mark unrelated entries.
+  // Best-effort: log but don't fail invoice creation if this update errors.
+  if (
+    project_id &&
+    Array.isArray(covered_time_entry_ids) &&
+    covered_time_entry_ids.length > 0
+  ) {
+    const { error: coverErr } = await supabaseAdmin
+      .from('project_time_entries')
+      .update({ covered_by_invoice_id: inv.id })
+      .in('id', covered_time_entry_ids)
+      .eq('project_id', project_id)
+    if (coverErr) {
+      console.error('[invoice POST] time-entry cover-mark failed', {
+        invoice_id: inv.id,
+        project_id,
+        entry_count: covered_time_entry_ids.length,
+        error: coverErr.message,
+      })
+    }
   }
 
   return NextResponse.json({ invoice: inv, catalog_version: CATALOG_VERSION })

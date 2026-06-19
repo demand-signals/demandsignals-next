@@ -3,11 +3,13 @@
 import { useEffect, useState, use, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Loader2, ChevronDown, ChevronRight, ExternalLink, CheckCircle2, Circle, Clock, Trash2, Pencil, FileText } from 'lucide-react'
+import { Loader2, ChevronDown, ChevronRight, ExternalLink, CheckCircle2, Circle, Clock, Trash2, Pencil, FileText, Receipt as ReceiptIcon } from 'lucide-react'
 import { formatCents } from '@/lib/format'
 import type { ProjectRow, ProjectPhase, ProjectPhaseDeliverable } from '@/lib/invoice-types'
 import { OutstandingObligations } from './OutstandingObligations'
 import { TimeEntriesPanel } from './TimeEntriesPanel'
+import { GenerateInvoiceModal } from './GenerateInvoiceModal'
+import { ProjectInvoicesPanel } from './ProjectInvoicesPanel'
 import { InlineEditText } from '@/components/admin/inline-edit-text'
 import { ProjectNotesPanel } from '@/components/admin/ProjectNotesPanel'
 
@@ -234,6 +236,7 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
   const [error, setError] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false)
 
   async function handleDelete() {
     setDeleting(true)
@@ -417,6 +420,14 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
                 <FileText className="w-3.5 h-3.5" />
                 Report
               </a>
+              <button
+                onClick={() => setShowInvoiceModal(true)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--teal)] text-white hover:bg-[var(--teal-dark)] text-xs font-medium"
+                title="Generate an invoice from this project"
+              >
+                <ReceiptIcon className="w-3.5 h-3.5" />
+                New Invoice
+              </button>
               <Link
                 href={`/admin/projects/${project.id}/edit`}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
@@ -481,6 +492,9 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
           prospectId={project.prospects.id}
         />
       )}
+
+      {/* Invoices generated from this project (migration 054) */}
+      <ProjectInvoicesPanel projectId={project.id} />
 
       {/* Client block */}
       {project.prospects && (
@@ -683,6 +697,14 @@ export default function AdminProjectDetailPage({ params }: { params: Promise<{ i
 
       {/* Project Notes */}
       <ProjectNotesPanel projectId={project.id} />
+
+      {/* Generate Invoice modal */}
+      {showInvoiceModal && (
+        <GenerateInvoiceModal
+          projectId={project.id}
+          onClose={() => setShowInvoiceModal(false)}
+        />
+      )}
     </div>
   )
 }
