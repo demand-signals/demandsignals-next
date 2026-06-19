@@ -78,7 +78,6 @@ export async function GET(
   // the codebase (and don't fail with `invalid input syntax for type
   // integer: "22.25"` on insert).
   const deliverablesLines: CreateLineItem[] = []
-  const deliverablesSkipped: Array<{ phaseName: string; delivName: string; reason: string }> = []
   const phases = Array.isArray(project.phases) ? project.phases : []
   for (const phase of phases) {
     const phaseName = typeof phase?.name === 'string' && phase.name.trim() ? phase.name.trim() : 'Phase'
@@ -115,18 +114,11 @@ export async function GET(
         phaseDesc ? `${phaseName} — ${phaseDesc}` :
         phaseName
 
-      // Filter $0 deliverables. "Delivered" can mean the work is done but
-      // the price wasn't set on the deliverable record; shipping that as a
-      // $0 invoice line is noise. Surface in skipped list so the seed
-      // notice can mention it.
-      if (lineTotalCents <= 0) {
-        deliverablesSkipped.push({
-          phaseName,
-          delivName: delivName || phaseDesc || 'untitled',
-          reason: 'no price set',
-        })
-        continue
-      }
+      // Note: we DO NOT filter $0 deliverables. Per Hunter 2026-06-19:
+      // every delivered phase should be visible in the invoice so the
+      // user can either set a price at invoice time, convert to TIK,
+      // or document the line at $0 (e.g. value-stack / included work).
+      // Filtering them hides work that was done.
 
       const hoursSuffix = (typeof d.hours === 'number' && d.hours > 0)
         ? ` (${formatHours(d.hours)} hrs)`
@@ -219,7 +211,7 @@ export async function GET(
       prospect_id: project.prospect_id,
     },
     prospect: prospect ?? null,
-    deliverables_seed: { lines: deliverablesLines, skipped: deliverablesSkipped },
+    deliverables_seed: { lines: deliverablesLines },
     time_entries_seed: { lines: timeLines, entry_ids: timeEntryIds },
   })
 }

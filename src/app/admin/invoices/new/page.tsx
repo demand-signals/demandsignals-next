@@ -121,7 +121,21 @@ function NewInvoiceForm() {
   useEffect(() => {
     fetch('/api/admin/prospects?limit=100&include_clients=1')
       .then((r) => r.json())
-      .then((d) => setProspects(d.data ?? []))
+      .then((d) => {
+        // MERGE, don't overwrite. The seed effect may have already injected
+        // a project's prospect ahead of this fetch resolving; if we blasted
+        // setProspects(d.data) we'd erase that injection — which is exactly
+        // why the picker showed "No matches" for Dockside even when the id
+        // was set. Preserve any pre-injected entries that aren't in the
+        // limit=100 page.
+        const incoming = (d.data ?? []) as Prospect[]
+        setProspects((prev) => {
+          if (prev.length === 0) return incoming
+          const incomingIds = new Set(incoming.map((p) => p.id))
+          const preserved = prev.filter((p) => !incomingIds.has(p.id))
+          return [...preserved, ...incoming]
+        })
+      })
       .catch(() => {})
   }, [])
 
@@ -141,10 +155,7 @@ function NewInvoiceForm() {
         const data = await res.json() as {
           project: { id: string; name: string; prospect_id: string }
           prospect: { id: string; business_name: string; owner_name: string | null; owner_email: string | null } | null
-          deliverables_seed: {
-            lines: Array<{ description: string; quantity: number; unit_price_cents: number; cadence: string }>
-            skipped?: Array<{ phaseName: string; delivName: string; reason: string }>
-          }
+          deliverables_seed: { lines: Array<{ description: string; quantity: number; unit_price_cents: number; cadence: string }> }
           time_entries_seed: { lines: Array<{ description: string; quantity: number; unit_price_cents: number; cadence: string }>; entry_ids: string[] }
         }
         if (cancelled) return
@@ -205,14 +216,8 @@ function NewInvoiceForm() {
           if (presetSource === 'time_entries') {
             setCoveredTimeEntryIds(data.time_entries_seed.entry_ids)
           }
-          const skippedCount = presetSource === 'deliverables'
-            ? (data.deliverables_seed.skipped?.length ?? 0)
-            : 0
-          const skippedNote = skippedCount > 0
-            ? ` Skipped ${skippedCount} deliverable${skippedCount === 1 ? '' : 's'} with no price set — add them manually if needed.`
-            : ''
           setSeedNotice(
-            `Seeded ${seeded.length} line${seeded.length === 1 ? '' : 's'} from "${data.project.name}" (${presetSource === 'time_entries' ? 'time entries' : 'delivered phases'}). Edit anything before issuing.${skippedNote}`,
+            `Seeded ${seeded.length} line${seeded.length === 1 ? '' : 's'} from "${data.project.name}" (${presetSource === 'time_entries' ? 'time entries' : 'delivered phases'}). Edit anything — including pricing $0 lines — before issuing.`,
           )
         } else if (presetSource === 'blank' || !presetSource) {
           setSeedNotice(`Linked to project "${data.project.name}". Add line items manually.`)
