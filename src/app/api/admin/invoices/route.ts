@@ -198,6 +198,10 @@ export async function POST(request: NextRequest) {
     // Term governs subscription duration (migration 043). Mutually exclusive.
     term_months?: number | null
     until_cancelled?: boolean
+    // Migration 054 — when seeded from time entries via GenerateInvoiceModal,
+    // these entries get covered_by_invoice_id flipped to the new invoice id
+    // so they aren't double-billed on a subsequent invoice generation.
+    covered_time_entry_ids?: string[]
     // Migration 054 — project_id back-link, set ONLY by the "Generate
     // Invoice from Project" flow on /admin/projects/[id]. Existing
     // SOW-driven / subscription / quote-driven flows leave this null.
