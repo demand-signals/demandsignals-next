@@ -1,6 +1,6 @@
 'use client'
 
-// dsig-stoplight-version: v1d
+// dsig-stoplight-version: v1e
 // Lightweight analytics tracker — first-party only, consent-gated.
 //
 // Behavior by CookieStoplight tier:
