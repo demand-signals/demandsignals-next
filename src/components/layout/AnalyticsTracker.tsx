@@ -1,21 +1,27 @@
 'use client'
 
+// dsig-stoplight-version: v1b
+// Lightweight analytics tracker — first-party only, consent-gated.
+//
+// Behavior by CookieStoplight tier:
+//   - Red (essential) / unset → no beacon at all
+//   - Yellow (balanced) / Green (all) → beacon with path + UTMs +
+//     referrer + screen dimensions
+//
+// The pre-consent silence is the load-bearing CIPA hygiene change:
+// even though this is a first-party beacon, fingerprint-adjacent
+// fields (referrer + screen size) shouldn't fire before the visitor
+// has had a chance to choose.
+//
+// Companion server endpoint expected at /api/analytics/collect. If
+// your project doesn't have one yet, this beacon will silently no-op
+// against a 404 — safe to install ahead of the endpoint.
+//
+// Install / update via: /stoplight
+
 import { useEffect, useRef, useState } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 
-/**
- * Lightweight analytics tracker — first-party only, consent-gated.
- *
- * Behavior by CookieStoplight tier:
- *   - Red (essential) / unset → no beacon at all
- *   - Yellow (balanced) / Green (all) → beacon with path + UTMs +
- *     referrer + screen dimensions
- *
- * The pre-consent silence is the load-bearing CIPA hygiene change:
- * even though this is a first-party beacon, fingerprint-adjacent
- * fields (referrer + screen size) shouldn't fire before the visitor
- * has had a chance to choose.
- */
 const CONSENT_STORAGE_KEY = 'dsig_cookie_consent'
 type ConsentTier = 'essential' | 'balanced' | 'all'
 

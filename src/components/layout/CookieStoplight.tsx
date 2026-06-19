@@ -1,47 +1,45 @@
 'use client'
 
+// dsig-stoplight-version: v1b
 // DSIG Cookie Stoplight — Next.js / React drop-in
 // ─────────────────────────────────────────────────────────────────────────────
-// Source-of-truth: Y:\TOOLS\dsig-cookie-stoplight\react\CookieStoplight.tsx
-// Visual treatment matched to AccessibilityWidget.tsx (same project, same
-// 40×40 circular button, same shadow, same bottom-left convention). When
-// both are installed, the cookie widget sits to the right of the
-// accessibility button so the two stack horizontally.
+// Source-of-truth: Y:\SKILLS\dsig-cookie-stoplight\components\CookieStoplight.tsx
+// Install / update via: /stoplight slash command (Y:\.claude\commands\stoplight.md)
 //
 // Behavior:
-//   1. First visit, no consent stored → three colored circles animate UP
-//      from the bottom-left, labeled red/yellow/green.
-//   2. Visitor clicks one → choice persists to localStorage AND a cookie
-//      named `dsig_cookie_consent`. A `dsig:consent-changed` window event
-//      fires for analytics scripts to consume.
-//   3. Circles animate DOWN, collapse into a single cookie-icon button.
-//   4. Clicking the button anytime reopens the three circles so the
-//      visitor can change their choice.
+//   1. First visit, no consent stored → three colored circles open in the
+//      bottom-left, labeled red/yellow/green. Visitor must pick.
+//   2. Honors Global Privacy Control: if `navigator.globalPrivacyControl`
+//      is true, auto-records Red without showing the panel (CCPA/CPRA
+//      regulations require treating GPC as a valid opt-out signal).
+//   3. Visitor's choice persists to localStorage AND a cookie named
+//      `dsig_cookie_consent`. A `dsig:consent-changed` window event
+//      fires for downstream analytics (PostHog, beacons) to consume.
+//   4. After choice, a confirmation toast fades in for 3 seconds.
+//   5. Circles collapse into a single cookie-icon button. Clicking it
+//      anytime reopens the three circles so the visitor can change.
+//   6. The companion FooterPrivacyChoices link fires a
+//      `dsig:open-consent-panel` event that pops the panel open from
+//      anywhere on the page — CCPA-compliant "Your Privacy Choices."
 //
 // Dependencies: framer-motion (already in every DSIG Next.js site).
-//
-// Version: v1a — 2026-05-21
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // ── CONFIG ──────────────────────────────────────────────────────────────────
-// Tweak these values to rebrand per-site. `buttonColor` is the closed-state
-// button background — also overridable per-mount via the `buttonColor` prop
-// or per-site via the `--cookie-button-color` CSS variable (see CookieStoplight
-// component for precedence). Stoplight circle colors stay universal because
-// red/yellow/green carry semantic meaning across all sites.
 
 const CONFIG = {
   storageKey: 'dsig_cookie_consent',
   cookieMaxAgeDays: 365,
-  defaultButtonColor: '#52C9A0',  // DSIG teal — default if no prop + no CSS var
-  buttonShadow: '0 2px 8px rgba(0,0,0,0.18)',  // matches AccessibilityWidget
+  defaultButtonColor: '#52C9A0',  // DSIG teal
+  buttonShadow: '0 2px 8px rgba(0,0,0,0.18)',
   position: {
     bottom: 20,
-    left: 70,  // sits to the right of AccessibilityWidget at left:20 (40w + 10gap = 70)
+    left: 70,  // sits to the right of AccessibilityWidget if present
   },
-  zIndex: 90,  // same as AccessibilityWidget
+  zIndex: 90,
+  toastDurationMs: 3000,
   tiers: [
     {
       id: 'essential' as const,
@@ -53,20 +51,20 @@ const CONFIG = {
       id: 'balanced' as const,
       label: 'Balanced',
       color: '#eab308',
-      description: 'Adds pageview counts via PostHog (third-party analytics). No session recording. No click or form recording. No heatmaps. No marketing.',
+      description: 'Adds pageview counts via third-party analytics (e.g. PostHog). No session recording. No click or form recording. No heatmaps. No marketing.',
     },
     {
       id: 'all' as const,
       label: 'All cookies',
       color: '#16a34a',
-      description: 'Adds session recording, click capture, and heatmaps via PostHog. Reserved for future marketing pixels. Most tailored experience.',
+      description: 'Adds session recording, click capture, and heatmaps via third-party analytics. Reserved for marketing pixels.',
     },
   ],
 }
 
-type ConsentTier = 'essential' | 'balanced' | 'all'
+export type ConsentTier = 'essential' | 'balanced' | 'all'
 
-// ── Cookie helper (no jsCookie dependency) ──────────────────────────────────
+// ── Cookie helpers ──────────────────────────────────────────────────────────
 
 function setConsentCookie(value: ConsentTier) {
   const maxAge = CONFIG.cookieMaxAgeDays * 24 * 60 * 60
@@ -80,16 +78,24 @@ function readConsent(): ConsentTier | null {
   try {
     const stored = localStorage.getItem(CONFIG.storageKey)
     if (stored === 'essential' || stored === 'balanced' || stored === 'all') return stored
-  } catch {
-    // localStorage blocked by privacy mode -- fall back to cookie
-  }
-  // Cookie fallback (in case localStorage was cleared but cookie survives)
+  } catch { /* localStorage blocked — fall through */ }
   const match = document.cookie.match(new RegExp(`(?:^|; )${CONFIG.storageKey}=([^;]+)`))
   if (match) {
     const v = decodeURIComponent(match[1])
     if (v === 'essential' || v === 'balanced' || v === 'all') return v
   }
   return null
+}
+
+// Global Privacy Control browser signal. Required by California regulations
+// (Sephora $1.2M, AG enforcement actions Mar-2025 through Mar-2026 all
+// included GPC handling). Returns true when the visitor's browser asserts
+// the opt-out signal.
+function hasGPCSignal(): boolean {
+  if (typeof navigator === 'undefined') return false
+  // @ts-expect-error globalPrivacyControl is a runtime browser property
+  // not yet in the TS lib.dom types.
+  return navigator.globalPrivacyControl === true
 }
 
 // ── Icons ───────────────────────────────────────────────────────────────────
@@ -112,78 +118,91 @@ const CloseIcon = () => (
   </svg>
 )
 
+const CheckIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+)
+
 // ── Main component ──────────────────────────────────────────────────────────
 
 export interface CookieStoplightProps {
-  /**
-   * Closed-state button background color. Precedence (highest first):
-   *   1. This prop (per-mount override)
-   *   2. CSS variable `--cookie-button-color` set on the page (per-site)
-   *   3. CONFIG.defaultButtonColor (DSIG teal)
-   *
-   * Accept any CSS color value (hex, rgb, hsl, color name, even
-   * `var(--my-brand)` if a site wants to chain through their own token).
-   *
-   * Example per-mount override:
-   *   <CookieStoplight buttonColor="#FF6B2B" />
-   *
-   * Example CSS-var-based theming in globals.css:
-   *   :root { --cookie-button-color: #FF6B2B; }
-   *   <CookieStoplight />   // picks up the var automatically
-   */
   buttonColor?: string
 }
 
 export function CookieStoplight({ buttonColor }: CookieStoplightProps = {}) {
-  // null = not yet checked localStorage (first render, before hydration);
-  // ConsentTier = consent has been given;
-  // 'unset' = checked, no consent yet (show panel immediately).
+  // null = not yet checked storage; 'unset' = checked, no consent yet.
   const [consent, setConsent] = useState<ConsentTier | 'unset' | null>(null)
-  // Which tier the visitor is currently hovering/focusing — drives the
-  // inline description text below the icons. Falls back to `consent` if
-  // already chosen, otherwise to balanced (yellow) so something is
-  // always visible.
   const [hoveredTier, setHoveredTier] = useState<ConsentTier | null>(null)
-
-  // Resolved button color. If the prop is provided, use it directly.
-  // Otherwise hand off to CSS: var() with a fallback to the default
-  // means a site can set `--cookie-button-color` in globals.css and
-  // the button picks it up automatically without any JSX change. If
-  // neither is set, falls through to the DSIG teal default.
-  const resolvedButtonColor = buttonColor ?? `var(--cookie-button-color, ${CONFIG.defaultButtonColor})`
   const [panelOpen, setPanelOpen] = useState(false)
+  const [toast, setToast] = useState<{ tier: ConsentTier; reason: 'choice' | 'gpc' } | null>(null)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const resolvedButtonColor = buttonColor ?? `var(--cookie-button-color, ${CONFIG.defaultButtonColor})`
+
+  // ── Boot-time consent resolution ──
+  // Priority: stored consent > GPC > unset (show panel).
+  // GPC special case: if browser asserts GPC and visitor previously chose
+  // Yellow/Green, we DOWNGRADE to Red and surface a toast. CA regulations
+  // treat GPC as a continuing opt-out signal that supersedes prior choice.
   useEffect(() => {
     const existing = readConsent()
+    const gpc = hasGPCSignal()
+
+    if (gpc) {
+      // Browser-level opt-out. Force essential, persist, and notify
+      // downstream scripts. Skip the panel entirely.
+      const downgrade = existing && existing !== 'essential'
+      try { localStorage.setItem(CONFIG.storageKey, 'essential') } catch { /* noop */ }
+      setConsentCookie('essential')
+      window.dispatchEvent(new CustomEvent('dsig:consent-changed', { detail: { tier: 'essential', source: 'gpc' } }))
+      setConsent('essential')
+      setPanelOpen(false)
+      if (downgrade) {
+        // Visitor previously chose more permissive; tell them GPC overrode.
+        setToast({ tier: 'essential', reason: 'gpc' })
+      }
+      return
+    }
+
     if (existing) {
       setConsent(existing)
       setPanelOpen(false)
     } else {
       setConsent('unset')
-      setPanelOpen(true)  // first visit -- show stoplight immediately
+      setPanelOpen(true)
     }
   }, [])
+
+  // ── Listen for external open requests (Your Privacy Choices link) ──
+  useEffect(() => {
+    function open() { setPanelOpen(true) }
+    window.addEventListener('dsig:open-consent-panel', open)
+    return () => window.removeEventListener('dsig:open-consent-panel', open)
+  }, [])
+
+  // ── Toast auto-dismiss ──
+  useEffect(() => {
+    if (!toast) return
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    toastTimerRef.current = setTimeout(() => setToast(null), CONFIG.toastDurationMs)
+    return () => { if (toastTimerRef.current) clearTimeout(toastTimerRef.current) }
+  }, [toast])
 
   const choose = useCallback((tier: ConsentTier) => {
     setConsent(tier)
     setPanelOpen(false)
-    try {
-      localStorage.setItem(CONFIG.storageKey, tier)
-    } catch {
-      // localStorage blocked -- cookie still persists choice
-    }
+    try { localStorage.setItem(CONFIG.storageKey, tier) } catch { /* cookie still persists */ }
     setConsentCookie(tier)
-    // Notify analytics/marketing scripts listening for consent changes
-    window.dispatchEvent(new CustomEvent('dsig:consent-changed', { detail: { tier } }))
+    window.dispatchEvent(new CustomEvent('dsig:consent-changed', { detail: { tier, source: 'user' } }))
+    setToast({ tier, reason: 'choice' })
   }, [])
 
-  // Hide entirely until we've checked storage (prevents flash of stoplight
-  // for returning visitors who already chose).
   if (consent === null) return null
 
   return (
     <>
-      {/* Trigger button -- visible whenever the panel is closed */}
+      {/* Trigger button — visible whenever the panel is closed */}
       <AnimatePresence>
         {!panelOpen && (
           <motion.div
@@ -226,7 +245,47 @@ export function CookieStoplight({ buttonColor }: CookieStoplightProps = {}) {
         )}
       </AnimatePresence>
 
-      {/* Stoplight panel -- visible while choosing */}
+      {/* Confirmation toast — fades in after a choice or GPC override */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            key="cookie-toast"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.25 }}
+            role="status"
+            aria-live="polite"
+            style={{
+              position: 'fixed',
+              bottom: CONFIG.position.bottom + 52,
+              left: CONFIG.position.left,
+              zIndex: CONFIG.zIndex + 2,
+              background: '#111827',
+              color: '#fff',
+              fontSize: 12,
+              fontWeight: 600,
+              padding: '8px 12px 8px 10px',
+              borderRadius: 8,
+              boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              maxWidth: 'min(320px, calc(100vw - 32px))',
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+            }}
+          >
+            <CheckIcon />
+            <span>
+              {toast.reason === 'gpc'
+                ? 'Your browser’s Global Privacy Control is on — opted out of analytics.'
+                : `Saved — ${CONFIG.tiers.find(t => t.id === toast.tier)?.label}.`}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Stoplight panel */}
       <AnimatePresence>
         {panelOpen && (
           <motion.div
@@ -244,19 +303,16 @@ export function CookieStoplight({ buttonColor }: CookieStoplightProps = {}) {
               borderRadius: 16,
               boxShadow: '0 10px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.12)',
               padding: '18px 18px 14px',
-              width: 'min(320px, calc(100vw - 32px))',
+              width: 'min(340px, calc(100vw - 32px))',
               fontFamily: 'system-ui, -apple-system, sans-serif',
             }}
             role="dialog"
             aria-label="Cookie preferences"
           >
-            {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
               <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#111827' }}>
                 Cookie preferences
               </h2>
-              {/* Close X is intentionally only shown if a choice already exists.
-                  On first visit, the visitor must pick a tier (can't dismiss). */}
               {consent !== 'unset' && (
                 <button
                   onClick={() => setPanelOpen(false)}
@@ -274,7 +330,7 @@ export function CookieStoplight({ buttonColor }: CookieStoplightProps = {}) {
               We use cookies to make this site work. Pick what you&apos;re comfortable with.
             </p>
 
-            {/* The three circles -- the "stoplight" */}
+            {/* Stoplight circles */}
             <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
               {CONFIG.tiers.map((tier) => {
                 const isCurrent = consent === tier.id
@@ -335,18 +391,24 @@ export function CookieStoplight({ buttonColor }: CookieStoplightProps = {}) {
               })}
             </div>
 
-            {/* Tier descriptions rendered inline. CIPA defensibility:
-                consent must be informed at the moment of choice, and
-                `title=` tooltips don't display on touch devices — so
-                phone visitors never saw the disclosure before tapping.
-                Description list expands as the visitor hovers/focuses
-                a tier; the currently-selected (or hovered) tier's text
-                shows below. Falls back to the middle tier when nothing
-                is hovered so there's always something to read. */}
             <CookieDescriptions
               tiers={CONFIG.tiers}
               activeTier={hoveredTier ?? (consent !== 'unset' && consent ? consent : 'balanced')}
             />
+
+            {/* CCPA-residents notice */}
+            <p style={{
+              margin: '10px 0 0',
+              fontSize: 10.5,
+              color: '#6b7280',
+              lineHeight: 1.45,
+              background: '#fef3c7',
+              borderRadius: 6,
+              padding: '6px 8px',
+            }}>
+              <strong style={{ color: '#92400e' }}>California residents:</strong>{' '}
+              Yellow and Green include third-party analytics. Red opts out of all non-essential cookies. We also honor the Global Privacy Control browser signal.
+            </p>
 
             <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6', textAlign: 'center' }}>
               <a
@@ -363,11 +425,8 @@ export function CookieStoplight({ buttonColor }: CookieStoplightProps = {}) {
   )
 }
 
-// ── Inline tier description (always visible) ───────────────────────────────
-// Renders the description for the currently-hovered/focused tier (or the
-// already-chosen tier on subsequent opens, or balanced as default). Touch
-// visitors get the text by tapping a tier circle once — the description
-// updates without committing the choice.
+// ── Inline tier description ─────────────────────────────────────────────────
+
 function CookieDescriptions({
   tiers,
   activeTier,

@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { LOGO_URL, CONTACT_PHONE, CONTACT_PHONE_TEL, CONTACT_EMAIL, BOOKING_URL } from '@/lib/constants'
+import { FooterPrivacyChoices } from './FooterPrivacyChoices'
 import styles from './footer.module.css'
 
 export function Footer() {
@@ -121,6 +122,7 @@ export function Footer() {
           <Link href="/privacy" style={{ color: 'rgba(255,255,255,0.35)' }}>Privacy</Link>
           <Link href="/terms" style={{ color: 'rgba(255,255,255,0.35)' }}>Terms</Link>
           <Link href="/accessibility" style={{ color: 'rgba(255,255,255,0.35)' }}>Accessibility</Link>
+          <FooterPrivacyChoices color="rgba(255,255,255,0.35)" />
         </div>
       </div>
     </footer>

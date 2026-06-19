@@ -129,6 +129,16 @@ export default function PrivacyPage() {
             California Penal Code &sect;&sect; 631 and 638.51 require that visitors consent to interception or recording of online communications by third parties. Choosing <strong style={bold}>Yellow</strong> or <strong style={bold}>Green</strong> on the cookie stoplight constitutes your prior consent for PostHog (a third party) to receive the data described in &sect; 3.1 above. Choosing <strong style={bold}>Red</strong>, or leaving the choice unmade, withholds that consent and disables all third-party data flow.
           </p>
 
+          <h3 style={h3}>3.5 Global Privacy Control (GPC)</h3>
+          <p>
+            We honor the Global Privacy Control browser signal. If your browser sends GPC (Brave, Firefox with the setting enabled, DuckDuckGo, or any browser with a GPC extension), we automatically treat your visit as <strong style={bold}>Red &mdash; Essential only</strong> regardless of any prior cookie choice you made on this site. The stoplight panel will not appear; a brief notification confirms the override. To temporarily allow analytics, you would need to disable GPC in your browser and reload &mdash; we will not nag you for consent while GPC is active.
+          </p>
+
+          <h3 style={h3}>3.6 &ldquo;Your Privacy Choices&rdquo; link</h3>
+          <p>
+            The <strong style={bold}>Your Privacy Choices</strong> link in our site footer (marked with the official California blue toggle icon) is the statutorily-required opt-out mechanism under California Civil Code &sect; 1798.135. Clicking it opens the cookie stoplight panel from any page on the site so you can change your tier or opt out at any time.
+          </p>
+
           <h2 style={h2}>4. AI Systems and Data Processing</h2>
           <p>
             Demand Signals uses AI systems (including language models, content generation tools, and automation agents) as part of our service delivery. When we process your business data through AI systems:
@@ -178,7 +188,7 @@ export default function PrivacyPage() {
             <li><strong style={bold}>Right to Know:</strong> You may request a copy of the personal information we have collected about you in the preceding 12 months, including the categories of information, sources, purposes, and third parties with whom it was shared.</li>
             <li><strong style={bold}>Right to Delete:</strong> You may request that we delete your personal information, subject to certain legal exceptions.</li>
             <li><strong style={bold}>Right to Correct:</strong> You may request correction of inaccurate personal information.</li>
-            <li><strong style={bold}>Right to Opt Out of Sale/Sharing:</strong> We do not sell or share your personal information for cross-context behavioral advertising. There is nothing to opt out of.</li>
+            <li><strong style={bold}>Right to Opt Out of Sale/Sharing:</strong> We do not sell or share your personal information for cross-context behavioral advertising. The <em>Your Privacy Choices</em> link in the site footer additionally lets you opt out of third-party analytics (PostHog) at any time, and we honor your browser&apos;s Global Privacy Control signal as a continuing opt-out. See &sect; 3.5 and &sect; 3.6.</li>
             <li><strong style={bold}>Right to Non-Discrimination:</strong> We will not discriminate against you for exercising any of your privacy rights.</li>
           </ul>
           <p>
