@@ -68,9 +68,20 @@ function NewInvoiceForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const presetProspectId = searchParams.get('prospect_id') ?? ''
+  // Project-driven seed (migration 054 + GenerateInvoiceModal v2).
+  // When ?project_id=<id>&source=<deliverables|time_entries|blank> is
+  // present, this page fetches /api/admin/projects/<id>/invoice-seed,
+  // prefills the prospect picker and the line editor, and threads
+  // project_id + covered_time_entry_ids into the eventual POST so the
+  // back-link gets persisted and time entries are marked covered.
+  const presetProjectId = searchParams.get('project_id') ?? ''
+  const presetSource = searchParams.get('source') ?? ''
 
   const [prospects, setProspects] = useState<Prospect[]>([])
   const [prospectId, setProspectId] = useState(presetProspectId)
+  const [projectId] = useState(presetProjectId)
+  const [coveredTimeEntryIds, setCoveredTimeEntryIds] = useState<string[]>([])
+  const [seedNotice, setSeedNotice] = useState<string | null>(null)
   const [kind, setKind] = useState<'quote_driven' | 'business' | 'restaurant_rule'>('business')
   const [lines, setLines] = useState<LineItemDraft[]>([{ ...EMPTY_LINE }])
   const [includeValueStack, setIncludeValueStack] = useState(false)
@@ -109,6 +120,78 @@ function NewInvoiceForm() {
       .then((d) => setProspects(d.data ?? []))
       .catch(() => {})
   }, [])
+
+  // Project-driven seed (migration 054). When the page is opened from a
+  // project's "New Invoice" button (see GenerateInvoiceModal), the URL
+  // looks like /admin/invoices/new?project_id=<uuid>&source=<bucket>.
+  // We fetch the same seed endpoint the modal used, prefill the prospect
+  // picker + the line editor, and stash covered_time_entry_ids so the
+  // eventual POST marks them billed. Runs once per project_id change.
+  useEffect(() => {
+    if (!presetProjectId) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/admin/projects/${presetProjectId}/invoice-seed`)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = await res.json() as {
+          project: { id: string; name: string; prospect_id: string }
+          prospect: { id: string; business_name: string } | null
+          deliverables_seed: { lines: Array<{ description: string; quantity: number; unit_price_cents: number; cadence: string }> }
+          time_entries_seed: { lines: Array<{ description: string; quantity: number; unit_price_cents: number; cadence: string }>; entry_ids: string[] }
+        }
+        if (cancelled) return
+
+        // Always honor the project's prospect — the modal already enforced
+        // this but a hand-typed URL might omit prospect_id.
+        if (data.project.prospect_id && !prospectId) {
+          setProspectId(data.project.prospect_id)
+        }
+
+        // Map seed lines into LineItemDraft. Source-aware: deliverables
+        // and time_entries already follow the qty=1, hours-in-description,
+        // full-total-as-unit-price convention from the seed endpoint, so
+        // we just unpack them.
+        const bucket = presetSource === 'time_entries' ? data.time_entries_seed
+          : presetSource === 'deliverables' ? data.deliverables_seed
+          : null
+        if (bucket && bucket.lines.length > 0) {
+          const seeded: LineItemDraft[] = bucket.lines.map((l) => ({
+            catalog_item_id: null,
+            description: l.description,
+            quantity: l.quantity,
+            unit_price_cents: l.unit_price_cents,
+            unit_price_input: (l.unit_price_cents / 100).toFixed(2),
+            discount_pct: 0,
+            discount_label: '',
+          }))
+          setLines(seeded)
+          if (presetSource === 'time_entries') {
+            setCoveredTimeEntryIds(data.time_entries_seed.entry_ids)
+          }
+          setSeedNotice(
+            `Seeded ${seeded.length} line${seeded.length === 1 ? '' : 's'} from "${data.project.name}" (${presetSource === 'time_entries' ? 'time entries' : 'delivered phases'}). Edit anything before issuing.`,
+          )
+        } else if (presetSource === 'blank' || !presetSource) {
+          setSeedNotice(`Linked to project "${data.project.name}". Add line items manually.`)
+        } else {
+          setSeedNotice(
+            `Linked to project "${data.project.name}" but the "${presetSource}" source had no lines to seed. Add line items manually.`,
+          )
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setSeedNotice(
+            `Could not load project seed: ${e instanceof Error ? e.message : 'unknown error'}. project_id will still be saved with the invoice.`,
+          )
+        }
+      }
+    })()
+    return () => { cancelled = true }
+    // Intentionally only runs on project_id change; we don't want the
+    // prospect picker fighting the seed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presetProjectId, presetSource])
 
   // Preload value stack items (active, included_with_paid_project=true) so
   // the toggle can be rendered with meaningful labels + totals.
@@ -236,6 +319,14 @@ function NewInvoiceForm() {
     return {
       kind,
       prospect_id: prospectId || undefined,
+      // project_id (migration 054) flows through when the page was opened
+      // from a project's New Invoice button. Server persists it on the
+      // invoices row so the project detail page's ProjectInvoicesPanel
+      // can list this invoice. covered_time_entry_ids flips the matching
+      // project_time_entries rows' covered_by_invoice_id on insert so
+      // they aren't double-billed on a later seeded invoice.
+      project_id: projectId || undefined,
+      covered_time_entry_ids: coveredTimeEntryIds.length > 0 ? coveredTimeEntryIds : undefined,
       line_items: finalLines,
       notes: notes || undefined,
       due_date: dueDate || undefined,
@@ -317,6 +408,15 @@ function NewInvoiceForm() {
           Show preview
         </button>
       </div>
+
+      {/* Seed notice — visible when the page was opened from a project's
+          New Invoice button. Includes the project name and source. */}
+      {seedNotice && (
+        <div className="bg-teal-50 border border-teal-200 text-teal-900 rounded-lg px-4 py-3 text-sm flex items-start gap-2">
+          <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0 text-teal-600" />
+          <span>{seedNotice}</span>
+        </div>
+      )}
 
       <section className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
         <h2 className="font-semibold">Client + Kind</h2>

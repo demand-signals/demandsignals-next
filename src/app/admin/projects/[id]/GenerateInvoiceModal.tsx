@@ -2,39 +2,30 @@
 
 // /admin/projects/[id]/GenerateInvoiceModal.tsx
 //
-// Generates a new invoice from a completed project. Source workflow: a
-// customer-service or one-off project that bypassed the SOW step now
-// needs to be billed. The existing /admin/invoices/new flow expects you
-// to manually pick a prospect and line items; this modal short-circuits
-// that by seeding everything from the project.
+// v2 (2026-06-19): thin source chooser. Each option redirects to
+// /admin/invoices/new?project_id=<id>&source=<bucket>. The full editor
+// owns the line-item editing, catalog picker, discounts, payment terms,
+// TIK, etc. — this modal just decides which seed bucket gets pre-loaded.
 //
-// Three seed sources, user picks one:
-//   1. Deliverables — every status='delivered' deliverable becomes a line
-//   2. Time entries — uncovered entries grouped by phase, summed, one line each
-//   3. Blank — only prospect_id + project_id pass through; user fills lines
+// Why: the original modal was opinionated and fast (3 clicks), but
+// couldn't expose the rest of the invoice editor's controls (catalog,
+// per-line discount, due date, late fees, TIK, subscription term). The
+// /admin/invoices/new surface already has all of those, plus draft +
+// preview + save flow. Routing the project flow into it consolidates on
+// ONE creation surface, two entry points.
 //
-// Submits to existing POST /api/admin/invoices with project_id +
-// covered_time_entry_ids carried through. On success, navigates to the
-// new invoice's detail page where the standard send/PDF/payment-link
-// surfaces take over.
+// Seed mechanics live in /api/admin/projects/[id]/invoice-seed — the
+// editor calls it on mount when project_id is in the URL.
 
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, X, FileText, Clock, FilePlus } from 'lucide-react'
-import { formatCents } from '@/lib/format'
 
-interface CreateLineItem {
-  description: string
-  quantity: number
-  unit_price_cents: number
-  cadence: 'one_time' | 'monthly' | 'quarterly' | 'annual'
-}
-
-interface SeedResponse {
+interface SeedSummary {
   project: { id: string; name: string; prospect_id: string }
-  prospect: { id: string; business_name: string; owner_name: string | null; owner_email: string | null } | null
-  deliverables_seed: { lines: CreateLineItem[] }
-  time_entries_seed: { lines: CreateLineItem[]; entry_ids: string[] }
+  prospect: { id: string; business_name: string; owner_name: string | null } | null
+  deliverables_seed: { lines: unknown[] }
+  time_entries_seed: { lines: unknown[]; entry_ids: string[] }
 }
 
 type SourceChoice = 'deliverables' | 'time_entries' | 'blank'
@@ -48,12 +39,9 @@ export function GenerateInvoiceModal({
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [seed, setSeed] = useState<SeedResponse | null>(null)
-  const [source, setSource] = useState<SourceChoice>('deliverables')
-  const [submitting, setSubmitting] = useState(false)
+  const [summary, setSummary] = useState<SeedSummary | null>(null)
   const [err, setErr] = useState<string | null>(null)
 
-  // Load seed on mount
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -63,13 +51,8 @@ export function GenerateInvoiceModal({
           const j = await res.json().catch(() => ({}))
           throw new Error(j.error ?? `Failed to load seed (${res.status})`)
         }
-        const data = (await res.json()) as SeedResponse
-        if (cancelled) return
-        setSeed(data)
-        // Auto-pick the source that actually has lines, in priority order.
-        if (data.deliverables_seed.lines.length > 0) setSource('deliverables')
-        else if (data.time_entries_seed.lines.length > 0) setSource('time_entries')
-        else setSource('blank')
+        const data = (await res.json()) as SeedSummary
+        if (!cancelled) setSummary(data)
       } catch (e) {
         if (!cancelled) setErr(e instanceof Error ? e.message : 'Load failed')
       } finally {
@@ -79,160 +62,82 @@ export function GenerateInvoiceModal({
     return () => { cancelled = true }
   }, [projectId])
 
-  const linesForSource = useCallback((): CreateLineItem[] => {
-    if (!seed) return []
-    if (source === 'deliverables') return seed.deliverables_seed.lines
-    if (source === 'time_entries') return seed.time_entries_seed.lines
-    return []
-  }, [seed, source])
-
-  const lines = linesForSource()
-  const totalCents = lines.reduce(
-    (s, l) => s + Math.max(0, l.unit_price_cents * l.quantity),
-    0,
-  )
-
-  async function handleSubmit() {
-    if (!seed) return
-    setErr(null)
-    setSubmitting(true)
-    try {
-      const payload: Record<string, unknown> = {
-        kind: 'business',
-        prospect_id: seed.project.prospect_id,
-        project_id: seed.project.id,
-        line_items: lines,
-        notes: `Generated from project: ${seed.project.name}`,
-      }
-      if (source === 'time_entries') {
-        payload.covered_time_entry_ids = seed.time_entries_seed.entry_ids
-      }
-      const res = await fetch('/api/admin/invoices', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}))
-        throw new Error(j.error ?? `Invoice creation failed (${res.status})`)
-      }
-      const j = await res.json()
-      const newId = j?.invoice?.id
-      if (!newId) throw new Error('Invoice created but no ID returned')
-      router.push(`/admin/invoices/${newId}`)
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Submit failed')
-      setSubmitting(false)
-    }
+  function go(source: SourceChoice) {
+    const qs = new URLSearchParams({ project_id: projectId, source })
+    router.push(`/admin/invoices/new?${qs.toString()}`)
   }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center overflow-y-auto pt-12 pb-12 px-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-xl">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-800">Generate Invoice from Project</h2>
+          <h2 className="text-lg font-semibold text-slate-800">New Invoice from Project</h2>
           <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-700" aria-label="Close">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+        <div className="p-6 space-y-3">
           {loading && (
             <div className="flex items-center gap-2 text-sm text-slate-500">
               <Loader2 className="w-4 h-4 animate-spin" /> Loading project data…
             </div>
           )}
 
-          {!loading && seed && (
+          {err && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{err}</p>
+          )}
+
+          {!loading && summary && (
             <>
               <div className="text-sm text-slate-600 bg-slate-50 rounded-lg p-3">
-                <div className="font-semibold text-slate-800">{seed.project.name}</div>
-                {seed.prospect && (
+                <div className="font-semibold text-slate-800">{summary.project.name}</div>
+                {summary.prospect && (
                   <div className="text-xs text-slate-500 mt-1">
-                    Client: {seed.prospect.business_name}
-                    {seed.prospect.owner_name && <> · {seed.prospect.owner_name}</>}
+                    Client: {summary.prospect.business_name}
+                    {summary.prospect.owner_name && <> · {summary.prospect.owner_name}</>}
                   </div>
                 )}
               </div>
 
-              {/* Source picker */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block">Seed line items from</label>
+              <p className="text-xs text-slate-500">
+                Choose a seed source. The full invoice editor will open with line items pre-populated — you can edit, add lines, set discounts, due date, payment terms before issuing.
+              </p>
 
+              <div className="space-y-2 pt-1">
                 <SourceOption
                   icon={<FileText className="w-4 h-4" />}
                   title="Delivered phases & deliverables"
                   subtitle={
-                    seed.deliverables_seed.lines.length > 0
-                      ? `${seed.deliverables_seed.lines.length} line${seed.deliverables_seed.lines.length === 1 ? '' : 's'} from delivered work`
+                    summary.deliverables_seed.lines.length > 0
+                      ? `${summary.deliverables_seed.lines.length} line${summary.deliverables_seed.lines.length === 1 ? '' : 's'} from delivered work`
                       : 'No delivered deliverables on this project'
                   }
-                  selected={source === 'deliverables'}
-                  disabled={seed.deliverables_seed.lines.length === 0}
-                  onSelect={() => setSource('deliverables')}
+                  disabled={summary.deliverables_seed.lines.length === 0}
+                  onClick={() => go('deliverables')}
                 />
 
                 <SourceOption
                   icon={<Clock className="w-4 h-4" />}
                   title="Time entries (uncovered)"
                   subtitle={
-                    seed.time_entries_seed.lines.length > 0
-                      ? `${seed.time_entries_seed.lines.length} phase bucket${seed.time_entries_seed.lines.length === 1 ? '' : 's'} · ${seed.time_entries_seed.entry_ids.length} entr${seed.time_entries_seed.entry_ids.length === 1 ? 'y' : 'ies'} will be marked covered`
+                    summary.time_entries_seed.lines.length > 0
+                      ? `${summary.time_entries_seed.lines.length} phase bucket${summary.time_entries_seed.lines.length === 1 ? '' : 's'} · ${summary.time_entries_seed.entry_ids.length} entr${summary.time_entries_seed.entry_ids.length === 1 ? 'y' : 'ies'} will be marked covered on save`
                       : 'No uncovered time entries on this project'
                   }
-                  selected={source === 'time_entries'}
-                  disabled={seed.time_entries_seed.lines.length === 0}
-                  onSelect={() => setSource('time_entries')}
+                  disabled={summary.time_entries_seed.lines.length === 0}
+                  onClick={() => go('time_entries')}
                 />
 
                 <SourceOption
                   icon={<FilePlus className="w-4 h-4" />}
-                  title="Blank — prefill prospect only"
+                  title="Blank — prefill prospect + project link only"
                   subtitle="Open the invoice editor and add lines manually"
-                  selected={source === 'blank'}
                   disabled={false}
-                  onSelect={() => setSource('blank')}
+                  onClick={() => go('blank')}
                 />
               </div>
-
-              {/* Preview */}
-              {source !== 'blank' && (
-                <div className="border border-slate-200 rounded-lg">
-                  <div className="px-3 py-2 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                    Preview ({lines.length} line{lines.length === 1 ? '' : 's'})
-                  </div>
-                  {lines.length === 0 ? (
-                    <div className="px-3 py-4 text-sm text-slate-400 italic">Nothing to bill from this source.</div>
-                  ) : (
-                    <div className="divide-y divide-slate-100">
-                      {lines.map((l, i) => (
-                        <div key={i} className="px-3 py-2 flex items-center justify-between gap-3 text-sm">
-                          <div className="flex-1 min-w-0">
-                            <div className="text-slate-800 truncate">{l.description}</div>
-                            <div className="text-xs text-slate-400">
-                              {l.quantity > 1 && <>{l.quantity} × </>}
-                              {formatCents(l.unit_price_cents)}
-                              {l.cadence !== 'one_time' && <> · {l.cadence}</>}
-                            </div>
-                          </div>
-                          <div className="text-sm font-semibold text-slate-700 whitespace-nowrap">
-                            {formatCents(l.unit_price_cents * l.quantity)}
-                          </div>
-                        </div>
-                      ))}
-                      <div className="px-3 py-2 flex items-center justify-between bg-slate-50 text-sm font-semibold text-slate-800">
-                        <span>Subtotal</span>
-                        <span>{formatCents(totalCents)}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
             </>
-          )}
-
-          {err && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{err}</p>
           )}
         </div>
 
@@ -244,15 +149,6 @@ export function GenerateInvoiceModal({
           >
             Cancel
           </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={submitting || loading || !seed || (source !== 'blank' && lines.length === 0)}
-            className="px-5 py-2 text-sm rounded-lg bg-[var(--teal)] text-white hover:bg-[var(--teal-dark)] disabled:opacity-50 inline-flex items-center gap-1.5"
-          >
-            {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            Create invoice
-          </button>
         </div>
       </div>
     </div>
@@ -263,39 +159,30 @@ function SourceOption({
   icon,
   title,
   subtitle,
-  selected,
   disabled,
-  onSelect,
+  onClick,
 }: {
   icon: React.ReactNode
   title: string
   subtitle: string
-  selected: boolean
   disabled: boolean
-  onSelect: () => void
+  onClick: () => void
 }) {
   return (
     <button
       type="button"
-      onClick={onSelect}
+      onClick={onClick}
       disabled={disabled}
       className={`w-full text-left px-3 py-3 rounded-lg border flex items-start gap-3 transition-colors ${
-        selected
-          ? 'border-teal-500 bg-teal-50'
-          : disabled
+        disabled
           ? 'border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed'
-          : 'border-slate-200 hover:bg-slate-50'
+          : 'border-slate-200 hover:border-teal-500 hover:bg-teal-50/40'
       }`}
     >
-      <div className={`mt-0.5 ${selected ? 'text-teal-600' : 'text-slate-400'}`}>{icon}</div>
+      <div className={disabled ? 'text-slate-400 mt-0.5' : 'text-teal-600 mt-0.5'}>{icon}</div>
       <div className="flex-1 min-w-0">
-        <div className={`text-sm font-semibold ${selected ? 'text-teal-700' : 'text-slate-800'}`}>{title}</div>
+        <div className="text-sm font-semibold text-slate-800">{title}</div>
         <div className="text-xs text-slate-500 mt-0.5">{subtitle}</div>
-      </div>
-      <div className={`w-4 h-4 rounded-full border-2 mt-1 flex-shrink-0 ${
-        selected ? 'border-teal-500 bg-teal-500' : 'border-slate-300'
-      }`}>
-        {selected && <div className="w-1.5 h-1.5 bg-white rounded-full mx-auto mt-0.5" />}
       </div>
     </button>
   )
