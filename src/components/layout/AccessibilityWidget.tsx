@@ -1,6 +1,6 @@
 'use client'
 
-// dsig-stoplight-version: v1e
+// dsig-stoplight-version: v1g
 // DSIG Accessibility Widget — Next.js / React drop-in
 // ─────────────────────────────────────────────────────────────────────────────
 // Source-of-truth: Y:\SKILLS\dsig-cookie-stoplight\components\AccessibilityWidget.tsx
@@ -55,6 +55,13 @@ interface AccessibilityState {
   letterSpacing: 'normal' | 'increased' | 'wide'
   highlightLinks: boolean
   readableFont: boolean
+  // WCAG 2.2 Enhancements (v1g) — user-side rendering aids targeting the
+  // three success criteria most-commonly cited in 2.2 conformance gaps.
+  // None of these claim conformance for the underlying site; they modify
+  // the user's own browsing experience on top of whatever the site ships.
+  enhancedFocusRing: boolean    // SC 2.4.7 Focus Visible
+  largerTapTargets: boolean     // SC 2.5.8 Target Size Minimum (NEW in 2.2)
+  keepFocusVisible: boolean     // SC 2.4.11 Focus Not Obscured (NEW in 2.2)
 }
 
 const DEFAULT_STATE: AccessibilityState = {
@@ -65,10 +72,14 @@ const DEFAULT_STATE: AccessibilityState = {
   letterSpacing: 'normal',
   highlightLinks: false,
   readableFont: false,
+  enhancedFocusRing: false,
+  largerTapTargets: false,
+  keepFocusVisible: false,
 }
 
 const A11Y_STYLE_ID = 'a11y-widget-styles'
 const A11Y_CURSOR_ID = 'a11y-cursor-styles'
+const KEEP_FOCUS_HANDLER_KEY = '__dsigA11yKeepFocusHandler'
 
 // ── DOM application helpers ───────────────────────────────────────────────────
 
@@ -137,12 +148,92 @@ function applyA11yStyles(state: AccessibilityState) {
   // implementation was a sledgehammer that broke well-designed animations
   // and was redundant with OS-level signaling.
 
+  // WCAG 2.2 Enhancements (v1g) ─────────────────────────────────────────────
+  // Each toggle targets a specific 2.2 AA success criterion. Implemented as
+  // user-side CSS overrides that do NOT make any claim about the underlying
+  // site's conformance — they alter the visitor's own browsing experience.
+
+  if (state.enhancedFocusRing) {
+    // SC 2.4.7 Focus Visible — 3px high-contrast outline that wins over
+    // most site-side focus-ring resets (Tailwind's focus:outline-none,
+    // CSS resets, etc.). The outline-offset gives breathing room so the
+    // ring doesn't crop against background elements.
+    rules.push(`
+      *:focus-visible, *:focus {
+        outline: 3px solid #fbbf24 !important;
+        outline-offset: 3px !important;
+        box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
+        border-radius: 2px !important;
+      }
+    `)
+  }
+  if (state.largerTapTargets) {
+    // SC 2.5.8 Target Size Minimum (NEW in 2.2) — ensures every
+    // interactive control meets the 24×24 CSS-px minimum (we go to 44px
+    // which is the more-stringent enhanced level and the iOS HIG default).
+    // padding instead of width/height because forcing dimensions on
+    // arbitrary buttons/inputs breaks site layout in too many cases.
+    rules.push(`
+      button, [role="button"], a, [role="link"], input:not([type="hidden"]),
+      select, textarea, summary, label[for], [tabindex]:not([tabindex="-1"]) {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        padding: max(8px, 0.5em) max(12px, 0.75em) !important;
+      }
+      /* Exempt inline links inside flowing text — forcing min-height on them
+         creates absurd line gaps in paragraphs. */
+      p a, li a, span a, td a {
+        min-width: 0 !important;
+        min-height: 0 !important;
+        padding: 2px 4px !important;
+      }
+    `)
+  }
+  // SC 2.4.11 Focus Not Obscured handled by JS listener, see
+  // applyKeepFocusVisible — sticky-header coverage isn't fixable with CSS alone.
+
   if (rules.length === 0) return
 
   const style = document.createElement('style')
   style.id = A11Y_STYLE_ID
   style.textContent = rules.join('\n')
   document.head.appendChild(style)
+}
+
+// ── WCAG 2.2 SC 2.4.11 Focus Not Obscured (v1g) ────────────────────────────
+// CSS alone can't fix focused-element-hidden-behind-sticky-header — needs
+// to react to actual focus events. When toggle is on, every focusin event
+// is checked against viewport; if the focused element's top is closer to
+// the viewport top than ~80px (rough sticky-header height), or below the
+// viewport bottom, scroll it into a comfortable position.
+function applyKeepFocusVisible(enabled: boolean) {
+  if (typeof window === 'undefined') return
+  // Remove any prior handler. Stored on window so it survives re-renders
+  // without being captured in a stale closure.
+  const w = window as unknown as Record<string, ((e: Event) => void) | undefined>
+  const prior = w[KEEP_FOCUS_HANDLER_KEY]
+  if (prior) {
+    document.removeEventListener('focusin', prior, true)
+    w[KEEP_FOCUS_HANDLER_KEY] = undefined
+  }
+  if (!enabled) return
+
+  const handler = (e: Event) => {
+    const el = e.target as HTMLElement | null
+    if (!el || typeof el.getBoundingClientRect !== 'function') return
+    const rect = el.getBoundingClientRect()
+    const headerSafeZone = 80   // rough sticky-header height across DSIG sites
+    const footerSafeZone = 40
+    const tooHigh = rect.top < headerSafeZone
+    const tooLow = rect.bottom > window.innerHeight - footerSafeZone
+    if (tooHigh || tooLow) {
+      // block:'center' positions focused element midway through viewport,
+      // which guarantees clearance from typical sticky chrome top + bottom.
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }
+  }
+  document.addEventListener('focusin', handler, true)
+  w[KEEP_FOCUS_HANDLER_KEY] = handler
 }
 
 // ── OS-level preference detection ──
@@ -361,6 +452,7 @@ export function AccessibilityWidget({
     applyContrast(initial.contrast)
     applyCursorSize(initial.cursorSize)
     applyA11yStyles(initial)
+    applyKeepFocusVisible(initial.keepFocusVisible)
   }, [])
 
   // Focus trap + Escape handling on drawer open.
@@ -419,8 +511,11 @@ export function AccessibilityWidget({
           'letterSpacing',
           'highlightLinks',
           'readableFont',
+          'enhancedFocusRing',
+          'largerTapTargets',
         ]
         if (styleKeys.some((k) => k in changes)) applyA11yStyles(next)
+        if ('keepFocusVisible' in changes) applyKeepFocusVisible(next.keepFocusVisible)
 
         return next
       })
@@ -434,6 +529,7 @@ export function AccessibilityWidget({
     applyFontSize(DEFAULT_STATE.fontSize)
     applyContrast(DEFAULT_STATE.contrast)
     applyCursorSize(DEFAULT_STATE.cursorSize)
+    applyKeepFocusVisible(false)
     document.getElementById(A11Y_STYLE_ID)?.remove()
   }
 
@@ -674,6 +770,37 @@ export function AccessibilityWidget({
                     accentColor={resolvedAccentColor}
                   >
                     Readable font
+                  </TogglePill>
+                </div>
+              </Section>
+
+              {/* WCAG 2.2 Enhancements (v1g) — three toggles targeting the
+                  most-commonly-cited 2.2 AA success criteria. User-side
+                  rendering aids; do NOT claim conformance for the
+                  underlying site. */}
+              <Section>
+                <SectionTitle>WCAG 2.2 enhancements</SectionTitle>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  <TogglePill
+                    active={state.enhancedFocusRing}
+                    onClick={() => update({ enhancedFocusRing: !state.enhancedFocusRing })}
+                    accentColor={resolvedAccentColor}
+                  >
+                    Enhanced focus ring
+                  </TogglePill>
+                  <TogglePill
+                    active={state.largerTapTargets}
+                    onClick={() => update({ largerTapTargets: !state.largerTapTargets })}
+                    accentColor={resolvedAccentColor}
+                  >
+                    Larger tap targets
+                  </TogglePill>
+                  <TogglePill
+                    active={state.keepFocusVisible}
+                    onClick={() => update({ keepFocusVisible: !state.keepFocusVisible })}
+                    accentColor={resolvedAccentColor}
+                  >
+                    Keep focus visible
                   </TogglePill>
                 </div>
               </Section>
