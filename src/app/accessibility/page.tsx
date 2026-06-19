@@ -5,11 +5,11 @@ import { breadcrumbSchema } from '@/lib/schema';
 
 export const metadata: Metadata = {
   title: 'Accessibility Statement — Demand Signals',
-  description: 'Our commitment to digital accessibility and WCAG 2.1 Level AA conformance. Learn about our accessibility practices, known limitations, and how to report issues.',
+  description: 'Our commitment to digital accessibility and WCAG 2.2 Level AA conformance. Learn about our accessibility practices, known limitations, and how to report issues.',
   alternates: { canonical: 'https://demandsignals.co/accessibility' },
   openGraph: {
     title: 'Accessibility Statement — Demand Signals',
-    description: 'Our commitment to digital accessibility and WCAG 2.1 Level AA conformance.',
+    description: 'Our commitment to digital accessibility and WCAG 2.2 Level AA conformance.',
     url: 'https://demandsignals.co/accessibility',
     siteName: 'Demand Signals',
     locale: 'en_US',
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary',
     title: 'Accessibility Statement — Demand Signals',
-    description: 'Our commitment to digital accessibility and WCAG 2.1 Level AA conformance.',
+    description: 'Our commitment to digital accessibility and WCAG 2.2 Level AA conformance.',
     site: '@demandsignals',
     creator: '@demandsignals',
   },
@@ -45,7 +45,7 @@ export default function AccessibilityPage() {
             Accessibility Statement
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>
-            Last updated: April 7, 2026
+            Last updated: June 18, 2026
           </p>
         </div>
       </section>
@@ -64,10 +64,10 @@ export default function AccessibilityPage() {
 
           <h2 style={h2}>Conformance Standard</h2>
           <p>
-            We are actively working toward full conformance with the <strong style={bold}>Web Content Accessibility Guidelines (WCAG) 2.1, Level AA</strong>, published by the World Wide Web Consortium (W3C). WCAG 2.1 Level AA is the standard referenced by the Americans with Disabilities Act (ADA) and Section 508 of the Rehabilitation Act, as well as accessibility regulations in the European Union, Canada, Australia, and many other jurisdictions.
+            We are actively working toward full conformance with the <strong style={bold}>Web Content Accessibility Guidelines (WCAG) 2.1, Level AA</strong>, published by the World Wide Web Consortium (W3C). WCAG 2.2 Level AA is the standard referenced by the Americans with Disabilities Act (ADA) and Section 508 of the Rehabilitation Act, as well as accessibility regulations in the European Union, Canada, Australia, and many other jurisdictions.
           </p>
           <p>
-            Our current status is <strong style={bold}>partially conformant</strong> — meaning the majority of our website conforms to WCAG 2.1 Level AA, with specific exceptions documented below that we are actively working to resolve.
+            Our current status is <strong style={bold}>partially conformant</strong> — meaning portions of our website do not yet fully conform to WCAG 2.2 Level AA. Specific known limitations are documented below. We do not represent that any individual page or component is certified or fully compliant; conformance is an ongoing process subject to continuous remediation.
           </p>
 
           <h2 style={h2}>What We&apos;ve Done</h2>
@@ -121,6 +121,17 @@ export default function AccessibilityPage() {
             <li>Tested with major screen readers (NVDA, VoiceOver) and keyboard-only navigation</li>
           </ul>
 
+          <h2 style={h2}>Display Preferences Widget</h2>
+          <p>
+            The accessibility icon at the bottom-left of every page opens a panel of <strong style={bold}>personal display preferences</strong> &mdash; text size, contrast, line and letter spacing, cursor size, link highlighting, readable font, pause animations. Preferences persist in your browser and reapply on every visit.
+          </p>
+          <p>
+            This widget is a convenience layer for personal display preferences. <strong style={bold}>It does not certify, guarantee, or substitute for the site&apos;s underlying accessibility.</strong> Conformance with WCAG is a property of the site&apos;s structure, semantics, contrast, and keyboard handling &mdash; not something an overlay can provide. If you encounter a barrier the widget cannot resolve, please report it (see <em>Reporting an Accessibility Issue</em> below).
+          </p>
+          <p>
+            The widget honors the <code>prefers-reduced-motion</code> and <code>prefers-contrast: more</code> operating-system signals at first visit, so visitors who have already configured their OS for these needs do not need to discover or open the widget. Your stored preferences override the OS defaults if you set them explicitly.
+          </p>
+
           <h2 style={h2}>Known Limitations</h2>
           <p>
             Despite our efforts, the following areas have known accessibility gaps that we are actively working to resolve:
@@ -143,7 +154,7 @@ export default function AccessibilityPage() {
           <div style={issueCard}>
             <p style={{ margin: '0 0 6px', color: 'var(--dark)', fontWeight: 700 }}>Third-Party Embedded Content</p>
             <p style={{ margin: 0 }}>
-              Our Google Calendar booking widget and any embedded third-party tools may not fully meet WCAG 2.1 Level AA standards. These components are controlled by external providers. We provide alternative contact methods (phone, email) for users who cannot interact with embedded widgets.
+              Our Google Calendar booking widget and any embedded third-party tools may not fully meet WCAG 2.2 Level AA standards. These components are controlled by external providers. We provide alternative contact methods (phone, email) for users who cannot interact with embedded widgets.
             </p>
           </div>
 
@@ -221,7 +232,7 @@ export default function AccessibilityPage() {
 
           <h2 style={h2}>Continuous Improvement</h2>
           <p>
-            Accessibility is not a one-time project — it is an ongoing commitment. We regularly audit our website, incorporate new accessibility best practices, and update this statement as improvements are made. Our goal is full WCAG 2.1 Level AA conformance across all pages and components.
+            Accessibility is not a one-time project — it is an ongoing commitment. We regularly audit our website, incorporate new accessibility best practices, and update this statement as improvements are made. Our goal is full WCAG 2.2 Level AA conformance across all pages and components.
           </p>
           <p>
             As an agency that builds websites for other businesses, we are committed to leading by example. The accessibility standards we apply to our own site inform the standards we recommend and implement for our clients.

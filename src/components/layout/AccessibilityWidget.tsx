@@ -1,42 +1,55 @@
 'use client'
 
+// dsig-stoplight-version: v1c
 // DSIG Accessibility Widget — Next.js / React drop-in
 // ─────────────────────────────────────────────────────────────────────────────
-// Source-of-truth: Y:\TOOLS\dsig-accessibility-widget\react\AccessibilityWidget.tsx
-// Bottom-left 40×40 circular blue button; click to open a left-side drawer
-// with 8 accessibility controls: text size, contrast, color-blind modes,
-// cursor size, line spacing, letter spacing, highlight links, readable
-// font, pause animations. Persists in localStorage; settings re-apply
-// automatically on every page load.
+// Source-of-truth: Y:\SKILLS\dsig-cookie-stoplight\components\AccessibilityWidget.tsx
+// Install / update via: /stoplight slash command.
 //
-// Visual treatment is the canonical DSIG accessibility surface — extracted
-// from demandsignals.co where it's been live and battle-tested. WCAG 2.1 AA
-// compliant.
+// Bottom-left 40×40 circular button, sits to the LEFT of the cookie
+// stoplight when both are mounted (a11y at left:20, cookie at left:70).
+// Click opens a left-side drawer with personal display preferences.
+//
+// IMPORTANT — what this widget IS and IS NOT
+// ───────────────────────────────────────────
+// IS:  A user-controlled set of personal display preferences (text size,
+//      contrast, spacing, link highlighting, animation pause, large
+//      cursor). Honors prefers-reduced-motion and prefers-contrast: more
+//      OS signals on boot.
+// IS NOT: A site accessibility certification. WCAG conformance is a
+//      property of the site's HTML/ARIA/contrast/keyboard handling — not
+//      something an overlay can provide. The drawer's footer links to
+//      the site's /accessibility statement page where actual conformance
+//      claims (always aspirational, never absolute) live.
+//
+// Why the badge was removed (was in v1a/v1b):
+// "WCAG 2.1 AA Compliant" badges inside overlays are the central exhibit
+// in accessibility-overlay litigation (accessiBe, UserWay, AudioEye FTC
+// settlement 2024). The badge claims conformance the widget can't
+// actually deliver; plaintiff testers run page scans, find any failure,
+// and the badge becomes Exhibit A of false advertising on top of the
+// underlying ADA Title III claim. Defensible replacement: a "personal
+// preferences" footer with a link to the site's accessibility statement.
+//
+// Why color-blind simulation filters were removed (were in v1a/v1b):
+// Filters that re-tint the whole page to simulate protanopia/etc. are
+// designer demos, not aids. A user with protanopia does not want to see
+// "what protanopia looks like" — that's their normal vision. Multiple
+// accessibility audits flag these as actively harmful.
 //
 // Dependencies: framer-motion (already in every DSIG Next.js site).
-//
-// Per-site theming:
-//   - `buttonColor` prop  → closed-state button background
-//   - `accentColor` prop  → drawer active-state highlights (defaults to same as button)
-//   - CSS var fallbacks   → `--a11y-button-color` + `--a11y-accent-color`
-//   - Defaults to DSIG blue `#1e40af` if nothing else is set
-//
-// Version: v1a — 2026-05-22
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const STORAGE_KEY = 'accessibility_settings'
 
-// Default colors. Per-site override via props or CSS variables --
-// see AccessibilityWidget component for precedence rules.
 const DEFAULT_BUTTON_COLOR = '#1e40af'  // DSIG blue
-const DEFAULT_ACCENT_COLOR = '#1e40af'  // same as button by default
+const DEFAULT_ACCENT_COLOR = '#1e40af'
 
 interface AccessibilityState {
   fontSize: number
   contrast: 'normal' | 'high' | 'inverted' | 'grayscale'
-  colorBlind: 'none' | 'protanopia' | 'deuteranopia' | 'tritanopia' | 'achromatopsia'
   cursorSize: 'normal' | 'large' | 'xlarge'
   lineHeight: 'normal' | 'increased' | 'double'
   letterSpacing: 'normal' | 'increased' | 'wide'
@@ -48,7 +61,6 @@ interface AccessibilityState {
 const DEFAULT_STATE: AccessibilityState = {
   fontSize: 100,
   contrast: 'normal',
-  colorBlind: 'none',
   cursorSize: 'normal',
   lineHeight: 'normal',
   letterSpacing: 'normal',
@@ -58,37 +70,7 @@ const DEFAULT_STATE: AccessibilityState = {
 }
 
 const A11Y_STYLE_ID = 'a11y-widget-styles'
-const A11Y_SVG_ID = 'a11y-colorblind-svg'
 const A11Y_CURSOR_ID = 'a11y-cursor-styles'
-
-// ── Color-blind SVG filter matrices ──────────────────────────────────────────
-
-const COLOR_BLIND_FILTERS: Record<string, string> = {
-  protanopia: `
-    <feColorMatrix type="matrix" values="
-      0.567 0.433 0     0 0
-      0.558 0.442 0     0 0
-      0     0.242 0.758 0 0
-      0     0     0     1 0"/>`,
-  deuteranopia: `
-    <feColorMatrix type="matrix" values="
-      0.625 0.375 0   0 0
-      0.7   0.3   0   0 0
-      0     0.3   0.7 0 0
-      0     0     0   1 0"/>`,
-  tritanopia: `
-    <feColorMatrix type="matrix" values="
-      0.95  0.05  0     0 0
-      0     0.433 0.567 0 0
-      0     0.475 0.525 0 0
-      0     0     0     1 0"/>`,
-  achromatopsia: `
-    <feColorMatrix type="matrix" values="
-      0.299 0.587 0.114 0 0
-      0.299 0.587 0.114 0 0
-      0.299 0.587 0.114 0 0
-      0     0     0     1 0"/>`,
-}
 
 // ── DOM application helpers ───────────────────────────────────────────────────
 
@@ -104,22 +86,6 @@ function applyContrast(value: AccessibilityState['contrast']) {
     grayscale: 'grayscale(1)',
   }
   document.documentElement.style.filter = filters[value]
-}
-
-function applyColorBlind(value: AccessibilityState['colorBlind']) {
-  document.getElementById(A11Y_SVG_ID)?.remove()
-
-  if (value === 'none') {
-    document.body.style.removeProperty('filter')
-    return
-  }
-
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-  svg.setAttribute('id', A11Y_SVG_ID)
-  svg.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden')
-  svg.innerHTML = `<defs><filter id="colorblind-filter">${COLOR_BLIND_FILTERS[value]}</filter></defs>`
-  document.head.appendChild(svg)
-  document.body.style.filter = 'url(#colorblind-filter)'
 }
 
 function applyCursorSize(value: AccessibilityState['cursorSize']) {
@@ -177,6 +143,22 @@ function applyA11yStyles(state: AccessibilityState) {
   document.head.appendChild(style)
 }
 
+// ── OS-level preference detection (CIPA/CCPA-analog for accessibility) ──
+// Honor prefers-reduced-motion and prefers-contrast: more at boot. Users
+// who have asserted these OS preferences should not have to discover and
+// click the widget — the site should already match their needs.
+function detectOSPreferences(): Partial<AccessibilityState> {
+  if (typeof window === 'undefined' || !window.matchMedia) return {}
+  const overrides: Partial<AccessibilityState> = {}
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    overrides.pauseAnimations = true
+  }
+  if (window.matchMedia('(prefers-contrast: more)').matches) {
+    overrides.contrast = 'high'
+  }
+  return overrides
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 const AccessIcon = () => (
@@ -190,6 +172,7 @@ const AccessIcon = () => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
+    aria-hidden="true"
   >
     <circle cx="16" cy="4" r="1" />
     <path d="m18 19 1-7-6 1" />
@@ -210,6 +193,7 @@ const CloseIcon = () => (
     strokeWidth="2.5"
     strokeLinecap="round"
     strokeLinejoin="round"
+    aria-hidden="true"
   >
     <line x1="18" y1="6" x2="6" y2="18" />
     <line x1="6" y1="6" x2="18" y2="18" />
@@ -238,22 +222,23 @@ function OptionButton({
   onClick,
   children,
   accentColor,
+  ariaLabel,
 }: {
   active: boolean
   onClick: () => void
   children: React.ReactNode
   accentColor: string
+  ariaLabel?: string
 }) {
   return (
     <button
       onClick={onClick}
+      aria-pressed={active}
+      aria-label={ariaLabel}
       style={{
         padding: '5px 10px',
         borderRadius: 6,
         border: active ? `1.5px solid ${accentColor}` : '1.5px solid #e5e7eb',
-        // Light tint for active background -- if accentColor differs from
-        // default DSIG blue, use a 12%-opacity-of-accent via color-mix.
-        // Falls back to #eff6ff for browsers without color-mix (caniuse: 95%+).
         background: active
           ? `color-mix(in srgb, ${accentColor} 8%, white)`
           : '#fff',
@@ -263,6 +248,7 @@ function OptionButton({
         cursor: 'pointer',
         transition: 'all 0.15s',
         whiteSpace: 'nowrap',
+        outlineOffset: 2,
       }}
     >
       {children}
@@ -284,6 +270,7 @@ function TogglePill({
   return (
     <button
       onClick={onClick}
+      aria-pressed={active}
       style={{
         padding: '6px 12px',
         borderRadius: 20,
@@ -294,6 +281,7 @@ function TogglePill({
         fontWeight: 500,
         cursor: 'pointer',
         transition: 'all 0.15s',
+        outlineOffset: 2,
       }}
     >
       {children}
@@ -317,70 +305,99 @@ function Section({ children }: { children: React.ReactNode }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export interface AccessibilityWidgetProps {
-  /**
-   * Closed-state button background color. Precedence (highest first):
-   *   1. This prop (per-mount override)
-   *   2. CSS variable `--a11y-button-color` on :root or any ancestor
-   *   3. DEFAULT_BUTTON_COLOR (DSIG blue #1e40af)
-   *
-   * Accept any CSS color value. Most sites only need to set this prop.
-   *
-   * Example per-mount override:
-   *   <AccessibilityWidget buttonColor="#FF6B2B" />
-   *
-   * Example CSS-var-based theming in globals.css:
-   *   :root { --a11y-button-color: #FF6B2B; }
-   *   <AccessibilityWidget />   // picks up the var automatically
-   */
   buttonColor?: string
-
-  /**
-   * Drawer active-state highlights — selected OptionButton border + text,
-   * selected TogglePill background, header icon color. If omitted, defaults
-   * to the same value as buttonColor for visual cohesion.
-   *
-   * Precedence (highest first):
-   *   1. This prop
-   *   2. CSS variable `--a11y-accent-color`
-   *   3. Same as resolved buttonColor
-   */
   accentColor?: string
+  /**
+   * Email to surface in the "Report an accessibility issue" link.
+   * Defaults to `accessibility@<site-host>` if not provided. Pass
+   * your own to override (e.g. mailto:hello@yourdomain.com).
+   */
+  reportEmail?: string
+  /**
+   * Path to the site's accessibility statement page. Defaults to
+   * `/accessibility`. The drawer footer links here as the canonical
+   * source for conformance claims.
+   */
+  statementPath?: string
 }
 
 export function AccessibilityWidget({
   buttonColor,
   accentColor,
+  reportEmail,
+  statementPath = '/accessibility',
 }: AccessibilityWidgetProps = {}) {
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<AccessibilityState>(DEFAULT_STATE)
+  const drawerRef = useRef<HTMLDivElement | null>(null)
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
 
-  // Resolved colors. Props win outright. Otherwise hand off to CSS:
-  // var() with fallback lets a site set `--a11y-button-color` or
-  // `--a11y-accent-color` in globals.css and the widget inherits with
-  // no JSX change. If neither prop nor var is set, falls through to
-  // the DSIG-blue defaults.
   const resolvedButtonColor = buttonColor
     ?? `var(--a11y-button-color, ${DEFAULT_BUTTON_COLOR})`
   const resolvedAccentColor = accentColor
     ?? `var(--a11y-accent-color, ${buttonColor ?? `var(--a11y-button-color, ${DEFAULT_ACCENT_COLOR})`})`
 
-  // Load state from localStorage on mount
+  // Load on mount: stored state wins; fall through to OS preferences.
   useEffect(() => {
+    const osDefaults = detectOSPreferences()
+    let initial: AccessibilityState = { ...DEFAULT_STATE, ...osDefaults }
+
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
       try {
         const parsed = JSON.parse(stored) as AccessibilityState
-        setState(parsed)
-        applyFontSize(parsed.fontSize)
-        applyContrast(parsed.contrast)
-        applyColorBlind(parsed.colorBlind)
-        applyCursorSize(parsed.cursorSize)
-        applyA11yStyles(parsed)
-      } catch {
-        // ignore parse errors
+        // Stored choice fully overrides OS — visitor's explicit pick wins.
+        initial = parsed
+      } catch { /* ignore parse errors */ }
+    }
+
+    setState(initial)
+    applyFontSize(initial.fontSize)
+    applyContrast(initial.contrast)
+    applyCursorSize(initial.cursorSize)
+    applyA11yStyles(initial)
+  }, [])
+
+  // Focus trap + Escape handling on drawer open.
+  useEffect(() => {
+    if (!open) return
+
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    // Move focus into the drawer after open animation settles.
+    const focusTimer = setTimeout(() => {
+      const firstFocusable = drawerRef.current?.querySelector<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      firstFocusable?.focus()
+    }, 50)
+
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setOpen(false)
+        return
+      }
+      if (e.key !== 'Tab' || !drawerRef.current) return
+      const focusables = drawerRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      if (focusables.length === 0) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
       }
     }
-  }, [])
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      clearTimeout(focusTimer)
+      document.removeEventListener('keydown', handleKey)
+      previouslyFocused?.focus?.()
+    }
+  }, [open])
 
   const update = useCallback(
     (changes: Partial<AccessibilityState>) => {
@@ -390,7 +407,6 @@ export function AccessibilityWidget({
 
         if ('fontSize' in changes) applyFontSize(next.fontSize)
         if ('contrast' in changes) applyContrast(next.contrast)
-        if ('colorBlind' in changes) applyColorBlind(next.colorBlind)
         if ('cursorSize' in changes) applyCursorSize(next.cursorSize)
 
         const styleKeys: (keyof AccessibilityState)[] = [
@@ -413,18 +429,25 @@ export function AccessibilityWidget({
     localStorage.removeItem(STORAGE_KEY)
     applyFontSize(DEFAULT_STATE.fontSize)
     applyContrast(DEFAULT_STATE.contrast)
-    applyColorBlind(DEFAULT_STATE.colorBlind)
     applyCursorSize(DEFAULT_STATE.cursorSize)
     document.getElementById(A11Y_STYLE_ID)?.remove()
   }
+
+  // Compute defensible mailto link. Falls through to a generic
+  // accessibility@<host> if no override is provided.
+  const computedReportEmail = reportEmail
+    ?? (typeof window !== 'undefined'
+        ? `mailto:accessibility@${window.location.hostname.replace(/^www\./, '')}`
+        : 'mailto:accessibility@example.com')
 
   return (
     <>
       {/* Trigger button */}
       <div style={{ position: 'fixed', bottom: 20, left: 20, zIndex: 90 }}>
         <button
+          ref={triggerRef}
           onClick={() => setOpen(true)}
-          title="Accessibility Settings"
+          title="Display preferences"
           style={{
             width: 40,
             height: 40,
@@ -438,8 +461,9 @@ export function AccessibilityWidget({
             color: '#fff',
             boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
             transition: 'transform 0.2s',
+            outlineOffset: 2,
           }}
-          aria-label="Open accessibility settings"
+          aria-label="Open display preferences"
         >
           <AccessIcon />
         </button>
@@ -449,7 +473,6 @@ export function AccessibilityWidget({
       <AnimatePresence>
         {open && (
           <>
-            {/* Backdrop */}
             <motion.div
               key="a11y-backdrop"
               initial={{ opacity: 0 }}
@@ -464,9 +487,12 @@ export function AccessibilityWidget({
               }}
             />
 
-            {/* Drawer */}
             <motion.div
               key="a11y-panel"
+              ref={drawerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="a11y-drawer-title"
               initial={{ x: -400 }}
               animate={{ x: 0 }}
               exit={{ x: -400 }}
@@ -504,16 +530,17 @@ export function AccessibilityWidget({
                     <span style={{ color: resolvedAccentColor }}>
                       <AccessIcon />
                     </span>
-                    <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#111827' }}>
-                      Accessibility
+                    <h2 id="a11y-drawer-title" style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#111827' }}>
+                      Display preferences
                     </h2>
                   </div>
                   <p style={{ margin: 0, fontSize: 12, color: '#9ca3af' }}>
-                    Customize your experience
+                    Personal adjustments for this site
                   </p>
                 </div>
                 <button
                   onClick={() => setOpen(false)}
+                  aria-label="Close display preferences"
                   style={{
                     background: 'none',
                     border: 'none',
@@ -523,27 +550,30 @@ export function AccessibilityWidget({
                     borderRadius: 6,
                     display: 'flex',
                     alignItems: 'center',
+                    outlineOffset: 2,
                   }}
                 >
                   <CloseIcon />
                 </button>
               </div>
 
-              {/* ── Text Size ── */}
+              {/* Text Size */}
               <Section>
-                <SectionTitle>Text Size</SectionTitle>
+                <SectionTitle>Text size</SectionTitle>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <button
                     onClick={() => update({ fontSize: Math.max(80, state.fontSize - 10) })}
+                    aria-label="Decrease text size"
                     style={circleBtn}
                   >
                     −
                   </button>
-                  <span style={{ minWidth: 48, textAlign: 'center', fontSize: 14, fontWeight: 600, color: '#111827' }}>
+                  <span aria-live="polite" style={{ minWidth: 48, textAlign: 'center', fontSize: 14, fontWeight: 600, color: '#111827' }}>
                     {state.fontSize}%
                   </span>
                   <button
                     onClick={() => update({ fontSize: Math.min(150, state.fontSize + 10) })}
+                    aria-label="Increase text size"
                     style={circleBtn}
                   >
                     +
@@ -551,7 +581,7 @@ export function AccessibilityWidget({
                 </div>
               </Section>
 
-              {/* ── Contrast ── */}
+              {/* Contrast */}
               <Section>
                 <SectionTitle>Contrast</SectionTitle>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -561,41 +591,17 @@ export function AccessibilityWidget({
                       active={state.contrast === v}
                       onClick={() => update({ contrast: v })}
                       accentColor={resolvedAccentColor}
+                      ariaLabel={`Contrast: ${v}`}
                     >
-                      {v === 'normal' ? 'Normal' : v === 'high' ? 'High Contrast' : v === 'inverted' ? 'Inverted' : 'Grayscale'}
+                      {v === 'normal' ? 'Normal' : v === 'high' ? 'High contrast' : v === 'inverted' ? 'Inverted' : 'Grayscale'}
                     </OptionButton>
                   ))}
                 </div>
               </Section>
 
-              {/* ── Color Blind Modes ── */}
+              {/* Cursor Size */}
               <Section>
-                <SectionTitle>Color Blind Modes</SectionTitle>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {(
-                    [
-                      ['none', 'None'],
-                      ['protanopia', 'Protanopia (Red-Blind)'],
-                      ['deuteranopia', 'Deuteranopia (Green-Blind)'],
-                      ['tritanopia', 'Tritanopia (Blue-Blind)'],
-                      ['achromatopsia', 'Achromatopsia (Total Color Blind)'],
-                    ] as [AccessibilityState['colorBlind'], string][]
-                  ).map(([v, label]) => (
-                    <OptionButton
-                      key={v}
-                      active={state.colorBlind === v}
-                      onClick={() => update({ colorBlind: v })}
-                      accentColor={resolvedAccentColor}
-                    >
-                      {label}
-                    </OptionButton>
-                  ))}
-                </div>
-              </Section>
-
-              {/* ── Cursor Size ── */}
-              <Section>
-                <SectionTitle>Cursor Size</SectionTitle>
+                <SectionTitle>Cursor size</SectionTitle>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {(['normal', 'large', 'xlarge'] as const).map((v) => (
                     <OptionButton
@@ -603,16 +609,17 @@ export function AccessibilityWidget({
                       active={state.cursorSize === v}
                       onClick={() => update({ cursorSize: v })}
                       accentColor={resolvedAccentColor}
+                      ariaLabel={`Cursor size: ${v}`}
                     >
-                      {v === 'normal' ? 'Normal' : v === 'large' ? 'Large' : 'Extra Large'}
+                      {v === 'normal' ? 'Normal' : v === 'large' ? 'Large' : 'Extra large'}
                     </OptionButton>
                   ))}
                 </div>
               </Section>
 
-              {/* ── Line Spacing ── */}
+              {/* Line Spacing */}
               <Section>
-                <SectionTitle>Line Spacing</SectionTitle>
+                <SectionTitle>Line spacing</SectionTitle>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {(['normal', 'increased', 'double'] as const).map((v) => (
                     <OptionButton
@@ -620,6 +627,7 @@ export function AccessibilityWidget({
                       active={state.lineHeight === v}
                       onClick={() => update({ lineHeight: v })}
                       accentColor={resolvedAccentColor}
+                      ariaLabel={`Line spacing: ${v}`}
                     >
                       {v === 'normal' ? 'Normal' : v === 'increased' ? 'Increased' : 'Double'}
                     </OptionButton>
@@ -627,9 +635,9 @@ export function AccessibilityWidget({
                 </div>
               </Section>
 
-              {/* ── Letter Spacing ── */}
+              {/* Letter Spacing */}
               <Section>
-                <SectionTitle>Letter Spacing</SectionTitle>
+                <SectionTitle>Letter spacing</SectionTitle>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {(['normal', 'increased', 'wide'] as const).map((v) => (
                     <OptionButton
@@ -637,6 +645,7 @@ export function AccessibilityWidget({
                       active={state.letterSpacing === v}
                       onClick={() => update({ letterSpacing: v })}
                       accentColor={resolvedAccentColor}
+                      ariaLabel={`Letter spacing: ${v}`}
                     >
                       {v === 'normal' ? 'Normal' : v === 'increased' ? 'Increased' : 'Wide'}
                     </OptionButton>
@@ -644,35 +653,35 @@ export function AccessibilityWidget({
                 </div>
               </Section>
 
-              {/* ── Additional Options ── */}
+              {/* Additional Options */}
               <Section>
-                <SectionTitle>Additional Options</SectionTitle>
+                <SectionTitle>Additional options</SectionTitle>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   <TogglePill
                     active={state.highlightLinks}
                     onClick={() => update({ highlightLinks: !state.highlightLinks })}
                     accentColor={resolvedAccentColor}
                   >
-                    Highlight Links
+                    Highlight links
                   </TogglePill>
                   <TogglePill
                     active={state.readableFont}
                     onClick={() => update({ readableFont: !state.readableFont })}
                     accentColor={resolvedAccentColor}
                   >
-                    Readable Font
+                    Readable font
                   </TogglePill>
                   <TogglePill
                     active={state.pauseAnimations}
                     onClick={() => update({ pauseAnimations: !state.pauseAnimations })}
                     accentColor={resolvedAccentColor}
                   >
-                    Pause Animations
+                    Pause animations
                   </TogglePill>
                 </div>
               </Section>
 
-              {/* Reset All Settings */}
+              {/* Reset */}
               <div style={{ padding: '16px 20px' }}>
                 <button
                   onClick={resetAll}
@@ -687,31 +696,43 @@ export function AccessibilityWidget({
                     fontWeight: 600,
                     cursor: 'pointer',
                     transition: 'all 0.15s',
+                    outlineOffset: 2,
                   }}
                 >
-                  Reset All Settings
+                  Reset all preferences
                 </button>
               </div>
 
-              {/* Branding + WCAG Badge */}
-              <div style={{ padding: '12px 20px 24px', textAlign: 'center' }}>
-                <p style={{ margin: '0 0 12px', fontSize: 11, color: '#9ca3af' }}>
-                  Accessibility App by Demand Signals
-                </p>
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  background: '#f0fdf4', border: '1px solid #bbf7d0',
-                  borderRadius: 8, padding: '8px 14px',
+              {/* Defensible footer — replaces the old "WCAG 2.1 AA Compliant"
+                  badge. The conformance claim, if any, lives on the
+                  /accessibility statement page where it can be qualified
+                  ("aspirational," "actively working toward," dated). */}
+              <div style={{
+                padding: '14px 20px 24px',
+                background: '#f9fafb',
+                borderTop: '1px solid #f3f4f6',
+              }}>
+                <p style={{
+                  margin: '0 0 10px',
+                  fontSize: 11,
+                  color: '#6b7280',
+                  lineHeight: 1.5,
                 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 6 9 17l-5-5" />
-                  </svg>
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#15803d' }}>WCAG 2.1 AA Compliant</div>
-                    <div style={{ fontSize: 10, color: '#4ade80', lineHeight: 1.3 }}>
-                      This site meets Web Content Accessibility Guidelines standards for accessible web content.
-                    </div>
-                  </div>
+                  These are personal display preferences. They do not certify the site&rsquo;s accessibility.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <a
+                    href={statementPath}
+                    style={{ fontSize: 11, color: resolvedAccentColor as string, textDecoration: 'underline' }}
+                  >
+                    Read our accessibility statement
+                  </a>
+                  <a
+                    href={computedReportEmail}
+                    style={{ fontSize: 11, color: resolvedAccentColor as string, textDecoration: 'underline' }}
+                  >
+                    Report an accessibility issue
+                  </a>
                 </div>
               </div>
             </motion.div>
@@ -735,4 +756,5 @@ const circleBtn: React.CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   color: '#374151',
+  outlineOffset: 2,
 }

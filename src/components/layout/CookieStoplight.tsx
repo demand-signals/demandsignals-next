@@ -1,6 +1,6 @@
 'use client'
 
-// dsig-stoplight-version: v1b
+// dsig-stoplight-version: v1c
 // DSIG Cookie Stoplight — Next.js / React drop-in
 // ─────────────────────────────────────────────────────────────────────────────
 // Source-of-truth: Y:\SKILLS\dsig-cookie-stoplight\components\CookieStoplight.tsx
