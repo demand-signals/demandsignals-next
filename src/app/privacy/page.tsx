@@ -45,7 +45,7 @@ export default function PrivacyPage() {
             Privacy Policy
           </h1>
           <p style={{ color: '#a0aec0', fontSize: '1rem' }}>
-            Last updated: April 7, 2026
+            Last updated: June 18, 2026
           </p>
         </div>
       </section>
@@ -71,8 +71,8 @@ export default function PrivacyPage() {
           <h3 style={h3}>1.2 Information Collected Automatically</h3>
           <ul style={ulStyle}>
             <li><strong style={bold}>Server logs:</strong> IP address, browser type, operating system, referring URL, pages visited, and timestamps. These are standard web server logs retained for security and operational purposes.</li>
-            <li><strong style={bold}>Analytics:</strong> We use Vercel Analytics, a privacy-first analytics service that collects aggregate pageview and visitor data without setting cookies or using personally identifiable information. No data is shared with third parties. See Section 3 for details.</li>
-            <li><strong style={bold}>Cookies:</strong> We use only essential cookies for site functionality (e.g., form submission state). We do not set analytics cookies, retargeting pixels, or cross-site tracking technologies.</li>
+            <li><strong style={bold}>Analytics:</strong> Depending on your cookie-stoplight choice (see Section 3), we may collect pageview events via PostHog and a first-party pageview beacon. We do not run advertising pixels or cross-site tracking technologies on this site.</li>
+            <li><strong style={bold}>Cookies:</strong> We store your cookie-stoplight preference under the key <code>dsig_cookie_consent</code> (essential / balanced / all) so we remember your choice. Additional cookies and recording features apply only on Yellow or Green &mdash; see Section 3.</li>
           </ul>
 
           <h3 style={h3}>1.3 Information We Do Not Collect</h3>
@@ -92,38 +92,41 @@ export default function PrivacyPage() {
             <li><strong style={bold}>Legal compliance:</strong> To comply with applicable laws, regulations, and legal processes.</li>
           </ul>
 
-          <h2 style={h2}>3. Analytics and Data Collection</h2>
+          <h2 style={h2}>3. Analytics, Cookie Tiers, and Your Choices</h2>
+
           <p>
-            We use <strong style={bold}>Vercel Analytics</strong> to understand aggregate traffic patterns on our website. Vercel Analytics is a privacy-first analytics service that:
-          </p>
-          <ul style={ulStyle}>
-            <li>Does <strong style={bold}>not</strong> set any cookies on your device</li>
-            <li>Does <strong style={bold}>not</strong> collect personally identifiable information</li>
-            <li>Does <strong style={bold}>not</strong> track you across websites</li>
-            <li>Does <strong style={bold}>not</strong> share data with third parties or advertising networks</li>
-            <li>Collects only aggregate pageview counts, referral sources, and geographic region data</li>
-          </ul>
-          <p>
-            Because Vercel Analytics does not use cookies or personal identifiers, no cookie consent banner is required. There is nothing to opt out of — your visit is counted anonymously and cannot be tied back to you as an individual.
-          </p>
-          <p>
-            For more information, visit <a href="https://vercel.com/docs/analytics/privacy-policy" style={link} target="_blank" rel="noopener noreferrer">Vercel Analytics Privacy Policy</a>.
+            We use a three-tier cookie preference widget (the &ldquo;stoplight&rdquo;) at the bottom-left of every page. Your choice controls what we collect. You can change your choice at any time by clicking the cookie icon. Until you choose, we treat your visit as <em>Essential only</em> &mdash; the most restrictive tier &mdash; and run no analytics at all.
           </p>
 
-          <h3 style={h3}>3.2 PostHog Product Analytics</h3>
-          <p>
-            We also use <strong style={bold}>PostHog</strong>, hosted on PostHog Cloud (US), to understand how visitors interact with our website. PostHog may collect:
-          </p>
+          <h3 style={h3}>3.1 What each tier does</h3>
           <ul style={ulStyle}>
-            <li>Anonymized session recordings (mouse movements, clicks, and scrolls)</li>
-            <li>Aggregated heatmap data showing where visitors click and scroll</li>
-            <li>Pageview events and navigation patterns</li>
+            <li>
+              <strong style={bold}>Red &mdash; Essential only:</strong> Site-function cookies only (authentication, session, security). No analytics. No session recording. No marketing. No first-party traffic beacon. We learn nothing about your visit beyond what is in standard web-server logs.
+            </li>
+            <li>
+              <strong style={bold}>Yellow &mdash; Balanced:</strong> Adds first-party pageview counts (our own server, no cookies) plus PostHog pageview events with UTM campaign attribution. PostHog is a third-party analytics platform hosted in the United States. At this tier, PostHog does <strong style={bold}>not</strong> record sessions, does <strong style={bold}>not</strong> capture clicks or form submissions, does <strong style={bold}>not</strong> build heatmaps, does <strong style={bold}>not</strong> record network timing, and does <strong style={bold}>not</strong> detect dead/rage clicks. The only signals it receives are which page you viewed and the campaign parameters in the URL.
+            </li>
+            <li>
+              <strong style={bold}>Green &mdash; All cookies:</strong> Everything in Yellow plus PostHog session replay (mouse movements, clicks, scrolls), heatmaps, autocapture (every click target and form-submit event), dead-click detection, request/response header recording in the replay timeline, and network timing data. Form inputs and any element marked with the <code>data-ph-mask</code> attribute are masked automatically so they are not visible in replays. This tier is also reserved for future third-party marketing pixels (e.g. social ad pixels); none are currently enabled.
+            </li>
           </ul>
+
+          <h3 style={h3}>3.2 PostHog details (Yellow and Green only)</h3>
           <p>
-            PostHog data is used solely to improve our website&apos;s usability and content. We do not use PostHog for advertising, cross-site tracking, or sharing data with third parties. Session recordings are anonymized — form inputs and sensitive text are masked automatically.
+            PostHog is hosted on PostHog Cloud (US region). We use PostHog only to improve our website&apos;s usability and content. We do not use PostHog for cross-site tracking, do not sell or share PostHog data with third parties, and do not use PostHog for advertising decisions. Replay recordings are stored by PostHog for the retention period set in our PostHog account and are accessible only to authorized DSIG staff.
           </p>
           <p>
-            For more information, visit <a href="https://posthog.com/privacy" style={link} target="_blank" rel="noopener noreferrer">PostHog Privacy Policy</a>.
+            For more information about PostHog&apos;s own practices, see the <a href="https://posthog.com/privacy" style={link} target="_blank" rel="noopener noreferrer">PostHog Privacy Policy</a>.
+          </p>
+
+          <h3 style={h3}>3.3 First-party pageview beacon</h3>
+          <p>
+            On Yellow and Green, we also send a lightweight beacon to our own server (<code>/api/analytics/collect</code>) on each navigation containing the page path, referring URL, screen dimensions, and UTM campaign parameters. This beacon is first-party, sets no cookies, is not shared with any third party, and is used to measure traffic volume and campaign attribution. On Red it does not fire at all.
+          </p>
+
+          <h3 style={h3}>3.4 California &mdash; CIPA disclosure</h3>
+          <p>
+            California Penal Code &sect;&sect; 631 and 638.51 require that visitors consent to interception or recording of online communications by third parties. Choosing <strong style={bold}>Yellow</strong> or <strong style={bold}>Green</strong> on the cookie stoplight constitutes your prior consent for PostHog (a third party) to receive the data described in &sect; 3.1 above. Choosing <strong style={bold}>Red</strong>, or leaving the choice unmade, withholds that consent and disables all third-party data flow.
           </p>
 
           <h2 style={h2}>4. AI Systems and Data Processing</h2>

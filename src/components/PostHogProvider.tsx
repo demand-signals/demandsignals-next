@@ -43,6 +43,35 @@ function consentAllowsAnalytics(tier: ConsentTier | null): boolean {
   return tier === 'balanced' || tier === 'all'
 }
 
+// Green-only PostHog features. Yellow opts into PostHog but DOES NOT get
+// session replay, heatmaps, autocapture, dead-click recording, or network
+// timing — only pageviews + UTM attribution + web vitals. This is what
+// makes Yellow's "privacy-preserving analytics" label honest under CIPA.
+function consentAllowsRichCapture(tier: ConsentTier | null): boolean {
+  return tier === 'all'
+}
+
+function applyRichCaptureForTier(tier: ConsentTier | null) {
+  // Runtime toggle so tier changes mid-session take effect without reload.
+  // Same set of features that get disabled in the init config when the
+  // visitor lands on Yellow first.
+  if (typeof window === 'undefined') return
+  const rich = consentAllowsRichCapture(tier)
+  if (rich) {
+    posthog.startSessionRecording?.()
+  } else {
+    posthog.stopSessionRecording?.()
+  }
+  posthog.set_config({
+    autocapture: rich,
+    capture_dead_clicks: rich,
+    enable_heatmaps: rich,
+    capture_performance: rich
+      ? { web_vitals: true, network_timing: true }
+      : { web_vitals: true, network_timing: false },
+  })
+}
+
 function readStoredConsent(): ConsentTier | null {
   if (typeof window === 'undefined') return null
   try {
@@ -79,27 +108,34 @@ if (typeof window !== 'undefined' && POSTHOG_KEY) {
     capture_pageleave: true,   // Tracks session duration + exit pages
 
     // --- Session Replay (5K free recordings/mo) ---
-    disable_session_recording: false,
+    // Initialized OFF. Only Green (all) consent turns it on via
+    // applyRichCaptureForTier() after init. Yellow (balanced) gets
+    // pageviews + autocapture-off; Red (essential) is opted out entirely.
+    disable_session_recording: true,
     session_recording: {
-      // Mask all text inputs by default for privacy (forms, passwords, etc.)
+      // Defensive: even if recording is enabled later, mask all inputs.
       maskAllInputs: true,
-      maskTextSelector: '[data-ph-mask]',  // Opt-in additional masking via data attribute
-      // Record network request/response headers in replay timeline
+      maskTextSelector: '[data-ph-mask]',
       recordHeaders: true,
-      recordBody: false,  // Don't capture request bodies (privacy)
+      recordBody: false,
     },
 
-    // --- Heatmaps (unlimited on free tier) ---
-    enable_heatmaps: true,
+    // --- Heatmaps (unlimited on free tier) — GREEN only ---
+    enable_heatmaps: false,
 
-    // --- Autocapture (clicks, inputs, form submits — counts toward 1M events/mo) ---
-    autocapture: true,
+    // --- Autocapture — GREEN only ---
+    // Yellow opts into PostHog with pageviews + UTMs only. Autocapture
+    // (every click target + form submit) is what plaintiff bar cites as
+    // "interception"; staying off until Green is the load-bearing
+    // CIPA hygiene move.
+    autocapture: false,
 
-    // --- Dead click detection (rage clicks, dead clicks in replays) ---
-    capture_dead_clicks: true,
+    // --- Dead click detection — GREEN only ---
+    capture_dead_clicks: false,
 
     // --- Performance / Web Vitals ---
-    capture_performance: { web_vitals: true, network_timing: true },
+    // web_vitals is fine pre-consent (no PII). network_timing is GREEN-only.
+    capture_performance: { web_vitals: true, network_timing: false },
 
     // --- Misc ---
     persistence: 'localStorage+cookie',  // Persist across sessions for accurate funnels
@@ -121,6 +157,11 @@ if (typeof window !== 'undefined' && POSTHOG_KEY) {
   const stored = readStoredConsent()
   if (consentAllowsAnalytics(stored)) {
     posthog.opt_in_capturing()
+    // Green-only feature set is layered on AFTER opt-in so the toggles
+    // land on a captured session. Yellow stays at the restrictive init
+    // defaults (no replay, no autocapture, no heatmaps, no dead clicks,
+    // no network timing).
+    applyRichCaptureForTier(stored)
   }
   // (If stored is null, 'essential', or unset, we stay opted out by
   // default — set on the init config above. The ConsentWatcher below
@@ -139,6 +180,7 @@ function ConsentWatcher() {
       const tier = detail?.tier ?? null
       if (consentAllowsAnalytics(tier)) {
         posthog.opt_in_capturing()
+        applyRichCaptureForTier(tier)
       } else {
         posthog.opt_out_capturing()
       }

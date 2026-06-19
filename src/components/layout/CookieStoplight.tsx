@@ -47,19 +47,19 @@ const CONFIG = {
       id: 'essential' as const,
       label: 'Essential only',
       color: '#dc2626',
-      description: 'Strictly necessary cookies only (auth, session, security). No analytics. No marketing.',
+      description: 'Site-function cookies only (auth, session, security). No analytics. No session recording. No marketing.',
     },
     {
       id: 'balanced' as const,
       label: 'Balanced',
       color: '#eab308',
-      description: 'Essential cookies + privacy-preserving analytics so we can improve the site. No marketing or ad personalization.',
+      description: 'Adds pageview counts via PostHog (third-party analytics). No session recording. No click or form recording. No heatmaps. No marketing.',
     },
     {
       id: 'all' as const,
       label: 'All cookies',
       color: '#16a34a',
-      description: 'Essential + analytics + marketing/personalization. Gives you the most tailored experience.',
+      description: 'Adds session recording, click capture, and heatmaps via PostHog. Reserved for future marketing pixels. Most tailored experience.',
     },
   ],
 }
@@ -139,6 +139,11 @@ export function CookieStoplight({ buttonColor }: CookieStoplightProps = {}) {
   // ConsentTier = consent has been given;
   // 'unset' = checked, no consent yet (show panel immediately).
   const [consent, setConsent] = useState<ConsentTier | 'unset' | null>(null)
+  // Which tier the visitor is currently hovering/focusing — drives the
+  // inline description text below the icons. Falls back to `consent` if
+  // already chosen, otherwise to balanced (yellow) so something is
+  // always visible.
+  const [hoveredTier, setHoveredTier] = useState<ConsentTier | null>(null)
 
   // Resolved button color. If the prop is provided, use it directly.
   // Otherwise hand off to CSS: var() with a fallback to the default
@@ -278,7 +283,7 @@ export function CookieStoplight({ buttonColor }: CookieStoplightProps = {}) {
                     key={tier.id}
                     onClick={() => choose(tier.id)}
                     aria-label={tier.label}
-                    title={tier.description}
+                    aria-describedby="cookie-stoplight-desc"
                     style={{
                       flex: 1,
                       background: 'none',
@@ -291,8 +296,16 @@ export function CookieStoplight({ buttonColor }: CookieStoplightProps = {}) {
                       alignItems: 'center',
                       gap: 6,
                     }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#f9fafb' }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = '#f9fafb'
+                      setHoveredTier(tier.id)
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+                      setHoveredTier(null)
+                    }}
+                    onFocus={() => setHoveredTier(tier.id)}
+                    onBlur={() => setHoveredTier(null)}
                   >
                     <motion.div
                       initial={{ scale: 0.6, opacity: 0 }}
@@ -322,12 +335,19 @@ export function CookieStoplight({ buttonColor }: CookieStoplightProps = {}) {
               })}
             </div>
 
-            {/* Footer link to privacy page. Per-tier descriptions are
-                NOT rendered separately — the buttons above carry
-                `title={tier.description}` (HTML tooltip on hover) and
-                `aria-label={tier.label}` (screen readers), so the
-                explanation is one hover away without doubling the
-                visual footprint. */}
+            {/* Tier descriptions rendered inline. CIPA defensibility:
+                consent must be informed at the moment of choice, and
+                `title=` tooltips don't display on touch devices — so
+                phone visitors never saw the disclosure before tapping.
+                Description list expands as the visitor hovers/focuses
+                a tier; the currently-selected (or hovered) tier's text
+                shows below. Falls back to the middle tier when nothing
+                is hovered so there's always something to read. */}
+            <CookieDescriptions
+              tiers={CONFIG.tiers}
+              activeTier={hoveredTier ?? (consent !== 'unset' && consent ? consent : 'balanced')}
+            />
+
             <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f3f4f6', textAlign: 'center' }}>
               <a
                 href="/privacy"
@@ -340,5 +360,42 @@ export function CookieStoplight({ buttonColor }: CookieStoplightProps = {}) {
         )}
       </AnimatePresence>
     </>
+  )
+}
+
+// ── Inline tier description (always visible) ───────────────────────────────
+// Renders the description for the currently-hovered/focused tier (or the
+// already-chosen tier on subsequent opens, or balanced as default). Touch
+// visitors get the text by tapping a tier circle once — the description
+// updates without committing the choice.
+function CookieDescriptions({
+  tiers,
+  activeTier,
+}: {
+  tiers: ReadonlyArray<{ id: ConsentTier; label: string; description: string; color: string }>
+  activeTier: ConsentTier
+}) {
+  const active = tiers.find((t) => t.id === activeTier) ?? tiers[1]
+  return (
+    <div
+      id="cookie-stoplight-desc"
+      role="status"
+      aria-live="polite"
+      style={{
+        marginTop: 4,
+        padding: '10px 12px',
+        background: '#f9fafb',
+        borderRadius: 8,
+        borderLeft: `3px solid ${active.color}`,
+        minHeight: 56,
+      }}
+    >
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+        {active.label}
+      </div>
+      <div style={{ fontSize: 11, color: '#6b7280', lineHeight: 1.45 }}>
+        {active.description}
+      </div>
+    </div>
   )
 }

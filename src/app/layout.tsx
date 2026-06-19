@@ -121,15 +121,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Footer />
           <ContactBot />
           <AccessibilityWidget />
-          {/* CookieStoplight + PostHog consent integration:
-              - red (essential)  → PostHog stays opted-out (zero capture)
-              - yellow (balanced) + green (all) → PostHog opts in
-              Gate lives in PostHogProvider.tsx; widget here is just the
-              UI. Reserved: green tier will additionally allow third-
-              party marketing scripts (social pixels, ad tracking) when
-              those are introduced. AnalyticsTracker below is first-
-              party + cookieless, exempt from consent under
-              "strictly necessary" — stays on for all visitors. */}
+          {/* CookieStoplight consent integration:
+              - red (essential)   → PostHog opted out (zero capture);
+                                    AnalyticsTracker beacon does NOT fire
+              - yellow (balanced) → PostHog opted in for pageviews + UTM
+                                    attribution + web vitals only (NO session
+                                    replay, NO heatmaps, NO autocapture, NO
+                                    dead-click recording, NO network timing);
+                                    AnalyticsTracker beacon fires
+              - green (all)       → Full PostHog (replay, heatmaps,
+                                    autocapture, dead-click, network timing);
+                                    AnalyticsTracker beacon fires; reserved
+                                    for future marketing scripts (social
+                                    pixels, ad tracking)
+              Gates live in PostHogProvider.tsx (PostHog tier-aware config)
+              and AnalyticsTracker.tsx (consent-gated beacon). The widget
+              here is just the UI. */}
           <CookieStoplight />
           <Suspense fallback={null}>
             <AnalyticsTracker />
