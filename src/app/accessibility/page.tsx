@@ -129,13 +129,39 @@ export default function AccessibilityPage() {
             This widget is a convenience layer for personal display preferences. <strong style={bold}>It does not certify, guarantee, or substitute for the site&apos;s underlying accessibility.</strong> Conformance with WCAG is a property of the site&apos;s structure, semantics, contrast, and keyboard handling &mdash; not something an overlay can provide. If you encounter a barrier the widget cannot resolve, please report it (see <em>Reporting an Accessibility Issue</em> below).
           </p>
           <p>
-            The widget honors the <code>prefers-reduced-motion</code> and <code>prefers-contrast: more</code> operating-system signals at first visit, so visitors who have already configured their OS for these needs do not need to discover or open the widget. Your stored preferences override the OS defaults if you set them explicitly.
+            The widget honors the <code>prefers-contrast: more</code> operating-system signal at first visit, so visitors who have already configured their OS for higher contrast do not need to discover or open the widget. Your stored preferences override the OS default if you set one explicitly. Motion preferences are handled by the site&rsquo;s own CSS via the <code>prefers-reduced-motion</code> media query rather than through a widget toggle, which would otherwise produce inconsistent results.
           </p>
+
+          <h3 style={h3}>What the widget does NOT do</h3>
+          <p>
+            To set expectations clearly, the display preferences widget is <strong style={bold}>not</strong>:
+          </p>
+          <ul style={ulStyle}>
+            <li>A screen reader replacement. If you use NVDA, JAWS, VoiceOver, TalkBack, or any other assistive technology, that remains the primary tool — the widget operates on top of, not in place of, your AT.</li>
+            <li>A fix for missing alt text, keyboard traps, broken focus order, or other underlying site issues. Those require remediation in the site&rsquo;s code, which is documented under <em>Known Limitations</em> below.</li>
+            <li>A WCAG conformance certification. No widget can certify the underlying page; conformance is a property of the site&rsquo;s structure, semantics, and contrast, not of any overlay.</li>
+            <li>A guarantee of compatibility with every assistive technology configuration. We test with NVDA on Windows and VoiceOver on macOS/iOS; other AT may produce different results.</li>
+            <li>A substitute for honest accessibility work. The widget exists alongside our ongoing remediation, not as a way to delay or avoid it.</li>
+          </ul>
 
           <h2 style={h2}>Known Limitations</h2>
           <p>
-            Despite our efforts, the following areas have known accessibility gaps that we are actively working to resolve:
+            The following limitations are documented based on our most recent automated and manual audits (last reviewed: June 18, 2026). We list them publicly because acknowledged limitations are part of &ldquo;actively working toward&rdquo; conformance, not despite it. If you encounter a barrier not listed here, please report it (see <em>Reporting an Accessibility Issue</em> below).
           </p>
+
+          <div style={issueCard}>
+            <p style={{ margin: '0 0 6px', color: 'var(--dark)', fontWeight: 700 }}>Color contrast (WCAG SC 1.4.3, 1.4.11)</p>
+            <p style={{ margin: 0 }}>
+              An automated scan against representative pages identified color-contrast failures on ~130 nodes across the site. The pattern is concentrated in the primary header CTA button, &ldquo;Book a Call&rdquo; buttons, and decorative eyebrow text where translucent or low-contrast values do not meet the 4.5:1 (body) or 3:1 (large text / UI) ratios. <strong style={bold}>Planned fix:</strong> systematic remediation pass replacing translucent text colors with values meeting AA ratios; current sprint.
+            </p>
+          </div>
+
+          <div style={issueCard}>
+            <p style={{ margin: '0 0 6px', color: 'var(--dark)', fontWeight: 700 }}>Form control accessible name (WCAG SC 4.1.2)</p>
+            <p style={{ margin: 0 }}>
+              At least one <code style={code}>&lt;select&gt;</code> element on the contact form does not yet have a programmatic accessible name (associated <code style={code}>&lt;label&gt;</code> or <code style={code}>aria-label</code>). Affected control still functions with screen readers but the announcement is generic. <strong style={bold}>Planned fix:</strong> add explicit labels to all form controls; same sprint as the contrast pass.
+            </p>
+          </div>
 
           <div style={issueCard}>
             <p style={{ margin: '0 0 6px', color: 'var(--dark)', fontWeight: 700 }}>Animated Canvas Elements</p>

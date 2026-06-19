@@ -1,6 +1,6 @@
 'use client'
 
-// dsig-stoplight-version: v1c
+// dsig-stoplight-version: v1d
 // DSIG Accessibility Widget — Next.js / React drop-in
 // ─────────────────────────────────────────────────────────────────────────────
 // Source-of-truth: Y:\SKILLS\dsig-cookie-stoplight\components\AccessibilityWidget.tsx
@@ -55,7 +55,6 @@ interface AccessibilityState {
   letterSpacing: 'normal' | 'increased' | 'wide'
   highlightLinks: boolean
   readableFont: boolean
-  pauseAnimations: boolean
 }
 
 const DEFAULT_STATE: AccessibilityState = {
@@ -66,7 +65,6 @@ const DEFAULT_STATE: AccessibilityState = {
   letterSpacing: 'normal',
   highlightLinks: false,
   readableFont: false,
-  pauseAnimations: false,
 }
 
 const A11Y_STYLE_ID = 'a11y-widget-styles'
@@ -131,9 +129,13 @@ function applyA11yStyles(state: AccessibilityState) {
   if (state.readableFont) {
     rules.push(`body, body * { font-family: Arial, Helvetica, sans-serif !important; }`)
   }
-  if (state.pauseAnimations) {
-    rules.push(`*, *::before, *::after { animation-play-state: paused !important; transition: none !important; }`)
-  }
+  // NOTE (v1d): pauseAnimations toggle removed. The boot-time
+  // prefers-reduced-motion detection still applies — users who have
+  // set their OS preference get reduced motion via the site's own
+  // CSS @media (prefers-reduced-motion) rules, not via a global
+  // animation-play-state override. The previous * { animation-play-state }
+  // implementation was a sledgehammer that broke well-designed animations
+  // and was redundant with OS-level signaling.
 
   if (rules.length === 0) return
 
@@ -143,16 +145,19 @@ function applyA11yStyles(state: AccessibilityState) {
   document.head.appendChild(style)
 }
 
-// ── OS-level preference detection (CIPA/CCPA-analog for accessibility) ──
-// Honor prefers-reduced-motion and prefers-contrast: more at boot. Users
-// who have asserted these OS preferences should not have to discover and
-// click the widget — the site should already match their needs.
+// ── OS-level preference detection ──
+// Honor prefers-contrast: more at boot. Users who have asserted this OS
+// preference should not have to discover and click the widget — the site
+// should already match their needs.
+//
+// prefers-reduced-motion is NOT mirrored to a widget toggle (v1d). The
+// site's own CSS @media (prefers-reduced-motion) rules are the correct
+// place to handle this — overriding every animation via a JS
+// !important sledgehammer breaks well-designed motion and produces
+// worse outcomes than a proper CSS-level response.
 function detectOSPreferences(): Partial<AccessibilityState> {
   if (typeof window === 'undefined' || !window.matchMedia) return {}
   const overrides: Partial<AccessibilityState> = {}
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    overrides.pauseAnimations = true
-  }
   if (window.matchMedia('(prefers-contrast: more)').matches) {
     overrides.contrast = 'high'
   }
@@ -414,7 +419,6 @@ export function AccessibilityWidget({
           'letterSpacing',
           'highlightLinks',
           'readableFont',
-          'pauseAnimations',
         ]
         if (styleKeys.some((k) => k in changes)) applyA11yStyles(next)
 
@@ -670,13 +674,6 @@ export function AccessibilityWidget({
                     accentColor={resolvedAccentColor}
                   >
                     Readable font
-                  </TogglePill>
-                  <TogglePill
-                    active={state.pauseAnimations}
-                    onClick={() => update({ pauseAnimations: !state.pauseAnimations })}
-                    accentColor={resolvedAccentColor}
-                  >
-                    Pause animations
                   </TogglePill>
                 </div>
               </Section>

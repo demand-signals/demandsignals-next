@@ -1,6 +1,6 @@
 'use client'
 
-// dsig-stoplight-version: v1c
+// dsig-stoplight-version: v1d
 // "Your Privacy Choices" footer link — CCPA/CPRA-required named opt-out
 // link. Renders the official blue toggle icon + the statutorily-approved
 // short label "Your Privacy Choices". Clicking it fires a window event
