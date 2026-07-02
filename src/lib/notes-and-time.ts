@@ -100,6 +100,7 @@ export interface NoteAndTimeResult {
 }
 
 export type NoteAndTimeError =
+  | { code: 'body_client_mismatch'; message: string }
   | { code: 'project_not_found'; message: string }
   | { code: 'client_not_found'; message: string }
   | { code: 'no_active_project'; message: string }
@@ -186,6 +187,55 @@ export async function createNoteAndTimeEntry(
     return {
       ok: false,
       error: { code: 'project_not_found', message: 'Project not found' },
+    }
+  }
+
+  // Body/prospect coherence check (locked 2026-07-01 after DOCK
+  // project_notes.4aae44f6 forensic: a DOCK handoff POSTed with a
+  // DOCK-appropriate title but a body that was verbatim leftover from a
+  // 2026-06-15 SMMA session, because the /handoff slash-command spec used a
+  // shared /tmp/handoff-body.txt buffer with no session-scoping or rotation).
+  // The /handoff spec now uses a session-scoped path plus a client-side
+  // brand-token abort gate; this server check is the second line of defense
+  // that catches any client bypassing those.
+  //
+  // Gated on `source='handoff'` — manual/import notes are admin-authored and
+  // may legitimately quote other clients. Only strong brand tokens are
+  // checked so a passing mention deep in the body ("unlike Southside MMA")
+  // doesn't false-positive; only the first 500 chars (session-focus header)
+  // are scanned.
+  if (input.source === 'handoff') {
+    const { data: prospectRow } = await supabaseAdmin
+      .from('prospects')
+      .select('client_code, business_name')
+      .eq('id', project.prospect_id)
+      .maybeSingle()
+    const clientCode = (prospectRow?.client_code || '').toUpperCase()
+    const bodyHead = (input.body || '').toLowerCase().slice(0, 500)
+    const BRAND_TOKENS: Array<{ code: string; pattern: RegExp }> = [
+      { code: 'SSMM', pattern: /(southside mma|smma\b)/ },
+      { code: 'SMMA', pattern: /(southside mma|smma\b)/ },
+      { code: 'DOCK', pattern: /(dockside|dock fuel|weekly fuel alert)/ },
+      { code: 'HANG', pattern: /(hangtown|placerville)/ },
+      { code: 'FRN9', pattern: /(front 9|front9|back9)/ },
+      { code: 'GRNP', pattern: /(greenroom partners|jon hill)/ },
+      { code: 'HEAD', pattern: /(headline talent)/ },
+    ]
+    for (const t of BRAND_TOKENS) {
+      if (t.pattern.test(bodyHead) && clientCode && clientCode !== t.code) {
+        // SSMM ⇔ SMMA are the same client under two code eras — never a mismatch.
+        if (
+          (clientCode === 'SSMM' && t.code === 'SMMA') ||
+          (clientCode === 'SMMA' && t.code === 'SSMM')
+        ) continue
+        return {
+          ok: false,
+          error: {
+            code: 'body_client_mismatch',
+            message: `Body contains ${t.code} brand tokens in the first 500 characters, but the resolved project belongs to ${clientCode}. This is almost certainly a stale-body leak from a prior session's /tmp/handoff-body file. Refusing the write. Rebuild the body from the current session's CLIENT UPDATE artifact and retry.`,
+          },
+        }
+      }
     }
   }
 

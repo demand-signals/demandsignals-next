@@ -74,12 +74,18 @@ export async function POST(request: NextRequest) {
   })
 
   if (!outcome.ok) {
-    const status =
+    let status: number
+    if (
       outcome.error.code === 'project_not_found' ||
       outcome.error.code === 'client_not_found' ||
       outcome.error.code === 'no_active_project'
-        ? 404
-        : 500
+    ) {
+      status = 404
+    } else if (outcome.error.code === 'body_client_mismatch') {
+      status = 400
+    } else {
+      status = 500
+    }
     return NextResponse.json(
       { error: outcome.error.message, code: outcome.error.code },
       { status },
