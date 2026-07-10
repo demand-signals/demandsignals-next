@@ -143,7 +143,7 @@ export async function GET(
 
   const { data: timeEntries } = await supabaseAdmin
     .from('project_time_entries')
-    .select('id, phase_id, hours, hourly_rate_cents, description')
+    .select('id, phase_id, hours, hourly_rate_cents, description, llm_billable_cents')
     .eq('project_id', id)
     .is('covered_by_invoice_id', null)
 
@@ -201,6 +201,42 @@ export async function GET(
         cadence: 'one_time',
       })
       timeEntryIds.push(...bucket.entryIds)
+    }
+  }
+
+  // ── LLM token-billing seed (2026-07-08) ───────────────────────────
+  // LLM/Claude usage bills on TOKENS, not hours. Each entry carries a
+  // pre-computed, post-margin client-billable amount in
+  // llm_billable_cents (from the /handoff pipeline). These do NOT scale
+  // with hours × rate — they are a flat dollar amount per entry — so
+  // they collapse into a single "LLM usage" line, summed across all
+  // uncovered entries. Cost + rates never touch this surface; only the
+  // billable total is shown.
+  let llmTotalCents = 0
+  const llmEntryIds: string[] = []
+  if (timeEntries && timeEntries.length > 0) {
+    for (const e of timeEntries) {
+      const cents = Number(e.llm_billable_cents) || 0
+      if (cents > 0) {
+        llmTotalCents += cents
+        // An entry can contribute BOTH an hours line (via its bucket) and
+        // the LLM line. Dedupe the id so covered_by_invoice_id is set once.
+        if (!timeEntryIds.includes(e.id) && !llmEntryIds.includes(e.id)) {
+          llmEntryIds.push(e.id)
+        }
+      }
+    }
+  }
+  if (llmTotalCents > 0) {
+    timeLines.push({
+      description: 'LLM usage (AI compute — token-based)',
+      quantity: 1,
+      unit_price_cents: llmTotalCents,
+      cadence: 'one_time',
+    })
+    // Merge llm-only entry ids into the covered set (dedup preserved).
+    for (const eid of llmEntryIds) {
+      if (!timeEntryIds.includes(eid)) timeEntryIds.push(eid)
     }
   }
 

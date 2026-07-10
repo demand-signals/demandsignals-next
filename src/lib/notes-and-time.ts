@@ -41,6 +41,20 @@ export const NoteAndTimeInputSchema = z
     session_ended_at: z.string().datetime({ offset: true }).optional().nullable(),
     hunter_minutes: z.number().int().min(0).max(60 * 24 * 7).optional(),
     claude_minutes: z.number().int().min(0).max(60 * 24 * 7).optional(),
+    // ── Token attribution (migration 053; wired here 2026-07-08) ──
+    claude_input_tokens: z.number().int().min(0).optional().nullable(),
+    claude_output_tokens: z.number().int().min(0).optional().nullable(),
+    claude_cache_read_tokens: z.number().int().min(0).optional().nullable(),
+    claude_cache_create_tokens: z.number().int().min(0).optional().nullable(),
+    model: z.string().max(64).optional().nullable(),
+    // ── LLM token-based billing (migration 055, 2026-07-08) ──
+    // Client-billable LLM amount, post-margin. Sent in DOLLARS by the
+    // handoff; stored as cents. Cost + rates never cross this boundary.
+    llm_billable_usd: z.number().min(0).optional().nullable(),
+    // Per-model usage + billable breakdown (usage tokens + billable USD,
+    // NO cost/rates). Stored verbatim as jsonb for display + audit.
+    llm_billing_by_model: z.record(z.string(), z.unknown()).optional().nullable(),
+    billing_model: z.enum(['token', 'time']).optional().nullable(),
   })
   .refine((d) => d.project_id || d.client_code, {
     message: 'Either project_id or client_code is required',
@@ -93,6 +107,8 @@ export interface NoteAndTimeResult {
     hours: number | null
     hunter_minutes: number
     claude_minutes: number
+    llm_billable_cents: number | null
+    billing_model: string | null
     logged_at: string
     logged_by: string | null
   } | null
@@ -316,8 +332,26 @@ export async function createNoteAndTimeEntry(
       session_ended_at: input.session_ended_at ?? null,
       description: input.title ?? null,
       source: input.source === 'import' ? 'manual' : input.source,
+      // Token attribution (migration 053).
+      claude_input_tokens: input.claude_input_tokens ?? null,
+      claude_output_tokens: input.claude_output_tokens ?? null,
+      claude_cache_read_tokens: input.claude_cache_read_tokens ?? null,
+      claude_cache_create_tokens: input.claude_cache_create_tokens ?? null,
+      model: input.model ?? null,
+      // LLM token-based billing (migration 055). Dollars → cents. We store
+      // the post-margin billable ONLY; DSIG cost/rates never reach the DB.
+      llm_billable_cents:
+        input.llm_billable_usd != null
+          ? Math.round(input.llm_billable_usd * 100)
+          : null,
+      llm_billing_by_model: input.llm_billing_by_model ?? null,
+      billing_model:
+        input.billing_model ??
+        (input.llm_billable_usd != null ? 'token' : null),
     })
-    .select('id, hours, hunter_minutes, claude_minutes, logged_at, logged_by')
+    .select(
+      'id, hours, hunter_minutes, claude_minutes, llm_billable_cents, billing_model, logged_at, logged_by',
+    )
     .single()
 
   if (teErr || !timeEntry) {

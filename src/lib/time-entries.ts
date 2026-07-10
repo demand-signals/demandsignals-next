@@ -52,6 +52,11 @@ export interface TimeEntry {
   session_ended_at: string | null
   source: 'handoff' | 'manual' | null
   project_note_id: string | null
+  // Migration 055: LLM token-based billing. Client-billable amount only
+  // (post-margin); DSIG cost + rates never reach this surface.
+  llm_billable_cents: number | null
+  llm_billing_by_model: Record<string, unknown> | null
+  billing_model: 'token' | 'time' | null
 }
 
 export interface TimeRollup {

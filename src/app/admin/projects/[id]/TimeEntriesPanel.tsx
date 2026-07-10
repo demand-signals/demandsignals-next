@@ -52,6 +52,15 @@ interface TimeEntry {
   claude_minutes: number | null
   source: string | null
   project_note_id: string | null
+  // LLM token-based billing (migration 055). Client-billable amount only
+  // (post-margin); DSIG cost + rates never reach this surface.
+  llm_billable_cents: number | null
+  billing_model: string | null
+}
+
+function fmtCents(cents: number | null | undefined): string {
+  if (!cents || cents <= 0) return '$0.00'
+  return '$' + (cents / 100).toFixed(2)
 }
 
 function fmtMinutes(min: number | null | undefined): string {
@@ -463,11 +472,22 @@ export function TimeEntriesPanel({
                     </div>
                   ) : (
                     <>
-                      {((e.hunter_minutes ?? 0) > 0 || (e.claude_minutes ?? 0) > 0) && (
-                        <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
+                      {((e.hunter_minutes ?? 0) > 0 || (e.claude_minutes ?? 0) > 0 || (e.llm_billable_cents ?? 0) > 0) && (
+                        <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
                           <span>Hunter <strong className="text-slate-700">{fmtMinutes(e.hunter_minutes)}</strong></span>
                           <span>·</span>
                           <span>Claude <strong className="text-slate-700">{fmtMinutes(e.claude_minutes)}</strong></span>
+                          {(e.llm_billable_cents ?? 0) > 0 && (
+                            <>
+                              <span>·</span>
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 font-medium"
+                                title="LLM usage billed on tokens (post-margin). AI compute line on the invoice."
+                              >
+                                LLM {fmtCents(e.llm_billable_cents)}
+                              </span>
+                            </>
+                          )}
                         </div>
                       )}
                       {e.description && (
