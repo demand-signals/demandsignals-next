@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Loader2, Clock, Plus, Trash2, X, Clipboard, Pencil, Check } from 'lucide-react'
+import { Loader2, Clock, Plus, Trash2, X, Clipboard, Pencil, Check, Hexagon } from 'lucide-react'
 import type { ProjectPhase } from '@/lib/invoice-types'
 
 type TimeEntryCategory =
@@ -56,6 +56,30 @@ interface TimeEntry {
   // (post-margin); DSIG cost + rates never reach this surface.
   llm_billable_cents: number | null
   billing_model: string | null
+  // Per-model token breakdown (jsonb). Shape from compute-llm-billing.cjs:
+  //   { "<model>": { display, usage:{input,output,cache_read,cache_create,total},
+  //                            billable:{input,output,cache_read,cache_create,total} } }
+  // usage + billable ONLY — never cost, rates, or margin. Rendered by the
+  // Token Entries section below.
+  llm_billing_by_model: Record<string, LlmModelUsage> | null
+}
+
+interface LlmModelUsage {
+  display?: string
+  usage?: {
+    input?: number
+    output?: number
+    cache_read?: number
+    cache_create?: number
+    total?: number
+  }
+  billable?: {
+    input?: number
+    output?: number
+    cache_read?: number
+    cache_create?: number
+    total?: number
+  }
 }
 
 function fmtCents(cents: number | null | undefined): string {
@@ -70,6 +94,35 @@ function fmtMinutes(min: number | null | undefined): string {
   const h = Math.floor(m / 60)
   const rem = m % 60
   return rem === 0 ? `${h}h` : `${h}h ${rem}m`
+}
+
+// Compact token count: 498 → "498", 213742 → "213.7K", 162303221 → "162.3M"
+function fmtTokens(n: number | null | undefined): string {
+  if (!n || n <= 0) return '0'
+  if (n < 1000) return String(n)
+  if (n < 1_000_000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
+  if (n < 1_000_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'
+  return (n / 1_000_000_000).toFixed(2).replace(/\.00$/, '') + 'B'
+}
+
+// Full token count with thousands separators for the tooltip/detail line.
+function fmtTokensFull(n: number | null | undefined): string {
+  if (!n || n <= 0) return '0'
+  return n.toLocaleString('en-US')
+}
+
+// A token entry is any time entry that carries a per-model breakdown.
+function hasTokenData(e: TimeEntry): boolean {
+  return !!e.llm_billing_by_model && Object.keys(e.llm_billing_by_model).length > 0
+}
+
+// Sum total tokens across all models in one entry.
+function entryTokenTotal(e: TimeEntry): number {
+  if (!e.llm_billing_by_model) return 0
+  return Object.values(e.llm_billing_by_model).reduce(
+    (sum, m) => sum + (m.usage?.total ?? 0),
+    0,
+  )
 }
 
 function entryHours(e: TimeEntry): number {
@@ -520,6 +573,114 @@ export function TimeEntriesPanel({
           })}
         </ul>
       )}
+
+      {/* ── TOKEN ENTRIES ──────────────────────────────────────────────
+          Parallel to Time Entries. One row per handoff that carried a
+          per-model token breakdown (llm_billing_by_model jsonb). Shows
+          usage (tokens) + billable (USD, post-margin) ONLY — never cost,
+          rates, or margin. Data already flows via listProjectTimeEntries
+          select('*'); this is a display-only surface. */}
+      {data && (() => {
+        const tokenEntries = data.entries.filter(hasTokenData)
+        if (tokenEntries.length === 0) return null
+        const totalTokens = tokenEntries.reduce((s, e) => s + entryTokenTotal(e), 0)
+        const totalBillableCents = tokenEntries.reduce(
+          (s, e) => s + (e.llm_billable_cents ?? 0),
+          0,
+        )
+        return (
+          <div className="mt-8 pt-6 border-t border-slate-200">
+            <div className="flex items-center gap-2 mb-3">
+              <Hexagon className="w-4 h-4 text-violet-500" />
+              <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
+                Token Entries
+              </h3>
+              <span className="text-xs text-slate-500">
+                · <span className="font-semibold text-slate-700 tabular-nums">{fmtTokens(totalTokens)}</span> tokens
+                {' '}(<span className="font-semibold text-violet-700 tabular-nums">{fmtCents(totalBillableCents)}</span> billable)
+              </span>
+            </div>
+
+            <ul className="space-y-3">
+              {tokenEntries.map((e) => (
+                <li
+                  key={`tok-${e.id}`}
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-3"
+                >
+                  {/* Entry header: date · source · total · billable */}
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <span className="tabular-nums text-slate-600">
+                        {new Date(e.logged_at).toLocaleDateString('en-US')}
+                      </span>
+                      {e.source && (
+                        <span className="px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 font-medium">
+                          {e.source}
+                        </span>
+                      )}
+                      {e.logged_by && <span className="text-slate-400">{e.logged_by}</span>}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="tabular-nums text-slate-600">
+                        {fmtTokensFull(entryTokenTotal(e))} tokens
+                      </span>
+                      <span className="text-slate-300">·</span>
+                      <span className="tabular-nums font-semibold text-violet-700">
+                        {fmtCents(e.llm_billable_cents)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Per-model, per-type breakdown */}
+                  <div className="mt-2 space-y-2">
+                    {Object.entries(e.llm_billing_by_model ?? {}).map(([model, m]) => {
+                      const u = m.usage ?? {}
+                      const b = m.billable ?? {}
+                      const rows: { label: string; tokens?: number; usd?: number }[] = [
+                        { label: 'Input',       tokens: u.input,        usd: b.input },
+                        { label: 'Output',      tokens: u.output,       usd: b.output },
+                        { label: 'Cache Read',  tokens: u.cache_read,   usd: b.cache_read },
+                        { label: 'Cache Write', tokens: u.cache_create, usd: b.cache_create },
+                      ]
+                      return (
+                        <div key={model} className="rounded bg-slate-50 px-3 py-2">
+                          <div className="flex items-center justify-between text-xs font-medium text-slate-700 mb-1">
+                            <span>{m.display ?? model}</span>
+                            <span className="tabular-nums text-violet-700">{fmtCents(Math.round((b.total ?? 0) * 100))}</span>
+                          </div>
+                          <table className="w-full text-[11px] text-slate-500">
+                            <tbody>
+                              {rows.map((r) => (
+                                <tr key={r.label}>
+                                  <td className="py-0.5 pr-2 text-slate-500">{r.label}</td>
+                                  <td className="py-0.5 pr-2 text-right tabular-nums text-slate-600">
+                                    {fmtTokensFull(r.tokens)}
+                                  </td>
+                                  <td className="py-0.5 text-right tabular-nums text-slate-500">
+                                    ${(r.usd ?? 0).toFixed(2)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {e.description && (
+                    <div className="text-xs text-slate-600 mt-2">{e.description}</div>
+                  )}
+                </li>
+              ))}
+            </ul>
+
+            <p className="text-[11px] text-slate-400 mt-3">
+              LLM usage billed on tokens (per model, per type), post-margin. AI-compute line on the invoice.
+            </p>
+          </div>
+        )
+      })()}
     </div>
   )
 }
