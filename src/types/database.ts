@@ -28,6 +28,11 @@ export type Prospect = {
   tags: string[]
   notes: string | null
   channels: Record<string, any>
+  // Client lifecycle + document numbering (migrations 019a, client conversion).
+  // client_code: 4 uppercase letters, unique when set; drives INV/SOW/RCT numbers.
+  client_code: string | null
+  is_client: boolean
+  became_client_at: string | null
   created_at: string
   updated_at: string
   last_contacted_at: string | null
