@@ -633,8 +633,17 @@ export async function issueInvoice(
     return { success: false, error: 'Invoice has no line items' }
   }
 
+  // Post-issue status must be baked into the render input: the invoice row
+  // above is still status='draft' (DB flip happens after the render), and the
+  // PDF's payment block keys off status. Rendering from the stale 'draft'
+  // value would emit the "PAYMENT — DRAFT PREVIEW" placeholder into the PDF we
+  // upload + dispatch for an invoice that is actually being sent.
+  const isZero = invoice.total_due_cents === 0
+  const sentStatus = isZero ? 'paid' : 'sent'
+
   const renderInput: InvoiceWithLineItems = {
     ...invoice,
+    status: sentStatus,
     line_items: lineItems,
     bill_to: {
       business_name: invoice.prospect?.business_name ?? 'Client',
@@ -675,10 +684,9 @@ export async function issueInvoice(
     return { success: false, error: `R2 upload failed: ${e instanceof Error ? e.message : e}` }
   }
 
-  const isZero = invoice.total_due_cents === 0
   const now = new Date().toISOString()
   const updates: Record<string, unknown> = {
-    status: isZero ? 'paid' : 'sent',
+    status: sentStatus,
     sent_at: now,
     sent_via_channel: 'manual',
     sent_via_email_to: invoice.prospect?.owner_email ?? null,
@@ -746,7 +754,7 @@ export async function issueInvoice(
 
   return {
     success: true,
-    status: isZero ? 'paid' : 'sent',
+    status: sentStatus,
     is_zero: isZero,
     pdf_storage_path: pdfKey,
   }

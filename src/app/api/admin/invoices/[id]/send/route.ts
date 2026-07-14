@@ -55,8 +55,19 @@ export async function POST(
     return NextResponse.json({ error: 'Invoice has no line items' }, { status: 400 })
   }
 
+  // Compute the post-send status up front so the PDF we render below carries
+  // it. The invoice row fetched above still has status='draft' (the DB flip
+  // happens after the render), and the PDF's payment block keys off status —
+  // rendering from the stale 'draft' value bakes the "PAYMENT — DRAFT PREVIEW,
+  // link appears once sent" placeholder into the very PDF we email out. Since
+  // the auto-send dispatch reuses these exact bytes (skipRegen), the customer
+  // would receive a draft-looking PDF for an invoice that is, in fact, sent.
+  const isZero = invoice.total_due_cents === 0
+  const sentStatus = isZero ? 'paid' : 'sent'
+
   const renderInput: InvoiceWithLineItems = {
     ...invoice,
+    status: sentStatus,
     line_items: lineItems,
     bill_to: {
       business_name: invoice.prospect?.business_name ?? 'Client',
@@ -104,10 +115,9 @@ export async function POST(
     )
   }
 
-  const isZero = invoice.total_due_cents === 0
   const now = new Date().toISOString()
   const updates: Record<string, unknown> = {
-    status: isZero ? 'paid' : 'sent',
+    status: sentStatus,
     sent_at: now,
     sent_via_channel: 'manual',
     sent_via_email_to: invoice.prospect?.owner_email ?? null,
@@ -194,7 +204,7 @@ export async function POST(
     pay_url: isZero
       ? null
       : `https://demandsignals.co/invoice/${invoice.invoice_number}/${invoice.public_uuid}#pay`,
-    status: isZero ? 'paid' : 'sent',
+    status: sentStatus,
     auto_email: autoEmailResult,
     auto_sms: autoSmsResult,
   })
