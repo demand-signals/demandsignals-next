@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { X, Save, Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -49,6 +49,7 @@ export function ProspectEditModal({ prospect, onClose }: ProspectEditModalProps)
   // ── Form state ──
   const [form, setForm] = useState({
     business_name: prospect.business_name,
+    client_code: prospect.client_code || '',
     industry: prospect.industry || '',
     address: prospect.address || '',
     city: prospect.city || '',
@@ -100,6 +101,17 @@ export function ProspectEditModal({ prospect, onClose }: ProspectEditModalProps)
       try { researchData = JSON.parse(researchJson) } catch { throw new Error('Invalid JSON in Research Data') }
       try { scoreFactors = JSON.parse(scoreJson) } catch { throw new Error('Invalid JSON in Score Factors') }
 
+      // Client code — normalize to uppercase; blank clears it (null). We save
+      // it via the /[id] endpoint below (NOT this collection PATCH) because
+      // that route enforces the 4-letter format AND does a collision check
+      // against the unique index, returning a friendly 409 instead of a raw
+      // Postgres 500. Validate the shape here for an instant client-side error.
+      const codeRaw = form.client_code.trim().toUpperCase()
+      if (codeRaw && !/^[A-Z]{4}$/.test(codeRaw)) {
+        throw new Error('Client code must be exactly 4 letters (A–Z).')
+      }
+      const codeChanged = codeRaw !== (prospect.client_code || '')
+
       // Build prospect update
       const updates: Record<string, any> = {
         id: prospect.id,
@@ -146,6 +158,21 @@ export function ProspectEditModal({ prospect, onClose }: ProspectEditModalProps)
         throw new Error(err.error || 'Failed to save prospect')
       }
 
+      // Save client_code via the /[id] endpoint — it validates the 4-letter
+      // format and collision-checks against the unique index, so a duplicate
+      // returns a clear 409 message instead of a raw DB error.
+      if (codeChanged) {
+        const codeRes = await fetch(`/api/admin/prospects/${prospect.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ client_code: codeRaw || null }),
+        })
+        if (!codeRes.ok) {
+          const err = await codeRes.json().catch(() => ({}))
+          throw new Error(err.error || 'Failed to save client code')
+        }
+      }
+
       // Save demos — create, update, delete
       for (const demo of demos) {
         if (demo._deleted && !demo._new) {
@@ -178,6 +205,69 @@ export function ProspectEditModal({ prospect, onClose }: ProspectEditModalProps)
   })
 
   const set = (key: keyof typeof form, value: string) => setForm(f => ({ ...f, [key]: value }))
+
+  // ── Client-code live availability check ──
+  // Debounced lookup against the availability endpoint, mirroring the editor
+  // on /admin/prospects/[id]. 'idle' when blank/unchanged, 'invalid' for a bad
+  // shape, otherwise 'checking' → 'available' | { taken }.
+  type CodeStatus = 'idle' | 'invalid' | 'checking' | 'available' | { taken: string }
+  const [codeStatus, setCodeStatus] = useState<CodeStatus>('idle')
+  const codeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  /* eslint-disable react-hooks/set-state-in-effect --
+     Synchronous status resets (idle/invalid) are intentional here: they mirror
+     the shipped client-code editor on /admin/prospects/[id] and are cheap flags,
+     not cascading data updates. The async availability result is set from the
+     debounced callback, which the rule permits. */
+  useEffect(() => {
+    if (codeDebounceRef.current) clearTimeout(codeDebounceRef.current)
+    const code = form.client_code.trim().toUpperCase()
+    if (!code || code === (prospect.client_code || '').toUpperCase()) {
+      setCodeStatus('idle')
+      return
+    }
+    if (!/^[A-Z]{4}$/.test(code)) {
+      setCodeStatus('invalid')
+      return
+    }
+    setCodeStatus('checking')
+    codeDebounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/admin/prospects/client-code-available?code=${code}&except_id=${prospect.id}`,
+        )
+        const j = await res.json()
+        if (j.available) setCodeStatus('available')
+        else if (j.error) setCodeStatus('invalid')
+        else setCodeStatus({ taken: j.taken_by?.business_name ?? 'another client' })
+      } catch {
+        setCodeStatus('idle') // don't block save on a lookup failure
+      }
+    }, 400)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.client_code, prospect.client_code, prospect.id])
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Auto-suggest a code from the business name (client-side mirror of the
+  // server's suggestClientCode: strip noise words/suffixes, take initials).
+  function suggestCode() {
+    const NOISE = new Set([
+      'THE','AND','OF','FOR','AT','TO','OR','A','AN',
+      'INC','LLC','CO','CORP','PC','PLLC','LTD','LP','CPA','CPAS','OD','DMD','DO',
+    ])
+    const DIGIT: Record<string, string> = {
+      '0':'Z','1':'O','2':'T','3':'T','4':'F','5':'F','6':'S','7':'S','8':'E','9':'N',
+    }
+    const raw = (form.business_name.match(/[A-Za-z]+|[0-9]+/g) ?? [])
+      .map(t => (/^[0-9]+$/.test(t) ? (DIGIT[t[0]] ?? '') : t))
+      .filter(t => t.length > 0 && !/^[A-Za-z]$/.test(t) && !NOISE.has(t.toUpperCase()))
+    let base: string
+    if (raw.length === 0) base = 'XXXX'
+    else if (raw.length === 1) base = raw[0].length >= 4 ? raw[0].slice(0, 4) : raw[0].padEnd(4, raw[0].slice(-1))
+    else base = raw.map(t => t.slice(0, 2)).join('').slice(0, 4)
+    if (base.length < 4) base = base.padEnd(4, base.slice(-1) || 'X')
+    set('client_code', base.toUpperCase())
+  }
 
   // ── Escape key ──
   useEffect(() => {
@@ -221,6 +311,34 @@ export function ProspectEditModal({ prospect, onClose }: ProspectEditModalProps)
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Business Name" className="sm:col-span-2">
                 <input className={inputClass} value={form.business_name} onChange={e => set('business_name', e.target.value)} />
+              </Field>
+              <Field label="Client Code" className="sm:col-span-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    className={cn(inputClass, 'font-mono uppercase tracking-widest max-w-[8rem]')}
+                    value={form.client_code}
+                    onChange={e => set('client_code', e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4))}
+                    placeholder="ABCD"
+                    maxLength={4}
+                    aria-describedby="client-code-help"
+                  />
+                  <button
+                    type="button"
+                    onClick={suggestCode}
+                    className="text-xs text-[var(--teal)] font-medium hover:underline whitespace-nowrap"
+                  >
+                    Suggest
+                  </button>
+                  {codeStatus === 'checking' && <span className="text-xs text-slate-400">Checking…</span>}
+                  {codeStatus === 'available' && <span className="text-xs text-green-600">✓ Available</span>}
+                  {codeStatus === 'invalid' && <span className="text-xs text-amber-600">Needs 4 letters</span>}
+                  {typeof codeStatus === 'object' && (
+                    <span className="text-xs text-red-500">Taken by {codeStatus.taken}</span>
+                  )}
+                </div>
+                <p id="client-code-help" className="text-[11px] text-slate-400">
+                  4 uppercase letters. Used to number invoices, SOWs &amp; receipts (e.g. INV-{form.client_code || 'ABCD'}-042326A). Required before issuing documents.
+                </p>
               </Field>
               <Field label="Industry">
                 <select className={selectClass} value={form.industry} onChange={e => set('industry', e.target.value)}>
