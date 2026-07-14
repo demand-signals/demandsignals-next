@@ -16,7 +16,6 @@ import { ProspectScoreBadge, TierBadge } from '@/components/admin/prospect-score
 import { BookingCard } from '@/components/admin/BookingCard'
 import { LatestQuotePanel } from '@/components/admin/LatestQuotePanel'
 // suggestClientCode removed — now using the server-side suggest endpoint
-import { ProspectEditModal } from '@/components/admin/prospect-edit-modal'
 import { ActivityTimeline } from '@/components/admin/activity-timeline'
 import { ProspectMap } from '@/components/admin/prospect-map'
 import { STAGES, STAGE_LABELS } from '@/types/database'
@@ -148,7 +147,6 @@ export default function ProspectDetailPage() {
   })
 
   // Edit modal + delete state
-  const [showEdit, setShowEdit] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   const deleteMutation = useMutation({
@@ -492,9 +490,9 @@ export default function ProspectDetailPage() {
                 : (prospect as any).is_client ? 'Demote' : 'Promote'}
             </button>
 
-            {/* Edit */}
+            {/* Edit — full-page editor */}
             <button
-              onClick={() => setShowEdit(true)}
+              onClick={() => router.push(`/admin/prospects/${prospect.id}/edit`)}
               className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-slate-300 bg-slate-500/10 backdrop-blur-sm text-slate-700 text-sm font-semibold hover:bg-slate-500/20 transition-colors"
               title="Edit all prospect details"
             >
@@ -1399,11 +1397,6 @@ export default function ProspectDetailPage() {
 
       {/* Documents (invoices + SOWs for this prospect) */}
       <ProspectDocuments prospectId={prospect.id} />
-
-      {/* Edit Modal */}
-      {showEdit && (
-        <ProspectEditModal prospect={prospect} onClose={() => setShowEdit(false)} />
-      )}
     </div>
   )
 }
