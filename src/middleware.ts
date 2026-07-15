@@ -36,8 +36,30 @@ const CATEGORY_SERVICE_MAP: Record<string, Set<string>> = {
   'ai-services': new Set(['ai-automation-strategies', 'ai-workforce-automation', 'ai-agent-infrastructure', 'ai-automated-outreach', 'ai-agent-swarms', 'private-llms', 'clawbot-setup']),
 }
 
+const DEAD_PREFIXES = [
+  '/ProductDetail', '/products/', '/product-category/',
+  '/wp-content/', '/wp-admin/', '/wp-json', '/wp-includes', '/wp-login',
+]
+
+const DEAD_SLUGS = new Set([
+  '/cart', '/shop',
+  '/booklets', '/menus', '/pamphlets', '/printed-banners', '/posters',
+  '/postcards', '/roll-stock-labels', '/feather-flags', '/laminated-items',
+  '/exterior-signage', '/interior-exterior-signage', '/window-graphics',
+  '/tradeshow-booths', '/other-event-items', '/acrylic-wall-signs',
+  '/custom-laser-cuts', '/contractors', '/breweries',
+  '/professional-services', '/print-sign-shop', '/technical-campaigns',
+  '/blog/restaurant-menu-design-importance',
+])
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // ── 410 Gone for dead PHP/WooCommerce/print-shop paths ──────
+  const cleanPath = pathname.replace(/\/+$/, '') || '/'
+  if (DEAD_PREFIXES.some(p => pathname.startsWith(p)) || DEAD_SLUGS.has(cleanPath)) {
+    return new NextResponse('Gone', { status: 410 })
+  }
 
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set('x-pathname', pathname)

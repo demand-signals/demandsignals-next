@@ -132,6 +132,14 @@
     { "source": "/comments/feed",            "destination": "/blog",                                          "permanent": true },
     { "source": "/comments/feed/",           "destination": "/blog",                                          "permanent": true },
     { "source": "/best-wineries-in-ca-shenandoah-valley-2025/feed", "destination": "/blog",                   "permanent": true },
-    { "source": "/best-wineries-in-ca-shenandoah-valley-2025/feed/", "destination": "/blog",                  "permanent": true }
+    { "source": "/best-wineries-in-ca-shenandoah-valley-2025/feed/", "destination": "/blog",                  "permanent": true },
+
+    { "source": "/Admin",                 "destination": "/login",                                            "permanent": true },
+    { "source": "/websites-trends",       "destination": "/blog",                                             "permanent": true },
+    { "source": "/sticker-shop-trends",   "destination": "/blog",                                             "permanent": true },
+    { "source": "/acrylic-shop-trends",   "destination": "/blog",                                             "permanent": true },
+    { "source": "/print-shop-trends",     "destination": "/blog",                                             "permanent": true },
+    { "source": "/event-products-trends", "destination": "/blog",                                             "permanent": true },
+    { "source": "/local-services-trends", "destination": "/blog",                                             "permanent": true }
   ]
 }

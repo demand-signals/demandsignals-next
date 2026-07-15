@@ -7,6 +7,7 @@ import { getCityBySlug, CITIES } from '@/lib/cities'
 import { getServiceBySlug, getServicesByCategory, SERVICE_CATEGORIES } from '@/lib/services'
 import { getCountyForCity } from '@/lib/counties'
 import { getCityServiceBySlug, getAllCityServiceParams } from '@/lib/city-service-slugs'
+import { getLtpContent } from '@/lib/ltp-content'
 import { PageHero } from '@/components/sections/PageHero'
 import { FaqAccordion } from '@/components/ui/FaqAccordion'
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/motion/ScrollReveal'
@@ -165,6 +166,7 @@ export default async function CityServiceLTP({ params }: Props) {
   const relatedCities = getRelatedCities(city.slug, city.county)
   const relatedServices = getRelatedServices(service.slug, service.category)
   const catMeta = SERVICE_CATEGORIES[service.category]
+  const ltpContent = getLtpContent(city.slug, service.slug)
 
   return (
     <>
@@ -283,6 +285,27 @@ export default async function CityServiceLTP({ params }: Props) {
           ))}
         </StaggerContainer>
       </section>
+
+      {/* ─── Unique city + service insight (when available) ───── */}
+      {ltpContent && (
+        <section style={{ background: 'var(--light)', padding: '56px 24px' }}>
+          <div style={{ maxWidth: 800, margin: '0 auto' }}>
+            <ScrollReveal>
+              <h2 style={{ fontSize: 'clamp(1.3rem, 2vw, 1.6rem)', fontWeight: 800, color: 'var(--dark)', marginBottom: 16, lineHeight: 1.3 }}>
+                {service.name} in the {city.name} Market
+              </h2>
+              <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.8, marginBottom: ltpContent.serviceInsight ? 16 : 0 }}>
+                {ltpContent.marketInsight}
+              </p>
+              {ltpContent.serviceInsight && (
+                <p style={{ color: 'var(--slate)', fontSize: '1.05rem', lineHeight: 1.8 }}>
+                  {ltpContent.serviceInsight}
+                </p>
+              )}
+            </ScrollReveal>
+          </div>
+        </section>
+      )}
 
       {/* ─── Deep content: Why Best [service] in [city] ──────── */}
       <section style={{ background: '#fff', padding: '80px 24px' }}>
