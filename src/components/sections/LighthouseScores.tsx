@@ -49,6 +49,7 @@ function ScoreRing({ value, label, size = 72, delay = 0, inView }: {
 
   return (
     <motion.div
+      data-motion="lighthouse-score"
       initial={{ opacity: 0, y: 14 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.45, delay }}
@@ -68,6 +69,7 @@ function ScoreRing({ value, label, size = 72, delay = 0, inView }: {
           />
         </svg>
         <motion.div
+          data-motion="lighthouse-value"
           initial={{ opacity: 0 }}
           animate={inView ? { opacity: 1 } : {}}
           transition={{ duration: 0.3, delay: delay + 0.7 }}
@@ -124,6 +126,7 @@ function SummaryRing({ value, inView, delay = 0 }: { value: number; inView: bool
         ))}
       </svg>
       <motion.div
+        data-motion="lighthouse-summary"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={inView ? { opacity: 1, scale: 1 } : {}}
         transition={{ duration: 0.4, delay: delay + 0.9 }}
@@ -148,6 +151,7 @@ function DeviceCard({ title, icon, scores, metrics, perfScore, cardDelay, inView
 }) {
   return (
     <motion.div
+      data-motion="lighthouse-card"
       initial={{ opacity: 0, y: 32 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.55, delay: cardDelay, ease: [0.25, 0.1, 0.25, 1] }}
@@ -182,6 +186,7 @@ function DeviceCard({ title, icon, scores, metrics, perfScore, cardDelay, inView
             {metrics.map((m, i) => (
               <motion.div
                 key={m.label}
+                data-motion="lighthouse-metric"
                 initial={{ opacity: 0, x: 12 }}
                 animate={inView ? { opacity: 1, x: 0 } : {}}
                 transition={{ duration: 0.35, delay: cardDelay + 0.4 + i * 0.07 }}
@@ -236,6 +241,7 @@ export default function LighthouseScores() {
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
         <motion.div
+          data-motion="lighthouse-heading"
           initial={{ opacity: 0, y: 24 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5 }}
@@ -265,6 +271,7 @@ export default function LighthouseScores() {
         </div>
 
         <motion.div
+          data-motion="lighthouse-badge"
           initial={{ opacity: 0 }}
           animate={inView ? { opacity: 1 } : {}}
           transition={{ duration: 0.4, delay: 0.8 }}

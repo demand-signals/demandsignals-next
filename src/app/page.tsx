@@ -83,7 +83,8 @@ export default function HomePage() {
       <IndustriesGrid />
       <HowItWorks />
       <PortfolioGrid />
-      <ReviewsMarquee />
+      {/* Hidden 2026-07-03 — banked for possible re-inclusion later. Keep import + component intact. */}
+      {/* <ReviewsMarquee /> */}
       <HomeBlogSection />
       <CtaBand />
     </>

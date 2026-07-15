@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, useEffect } from 'react'
-import { motion, useScroll, useTransform, useMotionValueEvent, AnimatePresence } from 'framer-motion'
+import { motion, useScroll, useTransform, useMotionValueEvent } from 'framer-motion'
 import { getIcon } from '@/lib/icons'
 
 const CARD_ACCENTS = [
@@ -10,86 +10,11 @@ const CARD_ACCENTS = [
 
 type Feature = { icon: string; title: string; description: string }
 
-function FeatureContent({ feature, index, direction }: { feature: Feature; index: number; direction: number }) {
-  const accent = CARD_ACCENTS[index % CARD_ACCENTS.length]
-  const Icon = getIcon(feature.icon)
-
-  return (
-    <motion.div
-      key={feature.title}
-      initial={{ opacity: 0, x: direction > 0 ? 80 : -80 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: direction > 0 ? -80 : 80 }}
-      transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-      style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
-    >
-      {/* Icon */}
-      <motion.div
-        initial={{ scale: 0, rotate: -180 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ duration: 0.6, delay: 0.1, type: 'spring', stiffness: 200 }}
-        style={{
-          width: 64, height: 64, borderRadius: 16,
-          background: `${accent}14`,
-          border: `2px solid ${accent}30`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: 24,
-        }}
-      >
-        {Icon ? (
-          <Icon size={30} strokeWidth={1.5} color={accent} />
-        ) : (
-          <span style={{ fontSize: '1.8rem' }}>{feature.icon}</span>
-        )}
-      </motion.div>
-
-      {/* Number badge */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.5 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2 }}
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          marginBottom: 16,
-        }}
-      >
-        <span style={{
-          width: 28, height: 28, borderRadius: '50%',
-          background: accent, color: '#fff',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '0.8rem', fontWeight: 700,
-        }}>
-          {index + 1}
-        </span>
-        <span style={{ color: accent, fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          Feature {index + 1} of 6
-        </span>
-      </motion.div>
-
-      <h3 style={{
-        color: 'var(--dark)', fontWeight: 800,
-        fontSize: 'clamp(1.4rem, 3vw, 2rem)',
-        lineHeight: 1.2, marginBottom: 16,
-      }}>
-        {feature.title}
-      </h3>
-
-      <p style={{
-        color: 'var(--slate)', lineHeight: 1.75,
-        fontSize: '1.05rem', margin: 0, maxWidth: 480,
-      }}>
-        {feature.description}
-      </p>
-    </motion.div>
-  )
-}
-
 export function FeatureShowcase({ eyebrow, heading, features }: {
   eyebrow: string; heading: string; features: Feature[]
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
-  const [direction, setDirection] = useState(1)
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
@@ -108,7 +33,6 @@ export function FeatureShowcase({ eyebrow, heading, features }: {
     if (isMobile) return
     const newIndex = Math.min(features.length - 1, Math.floor(v * features.length))
     if (newIndex !== activeIndex) {
-      setDirection(newIndex > activeIndex ? 1 : -1)
       setActiveIndex(newIndex)
     }
   })
@@ -162,16 +86,66 @@ export function FeatureShowcase({ eyebrow, heading, features }: {
 
             {/* Two-column: content left, visual right */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
-              {/* Left: animated feature content */}
+              {/* Left: all features in DOM for SEO, active one visible */}
               <div style={{ position: 'relative', minHeight: 320 }}>
-                <AnimatePresence mode="wait" custom={direction}>
-                  <FeatureContent
-                    key={activeIndex}
-                    feature={features[activeIndex]}
-                    index={activeIndex}
-                    direction={direction}
-                  />
-                </AnimatePresence>
+                {features.map((feature, i) => {
+                  const isActive = i === activeIndex
+                  const accent = CARD_ACCENTS[i % CARD_ACCENTS.length]
+                  const Icon = getIcon(feature.icon)
+                  return (
+                    <motion.div
+                      key={feature.title}
+                      data-motion="feature-content"
+                      animate={{ opacity: isActive ? 1 : 0 }}
+                      transition={{ duration: 0.4 }}
+                      style={{
+                        position: i === 0 ? 'relative' : 'absolute',
+                        inset: i === 0 ? undefined : 0,
+                        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                        pointerEvents: isActive ? 'auto' : 'none',
+                      }}
+                    >
+                      <div style={{
+                        width: 64, height: 64, borderRadius: 16,
+                        background: `${accent}14`,
+                        border: `2px solid ${accent}30`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginBottom: 24,
+                      }}>
+                        {Icon ? <Icon size={30} strokeWidth={1.5} color={accent} /> : <span style={{ fontSize: '1.8rem' }}>{feature.icon}</span>}
+                      </div>
+
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                        <span style={{
+                          width: 28, height: 28, borderRadius: '50%',
+                          background: accent, color: '#fff',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '0.8rem', fontWeight: 700,
+                        }}>
+                          {i + 1}
+                        </span>
+                        <span style={{ color: accent, fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                          Feature {i + 1} of {features.length}
+                        </span>
+                      </div>
+
+                      <h3 style={{
+                        color: 'var(--dark)', fontWeight: 800,
+                        fontSize: 'clamp(1.4rem, 3vw, 2rem)',
+                        lineHeight: 1.2, marginBottom: 16,
+                      }}>
+                        {feature.title}
+                      </h3>
+
+                      <p style={{
+                        color: 'var(--slate)', lineHeight: 1.75,
+                        fontSize: '1.05rem', margin: 0, maxWidth: 480,
+                      }}>
+                        {feature.description}
+                      </p>
+                    </motion.div>
+                  )
+                })}
               </div>
 
               {/* Right: progress + mini cards */}

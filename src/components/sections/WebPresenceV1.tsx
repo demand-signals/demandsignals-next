@@ -4,11 +4,11 @@ import Link from 'next/link'
 import { ScrollReveal } from '@/components/motion/ScrollReveal'
 
 const flavors = [
-  { icon: '🌐', label: 'Free HTML Sites', color: '#E5793A', sub: 'Hand-coded, AI-generated content', startingAt: 'FREE',   href: '/websites-apps/free-html-website' },
-  { icon: '⚡', label: 'Vite Sites',      color: '#646CFF', sub: 'Lightning-fast static sites + SPAs', startingAt: '$500',   href: '/websites-apps/vite-website' },
-  { icon: '🎨', label: 'Vibe Coded',      color: '#DB2777', sub: 'AI-generated presences',   startingAt: '$1,000', href: '/websites-apps/vibe-coded-website' },
-  { icon: '📰', label: 'WordPress',       color: '#21759B', sub: 'WordPress w/ Divi',        startingAt: '$2,000', href: '/websites-apps/wordpress-website' },
-  { icon: '🚀', label: 'React / Next.js', color: '#0891B2', sub: 'Full-stack web apps',      startingAt: '$4,000', href: '/websites-apps/react-nextjs-webapp' },
+  { icon: '🌐', label: 'Free HTML Sites', color: '#E5793A', sub: 'Hand-coded, AI-generated content', href: '/websites-apps/free-html-website' },
+  { icon: '⚡', label: 'Vite Sites',      color: '#646CFF', sub: 'Lightning-fast static sites + SPAs', href: '/websites-apps/vite-website' },
+  { icon: '🎨', label: 'Vibe Coded',      color: '#DB2777', sub: 'AI-generated presences',            href: '/websites-apps/vibe-coded-website' },
+  { icon: '📰', label: 'WordPress',       color: '#21759B', sub: 'WordPress w/ Divi',                 href: '/websites-apps/wordpress-website' },
+  { icon: '🚀', label: 'React / Next.js', color: '#0891B2', sub: 'Full-stack web apps',               href: '/websites-apps/react-nextjs-webapp' },
 ]
 
 export default function WebPresenceV1() {
@@ -75,13 +75,7 @@ export default function WebPresenceV1() {
                     }} />
                     <span style={{ fontSize: '2rem', display: 'block', marginBottom: 8 }}>{f.icon}</span>
                     <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--dark)', marginBottom: 4 }}>{f.label}</h3>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--slate)', margin: '0 0 6px', lineHeight: 1.5 }}>{f.sub}</p>
-                    <p style={{
-                      fontSize: '0.78rem', fontWeight: 700, color: f.color,
-                      margin: 0, lineHeight: 1.4, letterSpacing: '0.01em',
-                    }}>
-                      Starting at <span style={{ fontSize: '0.92rem' }}>{f.startingAt}</span>
-                    </p>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--slate)', margin: 0, lineHeight: 1.5 }}>{f.sub}</p>
                   </div>
                 </Link>
               ))}

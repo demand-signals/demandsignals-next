@@ -72,6 +72,7 @@ export function PageHero({ eyebrow, title, subtitle, ctaLabel = 'Get a Quote →
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
           {/* Eyebrow — slides down from above */}
           <motion.div
+            data-motion="hero-eyebrow"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
@@ -86,6 +87,7 @@ export function PageHero({ eyebrow, title, subtitle, ctaLabel = 'Get a Quote →
 
           {/* Title — spring animation per word */}
           <motion.h1
+            data-motion="hero-title"
             initial="hidden"
             animate="visible"
             style={{ fontSize: 'clamp(2rem, 5vw, 3.6rem)', fontWeight: 800, lineHeight: 1.1, marginBottom: 20, color: '#fff' }}
@@ -95,6 +97,7 @@ export function PageHero({ eyebrow, title, subtitle, ctaLabel = 'Get a Quote →
 
           {/* Subtitle — fades up after title */}
           <motion.p
+            data-motion="hero-subtitle"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
@@ -105,6 +108,7 @@ export function PageHero({ eyebrow, title, subtitle, ctaLabel = 'Get a Quote →
 
           {/* CTA buttons — scale in with elastic */}
           <motion.div
+            data-motion="hero-cta"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.8, type: 'spring', stiffness: 150 }}
