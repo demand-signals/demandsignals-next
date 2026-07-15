@@ -699,8 +699,10 @@ export default async function PublicSowPage({
                 Accept this Statement of Work
               </h2>
               <p className="text-sm mb-10 max-w-lg mx-auto" style={{ color: 'rgba(255,255,255,0.85)' }}>
-                By accepting, you authorize Demand Signals to invoice per the terms above.
-                Your typed name constitutes electronic consent.
+                By accepting, you authorize Demand Signals to invoice per the terms above and agree to
+                this Statement of Work and the governing Demand Signals Master Service Agreement and its
+                incorporated Standard Disclosures. Your typed name constitutes your electronic signature
+                and consent under the E-SIGN Act.
               </p>
               <SowAcceptClient
                 sowNumber={number}

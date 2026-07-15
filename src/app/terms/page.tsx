@@ -170,13 +170,14 @@ export default function TermsPage() {
           <h2 style={h2}>10. Termination</h2>
           <ul style={ulStyle}>
             <li><strong style={bold}>By you:</strong> You may stop using our website at any time. For paid services, termination procedures are defined in your Service Agreement.</li>
+            <li><strong style={bold}>Paid client engagements:</strong> These website Terms govern use of this website. Paid client engagements are governed by the separate Demand Signals Master Service Agreement and its incorporated Standard Disclosures (Standard Terms of Service, Standard Rates &amp; Payment Terms, and Mutual Confidentiality), which control over these Terms with respect to the services provided.</li>
             <li><strong style={bold}>By us:</strong> We may suspend or terminate your access to our website or services at any time for violation of these Terms, non-payment, or for any other lawful reason with reasonable notice.</li>
             <li><strong style={bold}>Effect of termination:</strong> Sections regarding intellectual property, limitation of liability, indemnification, and governing law survive termination.</li>
           </ul>
 
           <h2 style={h2}>11. Dispute Resolution</h2>
           <p>
-            In the event of a dispute, the parties agree to first attempt resolution through good-faith negotiation. If negotiation fails, disputes shall be resolved through binding arbitration administered by JAMS under its Streamlined Arbitration Rules, conducted in El Dorado County, California. The arbitrator&apos;s decision shall be final and enforceable in any court of competent jurisdiction.
+            In the event of a dispute, the parties agree to first attempt resolution through good-faith negotiation. If negotiation fails, disputes shall be resolved through binding arbitration administered by JAMS under its Streamlined Arbitration Rules, conducted in New Castle County, Delaware. The arbitrator&apos;s decision shall be final and enforceable in any court of competent jurisdiction.
           </p>
           <p>
             <strong style={bold}>Class action waiver:</strong> You agree that any dispute resolution will be conducted on an individual basis and not as a class, consolidated, or representative action.
@@ -184,7 +185,7 @@ export default function TermsPage() {
 
           <h2 style={h2}>12. Governing Law</h2>
           <p>
-            These Terms are governed by and construed in accordance with the laws of the State of California, without regard to its conflict of law principles. For any matters not subject to arbitration, the courts of El Dorado County, California shall have exclusive jurisdiction.
+            These Terms are governed by and construed in accordance with the laws of the State of Delaware, without regard to its conflict of law principles. For any matters not subject to arbitration, the courts of New Castle County, Delaware shall have exclusive jurisdiction. Nothing in this section limits any statutory privacy or consumer-protection rights available to California residents under applicable California law.
           </p>
 
           <h2 style={h2}>13. Modifications to These Terms</h2>

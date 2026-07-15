@@ -52,7 +52,7 @@ Websites and applications we build may incorporate open-source libraries and thi
   },
   {
     heading: '5. Payment Terms',
-    content: `- Payment terms, amounts, and schedules are defined in your Service Agreement.
+    content: `- Payment terms, amounts, and schedules are defined in your Statement of Work and the Demand Signals Standard Rates & Payment Terms Disclosure incorporated into your Master Service Agreement.
 - Unless otherwise agreed, invoices are due within 15 days of issuance.
 - Late payments may incur a fee of 1.5% per month on the outstanding balance.
 - We reserve the right to pause or suspend services if payment is more than 30 days overdue.
@@ -95,17 +95,18 @@ We reserve the right to refuse or terminate service to anyone who violates these
     heading: '10. Termination',
     content: `- **By you:** You may stop using our website at any time. For paid services, termination procedures are defined in your Service Agreement.
 - **By us:** We may suspend or terminate your access to our website or services at any time for violation of these Terms, non-payment, or for any other lawful reason with reasonable notice.
+- **Paid client engagements:** These website Terms govern use of this website. Paid client engagements are governed by the separate Demand Signals Master Service Agreement and its incorporated Standard Disclosures (Standard Terms of Service, Standard Rates & Payment Terms, and Mutual Confidentiality), which control over these Terms with respect to the services provided.
 - **Effect of termination:** Sections regarding intellectual property, limitation of liability, indemnification, and governing law survive termination.`,
   },
   {
     heading: '11. Dispute Resolution',
-    content: `In the event of a dispute, the parties agree to first attempt resolution through good-faith negotiation. If negotiation fails, disputes shall be resolved through binding arbitration administered by JAMS under its Streamlined Arbitration Rules, conducted in El Dorado County, California. The arbitrator's decision shall be final and enforceable in any court of competent jurisdiction.
+    content: `In the event of a dispute, the parties agree to first attempt resolution through good-faith negotiation. If negotiation fails, disputes shall be resolved through binding arbitration administered by JAMS under its Streamlined Arbitration Rules, conducted in New Castle County, Delaware. The arbitrator's decision shall be final and enforceable in any court of competent jurisdiction.
 
 **Class action waiver:** You agree that any dispute resolution will be conducted on an individual basis and not as a class, consolidated, or representative action.`,
   },
   {
     heading: '12. Governing Law',
-    content: `These Terms are governed by and construed in accordance with the laws of the State of California, without regard to its conflict of law principles. For any matters not subject to arbitration, the courts of El Dorado County, California shall have exclusive jurisdiction.`,
+    content: `These Terms are governed by and construed in accordance with the laws of the State of Delaware, without regard to its conflict of law principles. For any matters not subject to arbitration, the courts of New Castle County, Delaware shall have exclusive jurisdiction. Nothing in this section limits any statutory privacy or consumer-protection rights available to California residents under applicable California law.`,
   },
   {
     heading: '13. Modifications to These Terms',

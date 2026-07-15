@@ -133,8 +133,10 @@ export function SowAcceptClient({
 
       {/* Compliance microcopy */}
       <p className="mt-6 text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.78)' }}>
-        By accepting, you authorize Demand Signals to invoice per the terms above.
-        Your signature above constitutes electronic consent under the E-SIGN Act.
+        By accepting, you authorize Demand Signals to invoice per the terms above and agree to
+        this Statement of Work and the governing Demand Signals Master Service Agreement and its
+        incorporated Standard Disclosures. Your typed name above constitutes your electronic
+        signature and consent under the E-SIGN Act.
       </p>
     </div>
   )
