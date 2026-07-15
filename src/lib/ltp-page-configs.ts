@@ -10,18 +10,21 @@
 
 export type MarketSnapshotSection = {
   type: 'market-snapshot'
+  variant?: 'a' | 'b' | 'c' | 'd'
   headline: string
   stats: Array<{ value: string; label: string; detail: string }>
 }
 
 export type LocalContextSection = {
   type: 'local-context'
+  variant?: 'a' | 'b' | 'c' | 'd'
   headline: string
   paragraphs: string[]
 }
 
 export type ServiceDeepDiveSection = {
   type: 'service-deep-dive'
+  variant?: 'a' | 'b' | 'c' | 'd'
   headline: string
   intro: string
   features: Array<{ title: string; description: string }>
@@ -29,6 +32,7 @@ export type ServiceDeepDiveSection = {
 
 export type CompetitiveEdgeSection = {
   type: 'competitive-edge'
+  variant?: 'a' | 'b' | 'c' | 'd'
   headline: string
   intro: string
   advantages: Array<{ ours: string; theirs: string }>
@@ -36,12 +40,14 @@ export type CompetitiveEdgeSection = {
 
 export type ProcessFlowSection = {
   type: 'process-flow'
+  variant?: 'a' | 'b' | 'c' | 'd'
   headline: string
   steps: Array<{ number: string; title: string; detail: string }>
 }
 
 export type ResultsPreviewSection = {
   type: 'results-preview'
+  variant?: 'a' | 'b' | 'c' | 'd'
   headline: string
   intro: string
   metrics: Array<{ value: string; label: string; context: string }>
@@ -49,6 +55,7 @@ export type ResultsPreviewSection = {
 
 export type IndustrySpotlightSection = {
   type: 'industry-spotlight'
+  variant?: 'a' | 'b' | 'c' | 'd'
   headline: string
   industries: Array<{ name: string; challenge: string; solution: string }>
 }
@@ -77,6 +84,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'market-snapshot',
+        variant: 'a',
         headline: 'Roseville by the Numbers',
         stats: [
           { value: '147,000+', label: 'Roseville residents', detail: 'Placer County\'s largest city and the retail anchor of the I-80 corridor between Sacramento and the Sierra foothills.' },
@@ -87,6 +95,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'c',
         headline: 'Mobile Apps Built for Roseville Retail, Restaurants, and Medical Practices',
         intro:
           'A generic app template does not compete in a market this dense. DSIG designs and builds custom mobile apps engineered around the specific way Roseville customers order, book, and come back.',
@@ -100,6 +109,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'process-flow',
+        variant: 'b',
         headline: 'From Concept to App Store in Weeks, Not Months',
         steps: [
           { number: '01', title: 'Discovery & Scope', detail: 'We map the exact customer journey — ordering, booking, or loyalty — specific to your Roseville business model.' },
@@ -111,6 +121,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'd',
         headline: 'What Roseville Businesses See After Launch',
         intro: 'Mobile apps convert differently than a website — here is the kind of movement clients typically see in their first quarter live.',
         metrics: [
@@ -122,6 +133,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'industry-spotlight',
+        variant: 'a',
         headline: 'Industries We Build Roseville Apps For',
         industries: [
           { name: 'Restaurants', challenge: 'Third-party delivery apps take 20-30% commission on every order placed near the Galleria dining corridor.', solution: 'A branded ordering app keeps full margin in-house while still offering the convenience customers expect.' },
@@ -141,6 +153,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'local-context',
+        variant: 'b',
         headline: 'A Gold Country Town Built on Out-of-Town Visitors',
         paragraphs: [
           'Sutter Creek is Amador County\'s most walkable historic town — a Main Street of wine tasting rooms, antique shops, and bed-and-breakfasts housed in 1850s-era buildings. Unlike suburban markets, almost none of Sutter Creek\'s commercial revenue comes from residents; the town\'s population sits under 3,000.',
@@ -149,6 +162,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'market-snapshot',
+        variant: 'd',
         headline: 'Sutter Creek Visitor Economy Snapshot',
         stats: [
           { value: '2,800', label: 'year-round residents', detail: 'A town this small depends almost entirely on visitor spending, not local foot traffic.' },
@@ -159,6 +173,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'competitive-edge',
+        variant: 'c',
         headline: 'Why Generic Local SEO Fails a Town Like Sutter Creek',
         intro: 'Sutter Creek businesses do not compete for searches from Sutter Creek residents — they compete for searches from Sacramento and the Bay Area, weeks before the trip.',
         advantages: [
@@ -170,6 +185,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'b',
         headline: 'Geo-Targeting Built for a Destination Town',
         intro: 'DSIG\'s geo-targeting service reaches travelers by origin, not just destination — critical for a town where almost every customer is from somewhere else.',
         features: [
@@ -191,6 +207,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'market-snapshot',
+        variant: 'c',
         headline: 'Elk Grove Market Snapshot',
         stats: [
           { value: '180,000+', label: 'Elk Grove residents', detail: 'Sacramento County\'s second-largest city, having grown from roughly 72,000 residents in 2000.' },
@@ -201,6 +218,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'local-context',
+        variant: 'a',
         headline: 'A Family-Oriented, Multicultural Market',
         paragraphs: [
           'Elk Grove\'s population boom has been driven by families relocating for schools, affordability, and space relative to Sacramento proper. That growth has brought a wide mix of cultural backgrounds, languages, and shopping habits into a single, tightly clustered suburban market.',
@@ -209,6 +227,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'b',
         headline: 'What AI Content Generation Delivers for Elk Grove Businesses',
         intro: 'Volume alone does not win in a market this diverse — relevance does. Here is what Elk Grove clients typically see.',
         metrics: [
@@ -220,6 +239,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'a',
         headline: 'AI Content Generation for a Diverse, Fast-Growing City',
         intro: 'DSIG\'s AI content generation service produces high volumes of on-brand content while tailoring tone, references, and cultural relevance for Elk Grove\'s varied audience segments.',
         features: [
@@ -232,6 +252,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'process-flow',
+        variant: 'd',
         headline: 'How We Get Elk Grove Businesses Publishing Consistently',
         steps: [
           { number: '01', title: 'Voice & Audience Mapping', detail: 'We document your brand voice and the distinct customer segments within Elk Grove you need to reach.' },
@@ -252,6 +273,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'local-context',
+        variant: 'c',
         headline: 'Auburn\'s Seasonal, Dual-Audience Economy',
         paragraphs: [
           'Auburn is the seat of Placer County and the last significant town before Highway 49 and I-80 climb into the Sierra Nevada foothills. Its Old Town district — a cluster of historic brick storefronts — draws both loyal locals and a steady stream of outdoor recreation travelers headed toward the American River, Foresthill, and eventually Tahoe.',
@@ -260,6 +282,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'd',
         headline: 'One Piece of Content, Repurposed Across Every Channel',
         intro: 'DSIG\'s AI content repurposing service takes a single Auburn-focused piece — an event recap, a trail guide, a seasonal special — and reshapes it for every channel your customers actually use.',
         features: [
@@ -271,6 +294,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'competitive-edge',
+        variant: 'b',
         headline: 'Why Auburn Businesses Choose Repurposing Over Starting From Scratch',
         intro: 'Auburn\'s seasonal tourism economy punishes businesses that can\'t keep content fresh for both the Tevis Cup crowd and the Old Town regulars.',
         advantages: [
@@ -282,6 +306,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'a',
         headline: 'Content Output Auburn Clients See',
         intro: 'Repurposing compounds — the more source content you create, the more distributed assets DSIG generates from it.',
         metrics: [
@@ -303,6 +328,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'market-snapshot',
+        variant: 'b',
         headline: 'Ione Market Snapshot',
         stats: [
           { value: '~8,000', label: 'Ione residents', detail: 'A small Amador County town anchored by Preston Castle, Castle Oaks Golf Club, and the surrounding ranch land.' },
@@ -313,6 +339,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'local-context',
+        variant: 'd',
         headline: 'An Underserved Digital Market',
         paragraphs: [
           'Ione is known locally for Preston Castle, the surrounding Mule Creek State Prison complex, and the ranch land that dominates the landscape around town. It is not a tourism destination in the way Sutter Creek or Jackson are, and its small population means most Ione businesses have historically relied on word of mouth.',
@@ -321,6 +348,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'a',
         headline: 'A Complete Demand Generation System for Ione Businesses',
         intro: 'DSIG\'s Demand Gen Systems service builds the full stack — website, review management, content, and lead capture — as one connected system instead of scattered tools.',
         features: [
@@ -332,6 +360,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'process-flow',
+        variant: 'c',
         headline: 'How the Ione Demand Gen System Comes Together',
         steps: [
           { number: '01', title: 'Market & Competitor Audit', detail: 'We assess exactly how thin the digital competition is around Ione and the wider Amador County market.' },
@@ -343,6 +372,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'industry-spotlight',
+        variant: 'b',
         headline: 'Ione Businesses That Benefit Most',
         industries: [
           { name: 'Home Services', challenge: 'Contractors and trades in Ione compete for jobs across a wide, sparsely populated service area with almost no digital visibility.', solution: 'A Demand Gen System establishes local search dominance where competitors have none.' },
@@ -362,6 +392,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'local-context',
+        variant: 'a',
         headline: 'A Rural Amador County Community on a Tourism Corridor',
         paragraphs: [
           'Pine Grove is an unincorporated community along the Highway 88 corridor in the heart of Amador County, near Indian Grinding Rock State Historic Park. Its commercial base is small, but it sits directly in the path of travelers moving between the Shenandoah Valley wine region and the Sierra foothills.',
@@ -370,6 +401,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'competitive-edge',
+        variant: 'c',
         headline: 'A Small Business Advantage, Not Just a Big Business Feature',
         intro: 'Mobile apps are usually pitched at high-volume retail — DSIG builds them differently for Pine Grove\'s smaller, service-heavy business base.',
         advantages: [
@@ -381,6 +413,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'b',
         headline: 'Mobile Apps for Rural Amador County Service Businesses',
         intro: 'DSIG builds mobile apps for Pine Grove businesses that need scheduling, dispatch, and customer communication tools — not a storefront app nobody downloads.',
         features: [
@@ -392,6 +425,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'c',
         headline: 'What a Right-Sized App Delivers',
         intro: 'For a business this size, small operational gains compound quickly.',
         metrics: [
@@ -413,6 +447,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'market-snapshot',
+        variant: 'a',
         headline: 'Folsom Market Snapshot',
         stats: [
           { value: '80,000+', label: 'Folsom residents', detail: 'One of the wealthiest, most tech-forward cities in the Sacramento region, home to Intel\'s largest campus outside Oregon.' },
@@ -423,6 +458,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'c',
         headline: 'Repurposing Content for a Research-Heavy Audience',
         intro: 'Folsom customers do more digital research before purchasing than almost any market in the region. AI content repurposing keeps your business visible at every stage of that research.',
         features: [
@@ -435,6 +471,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'process-flow',
+        variant: 'a',
         headline: 'How Repurposing Works for Folsom Clients',
         steps: [
           { number: '01', title: 'Source Content Audit', detail: 'We identify your highest-performing Folsom-focused content as repurposing source material.' },
@@ -446,6 +483,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'competitive-edge',
+        variant: 'd',
         headline: 'Why Folsom Businesses Need More Than a Blog',
         intro: 'Folsom\'s affluent, research-driven customers touch multiple channels before deciding — a single blog post isn\'t enough.',
         advantages: [
@@ -457,6 +495,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'b',
         headline: 'Results Folsom Clients See',
         intro: 'Repurposing pays off fastest in markets where customers research heavily across multiple touchpoints — exactly Folsom\'s profile.',
         metrics: [
@@ -478,6 +517,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'local-context',
+        variant: 'd',
         headline: 'A Mountain Town Built Around Extreme Seasonality',
         paragraphs: [
           'Truckee sits on the north shore of Lake Tahoe in Nevada County, with an economy driven almost entirely by tourism and outdoor recreation. Winter brings a ski-industry surge tied to nearby resorts; summer brings hikers, bikers, and lake visitors. The shoulder seasons in April-May and October-November see dramatic drops in foot traffic and revenue.',
@@ -486,6 +526,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'market-snapshot',
+        variant: 'b',
         headline: 'Truckee Seasonal Market Snapshot',
         stats: [
           { value: '17,000+', label: 'Truckee residents', detail: 'A Nevada County mountain resort town whose working population swells significantly during peak ski and summer seasons.' },
@@ -496,6 +537,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'd',
         headline: 'AI Workforce Automation Built for Seasonal Mountain Businesses',
         intro: 'DSIG\'s AI Workforce Automation replaces the seasonal-hire scramble with systems that scale automatically as Truckee\'s tourist volume rises and falls.',
         features: [
@@ -508,6 +550,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'process-flow',
+        variant: 'b',
         headline: 'Deploying Workforce Automation Ahead of Peak Season',
         steps: [
           { number: '01', title: 'Seasonal Workflow Audit', detail: 'We map exactly which tasks strain your Truckee business hardest during ski season and summer peaks.' },
@@ -519,6 +562,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'a',
         headline: 'What Truckee Businesses See After Automating',
         intro: 'The value shows up most clearly during the weeks Truckee businesses used to be understaffed.',
         metrics: [
@@ -540,6 +584,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'market-snapshot',
+        variant: 'c',
         headline: 'Rancho Cordova Market Snapshot',
         stats: [
           { value: '80,000+', label: 'Rancho Cordova residents', detail: 'A rapidly growing city east of Sacramento with its own government offices, Mather Field business park, and retail centers.' },
@@ -550,6 +595,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'local-context',
+        variant: 'b',
         headline: 'From Sacramento Suburb to Business Destination',
         paragraphs: [
           'Rancho Cordova has transformed over the past two decades from a quiet Sacramento suburb into a business destination with its own identity. The city\'s economic development program has attracted major employers to Mather Field, and the Folsom Boulevard corridor is in the middle of a genuine commercial renaissance.',
@@ -558,6 +604,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'competitive-edge',
+        variant: 'd',
         headline: 'Why Rancho Cordova Needs Dedicated AI Optimization',
         intro: 'Standard local SEO wasn\'t built for how AI assistants answer location-specific questions — GEO/AEO optimization is.',
         advantages: [
@@ -569,6 +616,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'a',
         headline: 'GEO/AEO/LLM Optimization Built for Rancho Cordova',
         intro: 'DSIG\'s GEO/AEO/LLM optimization service makes sure ChatGPT, Perplexity, Google AI Overviews, and other answer engines surface Rancho Cordova businesses by name.',
         features: [
@@ -581,6 +629,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'industry-spotlight',
+        variant: 'c',
         headline: 'Rancho Cordova Sectors Where This Matters Most',
         industries: [
           { name: 'Government-Adjacent Services', challenge: 'Vendors and service providers near Rancho Cordova\'s government offices get buried under generic "Sacramento government services" AI answers.', solution: 'Entity anchoring and conversational query targeting surface these businesses specifically for Rancho Cordova.' },
@@ -600,6 +649,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'local-context',
+        variant: 'c',
         headline: 'An Affluent, Design-Conscious Community',
         paragraphs: [
           'Granite Bay is an unincorporated, affluent community in Placer County known for horse country, Folsom Lake access, and some of the highest home values in the Sacramento region. Businesses serving Granite Bay clients — luxury service providers, boutique professionals, specialty retailers — operate in a market where a polished digital first impression matters immediately.',
@@ -608,6 +658,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'b',
         headline: 'Vibe-Coded Sites Built for Granite Bay\'s Premium Market',
         intro: 'DSIG\'s vibe-coded web apps use AI-accelerated development to deliver a fast, premium-feeling site without the traditional custom-build price tag or timeline.',
         features: [
@@ -619,6 +670,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'd',
         headline: 'What a Vibe-Coded Site Delivers',
         intro: 'Speed and polish together — without sacrificing either for the other.',
         metrics: [
@@ -630,6 +682,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'competitive-edge',
+        variant: 'b',
         headline: 'Vibe-Coded vs. Traditional Custom Development',
         intro: 'Granite Bay service providers don\'t need a six-month build to look premium online.',
         advantages: [
@@ -651,6 +704,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'market-snapshot',
+        variant: 'd',
         headline: 'Granite Bay Professional Services Snapshot',
         stats: [
           { value: '22,000+', label: 'Granite Bay residents', detail: 'An affluent unincorporated Placer County community known for horse country, luxury homes, and Folsom Lake access.' },
@@ -661,6 +715,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'c',
         headline: 'Custom React & Next.js Applications for Granite Bay Professionals',
         intro: 'DSIG builds complex web applications — client portals, secure document exchange, scheduling systems — specifically for Granite Bay\'s wealth management and professional services firms.',
         features: [
@@ -673,6 +728,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'process-flow',
+        variant: 'a',
         headline: 'Building a Custom App for a Granite Bay Firm',
         steps: [
           { number: '01', title: 'Requirements & Compliance Review', detail: 'We map exactly what data your Granite Bay firm handles and what security and compliance requirements apply.' },
@@ -684,6 +740,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'industry-spotlight',
+        variant: 'd',
         headline: 'Granite Bay Firms We Build For',
         industries: [
           { name: 'Wealth Management', challenge: 'Advisory firms need secure client portals that meet financial data-handling expectations without an enterprise software budget.', solution: 'Custom Next.js portals with Supabase-backed security tailored to a firm\'s actual client volume.' },
@@ -693,6 +750,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'c',
         headline: 'What Granite Bay Firms See Post-Launch',
         intro: 'Custom applications pay off in client trust and operational efficiency, not just aesthetics.',
         metrics: [
@@ -714,6 +772,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'local-context',
+        variant: 'd',
         headline: 'Explosive Growth, New Businesses Every Month',
         paragraphs: [
           'Lincoln has grown faster than almost any other city in the region, fueled by massive master-planned communities like Lincoln Crossing and Twelve Bridges that have nearly tripled the population since 2000. Thunder Valley Casino draws regional traffic, and the Del Webb Lincoln Hills retirement community adds a steady, affluent customer base.',
@@ -722,6 +781,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'market-snapshot',
+        variant: 'b',
         headline: 'Lincoln Growth Snapshot',
         stats: [
           { value: '55,000+', label: 'Lincoln residents', detail: 'Nearly tripled since 2000, making Lincoln the fastest-growing city in Placer County.' },
@@ -732,6 +792,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'd',
         headline: 'Professional Branding for Lincoln\'s Newest Businesses',
         intro: 'DSIG\'s design service builds complete visual identities for new Lincoln businesses that need to look established from their very first day open.',
         features: [
@@ -743,6 +804,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'competitive-edge',
+        variant: 'a',
         headline: 'Why Lincoln Businesses Can\'t Afford to Skip Professional Design',
         intro: 'In a market growing this fast, an unpolished brand stands out immediately against newer neighbors.',
         advantages: [
@@ -754,6 +816,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'c',
         headline: 'Brand Launch Results for New Lincoln Businesses',
         intro: 'A strong first impression compounds in a growing market where reputation spreads fast.',
         metrics: [
@@ -775,6 +838,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'market-snapshot',
+        variant: 'd',
         headline: 'Roseville Web Presence Snapshot',
         stats: [
           { value: '147,000+', label: 'Roseville residents', detail: 'Placer County\'s largest city and one of the most competitive retail and medical markets in the region.' },
@@ -785,6 +849,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'competitive-edge',
+        variant: 'c',
         headline: 'Modern WordPress vs. the Legacy Sites Still Live in Roseville',
         intro: 'Roseville\'s dense retail and medical corridors are full of businesses still running websites built a decade ago.',
         advantages: [
@@ -796,6 +861,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'a',
         headline: 'WordPress Development for Roseville\'s Established Business Community',
         intro: 'DSIG modernizes Roseville websites into fast, secure, mobile-optimized platforms without losing the SEO equity an established business has already built.',
         features: [
@@ -808,6 +874,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'process-flow',
+        variant: 'd',
         headline: 'Modernizing a Roseville WordPress Site',
         steps: [
           { number: '01', title: 'Site Audit', detail: 'We assess your current site\'s performance, security, and SEO standing before touching anything.' },
@@ -819,6 +886,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'a',
         headline: 'Modernization Results for Roseville Sites',
         intro: 'Rebuilding a legacy site pays off quickly in a market as competitive as Roseville.',
         metrics: [
@@ -840,6 +908,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'market-snapshot',
+        variant: 'a',
         headline: 'Lincoln Growth Pressure Snapshot',
         stats: [
           { value: '55,000+', label: 'Lincoln residents', detail: 'Population has nearly tripled since 2000, driven by Lincoln Crossing and Twelve Bridges master-planned development.' },
@@ -850,6 +919,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'local-context',
+        variant: 'c',
         headline: 'Growth Outpacing Operational Capacity',
         paragraphs: [
           'Lincoln\'s explosive growth — driven by Lincoln Crossing, Twelve Bridges, and Sun City Lincoln Hills — has been a boon for local businesses in terms of raw demand. But that same growth has outpaced what most small teams can handle manually: more calls, more inquiries, more social engagement, more competitors opening down the street.',
@@ -858,6 +928,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'b',
         headline: 'A Practical AI Automation Roadmap for Growing Lincoln Businesses',
         intro: 'DSIG\'s AI Automation Strategies service builds a prioritized plan — not a vague list of AI tools — for scaling a Lincoln business\'s operations without scaling headcount at the same rate.',
         features: [
@@ -870,6 +941,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'd',
         headline: 'What a Lincoln Automation Roadmap Delivers',
         intro: 'The goal is capacity, not just efficiency — the ability to keep growing without breaking service quality.',
         metrics: [
@@ -881,6 +953,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'industry-spotlight',
+        variant: 'a',
         headline: 'Lincoln Businesses Facing the Sharpest Growth Pressure',
         industries: [
           { name: 'Restaurants', challenge: 'New restaurants in Lincoln\'s retail centers face immediate high demand with lean opening staff.', solution: 'Automation roadmaps prioritize reservation, ordering, and review response systems first.' },
@@ -900,6 +973,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'local-context',
+        variant: 'a',
         headline: 'A Community-Driven, Facebook-Group-Heavy Market',
         paragraphs: [
           'Lincoln\'s rapid growth has produced a strong sense of hyper-local community, expressed largely through Facebook groups dedicated to Lincoln Crossing, Twelve Bridges, and Sun City Lincoln Hills residents. New businesses get discussed, recommended, and occasionally criticized in these groups long before they show up in a Google search.',
@@ -908,6 +982,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'c',
         headline: 'AI Social Media Management Built for Lincoln\'s Community Channels',
         intro: 'DSIG\'s AI Social Media Management keeps a consistent, responsive presence across the platforms Lincoln\'s residents actually use to find and discuss local businesses.',
         features: [
@@ -920,6 +995,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'b',
         headline: 'Social Presence Results for Lincoln Clients',
         intro: 'Community visibility compounds — the earlier a new Lincoln business establishes presence, the faster word of mouth follows.',
         metrics: [
@@ -931,6 +1007,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'competitive-edge',
+        variant: 'd',
         headline: 'Why DIY Social Media Falls Behind in a Community Like Lincoln',
         intro: 'Manual social media management can\'t keep pace with how fast Lincoln\'s community conversation moves.',
         advantages: [
@@ -942,6 +1019,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'industry-spotlight',
+        variant: 'b',
         headline: 'Lincoln Businesses That Rely Most on Community Social Presence',
         industries: [
           { name: 'New Restaurants', challenge: 'Opening-week buzz in Lincoln Facebook groups can make or break a new restaurant\'s first months.', solution: 'Active monitoring and fast response turns community chatter into a reputation asset instead of a risk.' },
@@ -961,6 +1039,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'market-snapshot',
+        variant: 'c',
         headline: 'Roseville Competitive Efficiency Snapshot',
         stats: [
           { value: '147,000+', label: 'Roseville residents', detail: 'Placer County\'s largest city and one of the most competitive commercial markets in the Sacramento region.' },
@@ -971,6 +1050,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'd',
         headline: 'AI Automation Strategies for Established Roseville Businesses',
         intro: 'DSIG builds a prioritized automation roadmap specifically for Roseville businesses looking to protect margin in a market where every competitor is fighting for the same customers.',
         features: [
@@ -982,6 +1062,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'process-flow',
+        variant: 'c',
         headline: 'Rolling Out Automation at a Roseville Business',
         steps: [
           { number: '01', title: 'Operational Audit', detail: 'We map exactly where manual work is costing your Roseville business the most time and money.' },
@@ -993,6 +1074,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'competitive-edge',
+        variant: 'a',
         headline: 'Roseville Businesses With a Roadmap vs. Without One',
         intro: 'In a market this competitive, efficiency gaps compound fast.',
         advantages: [
@@ -1004,6 +1086,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'd',
         headline: 'Efficiency Gains Roseville Clients Report',
         intro: 'The payoff shows up directly on the bottom line, not just in workflow charts.',
         metrics: [
@@ -1025,6 +1108,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'market-snapshot',
+        variant: 'd',
         headline: 'Sacramento Metro Scale Snapshot',
         stats: [
           { value: '530,000+', label: 'Sacramento city residents', detail: 'The state capital and economic hub of a six-county metro area.' },
@@ -1035,6 +1119,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'local-context',
+        variant: 'b',
         headline: 'A Market Too Large for a Single AI Assistant',
         paragraphs: [
           'Sacramento is the state capital and the economic hub of a six-county metro area with over 2.4 million residents. The city\'s downtown revitalization — the DOCO district, the Golden 1 Center, the emerging Innovation District — has drawn thousands of new businesses into an already dense, competitive market.',
@@ -1043,6 +1128,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'a',
         headline: 'Coordinated AI Agent Swarms for Sacramento-Scale Operations',
         intro: 'DSIG\'s AI Agent Swarms deploy multiple specialized agents working together — not a single generalist bot trying to do everything at once.',
         features: [
@@ -1055,6 +1141,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'industry-spotlight',
+        variant: 'c',
         headline: 'Sacramento Sectors Running AI Agent Swarms',
         industries: [
           { name: 'Healthcare Systems', challenge: 'Sacramento\'s major healthcare providers manage patient communication at a volume no single tool can handle.', solution: 'Specialized agents split scheduling, reminders, and review management across dedicated workflows.' },
@@ -1064,6 +1151,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'process-flow',
+        variant: 'd',
         headline: 'Deploying an Agent Swarm at Sacramento Scale',
         steps: [
           { number: '01', title: 'Operations Mapping', detail: 'We map every function across your Sacramento operation that could benefit from a dedicated agent.' },
@@ -1076,6 +1164,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'a',
         headline: 'Results at Sacramento Scale',
         intro: 'Agent swarms are built for volume — the results reflect that.',
         metrics: [
@@ -1097,6 +1186,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'local-context',
+        variant: 'b',
         headline: 'Auburn\'s Seasonal Content Demand',
         paragraphs: [
           'Auburn is the seat of Placer County and the gateway to the Sierra Nevada foothills, serving both a loyal local population and a steady stream of outdoor recreation tourists headed toward the American River, Foresthill, and Tahoe. Its Old Town historic district anchors local commerce, while trail running, mountain biking, and rafting drive tourist traffic.',
@@ -1105,6 +1195,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'market-snapshot',
+        variant: 'a',
         headline: 'Auburn Content Market Snapshot',
         stats: [
           { value: '14,000+', label: 'Auburn residents', detail: 'Placer County\'s seat, serving as a hub for surrounding rural communities including Meadow Vista and Colfax.' },
@@ -1115,6 +1206,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'c',
         headline: 'AI Content Generation for Auburn\'s Dual-Audience Market',
         intro: 'DSIG\'s AI Content Generation produces the volume of seasonal, dual-audience content Auburn businesses need without adding a full-time content writer.',
         features: [
@@ -1127,6 +1219,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'competitive-edge',
+        variant: 'b',
         headline: 'AI Content Generation vs. Manual Seasonal Writing',
         intro: 'Auburn\'s seasonal content demands outpace what a solo owner or small team can produce by hand.',
         advantages: [
@@ -1138,6 +1231,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'c',
         headline: 'Content Output for Auburn Businesses',
         intro: 'Consistent, seasonally aware content compounds visibility across both Auburn\'s local and tourist search traffic.',
         metrics: [
@@ -1159,6 +1253,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'local-context',
+        variant: 'a',
         headline: 'A Small Community on a Wine Country Corridor',
         paragraphs: [
           'Pine Grove is an unincorporated community along Highway 88 in Amador County, near Indian Grinding Rock State Historic Park. Its small local population means most Pine Grove businesses depend on capturing travelers moving through the Shenandoah Valley wine region — visitors who research and discover businesses primarily through social media and search before arriving.',
@@ -1167,6 +1262,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'market-snapshot',
+        variant: 'c',
         headline: 'Pine Grove Social Reach Snapshot',
         stats: [
           { value: '<1,000', label: 'Pine Grove local population', detail: 'A small, rural Amador County community whose businesses depend heavily on through-traffic visibility.' },
@@ -1177,6 +1273,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'b',
         headline: 'AI Social Media Management for a Small Amador County Business',
         intro: 'DSIG\'s AI Social Media Management keeps a consistent, professional social presence running for Pine Grove businesses without requiring dedicated staff time.',
         features: [
@@ -1188,6 +1285,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'd',
         headline: 'Social Visibility Results for Pine Grove Businesses',
         intro: 'Even a small business sees outsized returns from consistent visibility on a tourist corridor.',
         metrics: [
@@ -1209,6 +1307,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
     sections: [
       {
         type: 'local-context',
+        variant: 'c',
         headline: 'A Mountain Town Competing Under a Bigger Name',
         paragraphs: [
           'Truckee sits on the north shore of Lake Tahoe in Nevada County, but most travelers planning a trip search for "Lake Tahoe," not "Truckee" specifically — even when Truckee is exactly where they\'ll end up staying, eating, and shopping. That naming gap costs Truckee businesses visibility against destinations branded more directly as "Tahoe."',
@@ -1217,6 +1316,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'competitive-edge',
+        variant: 'a',
         headline: 'Reaching Bay Area Travelers Before They Book',
         intro: 'Standard local SEO waits for someone to search "Truckee" — geo-targeting reaches them while they\'re still planning a "Tahoe" trip from the Bay Area.',
         advantages: [
@@ -1228,6 +1328,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'market-snapshot',
+        variant: 'b',
         headline: 'Truckee Visitor Origin Snapshot',
         stats: [
           { value: '17,000+', label: 'Truckee residents', detail: 'A Nevada County mountain resort town whose economy depends heavily on non-local visitor spending.' },
@@ -1238,6 +1339,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'service-deep-dive',
+        variant: 'd',
         headline: 'Geo-Targeting Built for Truckee\'s Naming Gap',
         intro: 'DSIG\'s geo-targeting service is built specifically to close the gap between how travelers search ("Lake Tahoe") and where they actually end up (Truckee).',
         features: [
@@ -1249,6 +1351,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
       },
       {
         type: 'results-preview',
+        variant: 'b',
         headline: 'Geo-Targeting Results for Truckee Businesses',
         intro: 'Closing the "Tahoe" vs. "Truckee" search gap shows up directly in booking and inquiry volume.',
         metrics: [
