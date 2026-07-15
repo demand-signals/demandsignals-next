@@ -137,7 +137,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   // ─────────────────────────────────────────────────────────────
   'sutter-creek-geo-targeting': {
     heroSubtitle:
-      "Sutter Creek's Main Street lives on visitors who make the trip up from Sacramento and the Bay Area before they ever set foot on the sidewalk. Our geo-targeting service reaches those travelers while they're still planning the trip — not after they've already booked a tasting room down the street.",
+      "Most Sutter Creek customers decide where to eat, taste, and stay while still sitting in Sacramento or the Bay Area. Our geo-targeting puts your business in front of those travelers during the planning window — days before they drive up Highway 49.",
     sections: [
       {
         type: 'local-context',
