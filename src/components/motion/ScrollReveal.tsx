@@ -25,6 +25,7 @@ export function ScrollReveal({
   const { x, y } = offsets[direction]
   return (
     <motion.div
+      data-motion="scroll-reveal"
       initial={{ opacity: 0, x, y }}
       whileInView={{ opacity: 1, x: 0, y: 0 }}
       viewport={{ once, margin: '-60px' }}
@@ -52,6 +53,7 @@ export function StaggerContainer({ children, style, className }: { children: Rea
 
   return (
     <motion.div
+      data-motion="stagger-container"
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: '-60px' }}
@@ -69,7 +71,7 @@ export function StaggerItem({ children, style }: { children: ReactNode; style?: 
   if (reduced) return <div style={style}>{children}</div>
 
   return (
-    <motion.div variants={itemVariants} style={style}>
+    <motion.div data-motion="stagger-item" variants={itemVariants} style={style}>
       {children}
     </motion.div>
   )

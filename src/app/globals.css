@@ -315,3 +315,11 @@ img, video { max-width: 100%; height: auto; }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Crawler / print fallback: force animated content visible */
+@media print {
+  [data-motion] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

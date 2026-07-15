@@ -108,6 +108,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="search" type="application/opensearchdescription+xml" title="Demand Signals" href="/opensearch.xml" />
         <JsonLd data={orgSchema} />
         <JsonLd data={websiteSchema} />
+        <noscript>
+          <style>{`[data-motion]{opacity:1!important;transform:none!important}`}</style>
+        </noscript>
       </head>
       <body className="min-h-screen flex flex-col">
         <PostHogProvider>
