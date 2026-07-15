@@ -8,6 +8,7 @@ import { getServiceBySlug, getServicesByCategory, SERVICE_CATEGORIES } from '@/l
 import { getCountyForCity } from '@/lib/counties'
 import { getCityServiceBySlug, getAllCityServiceParams } from '@/lib/city-service-slugs'
 import { getLtpContent } from '@/lib/ltp-content'
+import { getPageConfig, type LtpSection } from '@/lib/ltp-page-configs'
 import { PageHero } from '@/components/sections/PageHero'
 import { FaqAccordion } from '@/components/ui/FaqAccordion'
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/motion/ScrollReveal'
@@ -136,6 +137,216 @@ function getRelatedServices(currentSlug: string, category: string) {
     .filter(s => s.slug !== currentSlug)
 }
 
+/* ─── Custom section renderer for config-driven LTP layouts ──── */
+function renderCustomSection(section: LtpSection, idx: number, catColor: string) {
+  const bgs = ['var(--light)', '#fff', 'var(--dark)'] as const
+  const bg = bgs[idx % 3]
+  const dark = bg === 'var(--dark)'
+  const h = dark ? '#fff' : 'var(--dark)'
+  const p = dark ? 'rgba(255,255,255,0.65)' : 'var(--slate)'
+  const cBg = dark ? 'rgba(255,255,255,0.04)' : idx % 3 === 1 ? 'var(--light)' : '#fff'
+  const cBd = dark ? 'rgba(255,255,255,0.08)' : 'var(--border)'
+
+  switch (section.type) {
+    case 'market-snapshot':
+      return (
+        <section key={`s-${idx}`} style={{ background: bg, padding: '80px 24px' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+            <ScrollReveal direction="up">
+              <h2 style={{ textAlign: 'center', fontSize: 'clamp(1.6rem, 2.5vw, 2.2rem)', fontWeight: 800, color: h, marginBottom: 48, lineHeight: 1.2 }}>
+                {section.headline}
+              </h2>
+            </ScrollReveal>
+            <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
+              {section.stats.map((s, i) => (
+                <StaggerItem key={i}>
+                  <div style={{ background: cBg, border: `1px solid ${cBd}`, borderRadius: 16, padding: '28px 24px', textAlign: 'center', height: '100%' }}>
+                    <div style={{ fontSize: '2.2rem', fontWeight: 800, color: catColor, lineHeight: 1, marginBottom: 8 }}>{s.value}</div>
+                    <div style={{ fontWeight: 700, color: h, fontSize: '0.95rem', marginBottom: 6 }}>{s.label}</div>
+                    <div style={{ color: p, fontSize: '0.85rem', lineHeight: 1.5 }}>{s.detail}</div>
+                  </div>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+          </div>
+        </section>
+      )
+
+    case 'local-context':
+      return (
+        <section key={`s-${idx}`} style={{ background: bg, padding: '80px 24px' }}>
+          <div style={{ maxWidth: 800, margin: '0 auto' }}>
+            <ScrollReveal direction="up">
+              <h2 style={{ fontSize: 'clamp(1.5rem, 2.5vw, 2rem)', fontWeight: 800, color: h, marginBottom: 24, lineHeight: 1.3 }}>
+                {section.headline}
+              </h2>
+              {section.paragraphs.map((para, i) => (
+                <p key={i} style={{ color: p, fontSize: '1.05rem', lineHeight: 1.8, marginBottom: i < section.paragraphs.length - 1 ? 20 : 0 }}>
+                  {para}
+                </p>
+              ))}
+            </ScrollReveal>
+          </div>
+        </section>
+      )
+
+    case 'service-deep-dive':
+      return (
+        <section key={`s-${idx}`} style={{ background: bg, padding: '80px 24px' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+            <ScrollReveal direction="up">
+              <h2 style={{ textAlign: 'center', fontSize: 'clamp(1.6rem, 2.5vw, 2.2rem)', fontWeight: 800, color: h, marginBottom: 16, lineHeight: 1.2 }}>
+                {section.headline}
+              </h2>
+              <p style={{ textAlign: 'center', color: p, fontSize: '1.05rem', maxWidth: 660, margin: '0 auto 48px', lineHeight: 1.7 }}>
+                {section.intro}
+              </p>
+            </ScrollReveal>
+            <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+              {section.features.map((f, i) => (
+                <StaggerItem key={i}>
+                  <div style={{ background: cBg, border: `1px solid ${cBd}`, borderRadius: 16, padding: '28px 24px', height: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                      <div style={{ background: catColor, color: '#fff', fontWeight: 800, borderRadius: 8, width: 32, height: 32, minWidth: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>
+                        {i + 1}
+                      </div>
+                      <h3 style={{ color: h, fontWeight: 700, fontSize: '1.05rem', margin: 0, lineHeight: 1.3 }}>{f.title}</h3>
+                    </div>
+                    <p style={{ color: p, fontSize: '0.92rem', lineHeight: 1.65, margin: 0 }}>{f.description}</p>
+                  </div>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+          </div>
+        </section>
+      )
+
+    case 'competitive-edge':
+      return (
+        <section key={`s-${idx}`} style={{ background: bg, padding: '80px 24px' }}>
+          <div style={{ maxWidth: 900, margin: '0 auto' }}>
+            <ScrollReveal direction="up">
+              <h2 style={{ textAlign: 'center', fontSize: 'clamp(1.6rem, 2.5vw, 2.2rem)', fontWeight: 800, color: h, marginBottom: 16, lineHeight: 1.2 }}>
+                {section.headline}
+              </h2>
+              <p style={{ textAlign: 'center', color: p, fontSize: '1.05rem', maxWidth: 600, margin: '0 auto 48px', lineHeight: 1.7 }}>
+                {section.intro}
+              </p>
+            </ScrollReveal>
+            <div style={{ borderRadius: 12, overflow: 'hidden', border: `1px solid ${cBd}` }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                <div style={{ background: catColor, color: '#fff', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '14px 20px' }}>
+                  Demand Signals
+                </div>
+                <div style={{ background: dark ? 'rgba(255,255,255,0.06)' : '#e5e7eb', color: dark ? 'rgba(255,255,255,0.7)' : '#6b7280', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '14px 20px' }}>
+                  Generic Agencies
+                </div>
+              </div>
+              {section.advantages.map((a, i) => (
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                  <div style={{ padding: '16px 20px', borderTop: `1px solid ${cBd}`, background: dark ? 'rgba(82,201,160,0.06)' : 'rgba(82,201,160,0.05)', color: h, fontSize: '0.92rem', lineHeight: 1.5 }}>
+                    <span style={{ color: '#52C9A0', marginRight: 8, fontWeight: 700 }}>&#10003;</span>{a.ours}
+                  </div>
+                  <div style={{ padding: '16px 20px', borderTop: `1px solid ${cBd}`, background: dark ? 'rgba(255,255,255,0.02)' : '#f9fafb', color: p, fontSize: '0.92rem', lineHeight: 1.5 }}>
+                    <span style={{ marginRight: 8, opacity: 0.5 }}>&#10007;</span>{a.theirs}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+
+    case 'process-flow':
+      return (
+        <section key={`s-${idx}`} style={{ background: bg, padding: '80px 24px' }}>
+          <div style={{ maxWidth: 800, margin: '0 auto' }}>
+            <ScrollReveal direction="up">
+              <h2 style={{ textAlign: 'center', fontSize: 'clamp(1.6rem, 2.5vw, 2.2rem)', fontWeight: 800, color: h, marginBottom: 48, lineHeight: 1.2 }}>
+                {section.headline}
+              </h2>
+            </ScrollReveal>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {section.steps.map((s, i) => (
+                <ScrollReveal key={i} direction="left" delay={i * 0.1}>
+                  <div style={{ display: 'flex', gap: 24, padding: '28px 0', borderBottom: i < section.steps.length - 1 ? `1px solid ${cBd}` : 'none' }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 800, color: catColor, minWidth: 48, textAlign: 'center', lineHeight: 1 }}>
+                      {s.number}
+                    </div>
+                    <div>
+                      <h3 style={{ color: h, fontWeight: 700, fontSize: '1.1rem', margin: '0 0 8px', lineHeight: 1.3 }}>{s.title}</h3>
+                      <p style={{ color: p, fontSize: '0.92rem', lineHeight: 1.65, margin: 0 }}>{s.detail}</p>
+                    </div>
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+
+    case 'results-preview':
+      return (
+        <section key={`s-${idx}`} style={{ background: bg, padding: '80px 24px' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+            <ScrollReveal direction="up">
+              <h2 style={{ textAlign: 'center', fontSize: 'clamp(1.6rem, 2.5vw, 2.2rem)', fontWeight: 800, color: h, marginBottom: 16, lineHeight: 1.2 }}>
+                {section.headline}
+              </h2>
+              <p style={{ textAlign: 'center', color: p, fontSize: '1.05rem', maxWidth: 600, margin: '0 auto 48px', lineHeight: 1.7 }}>
+                {section.intro}
+              </p>
+            </ScrollReveal>
+            <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 }}>
+              {section.metrics.map((m, i) => (
+                <StaggerItem key={i}>
+                  <div style={{ background: cBg, border: `1px solid ${cBd}`, borderRadius: 16, padding: '32px 24px', textAlign: 'center', height: '100%' }}>
+                    <div style={{ fontSize: '2.5rem', fontWeight: 800, color: catColor, lineHeight: 1, marginBottom: 10 }}>{m.value}</div>
+                    <div style={{ fontWeight: 700, color: h, fontSize: '1rem', marginBottom: 8 }}>{m.label}</div>
+                    <div style={{ color: p, fontSize: '0.85rem', lineHeight: 1.55 }}>{m.context}</div>
+                  </div>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+          </div>
+        </section>
+      )
+
+    case 'industry-spotlight':
+      return (
+        <section key={`s-${idx}`} style={{ background: bg, padding: '80px 24px' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+            <ScrollReveal direction="up">
+              <h2 style={{ textAlign: 'center', fontSize: 'clamp(1.6rem, 2.5vw, 2.2rem)', fontWeight: 800, color: h, marginBottom: 48, lineHeight: 1.2 }}>
+                {section.headline}
+              </h2>
+            </ScrollReveal>
+            <StaggerContainer style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 28 }}>
+              {section.industries.map((ind, i) => (
+                <StaggerItem key={i}>
+                  <div style={{ background: cBg, border: `1px solid ${cBd}`, borderRadius: 16, padding: '32px 28px', height: '100%' }}>
+                    <h3 style={{ color: catColor, fontWeight: 800, fontSize: '1.1rem', marginBottom: 16 }}>{ind.name}</h3>
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ color: dark ? 'rgba(255,255,255,0.5)' : '#94a3b8', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>The Challenge</div>
+                      <p style={{ color: p, fontSize: '0.92rem', lineHeight: 1.6, margin: 0 }}>{ind.challenge}</p>
+                    </div>
+                    <div>
+                      <div style={{ color: '#52C9A0', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Our Approach</div>
+                      <p style={{ color: p, fontSize: '0.92rem', lineHeight: 1.6, margin: 0 }}>{ind.solution}</p>
+                    </div>
+                  </div>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+          </div>
+        </section>
+      )
+
+    default:
+      return null
+  }
+}
+
 /* ══════════════════════════════════════════════════════════════════
    ROOT-LEVEL LONG-TAIL PAGE — /{city}-{service}
    SEO / GEO / AEO optimized: "Best", "Near Me", "Top" keyword density,
@@ -167,6 +378,7 @@ export default async function CityServiceLTP({ params }: Props) {
   const relatedServices = getRelatedServices(service.slug, service.category)
   const catMeta = SERVICE_CATEGORIES[service.category]
   const ltpContent = getLtpContent(city.slug, service.slug)
+  const pageConfig = getPageConfig(canonicalSlug)
 
   return (
     <>
@@ -263,7 +475,7 @@ export default async function CityServiceLTP({ params }: Props) {
             <span style={{ color: '#52C9A0' }}>{city.name}</span>
           </>
         }
-        subtitle={`Searching for the best ${service.name.toLowerCase()} near me in ${city.name}? Demand Signals delivers AI-powered ${service.name.toLowerCase()} built for the ${city.county} market — not national templates.`}
+        subtitle={pageConfig?.heroSubtitle ?? `Searching for the best ${service.name.toLowerCase()} near me in ${city.name}? Demand Signals delivers AI-powered ${service.name.toLowerCase()} built for the ${city.county} market — not national templates.`}
         ctaLabel={`Get a Free ${city.name} Audit →`}
         ctaHref="/contact"
         callout={
@@ -286,6 +498,14 @@ export default async function CityServiceLTP({ params }: Props) {
         </StaggerContainer>
       </section>
 
+      {pageConfig ? (
+        <>
+          {pageConfig.sections.map((section, idx) =>
+            renderCustomSection(section, idx, catMeta.color)
+          )}
+        </>
+      ) : (
+        <>
       {/* ─── Unique city + service insight (when available) ───── */}
       {ltpContent && (
         <section style={{ background: 'var(--light)', padding: '56px 24px' }}>
@@ -590,6 +810,8 @@ export default async function CityServiceLTP({ params }: Props) {
             </ScrollReveal>
           </div>
         </section>
+      )}
+        </>
       )}
 
       {/* ─── FAQ — question-first for AEO extraction ─────────── */}
