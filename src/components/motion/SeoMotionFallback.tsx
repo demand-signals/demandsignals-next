@@ -2,19 +2,24 @@
 
 import { useEffect } from 'react'
 
-// Googlebot WRS executes JS but never scrolls, so framer-motion
-// whileInView animations never fire and content stays at opacity:0.
-// After 4 seconds (inside Googlebot's 5-10s render window), inject a
-// CSS rule that forces all [data-motion] elements visible. The
-// !important overrides framer-motion's inline styles per CSS spec.
+// The <head> contains a static <style id="seo-reveal-default"> that
+// forces [data-motion]{opacity:1!important}. This guarantees content
+// is visible in the SSR HTML before any JS runs — critical for
+// Googlebot WRS which may snapshot before React hydrates.
+//
+// On first scroll we remove that override so framer-motion's
+// whileInView animations can play their opacity transitions normally.
+// Mount-triggered animations (PageHero) keep their transform motion
+// (x/y/scale) but skip the opacity fade — acceptable trade-off for
+// guaranteed indexability. Googlebot never scrolls, so the override
+// stays permanently for crawlers.
 export function SeoMotionFallback() {
   useEffect(() => {
-    const t = setTimeout(() => {
-      const s = document.createElement('style')
-      s.textContent = '[data-motion]{opacity:1!important;filter:none!important}'
-      document.head.appendChild(s)
-    }, 4000)
-    return () => clearTimeout(t)
+    const onScroll = () => {
+      document.getElementById('seo-reveal-default')?.remove()
+    }
+    window.addEventListener('scroll', onScroll, { once: true, passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   return null

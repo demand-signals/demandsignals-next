@@ -106,6 +106,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="search" type="application/opensearchdescription+xml" title="Demand Signals" href="/opensearch.xml" />
         <JsonLd data={orgSchema} />
         <JsonLd data={websiteSchema} />
+        {/* SSR-level fallback: forces all animated elements visible in the
+            raw HTML before any JavaScript runs. Googlebot WRS snapshots
+            the rendered page at ~5s; the old JS-based 4s timeout fired
+            too late because it depended on React hydration completing
+            first. This static CSS guarantees visibility regardless of JS
+            timing. SeoMotionFallback removes it on first scroll so real
+            users still see whileInView animations. */}
+        <style id="seo-reveal-default">{`[data-motion]{opacity:1!important;filter:none!important}`}</style>
         <noscript>
           <style>{`[data-motion]{opacity:1!important;transform:none!important}`}</style>
         </noscript>
