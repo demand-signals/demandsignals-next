@@ -20,6 +20,7 @@ function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
 
   return (
     <motion.div
+      data-motion="feature-grid-card"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
@@ -97,6 +98,7 @@ export function FeatureGrid({ eyebrow, heading, features }: {
       <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative' }}>
         {/* Heading */}
         <motion.div
+          data-motion="feature-grid-heading"
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
@@ -120,6 +122,7 @@ export function FeatureGrid({ eyebrow, heading, features }: {
         {/* Intro — first feature as a text intro strip, not a heavy dark box */}
         {introFeature && (
           <motion.div
+            data-motion="feature-grid-intro"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}

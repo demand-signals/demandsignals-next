@@ -11,6 +11,7 @@ function StatItem({ stat, index }: { stat: Stat; index: number }) {
   return (
     <motion.div
       ref={ref}
+      data-motion="stat-item"
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}

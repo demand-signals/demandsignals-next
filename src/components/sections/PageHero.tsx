@@ -137,9 +137,8 @@ export function PageHero({ eyebrow, title, subtitle, ctaLabel = 'Get a Quote →
         <div style={{ maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
           <motion.p
             initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.7, delay: 1 }}
             style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)', fontWeight: 700, color: '#fff', lineHeight: 1.5, margin: 0 }}
           >
             {callout}

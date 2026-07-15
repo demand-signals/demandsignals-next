@@ -1,17 +1,74 @@
 'use client'
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence, useAnimation, useInView } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 
 type FAQ = { question: string; answer: string }
 
-// `heading` overrides the default "Frequently Asked Questions" so callers
-// can scope the section to the page topic (e.g. "Free HTML Sites FAQ",
-// "WordPress w/ Divi FAQ"). Default kept for backward-compat with the
-// 30+ existing callers that don't pass one. Per Hunter 2026-05-13:
-// generic "Frequently Asked Questions" is a missed SEO/UX opportunity.
+const SEO_FALLBACK_MS = 4000
+
+function FaqHeadingReveal({ children }: { children: React.ReactNode }) {
+  const controls = useAnimation()
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { once: true })
+  const revealed = useRef(false)
+
+  useEffect(() => {
+    if (inView && !revealed.current) {
+      revealed.current = true
+      controls.start({ opacity: 1, y: 0, transition: { duration: 0.6 } })
+    }
+  }, [inView, controls])
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (!revealed.current) {
+        revealed.current = true
+        controls.start({ opacity: 1, y: 0, transition: { duration: 0 } })
+      }
+    }, SEO_FALLBACK_MS)
+    return () => clearTimeout(t)
+  }, [controls])
+
+  return (
+    <motion.div ref={ref} initial={{ opacity: 0, y: 20 }} animate={controls}>
+      {children}
+    </motion.div>
+  )
+}
+
+function FaqItemReveal({ children, fromLeft, delay }: { children: React.ReactNode; fromLeft: boolean; delay: number }) {
+  const controls = useAnimation()
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-40px' })
+  const revealed = useRef(false)
+
+  useEffect(() => {
+    if (inView && !revealed.current) {
+      revealed.current = true
+      controls.start({ opacity: 1, x: 0, transition: { duration: 0.5, delay, ease: [0.25, 0.1, 0.25, 1] } })
+    }
+  }, [inView, controls, delay])
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (!revealed.current) {
+        revealed.current = true
+        controls.start({ opacity: 1, x: 0, transition: { duration: 0 } })
+      }
+    }, SEO_FALLBACK_MS)
+    return () => clearTimeout(t)
+  }, [controls])
+
+  return (
+    <motion.div ref={ref} initial={{ opacity: 0, x: fromLeft ? -60 : 60 }} animate={controls}>
+      {children}
+    </motion.div>
+  )
+}
+
 export function FaqAccordion({
   faqs,
   heading = 'Frequently Asked Questions',
@@ -26,26 +83,15 @@ export function FaqAccordion({
   return (
     <section className="mesh-white" style={{ padding: '72px 24px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
+        <FaqHeadingReveal>
           <SectionHeading eyebrow={eyebrow} heading={heading} />
-        </motion.div>
+        </FaqHeadingReveal>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 900, margin: '0 auto' }}>
           {faqs.map((faq, i) => {
             const isOpen = openFaq === i
             const fromLeft = i % 2 === 0
             return (
-              <motion.div
-                key={faq.question}
-                initial={{ opacity: 0, x: fromLeft ? -60 : 60 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.5, delay: i * 0.1, ease: [0.25, 0.1, 0.25, 1] }}
-              >
+              <FaqItemReveal key={faq.question} fromLeft={fromLeft} delay={i * 0.1}>
                 <div style={{
                   background: isOpen ? 'rgba(255,255,255,0.85)' : 'rgba(244,246,249,0.8)',
                   backdropFilter: 'blur(8px)',
@@ -90,7 +136,7 @@ export function FaqAccordion({
                     )}
                   </AnimatePresence>
                 </div>
-              </motion.div>
+              </FaqItemReveal>
             )
           })}
         </div>

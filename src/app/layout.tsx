@@ -9,6 +9,7 @@ import { AccessibilityWidget } from '@/components/layout/AccessibilityWidget'
 import { CookieStoplight } from '@/components/layout/CookieStoplight'
 import { ArcCardGame } from '@/components/sections/ArcCardGame'
 import { JsonLd } from '@/components/seo/JsonLd'
+import { SeoMotionFallback } from '@/components/motion/SeoMotionFallback'
 import { orgSchema, websiteSchema } from '@/lib/schema'
 import { Suspense } from 'react'
 import { AnalyticsTracker } from '@/components/layout/AnalyticsTracker'
@@ -108,6 +109,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <noscript>
           <style>{`[data-motion]{opacity:1!important;transform:none!important}`}</style>
         </noscript>
+        <SeoMotionFallback />
       </head>
       <body className="min-h-screen flex flex-col">
         <PostHogProvider>

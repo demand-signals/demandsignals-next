@@ -33,6 +33,7 @@ export function AnimatedAICallout({
       />
       <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative' }}>
         <motion.div
+          data-motion="ai-callout"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-60px' }}
@@ -53,6 +54,7 @@ export function AnimatedAICallout({
           {items.map((bullet, i) => (
             <motion.div
               key={bullet}
+              data-motion="ai-callout-bullet"
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
@@ -60,6 +62,7 @@ export function AnimatedAICallout({
               style={{ display: 'flex', gap: 12, alignItems: 'center' }}
             >
               <motion.div
+                data-motion="ai-callout-icon"
                 initial={{ scale: 0 }}
                 whileInView={{ scale: 1 }}
                 viewport={{ once: true }}
@@ -75,6 +78,7 @@ export function AnimatedAICallout({
 
         <motion.a
           href={BOOKING_URL}
+          data-motion="ai-callout-cta"
           initial={{ opacity: 0, scale: 0.9 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}

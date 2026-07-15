@@ -23,6 +23,7 @@ const cardVariants = {
 export function AnimatedServiceCards({ services }: { services: ServiceCard[] }) {
   return (
     <motion.div
+      data-motion="service-cards"
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: '-60px' }}
@@ -36,6 +37,7 @@ export function AnimatedServiceCards({ services }: { services: ServiceCard[] }) 
       {services.map((service) => (
         <motion.div
           key={service.title}
+          data-motion="service-card"
           variants={cardVariants}
           whileHover={{ y: -5, boxShadow: '0 12px 40px rgba(0,0,0,0.10)', transition: { duration: 0.18 } }}
           style={{ borderRadius: 16 }}
