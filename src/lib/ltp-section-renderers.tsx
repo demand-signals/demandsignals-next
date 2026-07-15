@@ -110,7 +110,7 @@ export function renderCustomSection(section: LtpSection, idx: number, catColor: 
                     {section.headline}
                   </h2>
                 </ScrollReveal>
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 2fr)', gap: 40, alignItems: 'start' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 40, alignItems: 'start' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
                     {section.stats.map((s, i) => (
                       <ScrollReveal key={i} direction="left" delay={i * 0.08}>
@@ -173,7 +173,7 @@ export function renderCustomSection(section: LtpSection, idx: number, catColor: 
                     {section.headline}
                   </h2>
                 </ScrollReveal>
-                <div style={{ display: 'grid', gridTemplateColumns: '55fr 45fr', gap: 48, alignItems: 'start' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 48, alignItems: 'start' }}>
                   <ScrollReveal direction="left">
                     <div>
                       {section.paragraphs.slice(0, section.paragraphs.length > 1 ? 1 : undefined).map((para, i) => (
@@ -295,7 +295,7 @@ export function renderCustomSection(section: LtpSection, idx: number, catColor: 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                   {section.features.map((f, i) => (
                     <ScrollReveal key={i} direction={i % 2 === 0 ? 'left' : 'right'} delay={i * 0.08}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, padding: '28px 0', borderBottom: i < section.features.length - 1 ? `1px solid ${cBd}` : 'none', alignItems: 'center' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 32, padding: '28px 0', borderBottom: i < section.features.length - 1 ? `1px solid ${cBd}` : 'none', alignItems: 'center' }}>
                         {i % 2 === 0 ? (
                           <>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
@@ -412,25 +412,27 @@ export function renderCustomSection(section: LtpSection, idx: number, catColor: 
                     {section.intro}
                   </p>
                 </ScrollReveal>
-                <div style={{ borderRadius: 12, overflow: 'hidden', border: `1px solid ${cBd}` }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-                    <div style={{ background: catColor, color: '#fff', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '14px 20px' }}>
-                      Demand Signals
+                <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                  <div style={{ borderRadius: 12, overflow: 'hidden', border: `1px solid ${cBd}`, minWidth: 500 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                      <div style={{ background: catColor, color: '#fff', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '14px 20px' }}>
+                        Demand Signals
+                      </div>
+                      <div style={{ background: dark ? 'rgba(255,255,255,0.06)' : '#e5e7eb', color: dark ? 'rgba(255,255,255,0.7)' : '#6b7280', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '14px 20px' }}>
+                        Generic Agencies
+                      </div>
                     </div>
-                    <div style={{ background: dark ? 'rgba(255,255,255,0.06)' : '#e5e7eb', color: dark ? 'rgba(255,255,255,0.7)' : '#6b7280', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '14px 20px' }}>
-                      Generic Agencies
-                    </div>
+                    {section.advantages.map((a, i) => (
+                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                        <div style={{ padding: '16px 20px', borderTop: `1px solid ${cBd}`, background: dark ? 'rgba(82,201,160,0.06)' : 'rgba(82,201,160,0.05)', color: h, fontSize: '0.92rem', lineHeight: 1.5 }}>
+                          <span style={{ color: '#52C9A0', marginRight: 8, fontWeight: 700 }}>&#10003;</span>{a.ours}
+                        </div>
+                        <div style={{ padding: '16px 20px', borderTop: `1px solid ${cBd}`, background: dark ? 'rgba(255,255,255,0.02)' : '#f9fafb', color: p, fontSize: '0.92rem', lineHeight: 1.5 }}>
+                          <span style={{ marginRight: 8, opacity: 0.5 }}>&#10007;</span>{a.theirs}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  {section.advantages.map((a, i) => (
-                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-                      <div style={{ padding: '16px 20px', borderTop: `1px solid ${cBd}`, background: dark ? 'rgba(82,201,160,0.06)' : 'rgba(82,201,160,0.05)', color: h, fontSize: '0.92rem', lineHeight: 1.5 }}>
-                        <span style={{ color: '#52C9A0', marginRight: 8, fontWeight: 700 }}>&#10003;</span>{a.ours}
-                      </div>
-                      <div style={{ padding: '16px 20px', borderTop: `1px solid ${cBd}`, background: dark ? 'rgba(255,255,255,0.02)' : '#f9fafb', color: p, fontSize: '0.92rem', lineHeight: 1.5 }}>
-                        <span style={{ marginRight: 8, opacity: 0.5 }}>&#10007;</span>{a.theirs}
-                      </div>
-                    </div>
-                  ))}
                 </div>
               </div>
             </section>
@@ -485,7 +487,7 @@ export function renderCustomSection(section: LtpSection, idx: number, catColor: 
                     {section.intro}
                   </p>
                 </ScrollReveal>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 28 }}>
                   <ScrollReveal direction="left">
                     <div style={{ borderTop: `4px solid ${catColor}`, borderRadius: 16, background: cBg, border: `1px solid ${cBd}`, borderTopWidth: 4, borderTopColor: catColor, borderTopStyle: 'solid', padding: '28px 24px', height: '100%' }}>
                       <h3 style={{ color: catColor, fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 20 }}>Demand Signals</h3>
@@ -624,12 +626,12 @@ export function renderCustomSection(section: LtpSection, idx: number, catColor: 
                     {section.headline}
                   </h2>
                 </ScrollReveal>
-                <div style={{ position: 'relative', paddingLeft: 40 }}>
+                <div style={{ position: 'relative', paddingLeft: 40, overflow: 'hidden' }}>
                   <div style={{ position: 'absolute', left: 15, top: 0, bottom: 0, width: 2, background: catColor }} />
                   {section.steps.map((s, i) => (
                     <ScrollReveal key={i} direction={i % 2 === 0 ? 'left' : 'right'} delay={i * 0.1}>
-                      <div style={{ position: 'relative', marginBottom: i < section.steps.length - 1 ? 40 : 0, marginLeft: i % 2 === 0 ? 0 : 60 }}>
-                        <div style={{ position: 'absolute', left: i % 2 === 0 ? -40 : -100, top: 4, width: 32, height: 32, borderRadius: '50%', background: catColor, color: '#fff', fontWeight: 800, fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ position: 'relative', marginBottom: i < section.steps.length - 1 ? 40 : 0, marginLeft: i % 2 === 0 ? 0 : 'clamp(20px, 8vw, 60px)' }}>
+                        <div style={{ position: 'absolute', left: i % 2 === 0 ? -40 : `calc(-40px - clamp(20px, 8vw, 60px))`, top: 4, width: 32, height: 32, borderRadius: '50%', background: catColor, color: '#fff', fontWeight: 800, fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           {s.number}
                         </div>
                         <h3 style={{ color: h, fontWeight: 700, fontSize: '1.05rem', margin: '0 0 6px', lineHeight: 1.3 }}>{s.title}</h3>
@@ -851,7 +853,7 @@ export function renderCustomSection(section: LtpSection, idx: number, catColor: 
                     <ScrollReveal key={i} direction="up" delay={i * 0.1}>
                       <div style={{ padding: '40px 32px', background: i % 2 === 0 ? (dark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)') : 'transparent', borderRadius: 12 }}>
                         <h3 style={{ color: catColor, fontWeight: 800, fontSize: '1.3rem', marginBottom: 20, textAlign: 'left' }}>{ind.name}</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 32 }}>
                           <div>
                             <div style={{ color: dark ? 'rgba(255,255,255,0.4)' : '#94a3b8', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>The Challenge</div>
                             <p style={{ color: p, fontSize: '0.95rem', lineHeight: 1.7, margin: 0 }}>{ind.challenge}</p>
@@ -910,8 +912,8 @@ export function renderCustomSection(section: LtpSection, idx: number, catColor: 
                     <ScrollReveal key={i} direction="up" delay={i * 0.1}>
                       <div>
                         <h3 style={{ color: catColor, fontWeight: 800, fontSize: '1.1rem', marginBottom: 12 }}>{ind.name}</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, borderRadius: 12, overflow: 'hidden', border: `1px solid ${cBd}` }}>
-                          <div style={{ background: dark ? 'rgba(242,133,0,0.04)' : 'rgba(242,133,0,0.03)', padding: '24px 24px', borderRight: `1px solid ${cBd}` }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 0, borderRadius: 12, overflow: 'hidden', border: `1px solid ${cBd}` }}>
+                          <div style={{ background: dark ? 'rgba(242,133,0,0.04)' : 'rgba(242,133,0,0.03)', padding: '24px 24px' }}>
                             <div style={{ color: dark ? 'rgba(242,133,0,0.6)' : 'rgba(242,133,0,0.7)', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>The Challenge</div>
                             <p style={{ color: p, fontSize: '0.92rem', lineHeight: 1.6, margin: 0 }}>{ind.challenge}</p>
                           </div>
