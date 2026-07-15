@@ -52,6 +52,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     keywords: [...keywords, `best ${service.searchIntentName.toLowerCase()} ${city.name}`, `top ${service.shortName.toLowerCase()} in ${city.name}`, `${service.shortName.toLowerCase()} near me ${city.name}`, `best ${service.shortName.toLowerCase()} near me`],
     openGraph: {
+      type: 'website',
       title: `Best ${service.searchIntentName} in ${city.name}, ${city.state}`,
       description,
       url,
@@ -249,6 +250,20 @@ export default async function CityServiceLTP({ params }: Props) {
       ])} />
       {/* ─── JSON-LD: FAQ ─────────────────────────────────────── */}
       <JsonLd data={faqSchema(faqs)} />
+      {/* ─── JSON-LD: WebPage (datePublished + dateModified) ──── */}
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        '@id': `${url}#webpage`,
+        url,
+        name: `Best ${service.searchIntentName} in ${city.name}, ${city.state}`,
+        description: `Top ${service.searchIntentName.toLowerCase()} services for ${city.name}, ${city.county} businesses. ${fill(service.tagline)}.`,
+        isPartOf: { '@id': 'https://demandsignals.co/#website' },
+        about: { '@id': `${url}#business` },
+        datePublished: '2025-03-15',
+        dateModified: new Date().toISOString().split('T')[0],
+        inLanguage: 'en-US',
+      }} />
       {/* ─── JSON-LD: HowTo ──────────────────────────────────── */}
       <JsonLd data={howToSchema(
         `How to Find the Best ${service.searchIntentName} in ${city.name}`,
@@ -602,6 +617,111 @@ export default async function CityServiceLTP({ params }: Props) {
           </div>
         </section>
       )}
+        </>
+      )}
+
+      {/* ─── Related services + nearby cities (custom pages) ──── */}
+      {pageConfig && (
+        <>
+          <section style={{ background: '#fff', padding: '80px 24px' }}>
+            <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+              <ScrollReveal direction="up">
+                <div style={{ textAlign: 'center', marginBottom: 48 }}>
+                  <p style={{ color: 'var(--teal)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
+                    More Services in {city.name}
+                  </p>
+                  <h2 style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', fontWeight: 800, color: 'var(--dark)', marginBottom: 16 }}>
+                    Complete AI marketing suite for{' '}<span style={{ color: '#FF6B2B' }}>{city.name}</span> businesses
+                  </h2>
+                </div>
+              </ScrollReveal>
+              <StaggerContainer style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                gap: 16, maxWidth: 1000, margin: '0 auto',
+              }}>
+                {relatedServices.map(rs => (
+                  <StaggerItem key={rs.slug}>
+                    <Link
+                      href={`/${city.slug}-${rs.slug}`}
+                      style={{ textDecoration: 'none', display: 'block', height: '100%' }}
+                    >
+                      <div style={{
+                        background: 'var(--light)', border: '1px solid var(--border)',
+                        borderRadius: 14, padding: '24px 22px', height: '100%',
+                        transition: 'border-color 0.2s, transform 0.2s',
+                        textAlign: 'center',
+                      }}>
+                        <div style={{ fontSize: '1.6rem', marginBottom: 10 }}>{rs.icon}</div>
+                        <div style={{ color: 'var(--dark)', fontWeight: 700, fontSize: '0.95rem', marginBottom: 6 }}>
+                          {rs.searchIntentName}
+                        </div>
+                        <div style={{ color: catMeta.color, fontSize: '0.8rem', fontWeight: 600 }}>
+                          View in {city.name} →
+                        </div>
+                      </div>
+                    </Link>
+                  </StaggerItem>
+                ))}
+              </StaggerContainer>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center', marginTop: 36 }}>
+                <Link
+                  href={service.parentHref}
+                  style={{
+                    display: 'inline-block',
+                    background: catMeta.color, color: '#fff', fontWeight: 600, fontSize: '0.95rem',
+                    textDecoration: 'none', padding: '12px 28px', borderRadius: 100,
+                  }}
+                >
+                  Learn More About {service.name} →
+                </Link>
+                {county && (
+                  <Link
+                    href={`/locations/${county.slug}/${city.slug}`}
+                    style={{
+                      display: 'inline-block',
+                      background: 'var(--teal)', color: '#fff', fontWeight: 600, fontSize: '0.95rem',
+                      textDecoration: 'none', padding: '12px 28px', borderRadius: 100,
+                    }}
+                  >
+                    ← All {city.name} Services
+                  </Link>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {relatedCities.length > 0 && (
+            <section style={{ background: 'var(--light)', padding: '56px 24px' }}>
+              <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+                <ScrollReveal direction="up">
+                  <p style={{ color: 'var(--teal)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>
+                    Best {service.searchIntentName} Near Me — {city.county}
+                  </p>
+                  <p style={{ color: 'var(--slate)', fontSize: '1rem', lineHeight: 1.7, maxWidth: 560, margin: '0 auto 24px' }}>
+                    Searching for {service.name.toLowerCase()} near me? We serve businesses across {city.county}. Select a nearby city:
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+                    {relatedCities.map(rc => (
+                      <Link
+                        key={rc.slug}
+                        href={`/${rc.slug}-${service.slug}`}
+                        style={{
+                          background: '#fff', border: '1px solid var(--border)',
+                          borderRadius: 100, padding: '8px 20px',
+                          fontSize: '0.875rem', color: 'var(--dark)', fontWeight: 500,
+                          textDecoration: 'none', transition: 'border-color 0.2s',
+                        }}
+                      >
+                        {rc.name}
+                      </Link>
+                    ))}
+                  </div>
+                </ScrollReveal>
+              </div>
+            </section>
+          )}
         </>
       )}
 
