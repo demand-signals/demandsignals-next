@@ -71,6 +71,7 @@ export type LtpSection =
 
 export type LtpPageConfig = {
   heroSubtitle: string
+  metaDescription?: string
   sections: LtpSection[]
 }
 
@@ -81,6 +82,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'roseville-mobile-apps': {
     heroSubtitle:
       "Roseville's retail corridor moves fast — the Galleria at Roseville and The Fountains draw shoppers who expect ordering, booking, and loyalty in an app, not a phone call. We build native iOS and Android apps that keep Roseville businesses in the pocket of the customers walking past their storefront.",
+    metaDescription: "Custom iOS & Android apps for Roseville businesses near the Galleria. Native mobile apps with ordering, booking & loyalty built for Placer County.",
     sections: [
       {
         type: 'market-snapshot',
@@ -150,6 +152,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'sutter-creek-geo-targeting': {
     heroSubtitle:
       "Most Sutter Creek customers decide where to eat, taste, and stay while still sitting in Sacramento or the Bay Area. Our geo-targeting puts your business in front of those travelers during the planning window — days before they drive up Highway 49.",
+    metaDescription: "Reach Sacramento and Bay Area travelers before they drive up Highway 49. Geo-targeting for Sutter Creek businesses in Amador County Gold Country.",
     sections: [
       {
         type: 'local-context',
@@ -204,6 +207,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'elk-grove-ai-content-generation': {
     heroSubtitle:
       "Elk Grove is Sacramento County's second-largest city and one of the most ethnically diverse communities in California. AI content generation lets Elk Grove businesses produce the volume and variety of content needed to speak authentically to a multicultural, family-oriented customer base.",
+    metaDescription: "AI-powered content for Elk Grove's diverse, family-oriented market. Scalable social, blog & email content for Sacramento County businesses.",
     sections: [
       {
         type: 'market-snapshot',
@@ -270,6 +274,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'auburn-ai-content-repurposing': {
     heroSubtitle:
       "Auburn's Old Town district and Sierra foothills recreation scene create bursts of seasonal content opportunity that most small businesses can't keep up with by hand. AI content repurposing turns one piece of Auburn content into a full slate of social posts, blog entries, and email content.",
+    metaDescription: "Turn one piece of Auburn content into social posts, blogs & emails. AI repurposing for Old Town and Sierra foothills seasonal business content.",
     sections: [
       {
         type: 'local-context',
@@ -325,6 +330,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'ione-systems': {
     heroSubtitle:
       "Ione's small, spread-out business community can't support a full-time marketing hire — but it can run on a demand generation system that works around the clock. DSIG builds Demand Gen Systems for Ione businesses that need to punch above the limits of a rural Amador County market.",
+    metaDescription: "Automated demand generation systems for Ione businesses. Always-on marketing infrastructure built for rural Amador County's small business market.",
     sections: [
       {
         type: 'market-snapshot',
@@ -389,6 +395,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'pine-grove-mobile-apps': {
     heroSubtitle:
       "Pine Grove's small, rural footprint doesn't mean its businesses can't reach wine-country tourists and Highway 88 travelers the same way a big city brand does. DSIG builds mobile apps sized to fit a business with one truck, one storefront, or one small crew.",
+    metaDescription: "Mobile apps for Pine Grove businesses serving Highway 88 travelers and wine-country tourists. iOS & Android apps sized for small rural operations.",
     sections: [
       {
         type: 'local-context',
@@ -444,6 +451,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'folsom-ai-content-repurposing': {
     heroSubtitle:
       "Folsom's tech-literate, affluent customer base researches heavily before ever visiting Historic Sutter Street or booking a service. AI content repurposing multiplies your best Folsom content across every channel those customers actually check.",
+    metaDescription: "Multiply your best content across every channel Folsom's research-heavy audience checks. AI repurposing for Historic Sutter Street businesses.",
     sections: [
       {
         type: 'market-snapshot',
@@ -514,6 +522,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'truckee-ai-workforce-automation': {
     heroSubtitle:
       "Truckee's ski-season surge and summer lake rush create staffing swings most mountain-town businesses can't hire around fast enough. AI Workforce Automation covers the marketing and admin workload that used to require seasonal hires.",
+    metaDescription: "AI automation for Truckee businesses facing seasonal staffing swings. Cover marketing and admin workload without hiring seasonal workers.",
     sections: [
       {
         type: 'local-context',
@@ -581,6 +590,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'rancho-cordova-geo-aeo-llm-optimization': {
     heroSubtitle:
       "Rancho Cordova gets lumped into generic 'Sacramento' results more often than any nearby city its size. GEO/AEO/LLM optimization makes sure AI assistants and answer engines surface your Rancho Cordova business specifically — not a Sacramento competitor instead.",
+    metaDescription: "Stop getting buried in generic Sacramento results. GEO/AEO/LLM optimization helps Rancho Cordova businesses surface in AI answers specifically.",
     sections: [
       {
         type: 'market-snapshot',
@@ -646,6 +656,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'granite-bay-vibe-coded': {
     heroSubtitle:
       "Granite Bay's affluent, horse-country market expects a premium first impression online — without the months-long timeline of a full custom build. Vibe-coded web apps get Granite Bay service providers a polished, professional site fast.",
+    metaDescription: "Premium vibe-coded web apps for Granite Bay's affluent market. Fast, polished sites for horse-country service providers without months-long builds.",
     sections: [
       {
         type: 'local-context',
@@ -701,6 +712,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'granite-bay-react-next-webapps': {
     heroSubtitle:
       "Granite Bay's wealth management firms and professional service providers need web applications that handle real client data securely, not brochure sites. DSIG builds custom React and Next.js applications for Granite Bay's high-value professional services market.",
+    metaDescription: "Custom React & Next.js web applications for Granite Bay wealth management and professional services firms. Secure platforms, not brochure sites.",
     sections: [
       {
         type: 'market-snapshot',
@@ -769,6 +781,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'lincoln-design': {
     heroSubtitle:
       "Lincoln is Placer County's fastest-growing city, and every new business opening near Thunder Valley Casino or inside a Del Webb-adjacent retail center needs professional branding to match. DSIG's design service gives new Lincoln businesses a polished visual identity from day one.",
+    metaDescription: "Professional branding and UI/UX design for Lincoln's booming business community. Visual identity for businesses near Thunder Valley and Del Webb.",
     sections: [
       {
         type: 'local-context',
@@ -835,6 +848,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'roseville-wordpress-development': {
     heroSubtitle:
       "Roseville's competitive retail and medical market is full of legacy websites that haven't been touched since they launched. DSIG's WordPress development service modernizes those sites into fast, mobile-ready platforms built to compete near the Galleria corridor.",
+    metaDescription: "Modern WordPress development for Roseville businesses with outdated sites. Fast, mobile-ready platforms built to compete near the Galleria corridor.",
     sections: [
       {
         type: 'market-snapshot',
@@ -905,6 +919,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'lincoln-ai-automation-strategies': {
     heroSubtitle:
       "Lincoln's population boom is creating scaling problems most fast-growing businesses have never had to solve before. AI Automation Strategies gives Lincoln business owners a clear roadmap for handling growth without proportionally growing headcount.",
+    metaDescription: "AI automation roadmaps for Lincoln's fast-growing businesses. Scale operations during Placer County's population boom without proportional hiring.",
     sections: [
       {
         type: 'market-snapshot',
@@ -970,6 +985,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'lincoln-ai-social-media-management': {
     heroSubtitle:
       "Lincoln's tight-knit community runs heavily on local Facebook groups and Nextdoor, where new businesses win or lose reputation fast. AI Social Media Management keeps Lincoln businesses consistently visible in the conversations that matter most.",
+    metaDescription: "AI-managed social media for Lincoln businesses. Stay visible in local Facebook groups and Nextdoor where reputation is won or lost fast.",
     sections: [
       {
         type: 'local-context',
@@ -1036,6 +1052,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'roseville-ai-automation-strategies': {
     heroSubtitle:
       "Roseville's 147,000-resident market rewards efficiency as much as visibility. AI Automation Strategies gives established Roseville businesses a clear roadmap for cutting operational overhead without cutting service quality.",
+    metaDescription: "AI automation strategies for established Roseville businesses. Cut operational overhead across the 147,000-resident market without cutting quality.",
     sections: [
       {
         type: 'market-snapshot',
@@ -1105,6 +1122,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'sacramento-ai-agent-swarms': {
     heroSubtitle:
       "Sacramento's scale — 530,000 in the city, 2.4 million across the metro — means complex, multi-channel operations that a single AI assistant can't handle alone. AI Agent Swarms coordinate multiple specialized AI agents to run Sacramento-scale demand generation.",
+    metaDescription: "Multi-agent AI systems for Sacramento-scale operations. Coordinated AI agent swarms handling demand generation across the 2.4M-person metro area.",
     sections: [
       {
         type: 'market-snapshot',
@@ -1183,6 +1201,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'auburn-ai-content-generation': {
     heroSubtitle:
       "Auburn's Old Town shops and Sierra foothills recreation businesses need seasonal content at a volume no small team can write by hand. AI Content Generation produces the trail guides, event previews, and seasonal specials Auburn's dual local-and-tourist audience expects.",
+    metaDescription: "AI content generation for Auburn's Old Town and Sierra recreation businesses. Trail guides, event previews & seasonal specials produced at scale.",
     sections: [
       {
         type: 'local-context',
@@ -1250,6 +1269,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'pine-grove-ai-social-media-management': {
     heroSubtitle:
       "Pine Grove businesses along the Highway 88 corridor need social presence to catch wine-country travelers passing through Amador County, not just locals. AI Social Media Management keeps a small Pine Grove business visible without a dedicated social hire.",
+    metaDescription: "AI social media management for Pine Grove's Highway 88 businesses. Catch wine-country travelers in Amador County without a dedicated social hire.",
     sections: [
       {
         type: 'local-context',
@@ -1304,6 +1324,7 @@ const PAGE_CONFIGS: Record<string, LtpPageConfig> = {
   'truckee-geo-targeting': {
     heroSubtitle:
       "Truckee competes for Bay Area travelers who are searching for Lake Tahoe, not necessarily 'Truckee' by name. Geo-targeting reaches those travelers by origin and intent, making sure Truckee businesses surface before the trip is even booked.",
+    metaDescription: "Geo-targeting for Truckee businesses competing for Bay Area travelers searching 'Lake Tahoe.' Surface before the trip is booked, not after.",
     sections: [
       {
         type: 'local-context',

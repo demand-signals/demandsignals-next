@@ -41,9 +41,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const vars = { city: city.name, county: city.county, state: city.state }
   const canonicalSlug = `${city.slug}-${service.slug}`
+  const pageConfig = getPageConfig(canonicalSlug)
   const title = `Best ${service.searchIntentName} in ${city.name}, ${city.state}`
-  const rawDesc = `Top ${service.searchIntentName.toLowerCase()} for ${city.name} businesses. ${fillTemplate(service.tagline, vars)}.`
-  const description = rawDesc.length > 155 ? rawDesc.slice(0, 152) + '...' : rawDesc
+  let description: string
+  if (pageConfig?.metaDescription) {
+    const raw = pageConfig.metaDescription
+    description = raw.length > 155 ? raw.slice(0, 152) + '...' : raw
+  } else {
+    const rawDesc = `Top ${service.searchIntentName.toLowerCase()} for ${city.name} businesses. ${fillTemplate(service.tagline, vars)}.`
+    description = rawDesc.length > 155 ? rawDesc.slice(0, 152) + '...' : rawDesc
+  }
   const url = `https://demandsignals.co/${canonicalSlug}`
   const keywords = service.keywordTemplates.map(k => fillTemplate(k, vars))
 

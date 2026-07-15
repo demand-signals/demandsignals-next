@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next'
 import { COUNTY_SLUGS, getCountyBySlug } from '@/lib/counties'
 import { ALL_CITY_SERVICE_SLUGS } from '@/lib/city-service-slugs'
 import { getAllPosts } from '@/lib/blog'
+import { getPageConfig } from '@/lib/ltp-page-configs'
 
 const BASE = 'https://demandsignals.co'
 
@@ -65,14 +66,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority:        0.8,
   }))
 
-  /* ── PRIORITY 0.7 — Long Tail Pages (city × service) ──────────────────── */
+  /* ── PRIORITY 0.7–0.8 — Long Tail Pages (city × service) ──────────────── */
   const ltps: MetadataRoute.Sitemap = ALL_CITY_SERVICE_SLUGS
     .filter(slug => !slug.includes('-web-developer') && !slug.includes('-websites'))
     .map((slug) => ({
       url:             `${BASE}/${slug}`,
       lastModified:    staticDate,
       changeFrequency: 'monthly' as const,
-      priority:        0.7,
+      priority:        getPageConfig(slug) ? 0.8 : 0.7,
     }))
 
   /* ── PRIORITY 0.6 — Category Pages (locations, tools, about, portfolio) ─ */
