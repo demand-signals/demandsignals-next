@@ -136,6 +136,7 @@ export function PageHero({ eyebrow, title, subtitle, ctaLabel = 'Get a Quote →
       <section style={{ background: 'var(--dark)', padding: '64px 24px' }}>
         <div style={{ maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
           <motion.p
+            data-motion="hero-callout"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 1 }}

@@ -33,7 +33,7 @@ function FaqHeadingReveal({ children }: { children: React.ReactNode }) {
   }, [controls])
 
   return (
-    <motion.div ref={ref} initial={{ opacity: 0, y: 20 }} animate={controls}>
+    <motion.div ref={ref} data-motion="faq-heading" initial={{ opacity: 0, y: 20 }} animate={controls}>
       {children}
     </motion.div>
   )
@@ -63,7 +63,7 @@ function FaqItemReveal({ children, fromLeft, delay }: { children: React.ReactNod
   }, [controls])
 
   return (
-    <motion.div ref={ref} initial={{ opacity: 0, x: fromLeft ? -60 : 60 }} animate={controls}>
+    <motion.div ref={ref} data-motion="faq-item" initial={{ opacity: 0, x: fromLeft ? -60 : 60 }} animate={controls}>
       {children}
     </motion.div>
   )
