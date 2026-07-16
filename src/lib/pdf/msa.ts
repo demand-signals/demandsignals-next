@@ -294,9 +294,9 @@ function termsPage(msa: MsaDocument, prospect: MsaProspect): string {
   `
 
   return `
-  <div style="break-before:page;break-inside:avoid;background:#fff;font-family:${FONT_STACK};color:${T.BODY};padding:0 0 20px 0;">
+  <div style="break-before:page;min-height:100vh;display:flex;flex-direction:column;background:#fff;font-family:${FONT_STACK};color:${T.BODY};">
     ${interiorPageHeader('01 — Agreement')}
-    <div style="padding:18px 56px 0 56px">
+    <div style="flex:1;min-height:0;padding:18px 56px 12px 56px">
       ${eyebrow('Parties & Terms', T.ORANGE_S)}
       <h1 style="font-size:22px;font-weight:700;color:${T.SLATE};margin:6px 0 4px 0;">Master Service Agreement</h1>
       <div style="width:50pt;height:2pt;background:${T.ORANGE_S};margin:0 0 12px 0;"></div>
@@ -316,7 +316,7 @@ function disclosuresAndExecutionPage(msa: MsaDocument, prospect: MsaProspect): s
     return `
       <div style="display:flex;align-items:center;gap:14px;padding:8px 0;border-bottom:1px solid ${T.RULE};">
         <div style="flex-shrink:0;width:56px;text-align:center;">
-          <div style="font-family:${CURSIVE};font-size:20px;color:${T.SLATE};min-height:22px;line-height:1;">${ini}</div>
+          <div style="font-family:${CURSIVE};font-weight:400;font-size:22px;color:${T.SLATE};min-height:24px;line-height:1;">${ini}</div>
           <div style="border-top:1px solid ${T.SLATE};margin-top:1px;font-size:7px;color:${T.GRAY};letter-spacing:0.04em;padding-top:1px;">INITIAL</div>
         </div>
         <div style="flex:1;">
@@ -329,16 +329,16 @@ function disclosuresAndExecutionPage(msa: MsaDocument, prospect: MsaProspect): s
   const executed = !!msa.executed_at && !!msa.executed_signature
   const cl = esc(clientName(msa, prospect))
   const clientSig = executed
-    ? `<div style="font-family:${CURSIVE};font-size:24px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:2px;min-height:32px;line-height:1.1">${esc(msa.executed_signature ?? '')}</div>`
+    ? `<div style="font-family:${CURSIVE};font-weight:400;font-size:30px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:2px;min-height:34px;line-height:1.1">${esc(msa.executed_signature ?? '')}</div>`
     : `<div style="border-bottom:1px solid ${T.SLATE};min-height:32px;"></div>`
   const val = (v: string | null | undefined) => v ? `<strong>${esc(v)}</strong>` : `<span style="display:inline-block;border-bottom:1px solid ${T.SLATE};min-width:160px;">&nbsp;</span>`
   const dsigDate = msa.dsig_signed_at ?? msa.sent_at ?? null
-  const dsigSig = `<div style="font-family:${CURSIVE};font-size:24px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:2px;min-height:32px;line-height:1.1">${esc(msa.dsig_signatory_name)}</div>`
+  const dsigSig = `<div style="font-family:${CURSIVE};font-weight:400;font-size:30px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:2px;min-height:34px;line-height:1.1">${esc(msa.dsig_signatory_name)}</div>`
 
   return `
-  <div style="break-before:page;background:#fff;font-family:${FONT_STACK};color:${T.BODY};padding:0 0 32px 0;">
+  <div style="break-before:page;min-height:100vh;display:flex;flex-direction:column;background:#fff;font-family:${FONT_STACK};color:${T.BODY};">
     ${interiorPageHeader('02 — Disclosures & Execution')}
-    <div style="padding:22px 56px 0 56px">
+    <div style="flex:1;min-height:0;padding:22px 56px 12px 56px">
       ${eyebrow('Incorporated Disclosures', T.ORANGE_S)}
       <p style="font-size:10.5px;line-height:1.5;margin:6px 0 10px 0;">
         This Agreement incorporates by reference the following standing Demand Signals Disclosures. By initialing
@@ -388,9 +388,9 @@ function disclosuresAndExecutionPage(msa: MsaDocument, prospect: MsaProspect): s
 function certificatePage(msa: MsaDocument): string {
   if (!msa.executed_at) {
     return `
-    <div style="break-before:page;background:#fff;font-family:${FONT_STACK};color:${T.BODY};padding:0 0 40px 0;">
+    <div style="break-before:page;min-height:100vh;display:flex;flex-direction:column;background:#fff;font-family:${FONT_STACK};color:${T.BODY};">
       ${interiorPageHeader('04 — Certificate')}
-      <div style="padding:28px 56px 0 56px">
+      <div style="flex:1;min-height:0;padding:28px 56px 12px 56px">
         ${eyebrow('Signature Certificate', T.ORANGE_S)}
         <h1 style="font-size:26px;font-weight:700;color:${T.SLATE};margin:6px 0 4px 0;">Not Yet Executed</h1>
         <div style="width:50pt;height:2pt;background:${T.ORANGE_S};margin:0 0 18px 0;"></div>
@@ -415,9 +415,9 @@ function certificatePage(msa: MsaDocument): string {
   }
 
   return `
-  <div style="break-before:page;background:#fff;font-family:${FONT_STACK};color:${T.BODY};padding:0 0 40px 0;">
+  <div style="break-before:page;min-height:100vh;display:flex;flex-direction:column;background:#fff;font-family:${FONT_STACK};color:${T.BODY};">
     ${interiorPageHeader('04 — Certificate')}
-    <div style="padding:28px 56px 0 56px">
+    <div style="flex:1;min-height:0;padding:28px 56px 12px 56px">
       ${eyebrow('Signature Certificate', T.ORANGE_S)}
       <h1 style="font-size:24px;font-weight:700;color:${T.SLATE};margin:6px 0 4px 0;">Certificate of Electronic Signature</h1>
       <div style="width:50pt;height:2pt;background:${T.ORANGE_S};margin:0 0 14px 0;"></div>
