@@ -203,9 +203,9 @@ export async function dispatchMsaEmail(
 
   const publicUrl = `https://demandsignals.co/msa/${msa.msa_number}/${msa.public_uuid}`
   const businessName = msa.prospect?.business_name ?? msa.client_legal_name ?? 'your business'
-  const subject = `Your Demand Signals Onboarding Agreement (${msa.msa_number})`
+  const subject = `Welcome to Demand Signals — your onboarding document`
   const html = onboardingEmailHtml(businessName, publicUrl, msa)
-  const text = `${businessName},\n\nWelcome to Demand Signals. Please review and sign your Master Service Agreement and the incorporated disclosures:\n\n${publicUrl}\n\nThe agreement PDF is attached. Reply to this email with any questions.\n\n— Demand Signals`
+  const text = `Welcome to Demand Signals!\n\nHere is your onboarding document to get things started:\n\n${publicUrl}\n\n— Demand Signals`
 
   const result = await sendEmail({
     to: email,
@@ -243,7 +243,11 @@ export async function dispatchMsaSms(
   }
 
   const phone = options.overridePhone ?? msa.prospect?.owner_phone ?? msa.prospect?.business_phone ?? null
-  if (!phone) return { success: false, error: 'No phone on prospect.owner_phone or prospect.business_phone' }
+  if (!phone) {
+    const err = 'No phone on prospect.owner_phone or prospect.business_phone'
+    await logMsaActivity({ msa, type: 'msa_sent', channel: 'sms', success: false, errorMessage: err, createdBy: options.createdBy })
+    return { success: false, error: err }
+  }
 
   const businessName = msa.prospect?.business_name ?? msa.client_legal_name ?? 'your business'
   const url = trackLink(
@@ -308,6 +312,17 @@ export async function sendOnboardingDocs(
   if (existing) {
     msaId = existing.id
     msaNumber = existing.msa_number
+    // Refresh client fields on the reused draft so it reflects current prospect
+    // data (client_code/name may have been filled since the draft was created).
+    if (existing.status === 'draft') {
+      await supabaseAdmin
+        .from('msa_documents')
+        .update({
+          client_legal_name: prospect.business_name,
+          client_code: prospect.client_code ?? null,
+        })
+        .eq('id', msaId)
+    }
   } else {
     // Current disclosure versions the MSA incorporates.
     const { data: discs } = await supabaseAdmin
@@ -362,16 +377,12 @@ export async function sendOnboardingDocs(
 
 /* ── Onboarding email HTML ──────────────────────────────────────────── */
 
-function onboardingEmailHtml(businessName: string, url: string, msa: MsaRow): string {
-  const rows = (msa.incorporated_disclosures ?? [])
-    .map((d) => `<li style="margin:4px 0;"><a href="${d.public_url}" style="color:#2BA98E;">${d.title} (${d.code})</a></li>`)
-    .join('')
-  return `<!doctype html><html><body style="font-family:Helvetica,Arial,sans-serif;color:#1f2733;line-height:1.6;">
-    <p>${businessName},</p>
-    <p>Welcome to Demand Signals. Before we begin, please review and sign your <strong>Master Service Agreement</strong> — the one-time agreement that governs our working relationship. It incorporates the following standing disclosures, which you can review at any time:</p>
-    <ul>${rows}</ul>
-    <p><a href="${url}" style="display:inline-block;background:#2BA98E;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;">Review &amp; Sign Your Agreement →</a></p>
-    <p>The agreement is also attached to this email as a PDF. Just reply if you have any questions.</p>
-    <p>— Demand Signals</p>
+function onboardingEmailHtml(_businessName: string, url: string, _msa: MsaRow): string {
+  return `<!doctype html><html><body style="font-family:Helvetica,Arial,sans-serif;color:#1f2733;line-height:1.6;max-width:520px;">
+    <p style="font-size:16px;">Welcome to Demand Signals!</p>
+    <p style="font-size:15px;">Here is your onboarding document to get things started.</p>
+    <p style="margin:24px 0;"><a href="${url}" style="display:inline-block;background:#2BA98E;color:#fff;padding:13px 26px;border-radius:6px;text-decoration:none;font-weight:600;font-size:15px;">Review &amp; Sign →</a></p>
+    <p style="font-size:13px;color:#64748b;">A copy is attached as a PDF. Just reply if you have any questions.</p>
+    <p style="font-size:14px;">— Demand Signals</p>
   </body></html>`
 }

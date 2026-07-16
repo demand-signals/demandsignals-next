@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Upload, Bot, LogOut,
   Target, MapPin, FileText, BarChart3, Layers, LineChart,
   Newspaper, Receipt, CreditCard, Repeat, ScrollText, Settings, Key,
-  FolderKanban, FileCheck, FileMinus, Coins, UserCheck, MessageSquare, Zap,
+  FolderKanban, FileCheck, FileMinus, Coins, UserCheck, MessageSquare, Zap, FileSignature,
   Clock, UserCog, Shield, Eye, ExternalLink, Bell, Plug,
   ChevronRight, ChevronDown,
 } from 'lucide-react'
@@ -43,6 +43,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'ONBOARDING',
     items: [
       { href: '/admin/demos', label: 'Demo Sites', icon: Layers },
+      { href: '/admin/msa', label: 'Master Agreements', icon: FileSignature },
       { href: '/admin/sow', label: 'Statements of Work', icon: ScrollText },
     ],
   },
