@@ -130,6 +130,7 @@ export const NAV_LOCATIONS = [
 export const EMAIL_FROM = {
   invoice:           'Demand Signals <invoices@demandsignals.co>',
   sow:               'Demand Signals <invoices@demandsignals.co>',
+  msa:               'Demand Signals <invoices@demandsignals.co>',
   receipt:           'Demand Signals <invoices@demandsignals.co>',
   credit_memo:       'Demand Signals <invoices@demandsignals.co>',
   contact_form:      'Demand Signals <noreply@demandsignals.co>',
@@ -149,6 +150,7 @@ export type EmailKind = keyof typeof EMAIL_FROM
 export const EMAIL_REPLY_TO: Partial<Record<EmailKind, string>> = {
   invoice:       'DemandSignals@gmail.com',
   sow:           'DemandSignals@gmail.com',
+  msa:           'DemandSignals@gmail.com',
   receipt:       'DemandSignals@gmail.com',
   credit_memo:   'DemandSignals@gmail.com',
   portal_digest: 'DemandSignals@gmail.com',

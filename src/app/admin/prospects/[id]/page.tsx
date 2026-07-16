@@ -15,6 +15,7 @@ import Link from 'next/link'
 import { ProspectScoreBadge, TierBadge } from '@/components/admin/prospect-score-badge'
 import { BookingCard } from '@/components/admin/BookingCard'
 import { LatestQuotePanel } from '@/components/admin/LatestQuotePanel'
+import { OnboardingDocsButton } from '@/components/admin/OnboardingDocsButton'
 // suggestClientCode removed — now using the server-side suggest endpoint
 import { ActivityTimeline } from '@/components/admin/activity-timeline'
 import { ProspectMap } from '@/components/admin/prospect-map'
@@ -1394,6 +1395,12 @@ export default function ProspectDetailPage() {
           <LatestQuotePanel quote={latestQuote} />
         </div>
       )}
+
+      {/* Onboarding kit — MSA + disclosures. Above documents; decoupled from SOW. */}
+      <OnboardingDocsButton
+        prospectId={prospect.id}
+        hasExecutedMsa={(prospect as { has_executed_msa?: boolean }).has_executed_msa}
+      />
 
       {/* Documents (invoices + SOWs for this prospect) */}
       <ProspectDocuments prospectId={prospect.id} />
