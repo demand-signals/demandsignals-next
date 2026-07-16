@@ -16,6 +16,7 @@ import {
   interiorPageHeader, interiorPageFooter,
   darkCoverTopStrip, darkCoverMetaBand, darkCoverFooterStrip,
 } from './_shared'
+import { SIGNATURE_FONT_FACE, SIGNATURE_FONT_FAMILY } from './signature-font'
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -89,7 +90,9 @@ export interface MsaProspect {
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-const CURSIVE = "'Brush Script MT','Segoe Script','Snell Roundhand',cursive"
+// Embedded handwriting font (rendered in serverless Chromium via @font-face),
+// with system-font fallbacks for local/dev environments.
+const CURSIVE = `'${SIGNATURE_FONT_FAMILY}','Brush Script MT','Segoe Script','Snell Roundhand',cursive`
 
 function fmtDate(iso: string | null | undefined): string {
   if (!iso) return '________________'
@@ -116,12 +119,13 @@ function clientName(msa: MsaDocument, prospect: MsaProspect): string {
   return msa.client_legal_name ?? prospect.business_name ?? '[Client]'
 }
 
-// Clause block helper: heading + paragraphs.
+// Clause block helper: heading + paragraphs. Tight spacing to keep the full
+// agreement compact (short-document goal).
 function clause(num: number, title: string, body: string): string {
   return `
-    <div style="margin-bottom:14px;break-inside:avoid;">
-      <div style="font-size:12px;font-weight:700;color:${T.SLATE};margin-bottom:4px;">${num}. ${esc(title)}</div>
-      <div style="font-size:10.5px;line-height:1.55;color:${T.BODY};">${body}</div>
+    <div style="margin-bottom:9px;break-inside:avoid;">
+      <div style="font-size:11px;font-weight:700;color:${T.SLATE};margin-bottom:2px;">${num}. ${esc(title)}</div>
+      <div style="font-size:10px;line-height:1.45;color:${T.BODY};">${body}</div>
     </div>`
 }
 
@@ -156,8 +160,10 @@ function coverPage(msa: MsaDocument, prospect: MsaProspect): string {
 
 function termsPage(msa: MsaDocument, prospect: MsaProspect): string {
   const cl = esc(clientName(msa, prospect))
-  const entity = esc(msa.client_entity_type ?? 'a [entity type / state]')
-  const code = msa.client_code ? esc(msa.client_code) : '[client code]'
+  // Entity type is optional — render the phrase only when known, so a blank
+  // never shows a "[entity type / state]" placeholder in the executed doc.
+  const entityPhrase = msa.client_entity_type ? `, ${esc(msa.client_entity_type)},` : ''
+  const codePhrase = msa.client_code ? `, client code <strong>${esc(msa.client_code)}</strong>` : ''
   const eff = fmtDate(msa.effective_date)
 
   const discLine = (msa.incorporated_disclosures ?? [])
@@ -168,8 +174,8 @@ function termsPage(msa: MsaDocument, prospect: MsaProspect): string {
     <p style="font-size:11px;line-height:1.6;margin:0 0 14px 0;color:${T.BODY};">
       This Master Service Agreement (the &ldquo;Agreement&rdquo;) is entered into as of <strong>${eff}</strong>
       (the &ldquo;Effective Date&rdquo;), by and between <strong>Demand Signals LLC</strong>, a Delaware limited
-      liability company (&ldquo;DSIG&rdquo; or the &ldquo;Company&rdquo;), and <strong>${cl}</strong>, ${entity}
-      (the &ldquo;Client,&rdquo; client code <strong>${code}</strong>). The Company and Client may each be referred
+      liability company (&ldquo;DSIG&rdquo; or the &ldquo;Company&rdquo;), and <strong>${cl}</strong>${entityPhrase}
+      (the &ldquo;Client&rdquo;${codePhrase}). The Company and Client may each be referred
       to individually as a &ldquo;Party&rdquo; and collectively as the &ldquo;Parties.&rdquo;
     </p>
 
@@ -300,78 +306,56 @@ function termsPage(msa: MsaDocument, prospect: MsaProspect): string {
 
 // ── Page 3: Incorporated disclosures (e-initials + linked codes) ──────
 
-function disclosuresPage(msa: MsaDocument): string {
+// ── Page 3: Disclosures + Execution (combined to reduce white space) ──
+
+function disclosuresAndExecutionPage(msa: MsaDocument, prospect: MsaProspect): string {
   const rows = (msa.incorporated_disclosures ?? []).map((d) => {
     const ini = esc(initialFor(msa, d.code))
     return `
-      <div style="display:flex;align-items:flex-start;gap:16px;padding:14px 0;border-bottom:1px solid ${T.RULE};">
-        <div style="flex-shrink:0;width:64px;text-align:center;">
-          <div style="font-family:${CURSIVE};font-size:20px;color:${T.SLATE};min-height:26px;line-height:1.1;">${ini}</div>
-          <div style="border-top:1px solid ${T.SLATE};margin-top:2px;font-size:8px;color:${T.GRAY};letter-spacing:0.04em;padding-top:2px;">INITIAL</div>
+      <div style="display:flex;align-items:center;gap:14px;padding:8px 0;border-bottom:1px solid ${T.RULE};">
+        <div style="flex-shrink:0;width:56px;text-align:center;">
+          <div style="font-family:${CURSIVE};font-size:20px;color:${T.SLATE};min-height:22px;line-height:1;">${ini}</div>
+          <div style="border-top:1px solid ${T.SLATE};margin-top:1px;font-size:7px;color:${T.GRAY};letter-spacing:0.04em;padding-top:1px;">INITIAL</div>
         </div>
         <div style="flex:1;">
-          <div style="font-size:13px;font-weight:600;color:${T.SLATE};line-height:1.4;">DSIG ${esc(d.title)}</div>
-          <a href="${esc(d.public_url)}" style="font-size:11px;color:${T.TEAL};text-decoration:underline;">${esc(d.code)}</a>
+          <div style="font-size:12px;font-weight:600;color:${T.SLATE};line-height:1.3;">DSIG ${esc(d.title)}</div>
+          <a href="${esc(d.public_url)}" style="font-size:10px;color:${T.TEAL};text-decoration:underline;">${esc(d.code)}</a>
         </div>
       </div>`
   }).join('')
 
-  return `
-  <div style="break-before:page;background:#fff;font-family:${FONT_STACK};color:${T.BODY};padding:0 0 40px 0;">
-    ${interiorPageHeader('02 — Disclosures')}
-    <div style="padding:28px 56px 0 56px">
-      ${eyebrow('Incorporated Disclosures', T.ORANGE_S)}
-      <h1 style="font-size:26px;font-weight:700;color:${T.SLATE};margin:6px 0 4px 0;">Standing Terms</h1>
-      <div style="width:50pt;height:2pt;background:${T.ORANGE_S};margin:0 0 18px 0;"></div>
-      <p style="font-size:12px;line-height:1.7;margin:0 0 18px 0;">
-        This Agreement incorporates by reference the following standing Demand Signals Disclosures. By initialing
-        beside each Disclosure below, the Client acknowledges that it has received, been given access to, reviewed,
-        and agrees to be bound by that Disclosure. The Client&rsquo;s initials constitute per-document acknowledgment
-        of that specific Disclosure.
-      </p>
-      <div>${rows || `<p style="font-size:12px;color:${T.GRAY};">No disclosures attached.</p>`}</div>
-    </div>
-    ${interiorPageFooter()}
-  </div>`
-}
-
-// ── Page 4: Execution + signatures ────────────────────────────────────
-
-function executionPage(msa: MsaDocument, prospect: MsaProspect): string {
   const executed = !!msa.executed_at && !!msa.executed_signature
   const cl = esc(clientName(msa, prospect))
-
-  // Client side (captured on execution)
   const clientSig = executed
-    ? `<div style="font-family:${CURSIVE};font-size:26px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:2px;min-height:40px;line-height:1.2">${esc(msa.executed_signature ?? '')}</div>`
-    : `<div style="border-bottom:1px solid ${T.SLATE};min-height:40px;"></div>`
-  const val = (v: string | null | undefined) => v ? `<strong>${esc(v)}</strong>` : `<span style="display:inline-block;border-bottom:1px solid ${T.SLATE};min-width:180px;">&nbsp;</span>`
-
-  // DSIG side (auto-countersigned on send)
+    ? `<div style="font-family:${CURSIVE};font-size:24px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:2px;min-height:32px;line-height:1.1">${esc(msa.executed_signature ?? '')}</div>`
+    : `<div style="border-bottom:1px solid ${T.SLATE};min-height:32px;"></div>`
+  const val = (v: string | null | undefined) => v ? `<strong>${esc(v)}</strong>` : `<span style="display:inline-block;border-bottom:1px solid ${T.SLATE};min-width:160px;">&nbsp;</span>`
   const dsigDate = msa.dsig_signed_at ?? msa.sent_at ?? null
-  const dsigSig = `<div style="font-family:${CURSIVE};font-size:26px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:2px;min-height:40px;line-height:1.2">${esc(msa.dsig_signatory_name)}</div>`
+  const dsigSig = `<div style="font-family:${CURSIVE};font-size:24px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:2px;min-height:32px;line-height:1.1">${esc(msa.dsig_signatory_name)}</div>`
 
   return `
-  <div style="break-before:page;background:#fff;font-family:${FONT_STACK};color:${T.BODY};padding:0 0 40px 0;">
-    ${interiorPageHeader('03 — Execution')}
-    <div style="padding:28px 56px 0 56px">
-      ${eyebrow('Authorization & Signatures', T.ORANGE_S)}
-      <h1 style="font-size:26px;font-weight:700;color:${T.SLATE};margin:6px 0 4px 0;">Execution</h1>
-      <div style="width:50pt;height:2pt;background:${T.ORANGE_S};margin:0 0 18px 0;"></div>
+  <div style="break-before:page;background:#fff;font-family:${FONT_STACK};color:${T.BODY};padding:0 0 32px 0;">
+    ${interiorPageHeader('02 — Disclosures & Execution')}
+    <div style="padding:22px 56px 0 56px">
+      ${eyebrow('Incorporated Disclosures', T.ORANGE_S)}
+      <p style="font-size:10.5px;line-height:1.5;margin:6px 0 10px 0;">
+        This Agreement incorporates by reference the following standing Demand Signals Disclosures. By initialing
+        beside each, the Client acknowledges it has received, reviewed, and agrees to be bound by that Disclosure.
+      </p>
+      <div>${rows || `<p style="font-size:11px;color:${T.GRAY};">No disclosures attached.</p>`}</div>
 
-      <p style="font-size:11px;line-height:1.6;margin:0 0 22px 0;">
-        IN WITNESS WHEREOF, the Parties have executed this Agreement as of the Effective Date. By signing (or by
-        typed-name electronic signature), each Party agrees to be bound by this Agreement and the Disclosures
-        incorporated herein. Electronic acceptance has the same legal effect as a handwritten signature under the
-        E-SIGN Act.${msa.esign_consent ? ' The Client has affirmatively consented to the use of electronic signatures.' : ''}
+      <div style="margin-top:22px;">${eyebrow('Authorization & Signatures', T.ORANGE_S)}</div>
+      <p style="font-size:10px;line-height:1.5;margin:6px 0 14px 0;color:${T.BODY};">
+        IN WITNESS WHEREOF, the Parties have executed this Agreement as of the Effective Date. Electronic acceptance
+        has the same legal effect as a handwritten signature under the E-SIGN Act.${msa.esign_consent ? ' The Client has affirmatively consented to electronic signatures.' : ''}
       </p>
 
       <div style="display:flex;gap:40px;">
         <div style="flex:1;">
-          <div style="font-size:12px;font-weight:700;color:${T.SLATE};margin-bottom:8px;">Company: Demand Signals LLC</div>
-          <div style="font-size:10px;color:${T.GRAY};letter-spacing:0.04em;">SUBMITTED BY</div>
+          <div style="font-size:11px;font-weight:700;color:${T.SLATE};margin-bottom:4px;">Company: Demand Signals LLC</div>
+          <div style="font-size:9px;color:${T.GRAY};letter-spacing:0.04em;">SUBMITTED BY</div>
           ${dsigSig}
-          <div style="font-size:11px;margin-top:10px;line-height:1.9;">
+          <div style="font-size:10.5px;margin-top:6px;line-height:1.7;">
             Date: <strong>${fmtDate(dsigDate)}</strong><br>
             Name: <strong>${esc(msa.dsig_signatory_name)}</strong><br>
             Title: <strong>${esc(msa.dsig_signatory_title)}</strong><br>
@@ -379,12 +363,11 @@ function executionPage(msa: MsaDocument, prospect: MsaProspect): string {
             Cell: <strong>${esc(msa.dsig_signatory_cell)}</strong>
           </div>
         </div>
-
         <div style="flex:1;">
-          <div style="font-size:12px;font-weight:700;color:${T.SLATE};margin-bottom:8px;">Client: ${cl}</div>
-          <div style="font-size:10px;color:${T.GRAY};letter-spacing:0.04em;">APPROVED BY</div>
+          <div style="font-size:11px;font-weight:700;color:${T.SLATE};margin-bottom:4px;">Client: ${cl}</div>
+          <div style="font-size:9px;color:${T.GRAY};letter-spacing:0.04em;">APPROVED BY</div>
           ${clientSig}
-          <div style="font-size:11px;margin-top:10px;line-height:1.9;">
+          <div style="font-size:10.5px;margin-top:6px;line-height:1.7;">
             Date: ${executed ? `<strong>${fmtDate(msa.executed_at)}</strong>` : val(null)}<br>
             Name: ${val(msa.approver_name ?? msa.executed_signature)}<br>
             Title: ${val(msa.approver_title)}<br>
@@ -496,10 +479,10 @@ export async function renderMsaPdf(
 ): Promise<Buffer> {
   const html = docShell(
     `MSA — ${msa.msa_number}`,
-    coverPage(msa, prospect)
+    `<style>${SIGNATURE_FONT_FACE}</style>`
+    + coverPage(msa, prospect)
     + termsPage(msa, prospect)
-    + disclosuresPage(msa)
-    + executionPage(msa, prospect)
+    + disclosuresAndExecutionPage(msa, prospect)
     + certificatePage(msa),
   )
   return htmlToPdfBuffer(html, { format: 'Legal', printBackground: true })
