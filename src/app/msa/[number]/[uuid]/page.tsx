@@ -69,6 +69,7 @@ export default async function PublicMsaPage({
             number={number}
             publicUuid={uuid}
             disclosures={disclosures}
+            msaPdfUrl={`/api/msa/public/${number}/pdf?k=${uuid}`}
             alreadyExecuted={executed}
             executedSignature={msa.executed_signature}
             defaultName={(msa.prospects as { owner_name?: string } | null)?.owner_name ?? null}

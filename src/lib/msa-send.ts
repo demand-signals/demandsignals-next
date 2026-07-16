@@ -17,6 +17,10 @@ import { trackLink } from '@/lib/track-link'
 import { getPrivateSignedUrl, uploadPrivate, deletePrivate } from '@/lib/r2-storage'
 import { renderMsaPdf, type MsaDocument, type MsaIncorporatedDisclosure } from '@/lib/pdf/msa'
 
+function escHtml(v: string): string {
+  return v.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")
+}
+
 interface DispatchResult {
   success: boolean
   recipient?: string
@@ -277,6 +281,64 @@ export async function dispatchMsaSms(
   const result = await sendSms(phone, message)
   await logMsaActivity({ msa, type: 'msa_sent', channel: 'sms', recipient: phone, content: message, link: url, success: result.success, errorMessage: result.error, createdBy: options.createdBy })
   return { success: result.success, recipient: phone, message_id: result.message_id, error: result.error }
+}
+
+/* ── Deliver the fully-executed / countersigned MSA to the signer ────── */
+// Called after execution: emails the countersigned PDF (attachment) and texts
+// a link. Prefers the approver's email/cell captured at signing, falling back
+// to the prospect contact fields.
+
+export async function sendExecutedMsa(msaId: string): Promise<void> {
+  const { data: row } = await supabaseAdmin
+    .from('msa_documents').select(SELECT).eq('id', msaId).maybeSingle()
+  if (!row) return
+  const msa = row as MsaRow & { approver_email?: string | null; approver_cell?: string | null; approver_name?: string | null; pdf_storage_path?: string | null }
+
+  const email = msa.approver_email ?? msa.prospect?.owner_email ?? msa.prospect?.business_email ?? null
+  const phone = msa.approver_cell ?? msa.prospect?.owner_phone ?? msa.prospect?.business_phone ?? null
+  const publicUrl = `https://demandsignals.co/msa/${msa.msa_number}/${msa.public_uuid}`
+  const who = msa.approver_name ?? msa.prospect?.business_name ?? 'there'
+
+  // Email with the executed PDF attached.
+  if (email && process.env.RESEND_API_KEY) {
+    let pdfBuffer: Buffer | undefined
+    if (msa.pdf_storage_path) {
+      try {
+        const signed = await getPrivateSignedUrl(msa.pdf_storage_path, 60)
+        const res = await fetch(signed)
+        if (res.ok) pdfBuffer = Buffer.from(await res.arrayBuffer())
+      } catch { /* link still delivered */ }
+    }
+    const html = `<!doctype html><html><body style="font-family:Helvetica,Arial,sans-serif;color:#1f2733;line-height:1.6;max-width:520px;">
+      <p style="font-size:16px;">Thank you, ${escHtml(who)}!</p>
+      <p style="font-size:15px;">Your Master Service Agreement (${escHtml(msa.msa_number)}) is fully executed. A signed copy is attached for your records.</p>
+      <p style="margin:20px 0;"><a href="${publicUrl}" style="display:inline-block;background:#2BA98E;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">View Agreement</a></p>
+      <p style="font-size:14px;">— Demand Signals</p>
+    </body></html>`
+    try {
+      await sendEmail({
+        to: email, kind: 'msa',
+        subject: `Signed: your Demand Signals Agreement (${msa.msa_number})`,
+        html, text: `Thank you, ${who}! Your Master Service Agreement ${msa.msa_number} is fully executed. Signed copy attached.\n${publicUrl}\n— Demand Signals`,
+        isClientFacing: true,
+        attachments: pdfBuffer ? [{ filename: `${msa.msa_number}-executed.pdf`, content: pdfBuffer }] : undefined,
+      })
+      await logMsaActivity({ msa, type: 'msa_executed_sent', channel: 'email', recipient: email, content: 'Executed copy delivered', link: publicUrl, success: true })
+    } catch (e) {
+      console.warn('[sendExecutedMsa] email failed:', e instanceof Error ? e.message : e)
+    }
+  }
+
+  // SMS with a link to the executed agreement.
+  if (phone) {
+    const msg = `Demand Signals: Your agreement ${msa.msa_number} is fully signed. Copy: ${publicUrl}`
+    try {
+      const r = await sendSms(phone, msg)
+      await logMsaActivity({ msa, type: 'msa_executed_sent', channel: 'sms', recipient: phone, content: msg, link: publicUrl, success: r.success, errorMessage: r.error })
+    } catch (e) {
+      console.warn('[sendExecutedMsa] sms failed:', e instanceof Error ? e.message : e)
+    }
+  }
 }
 
 /* ── Onboarding kit: ensure MSA exists → issue → email + SMS ─────────── */

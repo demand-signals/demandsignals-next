@@ -22,7 +22,15 @@ interface ExecuteBody {
   approver?: { name?: string; title?: string; email?: string; cell?: string }
   esignConsent?: boolean
   initials: Array<{ code: string; initials: string }>
+  msaInitials?: string
   fingerprint?: Record<string, unknown>
+}
+
+function initialsFromName(name: string): string {
+  return name.trim().split(/\s+/).filter(Boolean).map((w) => w[0]!.toUpperCase()).join('').slice(0, 5)
+}
+function isEmail(v: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
 }
 
 function num(v: string | null): number | undefined {
@@ -47,6 +55,27 @@ export async function POST(
   }
   if (!body.esignConsent) {
     return NextResponse.json({ error: 'Electronic signature consent is required' }, { status: 400 })
+  }
+
+  // ── Server-side validation (defense in depth; client validates too) ──
+  const approverName = (body.approver?.name ?? '').trim()
+  if (!approverName) {
+    return NextResponse.json({ error: 'Signer name is required' }, { status: 400 })
+  }
+  if (body.signature.trim().toLowerCase() !== approverName.toLowerCase()) {
+    return NextResponse.json({ error: 'Signature must match the signer name' }, { status: 400 })
+  }
+  const expectedInitials = initialsFromName(approverName)
+  const approverEmail = (body.approver?.email ?? '').trim()
+  if (approverEmail && !isEmail(approverEmail)) {
+    return NextResponse.json({ error: 'Invalid email address' }, { status: 400 })
+  }
+  // Every provided initial (disclosures + MSA) must equal the name's initials.
+  const allInitialVals = [...(body.initials ?? []).map((i) => i.initials), body.msaInitials]
+  for (const v of allInitialVals) {
+    if ((v ?? '').trim().toUpperCase() !== expectedInitials) {
+      return NextResponse.json({ error: `Initials must be "${expectedInitials}" on every document and match the signer name` }, { status: 400 })
+    }
   }
 
   const { data: msa, error } = await supabaseAdmin
@@ -132,11 +161,14 @@ export async function POST(
       .from('prospects')
       .update({ has_executed_msa: true, msa_executed_at: now, executed_msa_id: msa.id })
       .eq('id', msa.prospect_id)
+    // Regenerate the PDF (now fully executed + certificate), then deliver the
+    // countersigned copy to the signer and alert the DSIG team.
     try {
-      const { regenerateMsaPdf } = await import('@/lib/msa-send')
+      const { regenerateMsaPdf, sendExecutedMsa } = await import('@/lib/msa-send')
       await regenerateMsaPdf(msa.id)
+      await sendExecutedMsa(msa.id)   // email (PDF attached) + SMS to the signer
     } catch (e) {
-      console.warn('[msa/execute] post-exec regen failed:', e instanceof Error ? e.message : e)
+      console.warn('[msa/execute] post-exec delivery failed:', e instanceof Error ? e.message : e)
     }
     try {
       await supabaseAdmin.from('activities').insert({
@@ -145,11 +177,22 @@ export async function POST(
         channel: 'system',
         direction: 'inbound',
         subject: `MSA ${number} executed`,
-        body: `Signed by: ${a.name?.trim() || body.signature.trim()}${a.title ? ` (${a.title})` : ''}`,
+        body: `Signed by: ${approverName}${a.title ? ` (${a.title})` : ''}`,
         status: 'sent',
         created_by: 'system',
       })
     } catch { /* non-fatal */ }
+  }
+
+  // Admin SMS alert — MSA signed.
+  try {
+    const { notifyAdminsBySms } = await import('@/lib/admin-sms')
+    await notifyAdminsBySms({
+      source: 'msa-executed',
+      body: `✅ MSA ${number} signed by ${approverName}. Fully executed & delivered to the signer.`,
+    })
+  } catch (e) {
+    console.warn('[msa/execute] admin alert failed:', e instanceof Error ? e.message : e)
   }
 
   return NextResponse.json({ ok: true, executed_at: now })

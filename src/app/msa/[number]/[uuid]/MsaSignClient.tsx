@@ -1,9 +1,9 @@
 'use client'
 
-// Client-side MSA execution: approver identity, per-disclosure e-initials,
-// forced e-signature consent, cursive typed signature, and a full client-side
-// fingerprint (screen, timezone, geolocation, canvas, webgl, etc.) → POST
-// /api/msa/public/[number]/execute.
+// Client-side MSA execution: review & approve each document (MSA + disclosures),
+// approver identity, validated per-document e-initials, forced e-sign
+// certification, cursive signature (must match name), and a full client-side
+// fingerprint → POST /api/msa/public/[number]/execute.
 
 import { useState } from 'react'
 import { Loader2, Check, AlertTriangle } from 'lucide-react'
@@ -14,6 +14,7 @@ interface Props {
   number: string
   publicUuid: string
   disclosures: Disclosure[]
+  msaPdfUrl: string
   alreadyExecuted: boolean
   executedSignature?: string | null
   defaultName?: string | null
@@ -21,8 +22,16 @@ interface Props {
 }
 
 const CURSIVE = "'Brush Script MT','Segoe Script','Snell Roundhand',cursive"
+const MSA_KEY = '__MSA__'
 
-// ── Client fingerprint collection ────────────────────────────────────
+// "Hunter Long" -> "HL"; "Jane" -> "J"
+function initialsFromName(name: string): string {
+  return name.trim().split(/\s+/).filter(Boolean).map((w) => w[0]!.toUpperCase()).join('').slice(0, 5)
+}
+function isEmail(v: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
+}
+
 async function collectFingerprint(): Promise<Record<string, unknown>> {
   const fp: Record<string, unknown> = {}
   try {
@@ -39,53 +48,32 @@ async function collectFingerprint(): Promise<Record<string, unknown>> {
     fp.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
     fp.screen = { w: screen.width, h: screen.height, dpr: window.devicePixelRatio, color_depth: screen.colorDepth }
     fp.viewport = { w: window.innerWidth, h: window.innerHeight }
-
-    // Parse browser / os / device from UA (lightweight)
     const ua = nav.userAgent
-    fp.browser = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : /Firefox\//.test(ua) ? 'Firefox' : 'Unknown'
+    fp.browser = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'Unknown'
     fp.os = /Windows/.test(ua) ? 'Windows' : /Mac OS X/.test(ua) ? 'macOS' : /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : /Linux/.test(ua) ? 'Linux' : 'Unknown'
     fp.device = /Mobile/.test(ua) ? 'Mobile' : 'Desktop'
-
-    // Canvas fingerprint
     try {
-      const c = document.createElement('canvas')
-      const ctx = c.getContext('2d')
-      if (ctx) {
-        ctx.textBaseline = 'top'; ctx.font = "14px 'Arial'"
-        ctx.fillStyle = '#f60'; ctx.fillRect(125, 1, 62, 20)
-        ctx.fillStyle = '#069'; ctx.fillText('DSIG❤️', 2, 15)
-        fp.canvas_fp = c.toDataURL().slice(-32)
-      }
-    } catch { /* canvas blocked */ }
-
-    // WebGL
+      const c = document.createElement('canvas'); const ctx = c.getContext('2d')
+      if (ctx) { ctx.textBaseline = 'top'; ctx.font = "14px 'Arial'"; ctx.fillStyle = '#f60'; ctx.fillRect(125, 1, 62, 20); ctx.fillStyle = '#069'; ctx.fillText('DSIG', 2, 15); fp.canvas_fp = c.toDataURL().slice(-32) }
+    } catch { /* blocked */ }
     try {
       const gl = document.createElement('canvas').getContext('webgl') as WebGLRenderingContext | null
-      if (gl) {
-        const dbg = gl.getExtension('WEBGL_debug_renderer_info')
-        if (dbg) {
-          fp.webgl_vendor = gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL)
-          fp.webgl_renderer = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
-        }
-      }
-    } catch { /* webgl blocked */ }
-
-    // Precise geolocation (permission-gated; 4s timeout, best-effort)
+      if (gl) { const dbg = gl.getExtension('WEBGL_debug_renderer_info'); if (dbg) { fp.webgl_vendor = gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL); fp.webgl_renderer = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) } }
+    } catch { /* blocked */ }
     fp.geolocation = await new Promise((resolve) => {
       if (!navigator.geolocation) return resolve(null)
-      const done = (v: unknown) => resolve(v)
-      const t = setTimeout(() => done(null), 4000)
+      const t = setTimeout(() => resolve(null), 4000)
       navigator.geolocation.getCurrentPosition(
-        (pos) => { clearTimeout(t); done({ lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy, at: new Date().toISOString() }) },
-        () => { clearTimeout(t); done(null) },
+        (pos) => { clearTimeout(t); resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy, at: new Date().toISOString() }) },
+        () => { clearTimeout(t); resolve(null) },
         { timeout: 4000, maximumAge: 60000 },
       )
     })
-  } catch { /* fingerprint best-effort */ }
+  } catch { /* best-effort */ }
   return fp
 }
 
-export function MsaSignClient({ number, publicUuid, disclosures, alreadyExecuted, executedSignature, defaultName, defaultEmail }: Props) {
+export function MsaSignClient({ number, publicUuid, disclosures, msaPdfUrl, alreadyExecuted, executedSignature, defaultName, defaultEmail }: Props) {
   const [initials, setInitials] = useState<Record<string, string>>({})
   const [signature, setSignature] = useState('')
   const [name, setName] = useState(defaultName ?? '')
@@ -97,17 +85,39 @@ export function MsaSignClient({ number, publicUuid, disclosures, alreadyExecuted
   const [errMsg, setErrMsg] = useState('')
 
   if (alreadyExecuted || state === 'done') {
-    const who = state === 'done' ? signature.trim() : executedSignature
+    const who = state === 'done' ? (name.trim() || signature.trim()) : executedSignature
     return (
       <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-5 text-emerald-800">
         <div className="flex items-center gap-2 font-semibold"><Check className="h-5 w-5" /> Agreement signed</div>
-        <p className="mt-1 text-sm">Thank you, {who} — you&rsquo;re all set. We&rsquo;ll be in touch to get started.</p>
+        <p className="mt-1 text-sm">Thank you, {who} — you&rsquo;re all set. A fully-executed copy is on its way to your email and phone.</p>
       </div>
     )
   }
 
-  const allInitialed = disclosures.every((d) => (initials[d.code] ?? '').trim().length > 0)
-  const canSign = allInitialed && signature.trim().length > 0 && name.trim().length > 0 && consent && state !== 'signing'
+  // ── Documents to review (MSA first, then disclosures) ──
+  const docs = [
+    { key: MSA_KEY, title: 'Master Service Agreement', code: number, url: msaPdfUrl },
+    ...disclosures.map((d) => ({ key: d.code, title: `DSIG ${d.title}`, code: d.code, url: d.public_url })),
+  ]
+
+  // ── Validation ──
+  const expectedInitials = initialsFromName(name)
+  const allFilled = docs.every((d) => (initials[d.key] ?? '').trim().length > 0)
+  const initialsConsistent = docs.every((d) => (initials[d.key] ?? '').trim().toUpperCase() === expectedInitials) && expectedInitials.length > 0
+  const sigMatchesName = signature.trim().toLowerCase() === name.trim().toLowerCase() && name.trim().length > 0
+  const emailOk = email.trim() === '' || isEmail(email)
+  const canSign =
+    allFilled && initialsConsistent && sigMatchesName && emailOk && consent && name.trim().length > 0 && state !== 'signing'
+
+  const validationHint = (() => {
+    if (name.trim().length === 0) return 'Enter your full name first.'
+    if (!allFilled) return `Initial all ${docs.length} documents.`
+    if (!initialsConsistent) return `Initials must be your initials (${expectedInitials}) and match on every line.`
+    if (!sigMatchesName) return 'Your signature must match your typed name exactly.'
+    if (!emailOk) return 'Enter a valid email address.'
+    if (!consent) return 'Check the certification box to continue.'
+    return ''
+  })()
 
   async function sign() {
     setState('signing'); setErrMsg('')
@@ -121,7 +131,9 @@ export function MsaSignClient({ number, publicUuid, disclosures, alreadyExecuted
           signature: signature.trim(),
           approver: { name: name.trim(), title: title.trim(), email: email.trim(), cell: cell.trim() },
           esignConsent: consent,
+          // Send disclosure initials (server enforces one per disclosure).
           initials: disclosures.map((d) => ({ code: d.code, initials: (initials[d.code] ?? '').trim() })),
+          msaInitials: (initials[MSA_KEY] ?? '').trim(),
           fingerprint,
         }),
       })
@@ -137,26 +149,30 @@ export function MsaSignClient({ number, publicUuid, disclosures, alreadyExecuted
 
   return (
     <div className="space-y-6">
-      {/* Disclosures */}
+      {/* Documents (MSA + disclosures) */}
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">Review &amp; acknowledge each disclosure</h2>
+        <h2 className="text-lg font-semibold text-slate-900">Review &amp; Approve Each Document</h2>
         <p className="mt-1 text-sm text-slate-500">Enter your initials beside each. Click a title to read it.</p>
         <div className="mt-3 divide-y divide-slate-100 rounded-lg border border-slate-200">
-          {disclosures.map((d) => (
-            <div key={d.code} className="flex items-center gap-4 p-3">
-              <input
-                aria-label={`Initials for ${d.title}`}
-                value={initials[d.code] ?? ''}
-                onChange={(e) => setInitials((s) => ({ ...s, [d.code]: e.target.value.slice(0, 5).toUpperCase() }))}
-                placeholder="__"
-                className="w-16 rounded border border-slate-300 px-2 py-1.5 text-center font-semibold uppercase tracking-widest text-slate-800"
-              />
-              <div className="flex-1">
-                <a href={d.public_url} target="_blank" rel="noreferrer" className="font-medium text-teal-600 hover:underline">{d.title}</a>
-                <div className="text-xs text-slate-400">{d.code}</div>
+          {docs.map((d) => {
+            const val = (initials[d.key] ?? '')
+            const bad = val.trim().length > 0 && expectedInitials.length > 0 && val.trim().toUpperCase() !== expectedInitials
+            return (
+              <div key={d.key} className="flex items-center gap-4 p-3">
+                <input
+                  aria-label={`Initials for ${d.title}`}
+                  value={val}
+                  onChange={(e) => setInitials((s) => ({ ...s, [d.key]: e.target.value.slice(0, 5).toUpperCase() }))}
+                  placeholder={expectedInitials || '__'}
+                  className={`w-16 rounded border px-2 py-1.5 text-center font-semibold uppercase tracking-widest text-slate-800 ${bad ? 'border-red-400 bg-red-50' : 'border-slate-300'}`}
+                />
+                <div className="flex-1">
+                  <a href={d.url} target="_blank" rel="noreferrer" className="font-medium text-teal-600 hover:underline">{d.title}</a>
+                  <div className="text-xs text-slate-400">{d.code}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 
@@ -166,30 +182,35 @@ export function MsaSignClient({ number, publicUuid, disclosures, alreadyExecuted
         <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name *" className={field} />
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className={field} />
-          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className={field} />
+          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className={`${field} ${!emailOk ? 'border-red-400' : ''}`} />
           <input value={cell} onChange={(e) => setCell(e.target.value)} placeholder="Cell" className={field} />
         </div>
       </div>
 
-      {/* Signature */}
+      {/* Signature — must match name */}
       <div>
         <h2 className="text-lg font-semibold text-slate-900">Sign</h2>
-        <p className="mt-1 text-sm text-slate-500">Type your full name as your electronic signature.</p>
+        <p className="mt-1 text-sm text-slate-500">Type your full name exactly as above to sign.</p>
         <input
           value={signature}
           onChange={(e) => setSignature(e.target.value)}
           placeholder="Your full name"
-          className="mt-2 w-full max-w-md rounded border border-slate-300 px-3 py-2"
+          className={`mt-2 w-full max-w-md rounded border px-3 py-2 ${signature.trim() && !sigMatchesName ? 'border-red-400' : 'border-slate-300'}`}
           style={{ fontFamily: CURSIVE, fontSize: '28px', color: '#0f172a' }}
         />
+        {signature.trim() && !sigMatchesName && (
+          <p className="mt-1 text-xs text-red-600">Signature must match your typed name.</p>
+        )}
       </div>
 
-      {/* Forced e-sign consent */}
+      {/* Forced e-sign certification */}
       <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
         <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-4 w-4" />
         <span className="text-slate-700">
-          I agree to use an electronic signature, and I consent that my typed name and the recorded signing metadata
-          constitute my legal signature under the E-SIGN Act, with the same effect as a handwritten signature.
+          I certify that I have reviewed each of these documents and agree to the terms, conditions, and disclosures
+          contained herein. I agree to use an electronic signature, and I consent that my typed name and the recorded
+          signing metadata constitute my legal signature under the E-SIGN Act, with the same effect as a handwritten
+          signature.
         </span>
       </label>
 
@@ -198,13 +219,8 @@ export function MsaSignClient({ number, publicUuid, disclosures, alreadyExecuted
           <AlertTriangle className="h-4 w-4" /> {errMsg}
         </div>
       )}
-      {!canSign && state !== 'signing' && (
-        <p className="text-xs text-slate-400">
-          {!allInitialed ? `Initial all ${disclosures.length} disclosures. ` : ''}
-          {!name.trim() ? 'Enter your name. ' : ''}
-          {!signature.trim() ? 'Type your signature. ' : ''}
-          {!consent ? 'Agree to electronic signature.' : ''}
-        </p>
+      {!canSign && state !== 'signing' && validationHint && (
+        <p className="text-xs text-slate-400">{validationHint}</p>
       )}
 
       <button onClick={sign} disabled={!canSign}

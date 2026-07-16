@@ -37,6 +37,9 @@ export default function AdminMsaPage() {
   const [msas, setMsas] = useState<MsaRow[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const reload = () => setRefreshKey((k) => k + 1)
 
   useEffect(() => {
     setLoading(true)
@@ -46,7 +49,14 @@ export default function AdminMsaPage() {
       .then((r) => r.json())
       .then((d) => setMsas(d.msas ?? []))
       .finally(() => setLoading(false))
-  }, [statusFilter])
+  }, [statusFilter, refreshKey])
+
+  // Refresh when returning to the tab so newly-signed MSAs appear.
+  useEffect(() => {
+    const onFocus = () => reload()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [])
 
   return (
     <div className="p-6 space-y-6">
@@ -58,7 +68,7 @@ export default function AdminMsaPage() {
             disclosures) to any customer below, or from a prospect&rsquo;s page.
           </p>
         </div>
-        <SendMsaButton />
+        <SendMsaButton onSent={reload} />
       </div>
 
       <label className="text-sm">
