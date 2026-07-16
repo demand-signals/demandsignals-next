@@ -26,11 +26,12 @@ import type {
   RateCardRole,
 } from './retainer-types'
 
-const LEDGER_COLS =
-  'id, prospect_id, currency, balance_cents, lifetime_credited_cents, ' +
-  'lifetime_debited_cents, hourly_rate_cents, notify_pct, reup_pct, ' +
-  'auto_reup_enabled, reup_target_cents, last_notified_at, ' +
-  'last_reup_drafted_at, status, notes, created_at, updated_at'
+// Select '*' (a string LITERAL) rather than a concatenated column list —
+// Supabase's typegen can only infer the row shape from a literal, and a
+// runtime-built string collapses `data` to GenericStringError, breaking the
+// `as RetainerLedger` cast (caught by Vercel's strict build, not local
+// tsc --skipLibCheck). All ledger columns are wanted anyway.
+const LEDGER_COLS = '*'
 
 const DEFAULT_HOURLY_RATE_CENTS = 20000 // fallback if quote_config unreadable
 
