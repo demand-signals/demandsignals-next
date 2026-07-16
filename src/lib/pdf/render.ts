@@ -23,6 +23,17 @@ export async function htmlToPdfBuffer(
     const page = await browser.newPage()
     // waitUntil: 'networkidle0' ensures external images (logo URL) finish loading
     await page.setContent(html, { waitUntil: 'networkidle0' })
+    // Wait for embedded (@font-face data-URI) fonts to finish loading before the
+    // PDF snapshot — data-URI fonts make no network request, so networkidle0
+    // does not cover them. Best-effort; capped so a stuck font never hangs render.
+    try {
+      await page.evaluate(async () => {
+        const fonts = (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts
+        if (fonts?.ready) {
+          await Promise.race([fonts.ready, new Promise((r) => setTimeout(r, 3000))])
+        }
+      })
+    } catch { /* fonts.ready unsupported — proceed */ }
     const buf = await page.pdf({
       format: options.format ?? 'Legal',
       printBackground: options.printBackground ?? true,
