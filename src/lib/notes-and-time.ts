@@ -15,6 +15,7 @@
 
 import { z } from 'zod'
 import { supabaseAdmin } from './supabase/admin'
+import { accrueHandoffDebit } from './retainer-ledger'
 
 // ── Input schema ───────────────────────────────────────────────────
 
@@ -362,6 +363,39 @@ export async function createNoteAndTimeEntry(
         note,
         time_entry: null,
         warning: `time entry insert failed: ${teErr?.message ?? 'unknown'}`,
+      },
+    }
+  }
+
+  // ── Retainer accrual (opt-in, best-effort) ─────────────────────────
+  // If the client has a retainer ledger, accrue a role-LESS PENDING debit for
+  // this work (hours captured + LLM billable as the baseline; the human-hours
+  // rate is applied when the admin picks a role at approval). Clients WITHOUT
+  // a ledger are untouched — accrueHandoffDebit no-ops. This must NEVER fail
+  // the handoff: the note + time entry already wrote. Any error is swallowed
+  // to a warning, matching the best-effort receipt-creation pattern elsewhere.
+  try {
+    const hunterHours =
+      (input.hunter_minutes ?? 0) > 0
+        ? Math.round(((input.hunter_minutes ?? 0) / 60) * 100) / 100
+        : 0
+    await accrueHandoffDebit({
+      prospect_id: project.prospect_id,
+      project_id: project.id,
+      time_entry_id: timeEntry.id,
+      hunter_hours: hunterHours,
+      llm_billable_cents: timeEntry.llm_billable_cents ?? null,
+      description: input.title ?? `Session on ${loggedAt}`,
+    })
+  } catch (accrualErr) {
+    return {
+      ok: true,
+      result: {
+        note,
+        time_entry: timeEntry,
+        warning: `retainer accrual skipped: ${
+          accrualErr instanceof Error ? accrualErr.message : 'unknown'
+        }`,
       },
     }
   }

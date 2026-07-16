@@ -207,6 +207,16 @@ export interface SowPhase {
   name: string
   description: string
   deliverables: SowPhaseDeliverable[]
+  // Phase pricing mode (retainer ledger feature, 2026-07-16). Optional for
+  // back-compat — absent/undefined behaves as 'itemized' (today's render).
+  //   'itemized'   — deliverables carry per-line price columns (unchanged).
+  //   'scope_only' — deliverables render as scope bullets, no price columns;
+  //                  phase header shows a ± hours NTE range. Money for this
+  //                  work is drawn from the client's retainer ledger, not
+  //                  priced on the SOW.
+  pricing_mode?: 'itemized' | 'scope_only'
+  hours_low?: number   // scope_only NTE framing (± low–high hrs)
+  hours_high?: number
 }
 
 // ── SOW types ──────────────────────────────────────────────────────
@@ -313,6 +323,16 @@ export interface SowDocument {
   // Growth & Strategy' tagline). Migration 031 added these columns.
   cover_eyebrow?: string | null
   cover_tagline?: string | null
+  // Retainer engagement framing (migration 059). 'fixed_scope' (default) =
+  // classic itemized SOW, unchanged render. 'retainer' = money-on-the-books
+  // engagement: phases render as scope with a ± hours NTE range, and the
+  // pricing block shows the opening retainer pool instead of a line-item total.
+  // On accept, a retainer SOW seeds/reuses the client's retainer_ledgers row
+  // and drafts the opening replenish invoice for retainer_initial_cents.
+  engagement_type?: 'fixed_scope' | 'retainer'
+  retainer_initial_cents?: number | null
+  retainer_hours_low?: number | null
+  retainer_hours_high?: number | null
   created_by: string | null
   created_at: string
   updated_at: string

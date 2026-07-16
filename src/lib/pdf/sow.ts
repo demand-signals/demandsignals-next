@@ -249,7 +249,9 @@ export function phaseBlock(phase: SowPhase, idx: number): string {
     </div>
     ${phase.description ? `<p style="font-size:12px;color:${T.BODY};font-style:italic;margin-bottom:10px;margin-left:36px;line-height:1.5">${esc(phase.description)}</p>` : ''}
 
-    ${phase.deliverables.length > 0 ? `
+    ${phase.pricing_mode === 'scope_only'
+      ? scopeOnlyBody(phase)
+      : phase.deliverables.length > 0 ? `
     <table style="width:100%;border-collapse:collapse;font-family:${FONT_STACK}">
       <thead>
         <tr style="background:${T.SLATE}">
@@ -267,6 +269,33 @@ export function phaseBlock(phase: SowPhase, idx: number): string {
     ${subtotalStr ? `<div style="text-align:right;font-size:11px;color:${T.BODY};margin-top:6px;padding-right:11px">Phase subtotal: <strong style="color:${T.SLATE}">${subtotalStr}</strong></div>` : ''}
     ` : `<p style="font-size:12px;color:${T.GRAY};font-style:italic;margin-left:36px">No deliverables defined for this phase.</p>`}
   </div>`
+}
+
+// Scope-only phase body (retainer engagements): deliverables render as scope
+// bullets with a ± hours NTE line instead of the Qty/Rate/Total price table.
+// Money for this work is drawn from the client's retainer, not priced here.
+export function scopeOnlyBody(phase: SowPhase): string {
+  const hoursLine =
+    phase.hours_low != null || phase.hours_high != null
+      ? `<div style="font-size:11px;color:${T.BODY};margin-left:36px;margin-bottom:8px">
+           <strong style="color:${T.SLATE}">± ${phase.hours_low ?? '?'}–${phase.hours_high ?? '?'} hrs</strong>
+           <span style="color:${T.GRAY}"> · drawn from retainer</span>
+         </div>`
+      : ''
+  const bullets =
+    phase.deliverables.length > 0
+      ? `<ul style="margin:0 0 0 36px;padding-left:18px;font-size:12px;color:${T.BODY};line-height:1.7">
+           ${phase.deliverables
+             .map(
+               (d) =>
+                 `<li><span style="color:${T.SLATE};font-weight:600">${esc(d.name)}</span>${
+                   d.description ? ` — ${esc(d.description)}` : ''
+                 }</li>`,
+             )
+             .join('')}
+         </ul>`
+      : `<p style="font-size:12px;color:${T.GRAY};font-style:italic;margin-left:36px">Scope to be defined.</p>`
+  return `${hoursLine}${bullets}`
 }
 
 function legacyDeliverablesFallback(sow: SowDocument): string {
@@ -373,7 +402,102 @@ function infoCard(
   </div>`
 }
 
+// Shared authorization + signature block used by both the fixed-scope and
+// retainer investment pages. Extracted verbatim from the original inline
+// markup so the fixed-scope render is unchanged.
+function signatureBlock(sow: SowDocument, isAccepted: boolean, acceptedDate: string): string {
+  return `
+      ${eyebrow('Authorization &amp; Signatures')}
+
+      <div style="display:flex;gap:36px;max-width:520px;margin-bottom:16px">
+        <!-- Client -->
+        <div style="flex:1">
+          <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px;font-family:${FONT_STACK}">CLIENT</p>
+          ${isAccepted
+            ? `<p style="font-family:'Brush Script MT','Segoe Script',cursive;font-size:24px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:4px;min-height:40px;line-height:1.2">${esc(sow.accepted_signature ?? '')}</p>`
+            : `<div style="border-bottom:1px solid ${T.RULE};height:40px;min-width:160px"></div>`}
+          <p style="font-size:10px;color:${T.GRAY};margin-top:4px;font-family:${FONT_STACK}">
+            ${isAccepted ? `Date: ${acceptedDate}` : 'Date'}
+          </p>
+        </div>
+        <!-- DSIG -->
+        <div style="flex:1">
+          <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px;font-family:${FONT_STACK}">DEMAND SIGNALS</p>
+          <div style="border-bottom:1px solid ${T.RULE};height:40px;min-width:160px"></div>
+          <p style="font-size:10px;color:${T.GRAY};margin-top:4px;font-family:${FONT_STACK}">Date</p>
+        </div>
+      </div>`
+}
+
+// Investment section for a RETAINER engagement. Shows the opening retainer pool
+// + hours NTE framing instead of line-item totals. Reuses the same page chrome,
+// info cards, and signature block as the fixed-scope page.
+function retainerInvestmentPage(sow: SowDocument): string {
+  const initial = sow.retainer_initial_cents ?? 0
+  const hLow = sow.retainer_hours_low
+  const hHigh = sow.retainer_hours_high
+  const hoursNte =
+    hLow != null || hHigh != null
+      ? `± ${hLow ?? '?'}–${hHigh ?? '?'} hours (not-to-exceed framing)`
+      : ''
+  const isAccepted = !!sow.accepted_at && !!sow.accepted_signature
+  const acceptedDate = isAccepted
+    ? new Date(sow.accepted_at!).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : ''
+  const defaultTerms =
+    'All work under this engagement is billed against a prepaid retainer. Time and AI/token ' +
+    'usage draw the balance down at the applicable role rates. When the balance runs low you ' +
+    'are notified, and a replenishment invoice is issued to keep work moving. Unused funds are ' +
+    'refundable on request less work performed.'
+
+  return `
+  <div style="
+    width:100%;
+    background:${T.WHITE};
+    display:block;
+    break-before:page;
+    font-family:${FONT_STACK};
+  ">
+    ${interiorPageHeader('02 — Investment')}
+
+    <div style="padding:28px 54px 24px">
+      ${eyebrow('Retainer')}
+      <div style="
+        font-size:48px;
+        font-weight:700;
+        color:${T.TEAL_S};
+        letter-spacing:-0.03em;
+        line-height:1;
+        margin-bottom:4px;
+        font-variant-numeric:tabular-nums;
+      ">${formatCents(initial)}</div>
+      ${oDiv()}
+      <p style="font-size:12px;color:${T.BODY};margin-bottom:2px">opening retainer — placed on account</p>
+      ${hoursNte ? `<p style="font-size:12px;color:${T.GRAY};margin-bottom:2px">${hoursNte}</p>` : ''}
+
+      ${infoCard('HOW THE RETAINER WORKS', escNl(sow.payment_terms?.trim() || defaultTerms), T.VLT, T.TEAL_S)}
+      ${sow.guarantees ? infoCard('GUARANTEES', escNl(sow.guarantees), T.VLT, T.TEAL) : ''}
+      ${sow.notes ? infoCard('NOTES', escNl(sow.notes), T.VLO, T.ORANGE_S) : ''}
+
+      <div style="width:100%;height:0.5pt;background:${T.RULE};margin:24px 0 20px"></div>
+
+      ${signatureBlock(sow, isAccepted, acceptedDate)}
+    </div>
+
+    <div style="break-inside:avoid">
+      ${interiorPageFooter()}
+    </div>
+  </div>`
+}
+
 function investmentPage(sow: SowDocument): string {
+  // Retainer engagement: money lives in the retainer pool, not in line items.
+  // Render a dedicated pool-based investment section and return BEFORE any of
+  // the fixed-scope line-item math runs — so classic SOWs are byte-identical.
+  if (sow.engagement_type === 'retainer') {
+    return retainerInvestmentPage(sow)
+  }
+
   const totals      = accumulateAll(sow.phases)
   const tikCents    = sow.trade_credit_cents ?? 0
   // Document-level discount (migration 036). Order: subtotal − discount − TIK = cash.
@@ -532,26 +656,7 @@ function investmentPage(sow: SowDocument): string {
       <!-- Signature block — lives on this page per spec -->
       <div style="width:100%;height:0.5pt;background:${T.RULE};margin:24px 0 20px"></div>
 
-      ${eyebrow('Authorization &amp; Signatures')}
-
-      <div style="display:flex;gap:36px;max-width:520px;margin-bottom:16px">
-        <!-- Client -->
-        <div style="flex:1">
-          <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px;font-family:${FONT_STACK}">CLIENT</p>
-          ${isAccepted
-            ? `<p style="font-family:'Brush Script MT','Segoe Script',cursive;font-size:24px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:4px;min-height:40px;line-height:1.2">${esc(sow.accepted_signature ?? '')}</p>`
-            : `<div style="border-bottom:1px solid ${T.RULE};height:40px;min-width:160px"></div>`}
-          <p style="font-size:10px;color:${T.GRAY};margin-top:4px;font-family:${FONT_STACK}">
-            ${isAccepted ? `Date: ${acceptedDate}` : 'Date'}
-          </p>
-        </div>
-        <!-- DSIG -->
-        <div style="flex:1">
-          <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px;font-family:${FONT_STACK}">DEMAND SIGNALS</p>
-          <div style="border-bottom:1px solid ${T.RULE};height:40px;min-width:160px"></div>
-          <p style="font-size:10px;color:${T.GRAY};margin-top:4px;font-family:${FONT_STACK}">Date</p>
-        </div>
-      </div>
+      ${signatureBlock(sow, isAccepted, acceptedDate)}
     </div>
 
     <!--

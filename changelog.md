@@ -4,6 +4,19 @@ Append-only log of working sessions. Newest at top.
 
 ---
 
+## 2026-07-16 — dsig-02 — Hunter — Retainer ledger ("bill like attorneys") + role-based rate card
+
+- **Feature**: prepaid retainer per client; all work (human hours + LLM tokens) draws the balance down. Attorney-style: money on the books, services deducted, low-balance triggers notify + auto-draft re-up. Spec: `docs/superpowers/specs/2026-07-16-retainer-ledger-design.md`.
+- **Migration 059** (applied + verified): `retainer_ledgers`, `retainer_transactions`, `rate_card_roles` (6 seeded: $500 legal → $50 admin), `rate_card_markups` (platform +30%, LLM +50%); `sow_documents.{engagement_type, retainer_initial_cents, retainer_hours_low/high}`; `quote_config` kill switch + $100/hr fallback rate. APPLY-059 web-editor-safe.
+- **Ledger engine** (`retainer-ledger.ts`): balance invariant (cache = approved credits − approved debits), post/approve/waive/void, role-at-approval pricing (handoff accrues role-less, admin picks role → rate → amount), idempotent handoff accrual (opt-in, best-effort, zero change to handoff pipeline).
+- **Automation** (`retainer-automation.ts` + cron): current-cycle depletion (not lifetime), notify at 75%, auto-DRAFT re-up invoice at 90% (admin sends), paid-reup → credit + cycle reset. Daily cron `/api/cron/retainer-thresholds`.
+- **UI**: `/admin/rate-card` (edit roles + markups), `/admin/retainers` (balances + depletion bars), `RetainerLedgerPanel` on prospect detail (approval queue + role picker), SOW builder engagement-type + per-phase scope-only toggles.
+- **SOW render**: scope-only phases → bullets + ± hrs (no price table); retainer engagement → pool investment page. Existing itemized SOWs proven byte-identical (regression test).
+- **Non-regression**: all additive — new tables, nullable cols, opt-in ledger, best-effort accrual, self-guarded re-up hook. Existing invoice/SOW/handoff behavior untouched.
+- **Verification**: full tsc + eslint clean; DB round-trips (ledger lifecycle, idempotency 23505, SOW persist + CHECK, automation math) all pass. **2 bugs found & fixed in review**: fragile idempotency message-match → `error.code==='23505'`; re-up invoice insert missing NOT NULL `invoice_number` → temp-placeholder pattern. Full `next build` deferred to Vercel (Y: SMB `.next` corruption; D:\dev reset needs approval).
+
+---
+
 ## 2026-05-11 — WS1 (Gaming-PC) — Hunter — site traffic + lead-gen enhancement (research → diagnose → plan → ship)
 
 - **Span**: 2026-05-11 16:26 PT → 21:08 PT (4h 42m wall clock). Four commits pushed to master (`9eeceb7`, `9efa8d1`, `38bcf6e`, `440d0a3`).
@@ -128,3 +141,12 @@ Append-only log of working sessions. Newest at top.
 - Auto-handoff pipeline live: Hunter on-clock 9h 54m + Claude 3h 21m = 13h 15m billable (auto-derived from transcript, first live POST).
 - Decisions logged: auto-handoff = canonical billing path, 20-min idle cap, overbill-bias, tool exec is Claude work, MEMORY entry = client note body, annotate-don't-block, DRAFT mode for admin installment firing.
 - Next session priority: validate 9am client digest rendering of the new MEMORY-density body.
+
+## 2026-07-15 — dsig-02 — Hunter
+- MSA onboarding hardening (DSIG-internal). Cursive signatures/initials fixed after 4 attempts — root cause was a glyphless ~5KB stub in signature-font.ts; replaced with the verified full ~25KB Dancing Script latin subset. Verified via extracted FontFile glyph contours on the executed 0005 render.
+- Document condensed 5→4 pages (two-column clause body) + interior footers pinned to page bottom (min-height:100vh flex columns); shared _shared.ts footer untouched so invoice/SOW unaffected.
+- All signer fields (name/title/email/cell) now mandatory server + client. RNG 5-digit MSA numbers (migration 058, applied + verified: MSA-2026-62016/76619). Open-SMS on every open of unexecuted MSA + unpaid invoice, 10-min throttle per doc (view_sms_sent_at repurposed to last-sent).
+- Commits be6c553→f05c761 on master, all Vercel READY. Migration 058 applied by Hunter (columns + generator verified).
+- FAILURE: declared cursive "fixed" 3× on false verification (font-in-table ≠ font-renders). Lesson → feedback_verify_rendered_output_not_just_embedded.md. FAILURE: 404 regression from selecting 058 columns before 058 applied — decoupled render lookup, verified link returns 200 (f05c761).
+- Decisions: MSA numbers RNG (privacy); open-SMS 10-min throttle (anti-spam); verify rendered output not embedded-presence; never couple render-critical query to unapplied migration.
+- Next session priority: none blocking. Optional queued — extend content-logging to invoice/SOW sends; SOW contract-structure reshape; first-client onboarding auto-trigger.

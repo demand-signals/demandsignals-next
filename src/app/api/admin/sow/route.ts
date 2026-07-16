@@ -31,6 +31,11 @@ const phaseSchema = z.object({
   name: z.string().default(''),
   description: z.string().default(''),
   deliverables: z.array(phaseDeliverableSchema).default([]),
+  // Retainer engagement support (migration 059). Optional/back-compat:
+  // absent → 'itemized' render (unchanged). 'scope_only' → scope bullets + ± hrs.
+  pricing_mode: z.enum(['itemized', 'scope_only']).optional(),
+  hours_low: z.number().nonnegative().optional(),
+  hours_high: z.number().nonnegative().optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -186,6 +191,11 @@ const postBodySchema = z.object({
   trade_credit_description: z.string().nullable().optional(),
   cover_eyebrow: z.string().nullable().optional(),
   cover_tagline: z.string().nullable().optional(),
+  // Retainer engagement (migration 059). Default 'fixed_scope' = unchanged.
+  engagement_type: z.enum(['fixed_scope', 'retainer']).optional(),
+  retainer_initial_cents: z.number().int().nonnegative().nullable().optional(),
+  retainer_hours_low: z.number().nonnegative().nullable().optional(),
+  retainer_hours_high: z.number().nonnegative().nullable().optional(),
 })
 
 function computeLineTotal(d: z.infer<typeof deliverableSchema>): SowDeliverable {
@@ -228,6 +238,10 @@ export async function POST(request: NextRequest) {
     trade_credit_description,
     cover_eyebrow,
     cover_tagline,
+    engagement_type,
+    retainer_initial_cents,
+    retainer_hours_low,
+    retainer_hours_high,
   } = parsed
 
   // If phases present, compute total from one_time deliverables when client didn't supply one.
@@ -281,6 +295,10 @@ export async function POST(request: NextRequest) {
       trade_credit_description: trade_credit_description ?? null,
       cover_eyebrow: cover_eyebrow ?? null,
       cover_tagline: cover_tagline ?? null,
+      engagement_type: engagement_type ?? 'fixed_scope',
+      retainer_initial_cents: retainer_initial_cents ?? null,
+      retainer_hours_low: retainer_hours_low ?? null,
+      retainer_hours_high: retainer_hours_high ?? null,
       created_by: auth.user.id,
     })
     .select('*')

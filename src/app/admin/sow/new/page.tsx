@@ -41,7 +41,13 @@ interface SowPhase {
   name: string
   description: string
   deliverables: PhaseDeliverable[]
+  // Retainer engagement support (migration 059). Absent → 'itemized'.
+  pricing_mode?: 'itemized' | 'scope_only'
+  hours_low?: number
+  hours_high?: number
 }
+
+type EngagementType = 'fixed_scope' | 'retainer'
 
 const CADENCE_LABELS: Record<Cadence, string> = {
   one_time: 'One-time',
@@ -128,6 +134,11 @@ export default function NewSowPage() {
   const [phases, setPhases] = useState<SowPhase[]>([
     { id: newId(), name: 'Phase 1', description: '', deliverables: [] },
   ])
+  // Retainer engagement (migration 059).
+  const [engagementType, setEngagementType] = useState<EngagementType>('fixed_scope')
+  const [retainerInitialInput, setRetainerInitialInput] = useState('') // dollars
+  const [retainerHoursLow, setRetainerHoursLow] = useState('')
+  const [retainerHoursHigh, setRetainerHoursHigh] = useState('')
   const [depositPct, setDepositPct] = useState('25')
   const [paymentTerms, setPaymentTerms] = useState('')
   const [guarantees, setGuarantees] = useState('')
@@ -356,6 +367,20 @@ export default function NewSowPage() {
           computed_from_deliverables: true,
           trade_credit_cents: tradeCents > 0 ? tradeCents : undefined,
           trade_credit_description: tradeDescription || undefined,
+          // Retainer engagement (migration 059).
+          engagement_type: engagementType,
+          retainer_initial_cents:
+            engagementType === 'retainer'
+              ? Math.round((Number(retainerInitialInput) || 0) * 100)
+              : undefined,
+          retainer_hours_low:
+            engagementType === 'retainer' && retainerHoursLow
+              ? Number(retainerHoursLow)
+              : undefined,
+          retainer_hours_high:
+            engagementType === 'retainer' && retainerHoursHigh
+              ? Number(retainerHoursHigh)
+              : undefined,
         }),
       })
       const data = await res.json()
@@ -406,6 +431,70 @@ export default function NewSowPage() {
             rows={3}
           />
         </label>
+
+        {/* Engagement type — fixed-scope (itemized pricing) vs retainer (pool). */}
+        <div className="block">
+          <span className="text-sm">Engagement type</span>
+          <div className="flex gap-2 mt-1">
+            {(['fixed_scope', 'retainer'] as EngagementType[]).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setEngagementType(t)}
+                className={
+                  'text-xs font-semibold px-3 py-1.5 rounded border transition-colors ' +
+                  (engagementType === t
+                    ? 'bg-[var(--teal)] text-white border-[var(--teal)]'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300')
+                }
+              >
+                {t === 'fixed_scope' ? 'Fixed scope (itemized)' : 'Retainer (pool)'}
+              </button>
+            ))}
+          </div>
+          {engagementType === 'retainer' && (
+            <div className="mt-3 bg-teal-50 border border-teal-100 rounded-lg p-3 space-y-2">
+              <p className="text-xs text-slate-500">
+                Retainer engagements price a prepaid pool, not line items. Phases render as scope
+                (set each phase to &ldquo;Scope only&rdquo; below). Work draws the balance down.
+              </p>
+              <div className="flex flex-wrap gap-3 items-end">
+                <label className="text-xs">
+                  Opening retainer $
+                  <input
+                    type="number"
+                    min={0}
+                    step={100}
+                    value={retainerInitialInput}
+                    onChange={(e) => setRetainerInitialInput(e.target.value)}
+                    placeholder="0.00"
+                    className="block w-32 border border-slate-200 rounded px-2 py-1 mt-1 font-mono text-right"
+                  />
+                </label>
+                <label className="text-xs">
+                  Hours ± low
+                  <input
+                    type="number"
+                    min={0}
+                    value={retainerHoursLow}
+                    onChange={(e) => setRetainerHoursLow(e.target.value)}
+                    className="block w-20 border border-slate-200 rounded px-2 py-1 mt-1 font-mono text-right"
+                  />
+                </label>
+                <label className="text-xs">
+                  Hours ± high
+                  <input
+                    type="number"
+                    min={0}
+                    value={retainerHoursHigh}
+                    onChange={(e) => setRetainerHoursHigh(e.target.value)}
+                    className="block w-20 border border-slate-200 rounded px-2 py-1 mt-1 font-mono text-right"
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Phases */}
@@ -468,6 +557,66 @@ export default function NewSowPage() {
                 placeholder="Phase description (optional)"
                 className="w-full border border-slate-200 rounded px-2 py-1 text-sm"
               />
+
+              {/* Per-phase pricing mode. Scope-only hides price columns and
+                  renders deliverables as scope bullets + a ± hours range. */}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-slate-500">Pricing:</span>
+                {(['itemized', 'scope_only'] as const).map((m) => {
+                  const active = (phase.pricing_mode ?? 'itemized') === m
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => updatePhase(phase.id, { pricing_mode: m })}
+                      className={
+                        'font-semibold px-2.5 py-1 rounded border transition-colors ' +
+                        (active
+                          ? 'bg-slate-800 text-white border-slate-800'
+                          : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300')
+                      }
+                    >
+                      {m === 'itemized' ? 'Itemized' : 'Scope only'}
+                    </button>
+                  )
+                })}
+                {phase.pricing_mode === 'scope_only' && (
+                  <span className="flex items-center gap-2 ml-2 text-slate-500">
+                    ± hrs
+                    <input
+                      type="number"
+                      min={0}
+                      value={phase.hours_low ?? ''}
+                      onChange={(e) =>
+                        updatePhase(phase.id, {
+                          hours_low: e.target.value === '' ? undefined : Number(e.target.value),
+                        })
+                      }
+                      placeholder="low"
+                      className="w-16 border border-slate-200 rounded px-2 py-1 font-mono text-right"
+                    />
+                    <span>–</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={phase.hours_high ?? ''}
+                      onChange={(e) =>
+                        updatePhase(phase.id, {
+                          hours_high: e.target.value === '' ? undefined : Number(e.target.value),
+                        })
+                      }
+                      placeholder="high"
+                      className="w-16 border border-slate-200 rounded px-2 py-1 font-mono text-right"
+                    />
+                  </span>
+                )}
+              </div>
+              {phase.pricing_mode === 'scope_only' && (
+                <p className="text-xs text-slate-400 -mt-1">
+                  Deliverables below render as scope bullets (no Qty/Rate/Total). Cost is drawn from
+                  the retainer.
+                </p>
+              )}
 
               {/* Deliverables */}
               {phase.deliverables.map((d, delivIdx) => {

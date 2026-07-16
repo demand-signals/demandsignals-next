@@ -137,6 +137,17 @@ export async function POST(
     } catch (e) {
       console.error('[mark-paid] PDF regeneration threw:', e instanceof Error ? e.message : e)
     }
+
+    // If this was a retainer replenishment invoice, credit the retainer
+    // ledger and reset the cycle thresholds. Self-guards on
+    // auto_trigger='retainer_reup' — a no-op for every other invoice.
+    // Best-effort: never blocks the mark-paid response.
+    try {
+      const { creditFromPaidReupInvoice } = await import('@/lib/retainer-automation')
+      await creditFromPaidReupInvoice(id)
+    } catch (e) {
+      console.error('[mark-paid] retainer credit threw:', e instanceof Error ? e.message : e)
+    }
   }
 
   return NextResponse.json({

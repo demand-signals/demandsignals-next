@@ -9,7 +9,7 @@ import {
   Newspaper, Receipt, CreditCard, Repeat, ScrollText, Settings, Key,
   FolderKanban, FileCheck, FileMinus, Coins, UserCheck, MessageSquare, Zap, FileSignature,
   Clock, UserCog, Shield, Eye, ExternalLink, Bell, Plug,
-  ChevronRight, ChevronDown,
+  ChevronRight, ChevronDown, Table2, Wallet,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -71,6 +71,8 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/admin/credit-memos', label: 'Credit Memos', icon: FileMinus },
       { href: '/admin/subscriptions', label: 'Subscriptions', icon: Repeat },
       { href: '/admin/trade-credits', label: 'Trade Credits', icon: Coins },
+      { href: '/admin/rate-card', label: 'Rate Card', icon: Table2 },
+      { href: '/admin/retainers', label: 'Retainers', icon: Wallet },
       { href: '/admin/finance-reports', label: 'Reports', icon: BarChart3, soon: true },
     ],
   },
