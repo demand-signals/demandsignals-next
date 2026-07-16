@@ -21,6 +21,7 @@ export type LinkCampaign =
   | 'invoice_reminder'
   | 'invoice_chase'
   | 'sow'
+  | 'msa'
   | 'receipt'
   | 'quote_share'
   | 'booking_confirm'
