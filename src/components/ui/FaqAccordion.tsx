@@ -18,7 +18,7 @@ function FaqHeadingReveal({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (inView && !revealed.current) {
       revealed.current = true
-      controls.start({ opacity: 1, y: 0, transition: { duration: 0.6 } })
+      controls.start({ y: 0, transition: { duration: 0.6 } })
     }
   }, [inView, controls])
 
@@ -26,14 +26,14 @@ function FaqHeadingReveal({ children }: { children: React.ReactNode }) {
     const t = setTimeout(() => {
       if (!revealed.current) {
         revealed.current = true
-        controls.start({ opacity: 1, y: 0, transition: { duration: 0 } })
+        controls.start({ y: 0, transition: { duration: 0 } })
       }
     }, SEO_FALLBACK_MS)
     return () => clearTimeout(t)
   }, [controls])
 
   return (
-    <motion.div ref={ref} data-motion="faq-heading" initial={{ opacity: 0, y: 20 }} animate={controls}>
+    <motion.div ref={ref} data-motion="faq-heading" initial={{ y: 20 }} animate={controls}>
       {children}
     </motion.div>
   )
@@ -48,7 +48,7 @@ function FaqItemReveal({ children, fromLeft, delay }: { children: React.ReactNod
   useEffect(() => {
     if (inView && !revealed.current) {
       revealed.current = true
-      controls.start({ opacity: 1, x: 0, transition: { duration: 0.5, delay, ease: [0.25, 0.1, 0.25, 1] } })
+      controls.start({ x: 0, transition: { duration: 0.5, delay, ease: [0.25, 0.1, 0.25, 1] } })
     }
   }, [inView, controls, delay])
 
@@ -56,14 +56,14 @@ function FaqItemReveal({ children, fromLeft, delay }: { children: React.ReactNod
     const t = setTimeout(() => {
       if (!revealed.current) {
         revealed.current = true
-        controls.start({ opacity: 1, x: 0, transition: { duration: 0 } })
+        controls.start({ x: 0, transition: { duration: 0 } })
       }
     }, SEO_FALLBACK_MS)
     return () => clearTimeout(t)
   }, [controls])
 
   return (
-    <motion.div ref={ref} data-motion="faq-item" initial={{ opacity: 0, x: fromLeft ? -60 : 60 }} animate={controls}>
+    <motion.div ref={ref} data-motion="faq-item" initial={{ x: fromLeft ? -60 : 60 }} animate={controls}>
       {children}
     </motion.div>
   )

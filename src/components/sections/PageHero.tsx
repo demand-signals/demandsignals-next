@@ -15,9 +15,9 @@ type PageHeroProps = {
 }
 
 const wordSpring = {
-  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  hidden: { y: 30, scale: 0.95 },
   visible: (i: number) => ({
-    opacity: 1, y: 0, scale: 1,
+    y: 0, scale: 1,
     transition: { delay: 0.3 + i * 0.08, duration: 0.6, type: 'spring', stiffness: 120, damping: 14 },
   }),
 }
@@ -73,8 +73,8 @@ export function PageHero({ eyebrow, title, subtitle, ctaLabel = 'Get a Quote →
           {/* Eyebrow — slides down from above */}
           <motion.div
             data-motion="hero-eyebrow"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ y: -20 }}
+            animate={{ y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -98,8 +98,8 @@ export function PageHero({ eyebrow, title, subtitle, ctaLabel = 'Get a Quote →
           {/* Subtitle — fades up after title */}
           <motion.p
             data-motion="hero-subtitle"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ y: 20 }}
+            animate={{ y: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
             style={{ fontSize: 'clamp(1rem, 1.6vw, 1.2rem)', color: 'rgba(255,255,255,0.72)', maxWidth: 580, margin: '0 auto 36px', lineHeight: 1.65 }}
           >
@@ -109,8 +109,8 @@ export function PageHero({ eyebrow, title, subtitle, ctaLabel = 'Get a Quote →
           {/* CTA buttons — scale in with elastic */}
           <motion.div
             data-motion="hero-cta"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
             transition={{ duration: 0.5, delay: 0.8, type: 'spring', stiffness: 150 }}
             style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}
           >
@@ -141,8 +141,8 @@ export function PageHero({ eyebrow, title, subtitle, ctaLabel = 'Get a Quote →
         <div style={{ maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
           <motion.p
             data-motion="hero-callout"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ scale: 0.95 }}
+            animate={{ scale: 1 }}
             transition={{ duration: 0.7, delay: 1 }}
             style={{ fontSize: 'clamp(1.3rem, 2.5vw, 1.85rem)', fontWeight: 700, color: '#fff', lineHeight: 1.5, margin: 0 }}
           >

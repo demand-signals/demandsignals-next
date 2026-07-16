@@ -50,8 +50,8 @@ function ScoreRing({ value, label, size = 72, delay = 0, inView }: {
   return (
     <motion.div
       data-motion="lighthouse-score"
-      initial={{ opacity: 0, y: 14 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
+      initial={{ y: 14 }}
+      animate={inView ? { y: 0 } : {}}
       transition={{ duration: 0.45, delay }}
       style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}
     >
@@ -70,8 +70,8 @@ function ScoreRing({ value, label, size = 72, delay = 0, inView }: {
         </svg>
         <motion.div
           data-motion="lighthouse-value"
-          initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : {}}
+          initial={{}}
+          animate={{}}
           transition={{ duration: 0.3, delay: delay + 0.7 }}
           style={{
             position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -127,8 +127,8 @@ function SummaryRing({ value, inView, delay = 0 }: { value: number; inView: bool
       </svg>
       <motion.div
         data-motion="lighthouse-summary"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={inView ? { opacity: 1, scale: 1 } : {}}
+        initial={{ scale: 0.8 }}
+        animate={inView ? { scale: 1 } : {}}
         transition={{ duration: 0.4, delay: delay + 0.9 }}
         style={{
           position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
@@ -152,8 +152,8 @@ function DeviceCard({ title, icon, scores, metrics, perfScore, cardDelay, inView
   return (
     <motion.div
       data-motion="lighthouse-card"
-      initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
+      initial={{ y: 32 }}
+      animate={inView ? { y: 0 } : {}}
       transition={{ duration: 0.55, delay: cardDelay, ease: [0.25, 0.1, 0.25, 1] }}
       style={{
         background: '#fff', borderRadius: 20, padding: '32px 28px',
@@ -187,8 +187,8 @@ function DeviceCard({ title, icon, scores, metrics, perfScore, cardDelay, inView
               <motion.div
                 key={m.label}
                 data-motion="lighthouse-metric"
-                initial={{ opacity: 0, x: 12 }}
-                animate={inView ? { opacity: 1, x: 0 } : {}}
+                initial={{ x: 12 }}
+                animate={inView ? { x: 0 } : {}}
                 transition={{ duration: 0.35, delay: cardDelay + 0.4 + i * 0.07 }}
                 style={{ display: 'flex', alignItems: 'center', gap: 8 }}
               >
@@ -242,8 +242,8 @@ export default function LighthouseScores() {
 
         <motion.div
           data-motion="lighthouse-heading"
-          initial={{ opacity: 0, y: 24 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
+          initial={{ y: 24 }}
+          animate={inView ? { y: 0 } : {}}
           transition={{ duration: 0.5 }}
           style={{ textAlign: 'center', marginBottom: 48 }}
         >
@@ -272,8 +272,8 @@ export default function LighthouseScores() {
 
         <motion.div
           data-motion="lighthouse-badge"
-          initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : {}}
+          initial={{}}
+          animate={{}}
           transition={{ duration: 0.4, delay: 0.8 }}
           style={{ textAlign: 'center' }}
         >

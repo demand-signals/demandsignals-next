@@ -262,8 +262,8 @@ export function FeatureShowcase({ eyebrow, heading, features }: {
               <motion.div
                 key={feature.title}
                 data-motion="feature-card"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ y: 30 }}
+                whileInView={{ y: 0 }}
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.5, delay: i * 0.08 }}
                 style={{

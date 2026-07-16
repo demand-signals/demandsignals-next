@@ -36,7 +36,7 @@ export function ScrollReveal({
     if (inView && !revealed.current) {
       revealed.current = true
       controls.start({
-        opacity: 1, x: 0, y: 0,
+        x: 0, y: 0,
         transition: { duration, delay, ease: [0.25, 0.1, 0.25, 1] },
       })
     }
@@ -46,7 +46,7 @@ export function ScrollReveal({
     const t = setTimeout(() => {
       if (!revealed.current) {
         revealed.current = true
-        controls.start({ opacity: 1, x: 0, y: 0, transition: { duration: 0 } })
+        controls.start({ x: 0, y: 0, transition: { duration: 0 } })
       }
     }, SEO_FALLBACK_MS)
     return () => clearTimeout(t)
@@ -58,7 +58,7 @@ export function ScrollReveal({
     <motion.div
       ref={ref}
       data-motion="scroll-reveal"
-      initial={{ opacity: 0, x, y }}
+      initial={{ x, y }}
       animate={controls}
       style={style}
     >
@@ -73,8 +73,8 @@ const containerVariants: Variants = {
 }
 
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] } },
+  hidden: { y: 20 },
+  visible: { y: 0, transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] } },
 }
 
 export function StaggerContainer({ children, style, className }: { children: ReactNode; style?: CSSProperties; className?: string }) {

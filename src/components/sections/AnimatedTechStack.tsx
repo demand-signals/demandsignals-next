@@ -20,8 +20,8 @@ export function AnimatedTechStack({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 40, alignItems: 'center' }} className="tech-stack-grid">
           <motion.div
             data-motion="tech-stack"
-            initial={{ opacity: 0, x: -40 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ x: -40 }}
+            whileInView={{ x: 0 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
           >
@@ -35,8 +35,8 @@ export function AnimatedTechStack({
           </motion.div>
           <motion.div
             data-motion="tech-stack"
-            initial={{ opacity: 0, x: 40 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ x: 40 }}
+            whileInView={{ x: 0 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.7, delay: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
           >
@@ -46,8 +46,8 @@ export function AnimatedTechStack({
                 <motion.div
                   key={row.label}
                   data-motion="tech-stack-row"
-                  initial={{ opacity: 0, y: 16, filter: 'blur(4px)' }}
-                  whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  initial={{ y: 16, filter: 'blur(4px)' }}
+                  whileInView={{ y: 0, filter: 'blur(0px)' }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: 0.3 + i * 0.08 }}
                   style={{ display: 'flex', gap: 16, padding: '12px 0', borderBottom: '1px solid rgba(104,197,173,0.08)' }}

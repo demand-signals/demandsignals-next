@@ -12,8 +12,8 @@ function StatItem({ stat, index }: { stat: Stat; index: number }) {
     <motion.div
       ref={ref}
       data-motion="stat-item"
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={{ y: 30 }}
+      whileInView={{ y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
       transition={{ duration: 0.6, delay: index * 0.15, ease: [0.25, 0.1, 0.25, 1] }}
       style={{ textAlign: 'center', flex: 1, minWidth: 140 }}
