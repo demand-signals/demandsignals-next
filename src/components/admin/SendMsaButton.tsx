@@ -48,7 +48,8 @@ export function SendMsaButton({ onSent }: { onSent?: () => void }) {
       const res = await fetch('/api/admin/onboarding/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prospect_id: p.id, force: p.has_executed_msa ?? false }),
+        // Explicit admin send always proceeds (fresh MSA), regardless of prior state.
+        body: JSON.stringify({ prospect_id: p.id, force: true }),
       })
       const data = await res.json()
       if (!res.ok) { setSentMsg(`Failed: ${data.error ?? 'send error'}`); return }

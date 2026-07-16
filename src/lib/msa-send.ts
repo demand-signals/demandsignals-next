@@ -372,19 +372,25 @@ export async function sendOnboardingDocs(
   if (pErr) return { success: false, error: pErr.message }
   if (!prospect) return { success: false, error: 'Prospect not found' }
 
+  // The automatic (first-time-client) trigger is a no-op if an MSA is already
+  // executed. An explicit admin send (force) always proceeds and creates a
+  // fresh agreement so re-sends never silently do nothing.
   if (prospect.has_executed_msa && !options.force) {
     return { success: true, already_executed: true }
   }
 
-  // 2. Reuse an existing draft/sent MSA for this client, or create one.
-  const { data: existing } = await supabaseAdmin
-    .from('msa_documents')
-    .select('id, msa_number, status')
-    .eq('prospect_id', prospectId)
-    .in('status', ['draft', 'sent', 'viewed'])
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  // 2. Reuse an existing PENDING (draft/sent/viewed) MSA only for a non-forced
+  //    send. A forced send always creates a fresh agreement.
+  const { data: existing } = options.force
+    ? { data: null }
+    : await supabaseAdmin
+        .from('msa_documents')
+        .select('id, msa_number, status')
+        .eq('prospect_id', prospectId)
+        .in('status', ['draft', 'sent', 'viewed'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
   let msaId: string
   let msaNumber: string
