@@ -17,6 +17,8 @@ import { BookingCard } from '@/components/admin/BookingCard'
 import { LatestQuotePanel } from '@/components/admin/LatestQuotePanel'
 import { OnboardingDocsButton } from '@/components/admin/OnboardingDocsButton'
 import { AgreementsPanel } from '@/components/admin/AgreementsPanel'
+import { DocumentsPanel } from '@/components/admin/DocumentsPanel'
+import { SentMessagesPanel } from '@/components/admin/SentMessagesPanel'
 // suggestClientCode removed — now using the server-side suggest endpoint
 import { ActivityTimeline } from '@/components/admin/activity-timeline'
 import { ProspectMap } from '@/components/admin/prospect-map'
@@ -1406,6 +1408,12 @@ export default function ProspectDetailPage() {
       {/* Agreements — executed/sent MSAs with links to the signed PDFs. */}
       <div className="mb-4">
         <AgreementsPanel prospectId={prospect.id} />
+      </div>
+
+      {/* Bottom section — collapsible: all documents + sent-message log. */}
+      <div className="mb-4 space-y-3">
+        <DocumentsPanel prospectId={prospect.id} />
+        <SentMessagesPanel prospectId={prospect.id} />
       </div>
 
       {/* Documents (invoices + SOWs for this prospect) */}

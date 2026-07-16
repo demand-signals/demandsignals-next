@@ -31,6 +31,9 @@ import { formatCents } from '@/lib/format'
 import { EditClientButton } from '@/components/admin/edit-client-button'
 import { AgreementsPanel } from '@/components/admin/AgreementsPanel'
 import { ActivityTimeline } from '@/components/admin/activity-timeline'
+import { DocumentsPanel } from '@/components/admin/DocumentsPanel'
+import { SentMessagesPanel } from '@/components/admin/SentMessagesPanel'
+import { BackgroundPanel } from '@/components/admin/BackgroundPanel'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -997,6 +1000,13 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
               </div>
             </form>
           </Section>
+
+          {/* Bottom section — collapsible: documents, sent messages, background. */}
+          <div className="space-y-3">
+            <DocumentsPanel prospectId={prospect.id} />
+            <SentMessagesPanel prospectId={prospect.id} />
+            <BackgroundPanel prospectId={prospect.id} />
+          </div>
         </div>
 
         {/* Side column */}

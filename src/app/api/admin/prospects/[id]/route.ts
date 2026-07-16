@@ -26,6 +26,20 @@ const patchSchema = z.object({
   is_client: z.boolean().optional(),
 })
 
+export async function GET(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const auth = await requireAdmin(request)
+  if ('error' in auth) return auth.error
+  const { id } = await ctx.params
+  const { data, error } = await supabaseAdmin
+    .from('prospects')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle()
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!data) return NextResponse.json({ error: 'Prospect not found' }, { status: 404 })
+  return NextResponse.json({ prospect: data })
+}
+
 export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin(request)
   if ('error' in auth) return auth.error

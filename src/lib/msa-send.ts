@@ -48,17 +48,21 @@ async function logMsaActivity(args: {
   type: string
   channel: 'email' | 'sms' | 'system'
   recipient?: string
+  content?: string   // the actual message text sent
+  link?: string      // the magic link included
   success: boolean
   errorMessage?: string
   createdBy?: string
 }) {
   if (!args.msa.prospect_id) return
-  const { msa, type, channel, recipient, success, errorMessage, createdBy } = args
+  const { msa, type, channel, recipient, content, link, success, errorMessage, createdBy } = args
   const subject = success
     ? `MSA ${msa.msa_number} ${type === 'msa_issued' ? 'issued' : `sent via ${channel}`}`
     : `MSA ${msa.msa_number} send FAILED via ${channel}`
   const bodyLines: string[] = []
   if (recipient) bodyLines.push(`Recipient: ${recipient}`)
+  if (content) bodyLines.push(`Message: ${content}`)
+  if (link) bodyLines.push(`Link: ${link}`)
   if (errorMessage) bodyLines.push(`Error: ${errorMessage}`)
   try {
     await supabaseAdmin.from('activities').insert({
@@ -217,7 +221,7 @@ export async function dispatchMsaEmail(
     attachments: pdfBuffer ? [{ filename: `${msa.msa_number}.pdf`, content: pdfBuffer }] : undefined,
   })
 
-  await logMsaActivity({ msa, type: 'msa_sent', channel: 'email', recipient: email, success: result.success, errorMessage: result.error, createdBy: options.createdBy })
+  await logMsaActivity({ msa, type: 'msa_sent', channel: 'email', recipient: email, content: `Subject: ${subject}`, link: publicUrl, success: result.success, errorMessage: result.error, createdBy: options.createdBy })
   return { success: result.success, recipient: email, message_id: result.message_id, error: result.error }
 }
 
@@ -257,7 +261,7 @@ export async function dispatchMsaSms(
   const message = `${businessName}: Your Demand Signals onboarding agreement ${msa.msa_number} is ready to review & sign — ${url}`
 
   const result = await sendSms(phone, message)
-  await logMsaActivity({ msa, type: 'msa_sent', channel: 'sms', recipient: phone, success: result.success, errorMessage: result.error, createdBy: options.createdBy })
+  await logMsaActivity({ msa, type: 'msa_sent', channel: 'sms', recipient: phone, content: message, link: url, success: result.success, errorMessage: result.error, createdBy: options.createdBy })
   return { success: result.success, recipient: phone, message_id: result.message_id, error: result.error }
 }
 
