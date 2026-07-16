@@ -13,7 +13,7 @@ interface Disclosure { code: string; title: string; public_url: string }
 async function fetchMsa(number: string, uuid: string) {
   const { data } = await supabaseAdmin
     .from('msa_documents')
-    .select('id, msa_number, public_uuid, status, client_legal_name, incorporated_disclosures, executed_signature, prospects!prospect_id(business_name)')
+    .select('id, msa_number, public_uuid, status, client_legal_name, incorporated_disclosures, executed_signature, prospects!prospect_id(business_name, owner_name, owner_email)')
     .eq('msa_number', number)
     .maybeSingle()
   if (!data || data.public_uuid !== uuid) return null
@@ -71,6 +71,8 @@ export default async function PublicMsaPage({
             disclosures={disclosures}
             alreadyExecuted={executed}
             executedSignature={msa.executed_signature}
+            defaultName={(msa.prospects as { owner_name?: string } | null)?.owner_name ?? null}
+            defaultEmail={(msa.prospects as { owner_email?: string } | null)?.owner_email ?? null}
           />
         </div>
 

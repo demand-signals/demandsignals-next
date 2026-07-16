@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Loader2, FileSignature, ExternalLink } from 'lucide-react'
+import { SendMsaButton } from '@/components/admin/SendMsaButton'
 
 interface MsaRow {
   id: string
@@ -54,9 +55,10 @@ export default function AdminMsaPage() {
           <h1 className="text-2xl font-bold text-slate-900">Master Service Agreements</h1>
           <p className="mt-1 text-sm text-slate-500">
             The relationship contract, signed once per client. Send the onboarding kit (MSA +
-            disclosures) from a prospect&rsquo;s page &rarr; <span className="font-medium">Onboarding Kit</span> card.
+            disclosures) to any customer below, or from a prospect&rsquo;s page.
           </p>
         </div>
+        <SendMsaButton />
       </div>
 
       <label className="text-sm">

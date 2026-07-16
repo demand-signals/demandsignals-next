@@ -139,6 +139,12 @@ export async function issueMsa(
     return { success: true, status: msa.status as 'sent', pdf_storage_path: msa.pdf_storage_path ?? undefined, already_issued: true }
   }
 
+  const now = new Date().toISOString()
+  // Stamp effective date + DSIG auto-countersignature onto the object BEFORE
+  // rendering so the PDF reflects them (DSIG signs by issuing).
+  msa.effective_date = msa.effective_date ?? now.slice(0, 10)
+  msa.dsig_signed_at = now
+
   let pdfBuffer: Buffer
   try {
     pdfBuffer = await renderMsaPdf(msa, prospectProps(msa))
@@ -153,10 +159,18 @@ export async function issueMsa(
     return { success: false, error: `R2 upload failed: ${e instanceof Error ? e.message : e}` }
   }
 
-  const now = new Date().toISOString()
   const { error: updateErr } = await supabaseAdmin
     .from('msa_documents')
-    .update({ status: 'sent', sent_at: now, pdf_storage_path: pdfKey, pdf_rendered_at: now })
+    .update({
+      status: 'sent',
+      sent_at: now,
+      // Effective date + DSIG auto-countersignature are set at send time
+      // (DSIG is deemed to have signed by issuing the agreement).
+      effective_date: now.slice(0, 10),
+      dsig_signed_at: now,
+      pdf_storage_path: pdfKey,
+      pdf_rendered_at: now,
+    })
     .eq('id', msaId)
   if (updateErr) {
     await deletePrivate(pdfKey).catch(() => {})

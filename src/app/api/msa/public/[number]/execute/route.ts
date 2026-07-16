@@ -1,15 +1,14 @@
 // ── POST /api/msa/public/[number]/execute ────────────────────────────
-// Client-side MSA execution via the magic link. The client provides:
+// Client-side MSA execution via the magic link. Captures:
 //   - signature: typed full name (E-SIGN electronic signature)
-//   - initials:  [{ code, initials }] — one per incorporated disclosure
+//   - approver: name / title / email / cell
+//   - esignConsent: explicit checkbox agreement to electronic signature
+//   - initials: [{ code, initials }] — one per incorporated disclosure
+//   - fingerprint: full client-side signal blob (screen, tz, geolocation,
+//     canvas, webgl, etc.), merged with server-side signals (IP + Vercel geo).
 //
-// We:
-//   1. Validate the public_uuid (key) matches the msa_number
-//   2. Require an initial for EVERY incorporated disclosure
-//   3. Stamp executed_at / signature / ip + per-disclosure initials (with
-//      the disclosure's code — the acknowledged version — and timestamp/ip)
-//   4. Flip status sent/viewed → executed
-//   5. Set prospect.has_executed_msa = true, msa_executed_at, executed_msa_id
+// On success: stamp execution + fingerprint, flip status → executed, set
+// prospect.has_executed_msa, regenerate the PDF (now includes the certificate).
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -18,9 +17,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 interface ExecuteBody {
-  key: string // public_uuid
+  key: string
   signature: string
+  approver?: { name?: string; title?: string; email?: string; cell?: string }
+  esignConsent?: boolean
   initials: Array<{ code: string; initials: string }>
+  fingerprint?: Record<string, unknown>
+}
+
+function num(v: string | null): number | undefined {
+  if (!v) return undefined
+  const n = Number(v)
+  return isNaN(n) ? undefined : n
 }
 
 export async function POST(
@@ -34,9 +42,11 @@ export async function POST(
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
-
   if (!body.key || !body.signature?.trim()) {
     return NextResponse.json({ error: 'signature and key required' }, { status: 400 })
+  }
+  if (!body.esignConsent) {
+    return NextResponse.json({ error: 'Electronic signature consent is required' }, { status: 400 })
   }
 
   const { data: msa, error } = await supabaseAdmin
@@ -67,11 +77,28 @@ export async function POST(
     )
   }
 
-  const ip =
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    request.headers.get('x-real-ip') ??
-    null
+  const h = request.headers
+  const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? h.get('x-real-ip') ?? null
   const now = new Date().toISOString()
+
+  // Server-side geolocation from Vercel edge headers (no external API).
+  const ipGeo = {
+    city: h.get('x-vercel-ip-city') ? decodeURIComponent(h.get('x-vercel-ip-city')!) : undefined,
+    region: h.get('x-vercel-ip-country-region') ?? undefined,
+    country: h.get('x-vercel-ip-country') ?? undefined,
+    lat: num(h.get('x-vercel-ip-latitude')),
+    lon: num(h.get('x-vercel-ip-longitude')),
+    timezone: h.get('x-vercel-ip-timezone') ?? undefined,
+  }
+
+  // Merge client fingerprint with server signals.
+  const fingerprint = {
+    ...(body.fingerprint ?? {}),
+    ip,
+    ip_geo: ipGeo,
+    user_agent: h.get('user-agent') ?? (body.fingerprint?.user_agent as string | undefined) ?? null,
+    collected_at: now,
+  }
 
   const disclosureInitials = required.map((d) => ({
     code: d.code,
@@ -80,6 +107,7 @@ export async function POST(
     ip,
   }))
 
+  const a = body.approver ?? {}
   const { error: updErr } = await supabaseAdmin
     .from('msa_documents')
     .update({
@@ -87,25 +115,29 @@ export async function POST(
       executed_at: now,
       executed_signature: body.signature.trim(),
       executed_ip: ip,
+      approver_name: a.name?.trim() || body.signature.trim(),
+      approver_title: a.title?.trim() || null,
+      approver_email: a.email?.trim() || null,
+      approver_cell: a.cell?.trim() || null,
+      esign_consent: true,
+      esign_consent_at: now,
       disclosure_initials: disclosureInitials,
+      signer_fingerprint: fingerprint,
     })
     .eq('id', msa.id)
   if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 })
 
-  // Flip the client-level flag so any flow (SOW-accept, button) can check it.
   if (msa.prospect_id) {
     await supabaseAdmin
       .from('prospects')
       .update({ has_executed_msa: true, msa_executed_at: now, executed_msa_id: msa.id })
       .eq('id', msa.prospect_id)
-    // Regenerate the PDF so the stored copy shows the signature + initials.
     try {
       const { regenerateMsaPdf } = await import('@/lib/msa-send')
       await regenerateMsaPdf(msa.id)
     } catch (e) {
       console.warn('[msa/execute] post-exec regen failed:', e instanceof Error ? e.message : e)
     }
-    // Log activity.
     try {
       await supabaseAdmin.from('activities').insert({
         prospect_id: msa.prospect_id,
@@ -113,7 +145,7 @@ export async function POST(
         channel: 'system',
         direction: 'inbound',
         subject: `MSA ${number} executed`,
-        body: `Signed by: ${body.signature.trim()}`,
+        body: `Signed by: ${a.name?.trim() || body.signature.trim()}${a.title ? ` (${a.title})` : ''}`,
         status: 'sent',
         created_by: 'system',
       })
