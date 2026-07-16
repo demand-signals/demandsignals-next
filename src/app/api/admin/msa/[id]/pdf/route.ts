@@ -22,7 +22,7 @@ export async function GET(
 
   const { data: msaRow, error } = await supabaseAdmin
     .from('msa_documents')
-    .select('*, prospect:prospects(business_name, owner_name, owner_email)')
+    .select('*, prospect:prospects!prospect_id(business_name, owner_name, owner_email)')
     .eq('id', id)
     .maybeSingle()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

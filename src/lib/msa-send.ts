@@ -39,7 +39,7 @@ interface MsaRow extends MsaDocument {
 }
 
 const SELECT =
-  '*, prospect:prospects(business_name, owner_name, owner_email, business_email, owner_phone, business_phone)'
+  '*, prospect:prospects!prospect_id(business_name, owner_name, owner_email, business_email, owner_phone, business_phone)'
 
 /* ── Activity log ───────────────────────────────────────────────────── */
 
