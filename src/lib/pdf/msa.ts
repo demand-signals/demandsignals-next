@@ -123,9 +123,9 @@ function clientName(msa: MsaDocument, prospect: MsaProspect): string {
 // agreement compact (short-document goal).
 function clause(num: number, title: string, body: string): string {
   return `
-    <div style="margin-bottom:9px;break-inside:avoid;">
-      <div style="font-size:11px;font-weight:700;color:${T.SLATE};margin-bottom:2px;">${num}. ${esc(title)}</div>
-      <div style="font-size:10px;line-height:1.45;color:${T.BODY};">${body}</div>
+    <div style="margin-bottom:7px;break-inside:avoid;">
+      <div style="font-size:10px;font-weight:700;color:${T.SLATE};margin-bottom:1px;">${num}. ${esc(title)}</div>
+      <div style="font-size:9px;line-height:1.4;color:${T.BODY};">${body}</div>
     </div>`
 }
 
@@ -171,7 +171,7 @@ function termsPage(msa: MsaDocument, prospect: MsaProspect): string {
     .join('; ')
 
   const body = `
-    <p style="font-size:11px;line-height:1.6;margin:0 0 14px 0;color:${T.BODY};">
+    <p style="font-size:10px;line-height:1.5;margin:0 0 10px 0;color:${T.BODY};">
       This Master Service Agreement (the &ldquo;Agreement&rdquo;) is entered into as of <strong>${eff}</strong>
       (the &ldquo;Effective Date&rdquo;), by and between <strong>Demand Signals LLC</strong>, a Delaware limited
       liability company (&ldquo;DSIG&rdquo; or the &ldquo;Company&rdquo;), and <strong>${cl}</strong>${entityPhrase}
@@ -294,12 +294,12 @@ function termsPage(msa: MsaDocument, prospect: MsaProspect): string {
   `
 
   return `
-  <div style="break-before:page;background:#fff;font-family:${FONT_STACK};color:${T.BODY};padding:0 0 40px 0;">
+  <div style="break-before:page;break-inside:avoid;background:#fff;font-family:${FONT_STACK};color:${T.BODY};padding:0 0 20px 0;">
     ${interiorPageHeader('01 — Agreement')}
-    <div style="padding:24px 56px 0 56px">
+    <div style="padding:18px 56px 0 56px">
       ${eyebrow('Parties & Terms', T.ORANGE_S)}
-      <h1 style="font-size:24px;font-weight:700;color:${T.SLATE};margin:6px 0 4px 0;">Master Service Agreement</h1>
-      <div style="width:50pt;height:2pt;background:${T.ORANGE_S};margin:0 0 16px 0;"></div>
+      <h1 style="font-size:22px;font-weight:700;color:${T.SLATE};margin:6px 0 4px 0;">Master Service Agreement</h1>
+      <div style="width:50pt;height:2pt;background:${T.ORANGE_S};margin:0 0 12px 0;"></div>
       ${body}
     </div>
     ${interiorPageFooter()}
