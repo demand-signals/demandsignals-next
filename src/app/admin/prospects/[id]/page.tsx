@@ -16,6 +16,7 @@ import { ProspectScoreBadge, TierBadge } from '@/components/admin/prospect-score
 import { BookingCard } from '@/components/admin/BookingCard'
 import { LatestQuotePanel } from '@/components/admin/LatestQuotePanel'
 import { OnboardingDocsButton } from '@/components/admin/OnboardingDocsButton'
+import { AgreementsPanel } from '@/components/admin/AgreementsPanel'
 // suggestClientCode removed — now using the server-side suggest endpoint
 import { ActivityTimeline } from '@/components/admin/activity-timeline'
 import { ProspectMap } from '@/components/admin/prospect-map'
@@ -1401,6 +1402,11 @@ export default function ProspectDetailPage() {
         prospectId={prospect.id}
         hasExecutedMsa={(prospect as { has_executed_msa?: boolean }).has_executed_msa}
       />
+
+      {/* Agreements — executed/sent MSAs with links to the signed PDFs. */}
+      <div className="mb-4">
+        <AgreementsPanel prospectId={prospect.id} />
+      </div>
 
       {/* Documents (invoices + SOWs for this prospect) */}
       <ProspectDocuments prospectId={prospect.id} />

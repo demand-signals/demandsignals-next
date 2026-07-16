@@ -29,6 +29,8 @@ import {
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { formatCents } from '@/lib/format'
 import { EditClientButton } from '@/components/admin/edit-client-button'
+import { AgreementsPanel } from '@/components/admin/AgreementsPanel'
+import { ActivityTimeline } from '@/components/admin/activity-timeline'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -304,7 +306,7 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
       .limit(messagesOffset + PAGE_SIZE + 100),
     supabaseAdmin
       .from('activities')
-      .select('id, type, subject, body, channel, direction, created_at, created_by')
+      .select('id, type, subject, body, channel, direction, status, created_at, created_by')
       .eq('prospect_id', id)
       .order('created_at', { ascending: false })
       .limit(messagesOffset + PAGE_SIZE + 100),
@@ -562,6 +564,9 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main column */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Agreements — executed/sent MSAs with links to the signed PDFs. */}
+          <AgreementsPanel prospectId={prospect.id} />
+
           {/* SOWs — past, present, issued. Lives above Projects since SOWs
                drive project + invoice creation through the accept flow. */}
           <Section
@@ -1042,6 +1047,17 @@ export default async function ClientDetailPage({ params, searchParams }: PagePro
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2">
               <EditClientButton prospectId={prospect.id} />
             </div>
+          </div>
+
+          {/* Activity timeline — full history (MSAs, sends, notes, etc.) carries
+               over from the prospect record; the client view is not a blank slate. */}
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Activity</h3>
+            {(activitiesListRes.data ?? []).length === 0 ? (
+              <p className="text-sm text-slate-400">No activity yet.</p>
+            ) : (
+              <ActivityTimeline activities={(activitiesListRes.data ?? []) as unknown as Parameters<typeof ActivityTimeline>[0]['activities']} />
+            )}
           </div>
 
           {/* Acquisition history collapse */}

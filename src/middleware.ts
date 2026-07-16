@@ -63,6 +63,9 @@ export async function middleware(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set('x-pathname', pathname)
+  // Expose the query string to server components/layouts (which don't receive
+  // searchParams). Used e.g. by the prospect layout to honor ?keepView=1.
+  requestHeaders.set('x-search', request.nextUrl.search)
 
   // ============================================================
   // ADMIN ROUTE PROTECTION
