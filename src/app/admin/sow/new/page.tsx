@@ -328,7 +328,10 @@ export default function NewSowPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title,
+          // Drafts don't require a real title (WIP); the API needs a non-empty
+          // string, so fall back to a placeholder the admin can rename later.
+          // Save & Send still requires a real title (gated on the button).
+          title: title.trim() || 'Untitled SOW (draft)',
           prospect_id: prospectId || undefined,
           scope_summary: scopeSummary || undefined,
           phases,
@@ -673,6 +676,13 @@ export default function NewSowPage() {
                       rows={2}
                       className="w-full border border-slate-200 rounded px-2 py-1"
                     />
+                    {/* Pricing inputs hidden for scope-only phases — those
+                        deliverables are scope bullets billed from the retainer. */}
+                    {phase.pricing_mode === 'scope_only' ? (
+                      <p className="text-xs italic" style={{ color: '#94a0b8' }}>
+                        Scope item — no per-line price (billed from retainer).
+                      </p>
+                    ) : (
                     <div className="grid grid-cols-5 gap-2">
                       <label className="text-xs">
                         Cadence
@@ -757,6 +767,7 @@ export default function NewSowPage() {
                         </div>
                       </div>
                     </div>
+                    )}
                   </div>
                 )
               })}
@@ -946,21 +957,26 @@ export default function NewSowPage() {
 
       {error && <div className="text-red-600 text-sm">{error}</div>}
 
-      <div className="flex gap-3">
+      <div className="flex items-center gap-3">
+        {/* Save as draft is always allowed (WIP) — no title required. */}
         <button
           onClick={() => save(false)}
-          disabled={busy || !title}
+          disabled={busy}
           className="bg-slate-100 hover:bg-slate-200 rounded-lg px-4 py-2 font-semibold disabled:opacity-50"
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save as draft'}
         </button>
+        {/* Save & Send requires a title (it goes to the client). */}
         <button
           onClick={() => save(true)}
-          disabled={busy || !title}
+          disabled={busy || !title.trim()}
           className="bg-teal-500 text-white rounded-lg px-4 py-2 font-semibold hover:bg-teal-600 disabled:opacity-50"
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save & Send'}
         </button>
+        {!title.trim() && (
+          <span className="text-xs text-slate-400">Add a title to enable Save &amp; Send.</span>
+        )}
       </div>
 
       {/* Cadence picker modal */}
