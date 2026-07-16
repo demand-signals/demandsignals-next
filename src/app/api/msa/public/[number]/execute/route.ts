@@ -32,6 +32,9 @@ function initialsFromName(name: string): string {
 function isEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
 }
+function digitsOnly(v: string): string {
+  return v.replace(/\D/g, '')
+}
 
 function num(v: string | null): number | undefined {
   if (!v) return undefined
@@ -58,18 +61,31 @@ export async function POST(
   }
 
   // ── Server-side validation (defense in depth; client validates too) ──
+  // ALL signer fields are required — name, title, email, cell. The executed
+  // agreement is a legal instrument; no field may be left blank.
   const approverName = (body.approver?.name ?? '').trim()
+  const approverTitle = (body.approver?.title ?? '').trim()
+  const approverEmail = (body.approver?.email ?? '').trim()
+  const approverCell = (body.approver?.cell ?? '').trim()
   if (!approverName) {
     return NextResponse.json({ error: 'Signer name is required' }, { status: 400 })
+  }
+  if (!approverTitle) {
+    return NextResponse.json({ error: 'Signer title is required' }, { status: 400 })
+  }
+  if (!approverEmail) {
+    return NextResponse.json({ error: 'Signer email is required' }, { status: 400 })
+  }
+  if (!isEmail(approverEmail)) {
+    return NextResponse.json({ error: 'Invalid email address' }, { status: 400 })
+  }
+  if (!approverCell || digitsOnly(approverCell).length < 10) {
+    return NextResponse.json({ error: 'A valid signer cell phone is required' }, { status: 400 })
   }
   if (body.signature.trim().toLowerCase() !== approverName.toLowerCase()) {
     return NextResponse.json({ error: 'Signature must match the signer name' }, { status: 400 })
   }
   const expectedInitials = initialsFromName(approverName)
-  const approverEmail = (body.approver?.email ?? '').trim()
-  if (approverEmail && !isEmail(approverEmail)) {
-    return NextResponse.json({ error: 'Invalid email address' }, { status: 400 })
-  }
   // Every provided initial (disclosures + MSA) must equal the name's initials.
   const allInitialVals = [...(body.initials ?? []).map((i) => i.initials), body.msaInitials]
   for (const v of allInitialVals) {
@@ -136,7 +152,6 @@ export async function POST(
     ip,
   }))
 
-  const a = body.approver ?? {}
   const { error: updErr } = await supabaseAdmin
     .from('msa_documents')
     .update({
@@ -144,10 +159,10 @@ export async function POST(
       executed_at: now,
       executed_signature: body.signature.trim(),
       executed_ip: ip,
-      approver_name: a.name?.trim() || body.signature.trim(),
-      approver_title: a.title?.trim() || null,
-      approver_email: a.email?.trim() || null,
-      approver_cell: a.cell?.trim() || null,
+      approver_name: approverName,
+      approver_title: approverTitle,
+      approver_email: approverEmail,
+      approver_cell: approverCell,
       esign_consent: true,
       esign_consent_at: now,
       disclosure_initials: disclosureInitials,
@@ -177,7 +192,7 @@ export async function POST(
         channel: 'system',
         direction: 'inbound',
         subject: `MSA ${number} executed`,
-        body: `Signed by: ${approverName}${a.title ? ` (${a.title})` : ''}`,
+        body: `Signed by: ${approverName}${approverTitle ? ` (${approverTitle})` : ''}`,
         status: 'sent',
         created_by: 'system',
       })

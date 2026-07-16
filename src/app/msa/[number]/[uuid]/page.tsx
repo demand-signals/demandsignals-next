@@ -13,19 +13,52 @@ interface Disclosure { code: string; title: string; public_url: string }
 async function fetchMsa(number: string, uuid: string) {
   const { data } = await supabaseAdmin
     .from('msa_documents')
-    .select('id, msa_number, public_uuid, status, client_legal_name, incorporated_disclosures, executed_signature, prospects!prospect_id(business_name, owner_name, owner_email)')
+    .select('id, msa_number, public_uuid, status, client_legal_name, incorporated_disclosures, executed_signature, view_sms_sent_at, public_viewed_count, prospects!prospect_id(business_name, owner_name, owner_email)')
     .eq('msa_number', number)
     .maybeSingle()
   if (!data || data.public_uuid !== uuid) return null
 
-  // Mark as viewed (best-effort) the first time.
+  const nowIso = new Date().toISOString()
+
+  // Mark as viewed (best-effort) the first time; always bump the view counter.
   if (data.status === 'sent') {
     await supabaseAdmin
       .from('msa_documents')
-      .update({ status: 'viewed', viewed_at: new Date().toISOString() })
+      .update({ status: 'viewed', viewed_at: nowIso, public_viewed_count: (data.public_viewed_count ?? 0) + 1 })
       .eq('id', data.id)
-      .eq('status', 'sent')
+  } else {
+    await supabaseAdmin
+      .from('msa_documents')
+      .update({ public_viewed_count: (data.public_viewed_count ?? 0) + 1 })
+      .eq('id', data.id)
   }
+
+  // Admin SMS on EVERY open of an unexecuted MSA — throttled to one text per
+  // 10 min per document (Hunter directive 2026-07-16). Skip once executed:
+  // nothing left to chase. Best-effort; never blocks the page render.
+  if (data.status !== 'executed') {
+    try {
+      const OPEN_SMS_THROTTLE_MS = 10 * 60 * 1000
+      const last = data.view_sms_sent_at ? new Date(data.view_sms_sent_at).getTime() : 0
+      if (Date.now() - last >= OPEN_SMS_THROTTLE_MS) {
+        const { notifyAdminsBySms } = await import('@/lib/admin-sms')
+        const businessName = (data.prospects as { business_name?: string } | null)?.business_name ?? 'a client'
+        const result = await notifyAdminsBySms({
+          source: 'msa_view',
+          body: `DSIG: ${businessName} just opened MSA ${data.msa_number}.`,
+        })
+        if (result.dispatched) {
+          await supabaseAdmin
+            .from('msa_documents')
+            .update({ view_sms_sent_at: new Date().toISOString() })
+            .eq('id', data.id)
+        }
+      }
+    } catch (e) {
+      console.error('[msa public page] view-SMS pipeline threw:', e instanceof Error ? e.message : e)
+    }
+  }
+
   return data
 }
 

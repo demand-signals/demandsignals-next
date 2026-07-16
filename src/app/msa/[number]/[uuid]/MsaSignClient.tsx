@@ -105,16 +105,24 @@ export function MsaSignClient({ number, publicUuid, disclosures, msaPdfUrl, alre
   const allFilled = docs.every((d) => (initials[d.key] ?? '').trim().length > 0)
   const initialsConsistent = docs.every((d) => (initials[d.key] ?? '').trim().toUpperCase() === expectedInitials) && expectedInitials.length > 0
   const sigMatchesName = signature.trim().toLowerCase() === name.trim().toLowerCase() && name.trim().length > 0
-  const emailOk = email.trim() === '' || isEmail(email)
+  // ALL identity fields are required — name, title, email, cell.
+  const titleOk = title.trim().length > 0
+  const emailOk = isEmail(email)
+  const cellDigits = cell.replace(/\D/g, '')
+  const cellOk = cellDigits.length >= 10
   const canSign =
-    allFilled && initialsConsistent && sigMatchesName && emailOk && consent && name.trim().length > 0 && state !== 'signing'
+    allFilled && initialsConsistent && sigMatchesName &&
+    name.trim().length > 0 && titleOk && emailOk && cellOk &&
+    consent && state !== 'signing'
 
   const validationHint = (() => {
     if (name.trim().length === 0) return 'Enter your full name first.'
+    if (!titleOk) return 'Enter your title.'
+    if (!emailOk) return 'Enter a valid email address.'
+    if (!cellOk) return 'Enter a valid cell phone number.'
     if (!allFilled) return `Initial all ${docs.length} documents.`
     if (!initialsConsistent) return `Initials must be your initials (${expectedInitials}) and match on every line.`
     if (!sigMatchesName) return 'Your signature must match your typed name exactly.'
-    if (!emailOk) return 'Enter a valid email address.'
     if (!consent) return 'Check the certification box to continue.'
     return ''
   })()
@@ -180,10 +188,10 @@ export function MsaSignClient({ number, publicUuid, disclosures, msaPdfUrl, alre
       <div>
         <h2 className="text-lg font-semibold text-slate-900">Your details</h2>
         <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name *" className={field} />
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className={field} />
-          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className={`${field} ${!emailOk ? 'border-red-400' : ''}`} />
-          <input value={cell} onChange={(e) => setCell(e.target.value)} placeholder="Cell" className={field} />
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name *" className={`${field} ${name.trim().length === 0 ? 'border-red-400' : ''}`} />
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title *" className={`${field} ${!titleOk ? 'border-red-400' : ''}`} />
+          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Email *" className={`${field} ${!emailOk ? 'border-red-400' : ''}`} />
+          <input value={cell} onChange={(e) => setCell(e.target.value)} type="tel" placeholder="Cell *" className={`${field} ${!cellOk ? 'border-red-400' : ''}`} />
         </div>
       </div>
 
