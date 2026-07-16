@@ -179,6 +179,7 @@ function termsPage(msa: MsaDocument, prospect: MsaProspect): string {
       to individually as a &ldquo;Party&rdquo; and collectively as the &ldquo;Parties.&rdquo;
     </p>
 
+    <div style="column-count:2;column-gap:28px;column-fill:balance;">
     ${clause(1, 'Purpose & Structure',
       `This Agreement establishes the master terms and conditions governing the ongoing relationship between the
        Parties. It is intended to persist across multiple projects, engagements, and initiatives without
@@ -289,6 +290,7 @@ function termsPage(msa: MsaDocument, prospect: MsaProspect): string {
       `This Agreement, together with the Disclosures incorporated herein and all SOWs issued hereunder, constitutes
        the entire agreement between the Parties with respect to the subject matter hereof and supersedes all prior
        and contemporaneous understandings, agreements, representations, and warranties, both written and oral.`)}
+    </div>
   `
 
   return `
