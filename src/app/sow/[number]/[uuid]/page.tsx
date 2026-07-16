@@ -44,6 +44,11 @@ interface PublicSow {
   deliverables: LegacyDeliverable[]
   timeline: LegacyTimelinePhase[]
   pricing: SowPricing
+  // Retainer engagement (migration 059). Absent/'fixed_scope' → unchanged.
+  engagement_type?: 'fixed_scope' | 'retainer' | null
+  retainer_initial_cents?: number | null
+  retainer_hours_low?: number | null
+  retainer_hours_high?: number | null
   trade_credit_cents: number | null
   trade_credit_description: string | null
   // Document-level discount (migration 036). One-time only. Stacks with TIK.
@@ -166,8 +171,31 @@ function PhaseCard({ phase, idx }: { phase: SowPhase; idx: number }) {
         )}
       </div>
 
-      {/* Deliverables table */}
-      {phase.deliverables.length > 0 ? (
+      {/* Scope-only phase (retainer engagements): scope bullets + ± hours,
+          no price columns. Mirrors the PDF renderer's scopeOnlyBody. */}
+      {phase.pricing_mode === 'scope_only' ? (
+        <div className="px-6 pb-5">
+          {(phase.hours_low != null || phase.hours_high != null) && (
+            <div className="text-sm ml-11 mb-3" style={{ color: 'var(--slate)' }}>
+              <strong className="text-slate-900">± {phase.hours_low ?? '?'}–{phase.hours_high ?? '?'} hrs</strong>
+              <span style={{ color: '#94a0b8' }}> · drawn from retainer</span>
+            </div>
+          )}
+          {phase.deliverables.length > 0 ? (
+            <ul className="ml-11 list-disc pl-5 space-y-1.5 text-sm" style={{ color: 'var(--slate)' }}>
+              {phase.deliverables.map((d, i) => (
+                <li key={i}>
+                  <span className="font-semibold text-slate-900">{d.name}</span>
+                  {d.description ? ` — ${d.description}` : ''}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="ml-11 text-sm italic" style={{ color: '#94a0b8' }}>Scope to be defined.</p>
+          )}
+        </div>
+      ) : /* Deliverables table (itemized) */
+      phase.deliverables.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -400,9 +428,18 @@ export default async function PublicSowPage({
   const balanceCents = (hasReductions ? cashOneTime : totals.oneTime) - depositCents
   const hasRecurring = totals.monthly > 0 || totals.quarterly > 0 || totals.annual > 0
 
-  const bigNumber = usePhases
-    ? (hasReductions ? formatCents(cashOneTime) : formatCents(totals.oneTime))
-    : formatCents(sow.pricing.total_cents)
+  // Retainer engagement: the headline is the prepaid pool, not line-item totals.
+  const isRetainer = sow.engagement_type === 'retainer'
+  const retainerHoursNte =
+    isRetainer && (sow.retainer_hours_low != null || sow.retainer_hours_high != null)
+      ? `± ${sow.retainer_hours_low ?? '?'}–${sow.retainer_hours_high ?? '?'} hours (not-to-exceed)`
+      : ''
+
+  const bigNumber = isRetainer
+    ? formatCents(sow.retainer_initial_cents ?? 0)
+    : usePhases
+      ? (hasReductions ? formatCents(cashOneTime) : formatCents(totals.oneTime))
+      : formatCents(sow.pricing.total_cents)
 
   const issueDate = sow.sent_at
     ? new Date(sow.sent_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
@@ -547,6 +584,24 @@ export default async function PublicSowPage({
         >
           {bigNumber}
         </div>
+
+        {isRetainer ? (
+          <>
+            <p className="text-sm mb-1" style={{ color: 'var(--slate)' }}>opening retainer — placed on account</p>
+            {retainerHoursNte && (
+              <p className="text-sm mb-4" style={{ color: '#94a0b8' }}>{retainerHoursNte}</p>
+            )}
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 mt-8 mb-4">
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--slate)' }}>
+                All work under this engagement is billed against your prepaid retainer. Time and
+                AI/token usage draw the balance down at the applicable role rates. When the balance
+                runs low you&rsquo;re notified, and a replenishment invoice is issued to keep work
+                moving. Unused funds are refundable on request, less work performed.
+              </p>
+            </div>
+          </>
+        ) : (
+        <>
         {tikCents > 0 && (
           <p className="text-sm mb-1" style={{ color: 'var(--slate)' }}>
             cash project total (after {formatCents(tikCents)} trade-in-kind credit)
@@ -636,6 +691,8 @@ export default async function PublicSowPage({
           <p className="text-xs mb-2" style={{ color: '#94a0b8' }}>
             Recurring charges begin per deliverable start trigger.
           </p>
+        )}
+        </>
         )}
 
         {/* Orange accent rule */}

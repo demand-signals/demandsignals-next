@@ -123,7 +123,14 @@ function renderPhasesSection(sow: SowDocument): string {
         </div>
         <h3 style="font-size:15px;font-weight:600;color:#1d2330;margin:0 0 4px 0">${escapeHtml(phase.name)}</h3>
         ${phase.description ? `<p style="font-size:13px;color:#5d6780;margin:0 0 8px 0">${escapeHtml(phase.description)}</p>` : ''}
-        ${phase.deliverables.length > 0 ? `
+        ${phase.pricing_mode === 'scope_only' ? `
+          ${(phase.hours_low != null || phase.hours_high != null)
+            ? `<p style="font-size:13px;color:#1d2330;margin:0 0 6px 0"><strong>± ${phase.hours_low ?? '?'}–${phase.hours_high ?? '?'} hrs</strong> <span style="color:#94a0b8">· drawn from retainer</span></p>`
+            : ''}
+          ${phase.deliverables.length > 0
+            ? `<ul style="margin:0;padding-left:18px;font-size:13px;color:#5d6780;line-height:1.7">${phase.deliverables.map((d) => `<li><strong style="color:#1d2330">${escapeHtml(d.name)}</strong>${d.description ? ` — ${escapeHtml(d.description)}` : ''}</li>`).join('')}</ul>`
+            : '<p style="font-size:13px;color:#5d6780;font-style:italic">Scope to be defined</p>'}
+        ` : phase.deliverables.length > 0 ? `
           <table style="width:100%;border-collapse:collapse;font-size:13px">
             <thead>
               <tr>
