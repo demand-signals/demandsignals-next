@@ -422,27 +422,30 @@ function signatureBlock(sow: SowDocument, isAccepted: boolean, acceptedDate: str
     : sow.sent_at
       ? new Date(sow.sent_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
       : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+  // Layout matches the MSA execution block: DEMAND SIGNALS on the LEFT
+  // (pre-signed / SUBMITTED BY), CLIENT on the RIGHT (APPROVED BY), spanning
+  // the full content width (no max-width cap).
   return `
       ${eyebrow('Authorization &amp; Signatures')}
 
-      <div style="display:flex;gap:36px;max-width:520px;margin-bottom:16px">
-        <!-- Client -->
-        <div style="flex:1">
-          <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px;font-family:${FONT_STACK}">CLIENT</p>
-          ${isAccepted
-            ? `<p style="font-family:${CURSIVE};font-size:28px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:4px;min-height:40px;line-height:1.2">${esc(sow.accepted_signature ?? '')}</p>`
-            : `<div style="border-bottom:1px solid ${T.RULE};height:40px;min-width:160px"></div>`}
-          <p style="font-size:10px;color:${T.GRAY};margin-top:4px;font-family:${FONT_STACK}">
-            ${isAccepted ? `Date: ${acceptedDate}` : 'Date'}
-          </p>
-        </div>
-        <!-- DSIG — pre-signed (countersigned on issue) -->
+      <div style="display:flex;gap:40px;margin-bottom:16px">
+        <!-- DSIG — pre-signed (countersigned on issue), left column -->
         <div style="flex:1">
           <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px;font-family:${FONT_STACK}">DEMAND SIGNALS</p>
           <p style="font-family:${CURSIVE};font-size:28px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:4px;min-height:40px;line-height:1.2">${esc(DSIG_SIGNATORY.name)}</p>
           <p style="font-size:10px;color:${T.GRAY};margin-top:4px;font-family:${FONT_STACK};line-height:1.6">
             ${esc(DSIG_SIGNATORY.name)}, ${esc(DSIG_SIGNATORY.title)}<br>
             Date: ${dsigDate}
+          </p>
+        </div>
+        <!-- Client — signs on accept, right column -->
+        <div style="flex:1">
+          <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px;font-family:${FONT_STACK}">CLIENT</p>
+          ${isAccepted
+            ? `<p style="font-family:${CURSIVE};font-size:28px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:4px;min-height:40px;line-height:1.2">${esc(sow.accepted_signature ?? '')}</p>`
+            : `<div style="border-bottom:1px solid ${T.RULE};height:40px"></div>`}
+          <p style="font-size:10px;color:${T.GRAY};margin-top:4px;font-family:${FONT_STACK}">
+            ${isAccepted ? `Date: ${acceptedDate}` : 'Date'}
           </p>
         </div>
       </div>`
