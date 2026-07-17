@@ -12,12 +12,14 @@ export function SowAcceptClient({
   depositCents,
   downloadUrl,
   isOpen,
+  isRetainer = false,
 }: {
   sowNumber: string
   publicUuid: string
   depositCents: number
   downloadUrl: string
   isOpen: boolean
+  isRetainer?: boolean
 }) {
   const [signature, setSignature] = useState('')
   const [busy, setBusy] = useState(false)
@@ -116,7 +118,7 @@ export function SowAcceptClient({
           className="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ background: busy ? '#c05522' : '#FF6B2B' }}
         >
-          {busy ? 'Processing…' : `Accept & Pay Deposit (${depositStr}) →`}
+          {busy ? 'Processing…' : `Accept & Pay ${isRetainer ? 'Retainer' : 'Deposit'} (${depositStr}) →`}
         </button>
         <a
           href={downloadUrl}

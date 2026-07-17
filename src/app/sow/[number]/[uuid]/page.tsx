@@ -424,7 +424,14 @@ export default async function PublicSowPage({
   const cashOneTime = Math.max(0, totals.oneTime - discountCents - tikCents)
   const hasReductions = tikCents > 0 || discountCents > 0
   const depositPct  = sow.pricing.deposit_pct ?? 50
-  const depositCents = sow.pricing.deposit_cents ?? Math.round(cashOneTime * depositPct / 100)
+  // The "deposit" the client pays on accept: for a retainer engagement this is
+  // the opening pool amount (retainer_initial_cents) — the SAME value the accept
+  // API charges — NOT a % of a $0 line-item total. Single source of truth so the
+  // button, investment headline, and backend all agree.
+  const depositCents =
+    sow.engagement_type === 'retainer'
+      ? (sow.retainer_initial_cents ?? 0)
+      : (sow.pricing.deposit_cents ?? Math.round(cashOneTime * depositPct / 100))
   const balanceCents = (hasReductions ? cashOneTime : totals.oneTime) - depositCents
   const hasRecurring = totals.monthly > 0 || totals.quarterly > 0 || totals.annual > 0
 
@@ -767,6 +774,7 @@ export default async function PublicSowPage({
                 depositCents={depositCents}
                 downloadUrl={downloadUrl}
                 isOpen={isOpen}
+                isRetainer={isRetainer}
               />
             </>
           )}

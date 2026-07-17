@@ -1533,9 +1533,42 @@ export default function SowDetailPage({
                   {/* Deliverables table */}
                   <div className="px-4 pb-2">
                     {phase.pricing_mode === 'scope_only' ? (
-                      <p className="text-xs italic mt-2" style={{ color: '#94a0b8' }}>
-                        Scope-only phase — deliverables render as bullets (no Qty/Rate/Total), billed from the retainer.
-                      </p>
+                      <div className="mt-2">
+                        <p className="text-xs italic mb-2" style={{ color: '#94a0b8' }}>
+                          Scope-only — items render as bullets on the SOW (no Qty/Rate/Total), billed from the retainer.
+                        </p>
+                        {phase.deliverables.length === 0 ? (
+                          <p className="text-xs" style={{ color: '#94a0b8' }}>No scope items yet — add below.</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {phase.deliverables.map((d) => (
+                              <div key={d.id} className="flex gap-2 items-start rounded border p-2" style={{ borderColor: '#e2e8f0' }}>
+                                <div className="flex-1 space-y-1">
+                                  <FieldInput
+                                    value={d.name}
+                                    onChange={(v) => updateDeliverable(phase.id, d.id, { name: v })}
+                                    placeholder="Scope item"
+                                    className="font-semibold"
+                                  />
+                                  <FieldInput
+                                    value={d.description}
+                                    onChange={(v) => updateDeliverable(phase.id, d.id, { description: v })}
+                                    placeholder="Description (optional)"
+                                    className="text-xs"
+                                  />
+                                </div>
+                                <button
+                                  onClick={() => removeDeliverable(phase.id, d.id)}
+                                  className="text-slate-300 hover:text-red-500 mt-1"
+                                  title="Remove scope item"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     ) : phase.deliverables.length > 0 && (
                       <table className="w-full text-sm mt-2">
                         <thead>

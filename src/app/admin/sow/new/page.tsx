@@ -161,6 +161,16 @@ export default function NewSowPage() {
       .then((d) => setProspects(d.data ?? []))
   }, [])
 
+  // Prefill the prospect when arriving from a client/prospect record
+  // (?prospect_id=…). The client page links here with the id — reading it
+  // avoids forcing the admin to re-search for a client they came from.
+  // Read from window.location (not useSearchParams — that needs a Suspense
+  // boundary in Next 16 and would break the build; per project footgun notes).
+  useEffect(() => {
+    const pid = new URLSearchParams(window.location.search).get('prospect_id')
+    if (pid) setProspectId(pid)
+  }, [])
+
   // ── Phase helpers ─────────────────────────────────────────────────
 
   function addPhase() {
