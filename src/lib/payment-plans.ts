@@ -910,13 +910,13 @@ async function generateInvoiceFromParentInvoiceInstallment(
       total_due_cents: installment.amount_cents,
       currency: 'USD',
       auto_generated: true,
-      // Retainer engagement: tag the installment invoice 'retainer_reup' so
-      // the mark-paid hook (creditFromPaidReupInvoice) funds the retainer
-      // ledger on payment. The trigger label is display-only (nothing keys
-      // cascade logic off it — that uses payment_installment_id), so this is
-      // safe. Non-retainer installments keep the descriptive label.
+      // Retainer engagement: inherit 'retainer_reup' from the parent invoice
+      // so each paid child installment credits the retainer ledger via the
+      // mark-paid hook. The parent was tagged retainer_reup in
+      // firePaymentInstallment when the SOW is a retainer. The trigger label
+      // is display-only (cascade keys off payment_installment_id), so safe.
       auto_trigger:
-        options.sow?.engagement_type === 'retainer'
+        parentInvoice.auto_trigger === 'retainer_reup'
           ? 'retainer_reup'
           : `installment_invoice_${installment.trigger_type}`,
       auto_sent: mode === 'send' && options.autoSent === true,
