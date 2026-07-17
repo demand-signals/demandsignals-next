@@ -4,8 +4,10 @@
 // All CSS is inlined. Chromium pipeline (no external fonts).
 
 import { formatCents } from '@/lib/format'
+import { DSIG_SIGNATORY } from '@/lib/constants'
 import type { SowDocument, SowPhase, SowPhaseDeliverable } from '@/lib/invoice-types'
 import { htmlToPdfBuffer } from './render'
+import { SIGNATURE_FONT_FACE, SIGNATURE_FONT_FAMILY } from './signature-font'
 import {
   T, LOGO_URL, FONT_STACK,
   esc, escNl, docShell,
@@ -14,6 +16,12 @@ import {
   darkCoverTopStrip, darkCoverMetaBand, darkCoverFooterStrip,
 } from './_shared'
 import { pickBackCoverQuote } from './back-cover-quotes'
+
+// Cursive font stack for signatures — the embedded 'DSIG Signature' face
+// (real Dancing Script) first, then system fallbacks. Matches the MSA so
+// SOW signatures render at the same quality. The @font-face is injected
+// into the SOW HTML in renderSowPdf.
+const CURSIVE = `'${SIGNATURE_FONT_FAMILY}','Brush Script MT','Segoe Script','Snell Roundhand',cursive`
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -406,6 +414,14 @@ function infoCard(
 // retainer investment pages. Extracted verbatim from the original inline
 // markup so the fixed-scope render is unchanged.
 function signatureBlock(sow: SowDocument, isAccepted: boolean, acceptedDate: string): string {
+  // Demand Signals pre-signs (countersigns) every SOW when issued — matching
+  // how the MSA onboarding docs are signed. The DSIG date is the SOW's issue
+  // date (send_date/sent_at), falling back to today for an unsent draft.
+  const dsigDate = sow.send_date
+    ? new Date(sow.send_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : sow.sent_at
+      ? new Date(sow.sent_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+      : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
   return `
       ${eyebrow('Authorization &amp; Signatures')}
 
@@ -414,17 +430,20 @@ function signatureBlock(sow: SowDocument, isAccepted: boolean, acceptedDate: str
         <div style="flex:1">
           <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px;font-family:${FONT_STACK}">CLIENT</p>
           ${isAccepted
-            ? `<p style="font-family:'Brush Script MT','Segoe Script',cursive;font-size:24px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:4px;min-height:40px;line-height:1.2">${esc(sow.accepted_signature ?? '')}</p>`
+            ? `<p style="font-family:${CURSIVE};font-size:28px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:4px;min-height:40px;line-height:1.2">${esc(sow.accepted_signature ?? '')}</p>`
             : `<div style="border-bottom:1px solid ${T.RULE};height:40px;min-width:160px"></div>`}
           <p style="font-size:10px;color:${T.GRAY};margin-top:4px;font-family:${FONT_STACK}">
             ${isAccepted ? `Date: ${acceptedDate}` : 'Date'}
           </p>
         </div>
-        <!-- DSIG -->
+        <!-- DSIG — pre-signed (countersigned on issue) -->
         <div style="flex:1">
           <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${T.GRAY};margin-bottom:6px;font-family:${FONT_STACK}">DEMAND SIGNALS</p>
-          <div style="border-bottom:1px solid ${T.RULE};height:40px;min-width:160px"></div>
-          <p style="font-size:10px;color:${T.GRAY};margin-top:4px;font-family:${FONT_STACK}">Date</p>
+          <p style="font-family:${CURSIVE};font-size:28px;color:${T.SLATE};border-bottom:1px solid ${T.RULE};padding-bottom:4px;min-height:40px;line-height:1.2">${esc(DSIG_SIGNATORY.name)}</p>
+          <p style="font-size:10px;color:${T.GRAY};margin-top:4px;font-family:${FONT_STACK};line-height:1.6">
+            ${esc(DSIG_SIGNATORY.name)}, ${esc(DSIG_SIGNATORY.title)}<br>
+            Date: ${dsigDate}
+          </p>
         </div>
       </div>`
 }
@@ -822,7 +841,11 @@ export async function renderSowPdf(
 
   const html = docShell(
     `SOW — ${sow.sow_number} — ${prospect.business_name}`,
-    coverPage(sow, prospect)
+    // Inject the embedded signature @font-face so the cursive signatures
+    // render (system fallback otherwise — the glyphless-stub trap from the
+    // MSA font work). Scoped to the SOW body; harmless to other renderers.
+    `<style>${SIGNATURE_FONT_FACE}</style>`
+    + coverPage(sow, prospect)
     + scopePage(sow)
     + investmentPage(sow)
     + backCoverPage(prospect, issueDate, sow),

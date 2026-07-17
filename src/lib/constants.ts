@@ -4,6 +4,17 @@ export const CONTACT_EMAIL = 'DemandSignals@gmail.com'
 export const CONTACT_PHONE = '(916) 542-2423'
 export const CONTACT_PHONE_TEL = '+19165422423'
 
+// Demand Signals authorized signatory — the DSIG side of every document's
+// signature block is pre-signed with these details (matches the MSA's
+// dsig_signatory_* defaults from migration 056). Documents are countersigned
+// by DSIG when issued; the client adds their signature on accept.
+export const DSIG_SIGNATORY = {
+  name: 'Hunter Long',
+  title: 'Managing Director',
+  email: 'DemandSignals@gmail.com',
+  cell: '916-542-2423',
+} as const
+
 // Physical mailing address — used on invoices, SOWs, receipts, and contact page.
 export const BUSINESS_ADDRESS = {
   street: '5170 Golden Foothills Pkwy',
