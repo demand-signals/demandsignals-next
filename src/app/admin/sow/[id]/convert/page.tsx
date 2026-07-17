@@ -17,14 +17,19 @@ export default async function ConvertSowPage({
 
   const { data: sow } = await supabaseAdmin
     .from('sow_documents')
-    .select('id, sow_number, title, status, pricing, trade_credit_cents, trade_credit_description, phases')
+    .select('id, sow_number, title, status, pricing, trade_credit_cents, trade_credit_description, phases, engagement_type, retainer_initial_cents')
     .eq('id', id)
     .maybeSingle()
 
   if (!sow) notFound()
 
   const phases = (sow.phases ?? []) as SowPhase[]
-  const totalCents = (sow.pricing as { total_cents?: number } | null)?.total_cents ?? 0
+  // Retainer SOWs have no line-item total — the cash to allocate is the
+  // opening pool (retainer_initial_cents), NOT pricing.total_cents ($0).
+  const isRetainer = sow.engagement_type === 'retainer'
+  const totalCents = isRetainer
+    ? (sow.retainer_initial_cents ?? 0)
+    : ((sow.pricing as { total_cents?: number } | null)?.total_cents ?? 0)
   const tikCents = sow.trade_credit_cents ?? 0
 
   const recurringDeliverables = phases.flatMap((p) =>

@@ -136,7 +136,12 @@ export async function convertSowToProject(
   const pricing = sow.pricing as SowPricing
   const phases = (sow.phases ?? []) as SowPhase[]
   const tikCents = body.tik?.amount_cents ?? 0
-  const expectedCashTotal = pricing.total_cents - tikCents
+  // Retainer SOWs have no line-item total — the cash to allocate is the
+  // opening pool (retainer_initial_cents), NOT pricing.total_cents ($0).
+  const isRetainer = (sow as { engagement_type?: string }).engagement_type === 'retainer'
+  const retainerInitialCents = (sow as { retainer_initial_cents?: number | null }).retainer_initial_cents ?? 0
+  const baseTotalCents = isRetainer ? retainerInitialCents : pricing.total_cents
+  const expectedCashTotal = baseTotalCents - tikCents
 
   validatePaymentPlan(body.payment_plan, expectedCashTotal, phases)
 
@@ -168,6 +173,20 @@ export async function convertSowToProject(
       .from('prospects')
       .update({ is_client: true, became_client_at: new Date().toISOString() })
       .eq('id', sow.prospect_id)
+  }
+
+  // 5b. Retainer engagement: open the client's retainer ledger (idempotent).
+  // The payment-plan installments ARE the retainer funding — their invoices
+  // credit the ledger on payment (see firePaymentInstallment: retainer SOWs
+  // tag the invoice auto_trigger='retainer_reup' so the mark-paid hook funds
+  // the ledger). Best-effort — never break the conversion.
+  if (isRetainer && sow.prospect_id) {
+    try {
+      const { getOrCreateLedger } = await import('./retainer-ledger')
+      await getOrCreateLedger(sow.prospect_id)
+    } catch (ledgerErr) {
+      console.error('[convert] retainer ledger open failed:', ledgerErr instanceof Error ? ledgerErr.message : ledgerErr)
+    }
   }
 
   // 6. Create project (or reuse existing)
@@ -756,7 +775,12 @@ export async function generateInvoiceFromInstallment(
       total_due_cents: installment.amount_cents,
       currency: 'USD',
       auto_generated: true,
-      auto_trigger: `installment_${installment.trigger_type}`,
+      // Retainer engagement: tag 'retainer_reup' so payment funds the ledger
+      // (see the sibling insert below for rationale). Display-only label.
+      auto_trigger:
+        sow?.engagement_type === 'retainer'
+          ? 'retainer_reup'
+          : `installment_${installment.trigger_type}`,
       auto_sent: mode === 'send' && options.autoSent === true,
       category_hint: 'service_revenue',
       notes: `${installment.description ?? `Payment ${installment.sequence}`} for SOW ${sow.sow_number} — ${sow.title}`,
@@ -886,7 +910,15 @@ async function generateInvoiceFromParentInvoiceInstallment(
       total_due_cents: installment.amount_cents,
       currency: 'USD',
       auto_generated: true,
-      auto_trigger: `installment_invoice_${installment.trigger_type}`,
+      // Retainer engagement: tag the installment invoice 'retainer_reup' so
+      // the mark-paid hook (creditFromPaidReupInvoice) funds the retainer
+      // ledger on payment. The trigger label is display-only (nothing keys
+      // cascade logic off it — that uses payment_installment_id), so this is
+      // safe. Non-retainer installments keep the descriptive label.
+      auto_trigger:
+        options.sow?.engagement_type === 'retainer'
+          ? 'retainer_reup'
+          : `installment_invoice_${installment.trigger_type}`,
       auto_sent: mode === 'send' && options.autoSent === true,
       category_hint: parentInvoice.category_hint ?? 'service_revenue',
       notes:
