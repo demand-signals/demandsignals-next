@@ -59,6 +59,10 @@ interface SowPhase {
   name: string
   description: string
   deliverables: PhaseDeliverable[]
+  // Retainer engagement support (migration 059).
+  pricing_mode?: 'itemized' | 'scope_only'
+  hours_low?: number
+  hours_high?: number
 }
 
 interface SowData {
@@ -69,6 +73,11 @@ interface SowData {
   title: string
   scope_summary: string | null
   phases: SowPhase[]
+  // Retainer engagement (migration 059).
+  engagement_type?: 'fixed_scope' | 'retainer' | null
+  retainer_initial_cents?: number | null
+  retainer_hours_low?: number | null
+  retainer_hours_high?: number | null
   // legacy fields kept for backward compat display
   deliverables: Array<{
     name: string
@@ -324,6 +333,11 @@ export default function SowDetailPage({
   const [title, setTitle] = useState('')
   const [scopeSummary, setScopeSummary] = useState('')
   const [phases, setPhases] = useState<SowPhase[]>([])
+  // Retainer engagement (migration 059).
+  const [engagementType, setEngagementType] = useState<'fixed_scope' | 'retainer'>('fixed_scope')
+  const [retainerInitialInput, setRetainerInitialInput] = useState('')
+  const [retainerHoursLow, setRetainerHoursLow] = useState('')
+  const [retainerHoursHigh, setRetainerHoursHigh] = useState('')
   const [depositPct, setDepositPct] = useState('25')
   const [paymentTerms, setPaymentTerms] = useState('')
   const [guarantees, setGuarantees] = useState('')
@@ -362,6 +376,14 @@ export default function SowDetailPage({
   function initState(s: SowData) {
     setTitle(s.title)
     setScopeSummary(s.scope_summary ?? '')
+
+    // Retainer engagement (migration 059).
+    setEngagementType(s.engagement_type === 'retainer' ? 'retainer' : 'fixed_scope')
+    setRetainerInitialInput(
+      s.retainer_initial_cents != null ? (s.retainer_initial_cents / 100).toString() : '',
+    )
+    setRetainerHoursLow(s.retainer_hours_low != null ? String(s.retainer_hours_low) : '')
+    setRetainerHoursHigh(s.retainer_hours_high != null ? String(s.retainer_hours_high) : '')
 
     // If phases array is populated, use it; otherwise migrate legacy deliverables
     // into a single "Phase 1" so the UI is always phase-centric.
@@ -493,6 +515,16 @@ export default function SowDetailPage({
         scope_summary: scopeSummary,
         computed_from_deliverables: true,
         phases,
+        // Retainer engagement (migration 059).
+        engagement_type: engagementType,
+        retainer_initial_cents:
+          engagementType === 'retainer'
+            ? Math.round((Number(retainerInitialInput) || 0) * 100)
+            : null,
+        retainer_hours_low:
+          engagementType === 'retainer' && retainerHoursLow ? Number(retainerHoursLow) : null,
+        retainer_hours_high:
+          engagementType === 'retainer' && retainerHoursHigh ? Number(retainerHoursHigh) : null,
         // Keep legacy fields in sync with one-time deliverables for backward compat
         deliverables: allDeliverables
           .filter((d) => d.cadence === 'one_time')
@@ -1354,6 +1386,57 @@ export default function SowDetailPage({
               placeholder="Describe the scope of work..."
               rows={3}
             />
+
+            {/* Engagement type (migration 059) — fixed-scope vs retainer pool. */}
+            <div className="mt-4">
+              <div className="text-xs uppercase tracking-wide font-semibold mb-2" style={{ color: '#5d6780' }}>
+                Engagement type
+              </div>
+              <div className="flex gap-2">
+                {(['fixed_scope', 'retainer'] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => { setEngagementType(t); markDirty() }}
+                    className="text-xs font-semibold px-3 py-1.5 rounded border transition-colors"
+                    style={
+                      engagementType === t
+                        ? { background: '#68c5ad', color: '#fff', borderColor: '#68c5ad' }
+                        : { background: '#fff', color: '#5d6780', borderColor: '#e2e8f0' }
+                    }
+                  >
+                    {t === 'fixed_scope' ? 'Fixed scope (itemized)' : 'Retainer (pool)'}
+                  </button>
+                ))}
+              </div>
+              {engagementType === 'retainer' && (
+                <div className="mt-3 rounded-lg p-3 flex flex-wrap gap-3 items-end" style={{ background: 'rgba(104,197,173,0.08)', border: '1px solid rgba(104,197,173,0.25)' }}>
+                  <label className="text-xs" style={{ color: '#5d6780' }}>
+                    Opening retainer $
+                    <input
+                      type="number" min={0} step={100}
+                      value={retainerInitialInput}
+                      onChange={(e) => { setRetainerInitialInput(e.target.value); markDirty() }}
+                      placeholder="0.00"
+                      className="block w-32 border rounded px-2 py-1 mt-1 font-mono text-right"
+                      style={{ borderColor: '#e2e8f0' }}
+                    />
+                  </label>
+                  <label className="text-xs" style={{ color: '#5d6780' }}>
+                    Hours ± low
+                    <input type="number" min={0} value={retainerHoursLow}
+                      onChange={(e) => { setRetainerHoursLow(e.target.value); markDirty() }}
+                      className="block w-20 border rounded px-2 py-1 mt-1 font-mono text-right" style={{ borderColor: '#e2e8f0' }} />
+                  </label>
+                  <label className="text-xs" style={{ color: '#5d6780' }}>
+                    Hours ± high
+                    <input type="number" min={0} value={retainerHoursHigh}
+                      onChange={(e) => { setRetainerHoursHigh(e.target.value); markDirty() }}
+                      className="block w-20 border rounded px-2 py-1 mt-1 font-mono text-right" style={{ borderColor: '#e2e8f0' }} />
+                  </label>
+                </div>
+              )}
+            </div>
           </section>
 
           {/* Phases */}
@@ -1418,9 +1501,42 @@ export default function SowDetailPage({
                     />
                   </div>
 
+                  {/* Per-phase pricing mode (migration 059). Scope-only hides
+                      the price columns and renders scope bullets + ± hours. */}
+                  <div className="px-4 pb-1 flex flex-wrap items-center gap-2 text-xs" style={{ color: '#5d6780' }}>
+                    <span>Pricing:</span>
+                    {(['itemized', 'scope_only'] as const).map((m) => {
+                      const active = (phase.pricing_mode ?? 'itemized') === m
+                      return (
+                        <button key={m} type="button"
+                          onClick={() => updatePhase(phase.id, { pricing_mode: m })}
+                          className="font-semibold px-2.5 py-1 rounded border transition-colors"
+                          style={active ? { background: '#1d2330', color: '#fff', borderColor: '#1d2330' } : { background: '#fff', color: '#5d6780', borderColor: '#e2e8f0' }}>
+                          {m === 'itemized' ? 'Itemized' : 'Scope only'}
+                        </button>
+                      )
+                    })}
+                    {phase.pricing_mode === 'scope_only' && (
+                      <span className="flex items-center gap-1 ml-2">
+                        ± hrs
+                        <input type="number" min={0} value={phase.hours_low ?? ''}
+                          onChange={(e) => updatePhase(phase.id, { hours_low: e.target.value === '' ? undefined : Number(e.target.value) })}
+                          placeholder="low" className="w-14 border rounded px-1.5 py-1 font-mono text-right" style={{ borderColor: '#e2e8f0' }} />
+                        <span>–</span>
+                        <input type="number" min={0} value={phase.hours_high ?? ''}
+                          onChange={(e) => updatePhase(phase.id, { hours_high: e.target.value === '' ? undefined : Number(e.target.value) })}
+                          placeholder="high" className="w-14 border rounded px-1.5 py-1 font-mono text-right" style={{ borderColor: '#e2e8f0' }} />
+                      </span>
+                    )}
+                  </div>
+
                   {/* Deliverables table */}
                   <div className="px-4 pb-2">
-                    {phase.deliverables.length > 0 && (
+                    {phase.pricing_mode === 'scope_only' ? (
+                      <p className="text-xs italic mt-2" style={{ color: '#94a0b8' }}>
+                        Scope-only phase — deliverables render as bullets (no Qty/Rate/Total), billed from the retainer.
+                      </p>
+                    ) : phase.deliverables.length > 0 && (
                       <table className="w-full text-sm mt-2">
                         <thead>
                           <tr>

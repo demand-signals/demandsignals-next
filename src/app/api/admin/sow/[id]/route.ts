@@ -30,6 +30,10 @@ const phaseSchema = z.object({
   name: z.string().default(''),
   description: z.string().default(''),
   deliverables: z.array(phaseDeliverableSchema).default([]),
+  // Retainer engagement support (migration 059).
+  pricing_mode: z.enum(['itemized', 'scope_only']).optional(),
+  hours_low: z.number().nonnegative().optional(),
+  hours_high: z.number().nonnegative().optional(),
 })
 
 export async function GET(
@@ -84,6 +88,11 @@ const patchBodySchema = z.object({
     deposit_cents: z.number().int().optional(),
     deposit_pct: z.number().optional(),
   }).optional(),
+  // Retainer engagement (migration 059).
+  engagement_type: z.enum(['fixed_scope', 'retainer']).optional(),
+  retainer_initial_cents: z.number().int().nonnegative().nullable().optional(),
+  retainer_hours_low: z.number().nonnegative().nullable().optional(),
+  retainer_hours_high: z.number().nonnegative().nullable().optional(),
   force_edit: z.boolean().optional(),
   trade_credit_cents: z.number().int().nonnegative().optional(),
   trade_credit_description: z.string().nullable().optional(),
@@ -160,6 +169,10 @@ export async function PATCH(
   }
   if (fields.timeline !== undefined) updates.timeline = fields.timeline
   if (fields.phases !== undefined) updates.phases = fields.phases
+  if (fields.engagement_type !== undefined) updates.engagement_type = fields.engagement_type
+  if (fields.retainer_initial_cents !== undefined) updates.retainer_initial_cents = fields.retainer_initial_cents
+  if (fields.retainer_hours_low !== undefined) updates.retainer_hours_low = fields.retainer_hours_low
+  if (fields.retainer_hours_high !== undefined) updates.retainer_hours_high = fields.retainer_hours_high
   if (fields.pricing !== undefined) updates.pricing = fields.pricing
   if (fields.deliverables !== undefined) {
     updates.deliverables = fields.deliverables.map(computeLineTotal)
