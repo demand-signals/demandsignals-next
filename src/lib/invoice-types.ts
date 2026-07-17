@@ -361,6 +361,11 @@ export interface ProjectPhase {
   status: 'pending' | 'in_progress' | 'completed'
   completed_at?: string | null
   deliverables: ProjectPhaseDeliverable[]
+  // Carried from the SOW phase (migration 059) so the project view renders
+  // scope-only phases as scope, not a $0 price table.
+  pricing_mode?: 'itemized' | 'scope_only'
+  hours_low?: number
+  hours_high?: number
 }
 
 export interface ProjectRow {

@@ -146,6 +146,11 @@ function PhaseCard({
               placeholder="Add a phase description…"
             />
           </div>
+          {phase.pricing_mode === 'scope_only' && (phase.hours_low != null || phase.hours_high != null) && (
+            <div className="text-[11px] text-teal-600 mt-0.5">
+              ± {phase.hours_low ?? '?'}–{phase.hours_high ?? '?'} hrs · drawn from retainer
+            </div>
+          )}
         </div>
 
         {/* Phase action buttons */}

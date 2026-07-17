@@ -401,6 +401,12 @@ export async function POST(
       description: p.description,
       status: 'pending',
       completed_at: null,
+      // Carry the phase pricing mode + hours range into the project so the
+      // project view can render scope-only phases as bullets (not a $0 price
+      // table). Without this, retainer projects showed itemized $0 columns.
+      pricing_mode: p.pricing_mode ?? undefined,
+      hours_low: p.hours_low ?? undefined,
+      hours_high: p.hours_high ?? undefined,
       deliverables: (p.deliverables ?? []).map((d: any) => ({
         id: d.id,
         service_id: d.service_id ?? null,

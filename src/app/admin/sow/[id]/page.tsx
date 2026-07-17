@@ -465,7 +465,12 @@ export default function SowDetailPage({
 
   // ── Computed values ───────────────────────────────────────────────
 
-  const allDeliverables = phases.flatMap((p) => p.deliverables)
+  // Scope-only phases are unpriced scope, not line items — exclude their
+  // deliverables from pricing totals AND the legacy flat `deliverables`
+  // dual-write, so a retainer SOW doesn't carry a parallel priced copy.
+  const allDeliverables = phases
+    .filter((p) => p.pricing_mode !== 'scope_only')
+    .flatMap((p) => p.deliverables)
 
   const oneTimeTotalCents = allDeliverables
     .filter((d) => d.cadence === 'one_time')
@@ -537,11 +542,13 @@ export default function SowDetailPage({
             line_total_cents: computeLineCents(d),
           })),
         timeline: [],
-        pricing: {
-          total_cents: oneTimeTotalCents,
-          deposit_cents: depositCents,
-          deposit_pct: pct,
-        },
+        // Retainer engagements have no line-item total or deposit % — send
+        // zeros so no misleading deposit values are stored. Opening amount
+        // lives in retainer_initial_cents.
+        pricing:
+          engagementType === 'retainer'
+            ? { total_cents: 0, deposit_cents: 0, deposit_pct: 0 }
+            : { total_cents: oneTimeTotalCents, deposit_cents: depositCents, deposit_pct: pct },
         payment_terms:
           paymentTerms.trim() ||
           buildSowPaymentTerms({
