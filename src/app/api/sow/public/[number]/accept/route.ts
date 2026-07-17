@@ -31,6 +31,7 @@ import { sendSms, isSmsEnabled } from '@/lib/twilio-sms'
 import { renderInvoicePdf } from '@/lib/pdf/invoice'
 import { uploadPrivate } from '@/lib/r2-storage'
 import { getInvoicePaymentSummary, getInvoiceProjectMeta } from '@/lib/invoice-context'
+import { getOrCreateLedger } from '@/lib/retainer-ledger'
 import type { SowPricing, SowPhase, Invoice, InvoiceWithLineItems } from '@/lib/invoice-types'
 
 export async function POST(
@@ -74,9 +75,40 @@ export async function POST(
 
   const acceptedAt = new Date().toISOString()
 
+  // ── Retainer vs fixed-scope branch ────────────────────────────────
+  // Retainer engagement: the first invoice funds the prepaid pool
+  // (retainer_initial_cents), NOT a 25% deposit of a $0 line-item total.
+  // Accepting also OPENS the client's retainer ledger. When that opening
+  // invoice is paid, the mark-paid hook credits the ledger (auto_trigger
+  // 'retainer_reup' is recognized by creditFromPaidReupInvoice).
+  const isRetainer = (sow as { engagement_type?: string }).engagement_type === 'retainer'
+  const retainerInitialCents = (sow as { retainer_initial_cents?: number | null }).retainer_initial_cents ?? 0
+
+  // A retainer SOW with no opening amount is a misconfiguration — the whole
+  // point is to fund a pool. Reject rather than create a $0 invoice.
+  if (isRetainer && retainerInitialCents <= 0) {
+    return NextResponse.json(
+      { error: 'This retainer SOW has no opening amount set. Contact Demand Signals.' },
+      { status: 409 },
+    )
+  }
+
   // Generate deposit invoice.
   const pricing = sow.pricing as SowPricing
-  const depositCents = pricing.deposit_cents ?? Math.round(pricing.total_cents * 0.25)
+  const depositCents = isRetainer
+    ? retainerInitialCents
+    : (pricing.deposit_cents ?? Math.round(pricing.total_cents * 0.25))
+
+  // Open the retainer ledger on accept (idempotent). Failure here must not
+  // break the accept flow — the funding invoice still goes out; admin can
+  // open the ledger manually if this misfires.
+  if (isRetainer && sow.prospect_id) {
+    try {
+      await getOrCreateLedger(sow.prospect_id)
+    } catch (ledgerErr) {
+      console.error('[accept] retainer ledger open failed:', ledgerErr instanceof Error ? ledgerErr.message : ledgerErr)
+    }
+  }
 
   // Value stack ("New Client Appreciation" — Market Research Report,
   // Competitor Analysis, Comprehensive Project Plan) is intentionally
@@ -119,7 +151,9 @@ export async function POST(
       total_due_cents: depositCents,
       currency: 'USD',
       auto_generated: true,
-      auto_trigger: 'sow_deposit',
+      // Retainer opening invoice uses 'retainer_reup' so the paid→credit
+      // hook (creditFromPaidReupInvoice) funds the ledger on payment.
+      auto_trigger: isRetainer ? 'retainer_reup' : 'sow_deposit',
       auto_sent: true,
       category_hint: 'service_revenue',
       discount_kind: sowDiscountKind,
@@ -137,7 +171,9 @@ export async function POST(
       // sit here and confused clients (was ambiguous about whether
       // it meant invoice-level or SOW-level remaining). Hunter
       // directive 2026-04-29: drop the legacy line entirely.
-      notes: `Deposit invoice for SOW ${sow.sow_number} — ${sow.title}.`,
+      notes: isRetainer
+        ? `Opening retainer funding for SOW ${sow.sow_number} — ${sow.title}. Credited to your retainer balance on payment.`
+        : `Deposit invoice for SOW ${sow.sow_number} — ${sow.title}.`,
     })
     .select('*')
     .single()
@@ -223,7 +259,9 @@ export async function POST(
   const lineItems: Array<Record<string, unknown>> = [
     {
       invoice_id: depositInvoice.id,
-      description: `Deposit for ${sow.title} (SOW ${sow.sow_number})`,
+      description: isRetainer
+        ? `Opening retainer for ${sow.title} (SOW ${sow.sow_number})`
+        : `Deposit for ${sow.title} (SOW ${sow.sow_number})`,
       quantity: 1,
       unit_price_cents: depositCents,
       subtotal_cents: depositCents,
@@ -254,7 +292,10 @@ export async function POST(
 
   // Materialize subscriptions for recurring deliverables in phases.
   // Each monthly/quarterly/annual deliverable gets its own subscription row.
-  if (sow.prospect_id && Array.isArray(sow.phases) && (sow.phases as SowPhase[]).length > 0) {
+  // SKIPPED for retainer engagements: scope-only deliverables are unpriced
+  // ($0) and would create noise throwaway subscriptions — retainer work is
+  // billed from the pool, not per-deliverable subscriptions.
+  if (!isRetainer && sow.prospect_id && Array.isArray(sow.phases) && (sow.phases as SowPhase[]).length > 0) {
     const cadenceToBillingInterval: Record<string, string> = {
       monthly: 'month',
       quarterly: 'quarter',
@@ -569,9 +610,11 @@ export async function POST(
       const businessName = sow.prospect?.business_name ?? 'your business'
       const depositStr = `$${(depositCents / 100).toFixed(2)}`
       const url = `https://demandsignals.co/invoice/${depositInvoice.invoice_number}/${depositInvoice.public_uuid}`
-      const message =
-        `${businessName}: thanks for signing your SOW with Demand Signals. ` +
-        `Your deposit invoice ${depositInvoice.invoice_number} (${depositStr}) — ${url}`
+      const message = isRetainer
+        ? `${businessName}: thanks for signing your SOW with Demand Signals. ` +
+          `Your opening retainer invoice ${depositInvoice.invoice_number} (${depositStr}) — ${url}`
+        : `${businessName}: thanks for signing your SOW with Demand Signals. ` +
+          `Your deposit invoice ${depositInvoice.invoice_number} (${depositStr}) — ${url}`
       const result = await sendSms(smsRecipient, message)
       invoiceSmsResult = {
         sent: result.success,
