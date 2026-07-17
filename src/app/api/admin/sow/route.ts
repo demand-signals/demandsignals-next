@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 
   let q = supabaseAdmin
     .from('sow_documents')
-    .select('id, sow_number, title, status, pricing, phases, trade_credit_cents, prospect_id, quote_session_id, created_at, sent_at, viewed_at, accepted_at, prospects(business_name)')
+    .select('id, sow_number, title, status, pricing, phases, trade_credit_cents, engagement_type, retainer_initial_cents, prospect_id, quote_session_id, created_at, sent_at, viewed_at, accepted_at, prospects(business_name)')
     .order('created_at', { ascending: false })
 
   if (status) q = q.eq('status', status)
@@ -108,9 +108,15 @@ export async function GET(request: NextRequest) {
   const enriched = (data ?? []).map((row) => {
     const phases = ((row as unknown as { phases?: Phase[] | null }).phases ?? []) as Phase[]
     const tikCents = (row as unknown as { trade_credit_cents?: number }).trade_credit_cents ?? 0
+    const engagementType = (row as unknown as { engagement_type?: string }).engagement_type
+    const retainerInitialCents = (row as unknown as { retainer_initial_cents?: number | null }).retainer_initial_cents ?? 0
     let oneTimeCents = 0
     let recurringCents = 0
-    if (Array.isArray(phases) && phases.length > 0) {
+    // Retainer SOWs: the value is the opening pool, not line-item totals
+    // (scope-only phases have no priced deliverables → would show $0).
+    if (engagementType === 'retainer') {
+      oneTimeCents = retainerInitialCents
+    } else if (Array.isArray(phases) && phases.length > 0) {
       for (const ph of phases) {
         for (const d of (ph.deliverables ?? [])) {
           const v = deliverableValueCents(d)
