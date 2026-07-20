@@ -43,6 +43,22 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Throttle FORCED re-runs too. The idempotency guard above only covers the
+  // non-forced path, so a session-token holder could previously spam
+  // { force:true } to re-fire billable Google Places calls + prospect-URL
+  // fetches on every request. Enforce a minimum interval between runs
+  // regardless of force. Security audit 2026-07-20.
+  const FORCE_MIN_INTERVAL_MS = 60_000
+  if (force && fresh?.research_started_at) {
+    const sinceLastMs = Date.now() - new Date(fresh.research_started_at).getTime()
+    if (sinceLastMs < FORCE_MIN_INTERVAL_MS) {
+      return NextResponse.json(
+        { ok: true, status: 'throttled', retry_after_ms: FORCE_MIN_INTERVAL_MS - sinceLastMs },
+        { status: 429 },
+      )
+    }
+  }
+
   if (!session.business_name) {
     return NextResponse.json({ ok: false, error: 'business_name not set yet' }, { status: 400 })
   }

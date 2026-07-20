@@ -123,7 +123,12 @@ export async function isAiEnabled(): Promise<boolean> {
 export async function getDailyCostCapCents(): Promise<number> {
   const cfg = await loadConfig()
   const raw = cfg.daily_cost_cap_cents
-  return typeof raw === 'number' ? raw : 5000
+  // Default 0 — the /quote endpoints are not linked publicly, so anonymous
+  // (uncommitted) spend should be $0/day. This is now a HARD circuit breaker
+  // (see preflightOrThrow), not alert-only. Committed sessions (phone/email
+  // verified etc.) bypass this cap so real prospects are never blocked.
+  // Security audit 2026-07-20. Admin can raise via quote_config if needed.
+  return typeof raw === 'number' ? raw : 0
 }
 
 export async function getSessionCostCapCents(): Promise<number> {
@@ -204,7 +209,7 @@ export function calculateCostCents(model: ModelId, usage: TokenUsage): number {
 
 export class BudgetViolation extends Error {
   constructor(
-    public readonly reason: 'ai_disabled' | 'session_cost_cap' | 'session_token_cap' | 'session_message_cap' | 'session_duration_cap' | 'rate_limit' | 'request_input_cap',
+    public readonly reason: 'ai_disabled' | 'session_cost_cap' | 'session_token_cap' | 'session_message_cap' | 'session_duration_cap' | 'rate_limit' | 'request_input_cap' | 'daily_cost_cap',
     message: string,
     public readonly userFacingMessage: string,
   ) {
@@ -212,6 +217,45 @@ export class BudgetViolation extends Error {
     this.name = 'BudgetViolation'
   }
 }
+
+/**
+ * Sum of all quote spend created since UTC-relative `days` ago, in cents.
+ * Used by the daily-cap circuit breaker. Cheap: one indexed aggregate read.
+ */
+export async function getTodaySpendCents(days = 1): Promise<number> {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+  const { data, error } = await supabaseAdmin
+    .from('quote_sessions')
+    .select('total_cost_cents')
+    .gte('created_at', since)
+  if (error) throw new Error(`getTodaySpendCents: ${error.message}`)
+  return (data ?? []).reduce((s, r) => s + (r.total_cost_cents ?? 0), 0)
+}
+
+/**
+ * Sum of today's quote spend (cents) across all sessions from a given IP.
+ * Powers the per-IP free-turn allowance for anonymous visitors: an IP gets a
+ * tiny amount of AI spend to reach phone/email verification, after which the
+ * $0 daily cap applies. Null/empty IP is treated as its own bucket.
+ */
+export async function getTodaySpendCentsForIp(ip: string | null, days = 1): Promise<number> {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+  let q = supabaseAdmin
+    .from('quote_sessions')
+    .select('total_cost_cents')
+    .gte('created_at', since)
+  q = ip ? q.eq('ip_address', ip) : q.is('ip_address', null)
+  const { data, error } = await q
+  if (error) throw new Error(`getTodaySpendCentsForIp: ${error.message}`)
+  return (data ?? []).reduce((s, r) => s + (r.total_cost_cents ?? 0), 0)
+}
+
+// Per-IP free allowance (cents) for anonymous/uncommitted visitors before the
+// $0 daily cap bites. ~5c ≈ a handful of Sonnet turns — enough to greet the
+// visitor and get them to phone/email verification (which flips them to
+// "committed" and removes the cap entirely). Abuse from a single IP is thus
+// bounded to a few cents/day. Security audit 2026-07-20.
+export const ANON_IP_FREE_ALLOWANCE_CENTS = 5
 
 export interface SessionBudgetSnapshot {
   total_tokens_used: number
@@ -324,6 +368,37 @@ export async function preflightOrThrow(sessionId: string, estimatedInputTokens: 
 
   const budget = await getSessionBudget(sessionId)
   const caps = await computeSessionBudget(sessionId)
+
+  // ── Daily cost cap — HARD circuit breaker with per-IP free allowance ──
+  // The /quote endpoints aren't linked publicly, so anonymous spend should be
+  // ~$0/day. But a literal $0 would block the FIRST turn of every visitor —
+  // and a prospect can only earn "committed" status (phone/email) BY talking.
+  // So: committed sessions (any commitment signal) bypass entirely; anonymous
+  // IPs get a small free allowance (ANON_IP_FREE_ALLOWANCE_CENTS) to reach
+  // verification, then the platform daily cap ($0 by default) applies. Net:
+  // real prospects always start + can commit; a single abusive IP is bounded
+  // to a few cents/day. Security audit 2026-07-20.
+  if (caps.signals.length === 0) {
+    const { data: sessionRow } = await supabaseAdmin
+      .from('quote_sessions')
+      .select('ip_address')
+      .eq('id', sessionId)
+      .maybeSingle()
+    const ip = (sessionRow?.ip_address as string | null) ?? null
+    const ipSpend = await getTodaySpendCentsForIp(ip)
+    if (ipSpend >= ANON_IP_FREE_ALLOWANCE_CENTS) {
+      // Free allowance exhausted for this IP — apply the platform daily cap.
+      const dailyCap = await getDailyCostCapCents()
+      const todaySpend = await getTodaySpendCents()
+      if (todaySpend >= dailyCap) {
+        throw new BudgetViolation(
+          'daily_cost_cap',
+          `anon IP spend ${ipSpend}c >= free ${ANON_IP_FREE_ALLOWANCE_CENTS}c; daily ${todaySpend}c >= cap ${dailyCap}c`,
+          "Our AI advisor is at capacity right now. Book a quick call and a real human will walk you through your plan.",
+        )
+      }
+    }
+  }
 
   if (budget.total_cost_cents >= caps.maxCostCents) {
     throw new BudgetViolation(

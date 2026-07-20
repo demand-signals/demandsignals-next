@@ -56,6 +56,31 @@ export async function POST(
   if (!body.key || !body.signature?.trim()) {
     return NextResponse.json({ error: 'signature and key required' }, { status: 400 })
   }
+
+  // ── Identity gate FIRST (before any status/field validation) ──
+  // Fetch by number AND public_uuid in the SAME query, and return a uniform
+  // 404 on any miss. The previous code fetched by msa_number alone, then
+  // compared public_uuid in app code — which returned 404 for a bad number
+  // but 403 for a valid number with a wrong key. That divergence was an
+  // existence oracle over the guessable MSA-CLIENT-MMDDYY{SUFFIX} space,
+  // letting an attacker enumerate which MSA numbers exist without any UUID.
+  // Matching the invoice/SOW routes closes it. Security audit 2026-07-20.
+  const { data: msa, error } = await supabaseAdmin
+    .from('msa_documents')
+    .select('id, prospect_id, public_uuid, status, incorporated_disclosures')
+    .eq('msa_number', number)
+    .eq('public_uuid', body.key)
+    .maybeSingle()
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!msa) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  if (msa.status === 'executed') {
+    return NextResponse.json({ ok: true, already_executed: true })
+  }
+  if (!['sent', 'viewed'].includes(msa.status)) {
+    return NextResponse.json({ error: `Cannot execute an agreement in status ${msa.status}` }, { status: 409 })
+  }
+
   if (!body.esignConsent) {
     return NextResponse.json({ error: 'Electronic signature consent is required' }, { status: 400 })
   }
@@ -92,23 +117,6 @@ export async function POST(
     if ((v ?? '').trim().toUpperCase() !== expectedInitials) {
       return NextResponse.json({ error: `Initials must be "${expectedInitials}" on every document and match the signer name` }, { status: 400 })
     }
-  }
-
-  const { data: msa, error } = await supabaseAdmin
-    .from('msa_documents')
-    .select('id, prospect_id, public_uuid, status, incorporated_disclosures')
-    .eq('msa_number', number)
-    .maybeSingle()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  if (!msa) return NextResponse.json({ error: 'Agreement not found' }, { status: 404 })
-  if (msa.public_uuid !== body.key) {
-    return NextResponse.json({ error: 'Invalid link' }, { status: 403 })
-  }
-  if (msa.status === 'executed') {
-    return NextResponse.json({ ok: true, already_executed: true })
-  }
-  if (!['sent', 'viewed'].includes(msa.status)) {
-    return NextResponse.json({ error: `Cannot execute an agreement in status ${msa.status}` }, { status: 409 })
   }
 
   // Require an initial for every incorporated disclosure.

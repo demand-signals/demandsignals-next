@@ -92,6 +92,16 @@ export async function POST(request: NextRequest) {
     console.error('[unauthorized-log] Failed to log:', error.message)
   }
 
+  // Reflection is DELIBERATE: the /unauthorized deterrent page ("we see you —
+  // here's your name, IP, and location") renders this payload to discourage
+  // intruders. Security audit 2026-07-20 flagged the reflection; decision
+  // (Hunter, same day) is to KEEP it. Residual risk is bounded and accepted:
+  //   - every field is the CALLER'S OWN data (no cross-user enumeration)
+  //   - the route requires an authenticated Supabase session (see `if (!user)`)
+  //   - identity/geo come from the user's own session + their own request IP
+  // The only exfil path is XSS on an already-authenticated page reading the
+  // user's own session data — a property true of any authed page, not unique
+  // to this endpoint. The deterrent value outweighs closing this narrow path.
   return NextResponse.json({
     email,
     fullName,

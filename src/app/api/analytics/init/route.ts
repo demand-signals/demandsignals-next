@@ -26,25 +26,30 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Show which DB URL is being used (masked for security)
+  // Report WHICH env var is active + whether it's set — but NEVER any slice
+  // of the value. A Postgres URL's leading chars are
+  // `postgresql://<user>:<passwordstart>`, so even a 30-char "preview" leaked
+  // the DB username and the start of the password into HTTP logs, proxies,
+  // and browser history. Security audit 2026-07-20. Return a boolean, not a
+  // substring.
   const neonUrl = process.env.NEON_DATABASE_URL
   const dbUrl = process.env.DATABASE_URL
   const pgUrl = process.env.POSTGRES_URL
   const activeUrl = neonUrl || dbUrl || pgUrl
   const urlSource = neonUrl ? 'NEON_DATABASE_URL' : dbUrl ? 'DATABASE_URL' : pgUrl ? 'POSTGRES_URL' : 'NONE'
-  const urlPreview = activeUrl ? activeUrl.slice(0, 30) + '...' : 'NOT SET'
+  const dbInfo = { source: urlSource, configured: Boolean(activeUrl) }
 
   try {
     await initSchema()
     return NextResponse.json({
       ok: true,
       message: 'Analytics schema initialized — pageviews table and indexes created.',
-      db: { source: urlSource, preview: urlPreview },
+      db: dbInfo,
     })
   } catch (err) {
     console.error('[Analytics Init]', err)
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : 'Unknown error', db: { source: urlSource, preview: urlPreview } },
+      { ok: false, error: err instanceof Error ? err.message : 'Unknown error', db: dbInfo },
       { status: 500 }
     )
   }

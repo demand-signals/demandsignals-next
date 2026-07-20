@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { authorizeSession } from '@/lib/quote-session'
 import { sendVerificationCode, isTwilioConfigured } from '@/lib/quote-twilio'
-import { toE164 } from '@/lib/quote-crypto'
+import { toE164, hashPhone } from '@/lib/quote-crypto'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export const runtime = 'nodejs'
@@ -12,18 +12,44 @@ const bodySchema = z.object({
   tcpa_consent: z.literal(true, { message: 'TCPA consent required.' }),
 })
 
-// Simple per-phone / per-session rate limit using quote_events as the counter.
+// Per-phone / per-session rate limit using quote_events as the counter.
+//
+// Two independent caps, both hourly, both DB-backed (survive Lambda churn):
+//   - per SESSION: max 3 sends/hr (stops one session hammering).
+//   - per PHONE across ALL sessions: max 5 sends/hr (stops SMS-pump / toll
+//     fraud where an attacker mints fresh sessions to keep texting the same
+//     victim number). Counts on the SHA-256 phone hash stored in event_data,
+//     so no raw number is compared. Security audit 2026-07-20 — closes the
+//     "for MVP we gate at session level" gap noted in the prior code.
+const MAX_PER_SESSION_PER_HOUR = 3
+const MAX_PER_PHONE_PER_HOUR = 5
+
 async function withinRateLimit(session_id: string, e164: string): Promise<{ ok: boolean; reason?: string }> {
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-  const { data } = await supabaseAdmin
+
+  const { data: sessionSends } = await supabaseAdmin
     .from('quote_events')
     .select('id')
     .eq('session_id', session_id)
     .eq('event_type', 'phone_verify_send')
     .gte('created_at', oneHourAgo)
-  if ((data?.length ?? 0) >= 3) return { ok: false, reason: 'Too many attempts. Try again in an hour.' }
-  // Also check same phone across sessions (prevent enumeration via many sessions).
-  // Using phone_e164_hash would require computing and joining; for MVP we gate at session level.
+  if ((sessionSends?.length ?? 0) >= MAX_PER_SESSION_PER_HOUR) {
+    return { ok: false, reason: 'Too many attempts. Try again in an hour.' }
+  }
+
+  // Cross-session per-phone counter. Filters quote_events by the hashed number
+  // inside event_data (jsonb ->> match). Prevents a fresh-session SMS pump.
+  const phoneHash = hashPhone(e164)
+  const { data: phoneSends } = await supabaseAdmin
+    .from('quote_events')
+    .select('id')
+    .eq('event_type', 'phone_verify_send')
+    .eq('event_data->>e164_hash', phoneHash)
+    .gte('created_at', oneHourAgo)
+  if ((phoneSends?.length ?? 0) >= MAX_PER_PHONE_PER_HOUR) {
+    return { ok: false, reason: 'Too many attempts for this number. Try again in an hour.' }
+  }
+
   return { ok: true }
 }
 
@@ -69,7 +95,10 @@ export async function POST(request: NextRequest) {
   await supabaseAdmin.from('quote_events').insert({
     session_id: session.id,
     event_type: 'phone_verify_send',
-    event_data: { e164_last4: e164.slice(-4), status: result.status },
+    // e164_hash powers the cross-session per-phone rate limit (see
+    // withinRateLimit). Only last-4 + the SHA-256 hash are stored — never the
+    // raw number.
+    event_data: { e164_last4: e164.slice(-4), e164_hash: hashPhone(e164), status: result.status },
   })
 
   return NextResponse.json({ ok: true, status: result.status })

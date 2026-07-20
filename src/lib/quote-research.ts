@@ -13,6 +13,7 @@
 import { isPlacesConfigured, searchPlaces, getPlaceDetails, matchConfidence, type PlaceSearchResult, type PlaceDetails } from './quote-places'
 import { supabaseAdmin } from './supabase/admin'
 import { findExistingProspectFromResearch } from './quote-existing-match'
+import { fetchGuarded, assertPublicUrl, SsrfBlockedError } from './ssrf-guard'
 
 export interface SiteScan {
   url: string
@@ -121,6 +122,21 @@ async function scanSite(url: string): Promise<SiteScan> {
   // http://..., we upgrade to https:// for this probe so we can observe
   // whether the cert works. A dead cert is a flashing red flag for SEO
   // and trust — every browser shows a scary warning to visitors.
+  // SSRF egress guard: reject any prospect-supplied URL that resolves to a
+  // private / loopback / link-local (cloud metadata) address before we make
+  // ANY request. A blocked URL aborts the whole scan — we never probe it.
+  // Security audit 2026-07-20.
+  try {
+    await assertPublicUrl(url)
+  } catch (e) {
+    if (e instanceof SsrfBlockedError) {
+      scan.error = 'blocked_url'
+      scan.notable_issues.push('URL points to a non-public address and was not scanned')
+      return scan
+    }
+    throw e
+  }
+
   const normalizedUrl = url.replace(/^http:\/\//i, 'https://')
   const probeHttpsOnly = normalizedUrl !== url || url.startsWith('https://')
 
@@ -128,15 +144,19 @@ async function scanSite(url: string): Promise<SiteScan> {
     try {
       const controller = new AbortController()
       const t = setTimeout(() => controller.abort(), 8_000)
-      const probeRes = await fetch(normalizedUrl, {
+      const probeRes = await fetchGuarded(normalizedUrl, {
         signal: controller.signal,
         method: 'HEAD',
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DSIG-Research/1.0)' },
-        redirect: 'follow',
       })
       clearTimeout(t)
       scan.https_valid = probeRes.ok || (probeRes.status >= 300 && probeRes.status < 400)
     } catch (e) {
+      if (e instanceof SsrfBlockedError) {
+        scan.error = 'blocked_url'
+        scan.notable_issues.push('URL redirected to a non-public address and was not scanned')
+        return scan
+      }
       const msg = e instanceof Error ? e.message : 'ssl probe failed'
       // Node's fetch surfaces cert errors as specific codes
       if (/CERT_|SELF_SIGNED|UNABLE_TO_|certificate|TLS|handshake/i.test(msg)) {
@@ -153,10 +173,9 @@ async function scanSite(url: string): Promise<SiteScan> {
   try {
     const controller = new AbortController()
     const t = setTimeout(() => controller.abort(), 12_000)
-    const res = await fetch(url, {
+    const res = await fetchGuarded(url, {
       signal: controller.signal,
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DSIG-Research/1.0)' },
-      redirect: 'follow',
     })
     clearTimeout(t)
     scan.ttfb_ms = Date.now() - started
@@ -319,6 +338,11 @@ async function scanSite(url: string): Promise<SiteScan> {
       if (scan.likely_services.length >= 10) break
     }
   } catch (e) {
+    if (e instanceof SsrfBlockedError) {
+      scan.error = 'blocked_url'
+      scan.notable_issues.push('URL redirected to a non-public address and was not scanned')
+      return scan
+    }
     const msg = e instanceof Error ? e.message : 'scan failed'
     scan.error = msg
     scan.notable_issues.push('could not reach site for scan')
@@ -332,7 +356,7 @@ async function scanSite(url: string): Promise<SiteScan> {
       try {
         const c = new AbortController()
         const t = setTimeout(() => c.abort(), 5_000)
-        const r = await fetch(origin + path, {
+        const r = await fetchGuarded(origin + path, {
           signal: c.signal,
           headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DSIG-Research/1.0)' },
         })
@@ -357,7 +381,7 @@ async function scanSite(url: string): Promise<SiteScan> {
     const origin = new URL(url).origin
     const c = new AbortController()
     const t = setTimeout(() => c.abort(), 5_000)
-    const r = await fetch(origin + '/llms.txt', {
+    const r = await fetchGuarded(origin + '/llms.txt', {
       signal: c.signal,
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DSIG-Research/1.0)' },
     })
