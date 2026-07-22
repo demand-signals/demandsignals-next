@@ -63,6 +63,12 @@ export const NoteAndTimeInputSchema = z
     // NO cost/rates). Stored verbatim as jsonb for display + audit.
     llm_billing_by_model: z.record(z.string(), z.unknown()).optional().nullable(),
     billing_model: z.enum(['token', 'time']).optional().nullable(),
+    // Idempotency (migration 053 unique index). sha256(session_id). A
+    // re-handoff of the SAME session UPDATES the existing entry rather than
+    // creating a duplicate — prevents double-billing. (2026-07-23: was
+    // accepted by the route but never inserted, so every row had NULL key
+    // and the partial unique index never fired — double-posts sailed through.)
+    idempotency_key: z.string().max(128).optional().nullable(),
   })
   .refine((d) => d.project_id || d.client_code, {
     message: 'Either project_id or client_code is required',
@@ -119,8 +125,12 @@ export interface NoteAndTimeResult {
     billing_model: string | null
     logged_at: string
     logged_by: string | null
+    approval_status?: string | null
   } | null
   warning?: string
+  /** True when a re-handoff of the same session updated an existing row
+      instead of creating a duplicate (idempotency short-circuit). */
+  idempotent_update?: boolean
 }
 
 export type NoteAndTimeError =
@@ -263,6 +273,69 @@ export async function createNoteAndTimeEntry(
     }
   }
 
+  // ── IDEMPOTENCY SHORT-CIRCUIT (2026-07-23) ────────────────────────
+  // If a time entry with this idempotency_key already exists (same session
+  // re-handoff), UPDATE it in place instead of creating a second note + entry.
+  // This is the fix for the double-post/double-bill class: the key was
+  // accepted but never persisted, so the unique index never fired.
+  if (input.idempotency_key) {
+    const { data: existing } = await supabaseAdmin
+      .from('project_time_entries')
+      .select('id, project_note_id, approval_status')
+      .eq('idempotency_key', input.idempotency_key)
+      .maybeSingle()
+
+    if (existing) {
+      // Do NOT overwrite an already-approved entry's billing numbers (a human
+      // verified them). Update the captured entry's tokens/hours to the fresh
+      // full-session figures; refresh the linked note body.
+      const totalMinutes2 = (input.hunter_minutes ?? 0) + (input.claude_minutes ?? 0)
+      const hoursDecimal2 = totalMinutes2 > 0 ? Math.round((totalMinutes2 / 60) * 100) / 100 : null
+      if (existing.approval_status !== 'approved') {
+        await supabaseAdmin
+          .from('project_time_entries')
+          .update({
+            hours: hoursDecimal2,
+            hunter_minutes: input.hunter_minutes ?? 0,
+            claude_minutes: input.claude_minutes ?? 0,
+            claude_input_tokens: input.claude_input_tokens ?? null,
+            claude_output_tokens: input.claude_output_tokens ?? null,
+            claude_cache_read_tokens: input.claude_cache_read_tokens ?? null,
+            claude_cache_create_tokens: input.claude_cache_create_tokens ?? null,
+            model: input.model ?? null,
+            llm_billable_cents: input.llm_billable_usd != null ? Math.round(input.llm_billable_usd * 100) : null,
+            llm_billing_by_model: input.llm_billing_by_model ?? null,
+            billing_model: input.billing_model ?? 'token',
+            session_ended_at: input.session_ended_at ?? null,
+            description: input.title ?? null,
+          })
+          .eq('id', existing.id)
+      }
+      if (existing.project_note_id) {
+        await supabaseAdmin
+          .from('project_notes')
+          .update({ title: input.title ?? null, body: input.body, session_ended_at: input.session_ended_at ?? null })
+          .eq('id', existing.project_note_id)
+      }
+      // Return the existing (now-updated) rows — NO duplicate created.
+      const { data: refreshedNote } = await supabaseAdmin
+        .from('project_notes').select('*').eq('id', existing.project_note_id).single()
+      const { data: refreshedEntry } = await supabaseAdmin
+        .from('project_time_entries').select('id, hours, hunter_minutes, claude_minutes, llm_billable_cents, billing_model, logged_at, logged_by, approval_status').eq('id', existing.id).single()
+      return {
+        ok: true,
+        result: {
+          note: refreshedNote,
+          time_entry: refreshedEntry,
+          idempotent_update: true,
+          warning: existing.approval_status === 'approved'
+            ? 'Entry already approved — billing numbers preserved, note refreshed only.'
+            : undefined,
+        },
+      }
+    }
+  }
+
   // Insert the note
   const { data: note, error: noteErr } = await supabaseAdmin
     .from('project_notes')
@@ -338,6 +411,9 @@ export async function createNoteAndTimeEntry(
       // human reviews + approves in-project, which then forks to retainer
       // debit or invoice. Only 'approved' entries reach either money surface.
       approval_status: 'captured',
+      // Persist the idempotency key so a re-handoff of this session finds +
+      // updates this row instead of creating a duplicate (unique index, mig 053).
+      idempotency_key: input.idempotency_key ?? null,
       hunter_minutes: input.hunter_minutes ?? 0,
       claude_minutes: input.claude_minutes ?? 0,
       session_started_at: input.session_started_at ?? null,
