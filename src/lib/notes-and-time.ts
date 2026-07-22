@@ -40,8 +40,13 @@ export const NoteAndTimeInputSchema = z
     // causing 400s that the frontend surfaced as "Invalid input."
     session_started_at: z.string().datetime({ offset: true }).optional().nullable(),
     session_ended_at: z.string().datetime({ offset: true }).optional().nullable(),
-    hunter_minutes: z.number().int().min(0).max(60 * 24 * 7).optional(),
-    claude_minutes: z.number().int().min(0).max(60 * 24 * 7).optional(),
+    // Block-time handoffs aggregate a multi-day work window into one entry,
+    // so the cap is a full billing period, not a single week. (2026-07-22:
+    // the old 1-week cap would silently reject long-session handoffs at
+    // validation, same failure class as the hours<=24 DB CHECK.) 1000h in
+    // minutes = 60000; matches migration 056's hours<=1000 sanity bound.
+    hunter_minutes: z.number().int().min(0).max(60 * 1000).optional(),
+    claude_minutes: z.number().int().min(0).max(60 * 1000).optional(),
     // ── Token attribution (migration 053; wired here 2026-07-08) ──
     claude_input_tokens: z.number().int().min(0).optional().nullable(),
     claude_output_tokens: z.number().int().min(0).optional().nullable(),
