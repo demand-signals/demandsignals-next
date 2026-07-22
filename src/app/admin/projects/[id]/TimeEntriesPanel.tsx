@@ -111,8 +111,19 @@ function fmtTokensFull(n: number | null | undefined): string {
   return n.toLocaleString('en-US')
 }
 
-// A token entry is any time entry that carries a per-model breakdown.
+// A token entry is any time entry that has LLM billing — whether or not it
+// carries the per-model breakdown. Entries posted before per-model wiring
+// (or by the legacy hand-rolled script) have llm_billable_cents but NULL
+// llm_billing_by_model; they still belong in Token Entries, shown with the
+// total + a "breakdown not captured" note rather than being hidden. (Fix
+// 2026-07-22: DOCK had $766 of LLM billing across 3 handoffs but no Token
+// Entries section because none carried the jsonb.)
 function hasTokenData(e: TimeEntry): boolean {
+  const hasBreakdown = !!e.llm_billing_by_model && Object.keys(e.llm_billing_by_model).length > 0
+  const hasBillable = (e.llm_billable_cents ?? 0) > 0
+  return hasBreakdown || hasBillable
+}
+function hasModelBreakdown(e: TimeEntry): boolean {
   return !!e.llm_billing_by_model && Object.keys(e.llm_billing_by_model).length > 0
 }
 
@@ -621,17 +632,29 @@ export function TimeEntriesPanel({
                       {e.logged_by && <span className="text-slate-400">{e.logged_by}</span>}
                     </div>
                     <div className="flex items-center gap-2 text-xs">
-                      <span className="tabular-nums text-slate-600">
-                        {fmtTokensFull(entryTokenTotal(e))} tokens
-                      </span>
-                      <span className="text-slate-300">·</span>
+                      {hasModelBreakdown(e) && (
+                        <>
+                          <span className="tabular-nums text-slate-600">
+                            {fmtTokensFull(entryTokenTotal(e))} tokens
+                          </span>
+                          <span className="text-slate-300">·</span>
+                        </>
+                      )}
                       <span className="tabular-nums font-semibold text-violet-700">
                         {fmtCents(e.llm_billable_cents)}
                       </span>
                     </div>
                   </div>
 
-                  {/* Per-model, per-type breakdown */}
+                  {/* Per-model, per-type breakdown — or a graceful fallback
+                      for legacy entries billed before per-model wiring. */}
+                  {!hasModelBreakdown(e) ? (
+                    <div className="mt-2 rounded bg-slate-50 px-3 py-2 text-[11px] text-slate-500">
+                      Per-model breakdown not captured for this handoff (billed before
+                      per-model token attribution). Total LLM billable:{' '}
+                      <span className="font-semibold text-violet-700">{fmtCents(e.llm_billable_cents)}</span>.
+                    </div>
+                  ) : (
                   <div className="mt-2 space-y-2">
                     {Object.entries(e.llm_billing_by_model ?? {}).map(([model, m]) => {
                       const u = m.usage ?? {}
@@ -667,6 +690,7 @@ export function TimeEntriesPanel({
                       )
                     })}
                   </div>
+                  )}
 
                   {e.description && (
                     <div className="text-xs text-slate-600 mt-2">{e.description}</div>
