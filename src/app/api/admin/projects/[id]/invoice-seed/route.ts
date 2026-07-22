@@ -141,10 +141,15 @@ export async function GET(
   // Only entries that have NOT already been covered by a prior invoice
   // (covered_by_invoice_id IS NULL) are included — prevents double billing.
 
+  // APPROVAL GATE (2026-07-23): only entries a human has APPROVED can bill.
+  // Captured (unapproved) entries are excluded — they surface in the project's
+  // pending-approval banner instead. This is the load-bearing fix: wrong hours
+  // captured by a handoff can never reach a client invoice without review.
   const { data: timeEntries } = await supabaseAdmin
     .from('project_time_entries')
-    .select('id, phase_id, hours, hourly_rate_cents, description, llm_billable_cents')
+    .select('id, phase_id, hours, hourly_rate_cents, description, llm_billable_cents, llm_billing_by_model, approval_status')
     .eq('project_id', id)
+    .eq('approval_status', 'approved')
     .is('covered_by_invoice_id', null)
 
   const timeLines: CreateLineItem[] = []
@@ -214,22 +219,38 @@ export async function GET(
   // billable total is shown.
   let llmTotalCents = 0
   const llmEntryIds: string[] = []
+  // Aggregate per-model billable across entries so the invoice line can name
+  // the models (matching the Token Entries panel). usage + billable only.
+  const modelBillable = new Map<string, number>()
   if (timeEntries && timeEntries.length > 0) {
     for (const e of timeEntries) {
       const cents = Number(e.llm_billable_cents) || 0
       if (cents > 0) {
         llmTotalCents += cents
-        // An entry can contribute BOTH an hours line (via its bucket) and
-        // the LLM line. Dedupe the id so covered_by_invoice_id is set once.
         if (!timeEntryIds.includes(e.id) && !llmEntryIds.includes(e.id)) {
           llmEntryIds.push(e.id)
+        }
+        // Per-model roll-up from the jsonb, if present.
+        const bm = e.llm_billing_by_model as Record<string, { display?: string; billable?: { total?: number } }> | null
+        if (bm) {
+          for (const [model, m] of Object.entries(bm)) {
+            const label = m.display ?? model
+            const dollars = m.billable?.total ?? 0
+            modelBillable.set(label, (modelBillable.get(label) ?? 0) + Math.round(dollars * 100))
+          }
         }
       }
     }
   }
   if (llmTotalCents > 0) {
+    // Compose a per-model suffix, e.g. "(Opus 4.8 $196.93 · Opus 4.7 $158.58)".
+    const modelParts = Array.from(modelBillable.entries())
+      .filter(([, c]) => c > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([label, c]) => `${label} ${formatCentsInline(c)}`)
+    const modelSuffix = modelParts.length > 0 ? ` (${modelParts.join(' · ')})` : ''
     timeLines.push({
-      description: 'LLM usage (AI compute — token-based)',
+      description: `LLM usage (AI compute — token-based)${modelSuffix}`,
       quantity: 1,
       unit_price_cents: llmTotalCents,
       cadence: 'one_time',
@@ -238,6 +259,26 @@ export async function GET(
     for (const eid of llmEntryIds) {
       if (!timeEntryIds.includes(eid)) timeEntryIds.push(eid)
     }
+  }
+
+  // QA counts (2026-07-23): make a thin invoice VISIBLE, not silent. Counts
+  // captured-but-unapproved entries + their estimated $ so the admin knows
+  // there's un-billed work waiting on approval before finalizing the invoice.
+  const { data: capturedRows } = await supabaseAdmin
+    .from('project_time_entries')
+    .select('hours, hourly_rate_cents, llm_billable_cents')
+    .eq('project_id', id)
+    .eq('approval_status', 'captured')
+    .is('covered_by_invoice_id', null)
+
+  let pendingApprovalCents = 0
+  const pendingApprovalCount = (capturedRows ?? []).length
+  for (const e of capturedRows ?? []) {
+    const hoursCents =
+      Number(e.hours) > 0 && Number(e.hourly_rate_cents) > 0
+        ? Math.round(Number(e.hours) * Number(e.hourly_rate_cents))
+        : 0
+    pendingApprovalCents += hoursCents + (Number(e.llm_billable_cents) || 0)
   }
 
   return NextResponse.json({
@@ -249,5 +290,18 @@ export async function GET(
     prospect: prospect ?? null,
     deliverables_seed: { lines: deliverablesLines },
     time_entries_seed: { lines: timeLines, entry_ids: timeEntryIds },
+    // QA — surfaced to the New Invoice UI so nothing is silently left off.
+    qa: {
+      deliverable_lines: deliverablesLines.length,
+      time_lines: timeLines.length,
+      time_entries_covered: timeEntryIds.length,
+      llm_total_cents: llmTotalCents,
+      pending_approval_count: pendingApprovalCount,
+      pending_approval_cents: pendingApprovalCents,
+      warning:
+        pendingApprovalCount > 0
+          ? `${pendingApprovalCount} time ${pendingApprovalCount === 1 ? 'entry is' : 'entries are'} pending approval (${formatCentsInline(pendingApprovalCents)}) and NOT included. Approve them first if they should bill.`
+          : null,
+    },
   })
 }

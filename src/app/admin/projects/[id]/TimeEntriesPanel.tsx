@@ -62,6 +62,12 @@ interface TimeEntry {
   // usage + billable ONLY — never cost, rates, or margin. Rendered by the
   // Token Entries section below.
   llm_billing_by_model: Record<string, LlmModelUsage> | null
+  // Approval state machine (migration 057, 2026-07-23). Handoff writes
+  // 'captured'; a human approves in-project, which forks to retainer debit
+  // or invoice. Only 'approved' entries reach either money surface.
+  approval_status: 'captured' | 'approved' | null
+  approved_at: string | null
+  retainer_debit_id: string | null
 }
 
 interface LlmModelUsage {
@@ -182,6 +188,17 @@ export function TimeEntriesPanel({
     subscriptions: CoverageRefOption[]
   } | null>(null)
 
+  // ── Approval state (2026-07-23) ───────────────────────────────────
+  // Reviewing a captured entry: edit hours + pick role/rate + confirm LLM,
+  // then Approve → server auto-forks to retainer debit or invoice.
+  const [approvingId, setApprovingId] = useState<string | null>(null)
+  const [approveHoursStr, setApproveHoursStr] = useState('')
+  const [approveRoleKey, setApproveRoleKey] = useState('')
+  const [approveRateStr, setApproveRateStr] = useState('')
+  const [approveLlmStr, setApproveLlmStr] = useState('')
+  const [approveBusy, setApproveBusy] = useState(false)
+  const [roles, setRoles] = useState<{ key: string; label: string; hourly_rate_cents: number }[]>([])
+
   const load = useCallback(() => {
     setLoading(true)
     fetch(`/api/admin/projects/${projectId}/time-entries`)
@@ -214,6 +231,73 @@ export function TimeEntriesPanel({
     if (h) mins += parseInt(h[1], 10) * 60
     if (m) mins += parseInt(m[1], 10)
     return mins
+  }
+
+  // ── Approval handlers ─────────────────────────────────────────────
+  async function startApprove(e: TimeEntry) {
+    setApprovingId(e.id)
+    setEditingId(null) // don't overlap with the edit form
+    // Seed from the entry; hours pre-filled but MUST be verified.
+    setApproveHoursStr(e.hours != null ? String(e.hours) : '')
+    setApproveRoleKey('')
+    setApproveRateStr(e.hourly_rate_cents != null ? String((e.hourly_rate_cents / 100).toFixed(2)) : '')
+    setApproveLlmStr(e.llm_billable_cents != null ? String((e.llm_billable_cents / 100).toFixed(2)) : '')
+    // Fetch roles once for the dropdown.
+    if (roles.length === 0) {
+      try {
+        const r = await fetch('/api/admin/rate-card')
+        if (r.ok) {
+          const j = await r.json()
+          const active = (j.roles ?? [])
+            .filter((x: { is_active?: boolean }) => x.is_active !== false)
+            .map((x: { key: string; name?: string; hourly_rate_cents: number }) => ({
+              key: x.key,
+              label: x.name ?? x.key,
+              hourly_rate_cents: x.hourly_rate_cents,
+            }))
+          setRoles(active)
+        }
+      } catch { /* dropdown just stays empty; manual rate still works */ }
+    }
+  }
+
+  function onApproveRoleChange(key: string) {
+    setApproveRoleKey(key)
+    const role = roles.find((r) => r.key === key)
+    if (role) setApproveRateStr((role.hourly_rate_cents / 100).toFixed(2))
+  }
+
+  async function submitApprove(entryId: string) {
+    setApproveBusy(true)
+    try {
+      const hours = parseFloat(approveHoursStr) || 0
+      const rateCents = approveRateStr ? Math.round(parseFloat(approveRateStr) * 100) : undefined
+      const llmCents = approveLlmStr ? Math.round(parseFloat(approveLlmStr) * 100) : undefined
+      const res = await fetch(
+        `/api/admin/projects/${projectId}/time-entries/${entryId}/approve`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            hours,
+            role_key: approveRoleKey || undefined,
+            hourly_rate_cents: rateCents,
+            llm_billable_cents: llmCents,
+          }),
+        },
+      )
+      const j = await res.json().catch(() => ({}))
+      if (res.ok) {
+        if (j.message) alert(j.message)
+        else if (j.warning) alert(`Warning: ${j.warning}`)
+        setApprovingId(null)
+        load()
+      } else {
+        alert(`Approve failed: ${j.error ?? res.status}`)
+      }
+    } finally {
+      setApproveBusy(false)
+    }
   }
 
   async function loadCoverageOptionsIfNeeded() {
@@ -387,6 +471,28 @@ export function TimeEntriesPanel({
         />
       )}
 
+      {/* Pending-approval banner (2026-07-23): captured entries are NOT
+          billable until reviewed + approved. Surfaces so nothing is silently
+          forgotten. Billable-$ estimate = uncovered captured hours×rate + LLM. */}
+      {data && (() => {
+        const captured = data.entries.filter((e) => e.approval_status === 'captured')
+        if (captured.length === 0) return null
+        const pendingCents = captured.reduce((s, e) => {
+          const hoursCents =
+            (e.hours ?? 0) > 0 && (e.hourly_rate_cents ?? 0) > 0
+              ? Math.round((e.hours ?? 0) * (e.hourly_rate_cents ?? 0))
+              : 0
+          return s + hoursCents + (e.llm_billable_cents ?? 0)
+        }, 0)
+        return (
+          <div className="mx-4 mb-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
+            <strong>{captured.length}</strong> {captured.length === 1 ? 'entry' : 'entries'} pending approval
+            {pendingCents > 0 && <> — <strong>{fmtCents(pendingCents)}</strong> not yet billable</>}
+            <span className="text-amber-600"> · review + Approve to debit the retainer or queue for invoice</span>
+          </div>
+        )
+      })()}
+
       {loading ? (
         <div className="px-4 py-6 flex items-center justify-center">
           <Loader2 className="w-4 h-4 animate-spin text-teal-500" />
@@ -399,6 +505,7 @@ export function TimeEntriesPanel({
         <ul className="divide-y divide-slate-100">
           {data.entries.map((e) => {
             const isEditing = editingId === e.id
+            const isApproving = approvingId === e.id
             return (
               <li key={e.id} className="px-4 py-2.5 flex items-start gap-3 group">
                 <div className="text-sm font-semibold text-slate-700 tabular-nums w-14 shrink-0">
@@ -557,12 +664,111 @@ export function TimeEntriesPanel({
                       {e.description && (
                         <div className="text-sm text-slate-700 mt-0.5">{e.description}</div>
                       )}
+                      {/* Approval status badge (2026-07-23) */}
+                      {e.approval_status === 'captured' && (
+                        <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">
+                          PENDING APPROVAL
+                        </span>
+                      )}
+                      {e.approval_status === 'approved' && (
+                        <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 font-medium">
+                          {e.retainer_debit_id ? 'APPROVED · RETAINER DEBITED' : 'APPROVED'}
+                        </span>
+                      )}
+
+                      {/* Inline approve form */}
+                      {isApproving && (
+                        <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
+                          <div className="text-[11px] font-semibold text-amber-800">Review + Approve — verify hours before billing</div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <label className="text-[11px] text-slate-600 block">
+                              Hours (verify!)
+                              <input
+                                value={approveHoursStr}
+                                onChange={(ev) => setApproveHoursStr(ev.target.value)}
+                                placeholder="e.g. 3.5"
+                                className="w-full mt-0.5 px-2 py-1 border border-slate-200 rounded text-sm bg-white"
+                              />
+                            </label>
+                            <label className="text-[11px] text-slate-600 block">
+                              Role / employee
+                              <select
+                                value={approveRoleKey}
+                                onChange={(ev) => onApproveRoleChange(ev.target.value)}
+                                className="w-full mt-0.5 px-2 py-1 border border-slate-200 rounded text-sm bg-white"
+                              >
+                                <option value="">— Pick a role —</option>
+                                {roles.map((r) => (
+                                  <option key={r.key} value={r.key}>
+                                    {r.label} (${(r.hourly_rate_cents / 100).toFixed(0)}/hr)
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="text-[11px] text-slate-600 block">
+                              Rate $/hr
+                              <input
+                                value={approveRateStr}
+                                onChange={(ev) => setApproveRateStr(ev.target.value)}
+                                placeholder="e.g. 150.00"
+                                className="w-full mt-0.5 px-2 py-1 border border-slate-200 rounded text-sm bg-white"
+                              />
+                            </label>
+                            <label className="text-[11px] text-slate-600 block">
+                              LLM billable $ (reliable)
+                              <input
+                                value={approveLlmStr}
+                                onChange={(ev) => setApproveLlmStr(ev.target.value)}
+                                className="w-full mt-0.5 px-2 py-1 border border-slate-200 rounded text-sm bg-white"
+                              />
+                            </label>
+                          </div>
+                          {/* Live computed debit total */}
+                          <div className="text-[11px] text-slate-600">
+                            Debit total:{' '}
+                            <strong className="text-violet-700">
+                              {(() => {
+                                const h = parseFloat(approveHoursStr) || 0
+                                const r = parseFloat(approveRateStr) || 0
+                                const llm = parseFloat(approveLlmStr) || 0
+                                return '$' + (h * r + llm).toFixed(2)
+                              })()}
+                            </strong>
+                            <span className="text-slate-400"> (hours×rate + LLM). Retainer clients debit now; others queue for invoice.</span>
+                          </div>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setApprovingId(null)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded text-slate-600 hover:bg-slate-100"
+                            >
+                              <X className="w-3.5 h-3.5" /> Cancel
+                            </button>
+                            <button
+                              onClick={() => submitApprove(e.id)}
+                              disabled={approveBusy}
+                              className="inline-flex items-center gap-1 px-3 py-1 text-xs rounded bg-emerald-600 text-white font-medium disabled:opacity-50 hover:bg-emerald-700"
+                            >
+                              {approveBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                              Approve
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
 
-                {!isEditing && (
+                {!isEditing && !isApproving && (
                   <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {e.approval_status === 'captured' && (
+                      <button
+                        onClick={() => startApprove(e)}
+                        className="text-[10px] px-2 py-0.5 rounded bg-emerald-600 text-white font-medium hover:bg-emerald-700 opacity-100"
+                        title="Review + approve → debit retainer or queue for invoice"
+                      >
+                        Approve
+                      </button>
+                    )}
                     <button
                       onClick={() => startEditEntry(e)}
                       className="text-slate-400 hover:text-teal-600"

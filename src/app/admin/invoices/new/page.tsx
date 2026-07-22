@@ -86,6 +86,7 @@ function NewInvoiceForm() {
   const [projectId] = useState(presetProjectId)
   const [coveredTimeEntryIds, setCoveredTimeEntryIds] = useState<string[]>([])
   const [seedNotice, setSeedNotice] = useState<string | null>(null)
+  const [seedWarning, setSeedWarning] = useState<string | null>(null)
   const [kind, setKind] = useState<'quote_driven' | 'business' | 'restaurant_rule'>('business')
   const [lines, setLines] = useState<LineItemDraft[]>([{ ...EMPTY_LINE }])
   const [includeValueStack, setIncludeValueStack] = useState(false)
@@ -157,8 +158,23 @@ function NewInvoiceForm() {
           prospect: { id: string; business_name: string; owner_name: string | null; owner_email: string | null } | null
           deliverables_seed: { lines: Array<{ description: string; quantity: number; unit_price_cents: number; cadence: string }> }
           time_entries_seed: { lines: Array<{ description: string; quantity: number; unit_price_cents: number; cadence: string }>; entry_ids: string[] }
+          qa?: {
+            deliverable_lines: number
+            time_lines: number
+            time_entries_covered: number
+            llm_total_cents: number
+            pending_approval_count: number
+            pending_approval_cents: number
+            warning: string | null
+          }
         }
         if (cancelled) return
+
+        // Surface the approval QA warning so a thin invoice isn't silent
+        // (2026-07-23): unapproved entries are excluded; tell the admin.
+        if (data.qa?.warning) {
+          setSeedWarning(data.qa.warning)
+        }
 
         // Always honor the project's prospect — the modal already enforced
         // this but a hand-typed URL might omit prospect_id.
@@ -462,6 +478,12 @@ function NewInvoiceForm() {
         <div className="bg-teal-50 border border-teal-200 text-teal-900 rounded-lg px-4 py-3 text-sm flex items-start gap-2">
           <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0 text-teal-600" />
           <span>{seedNotice}</span>
+        </div>
+      )}
+      {seedWarning && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg px-4 py-3 text-sm flex items-start gap-2">
+          <span className="mt-0.5 flex-shrink-0">⚠</span>
+          <span>{seedWarning}</span>
         </div>
       )}
 

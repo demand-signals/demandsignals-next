@@ -15,7 +15,9 @@
 
 import { z } from 'zod'
 import { supabaseAdmin } from './supabase/admin'
-import { accrueHandoffDebit } from './retainer-ledger'
+// NOTE: accrueHandoffDebit moved to the Approve route (2026-07-23) — handoff
+// no longer auto-debits the retainer. Import lives where it's now used:
+// src/app/api/admin/projects/[id]/time-entries/[entryId]/approve/route.ts
 
 // ── Input schema ───────────────────────────────────────────────────
 
@@ -332,6 +334,10 @@ export async function createNoteAndTimeEntry(
       logged_at: loggedAt,
       logged_by: audit.actor_label,
       billable: true,
+      // Handoff CAPTURES only (2026-07-23). Entry stays 'captured' until a
+      // human reviews + approves in-project, which then forks to retainer
+      // debit or invoice. Only 'approved' entries reach either money surface.
+      approval_status: 'captured',
       hunter_minutes: input.hunter_minutes ?? 0,
       claude_minutes: input.claude_minutes ?? 0,
       session_started_at: input.session_started_at ?? null,
@@ -372,38 +378,17 @@ export async function createNoteAndTimeEntry(
     }
   }
 
-  // ── Retainer accrual (opt-in, best-effort) ─────────────────────────
-  // If the client has a retainer ledger, accrue a role-LESS PENDING debit for
-  // this work (hours captured + LLM billable as the baseline; the human-hours
-  // rate is applied when the admin picks a role at approval). Clients WITHOUT
-  // a ledger are untouched — accrueHandoffDebit no-ops. This must NEVER fail
-  // the handoff: the note + time entry already wrote. Any error is swallowed
-  // to a warning, matching the best-effort receipt-creation pattern elsewhere.
-  try {
-    const hunterHours =
-      (input.hunter_minutes ?? 0) > 0
-        ? Math.round(((input.hunter_minutes ?? 0) / 60) * 100) / 100
-        : 0
-    await accrueHandoffDebit({
-      prospect_id: project.prospect_id,
-      project_id: project.id,
-      time_entry_id: timeEntry.id,
-      hunter_hours: hunterHours,
-      llm_billable_cents: timeEntry.llm_billable_cents ?? null,
-      description: input.title ?? `Session on ${loggedAt}`,
-    })
-  } catch (accrualErr) {
-    return {
-      ok: true,
-      result: {
-        note,
-        time_entry: timeEntry,
-        warning: `retainer accrual skipped: ${
-          accrualErr instanceof Error ? accrualErr.message : 'unknown'
-        }`,
-      },
-    }
-  }
+  // ── Retainer accrual: REMOVED at handoff time (2026-07-23) ─────────
+  // The handoff no longer auto-accrues a retainer debit. Hours captured by
+  // the handoff are often wrong, so auto-debiting mis-charged client money.
+  // New model: handoff CAPTURES (approval_status='captured'); a human
+  // reviews + edits hours/role/rate/tokens in-project and clicks Approve,
+  // which THEN forks — retainer clients get a debit with the verified
+  // numbers; non-retainer clients' approved entries flow into New Invoice.
+  // See Y:\SKILLS\dsig-handoff\specs\2026-07-23-handoff-rewrite-plan-v2a-amended.md
+  // Approve API: POST /api/admin/projects/[id]/time-entries/[entryId]/approve
+  //
+  // (accrueHandoffDebit is still imported + used by the Approve route, not here.)
 
   return {
     ok: true,
